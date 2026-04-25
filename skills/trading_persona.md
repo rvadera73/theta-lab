@@ -98,6 +98,62 @@ The thesis must break — not just the price.
 
 ---
 
+## Macro Sector Thesis (as of Apr 2026)
+
+This is the fundamental research layer that drives stock universe selection. Sectors are not equal — within each sector, the trader applies a **pick-and-shovel filter**: prefer enabling infrastructure over direct plays.
+
+### Active Sector Views
+
+**AI — Pick and Shovel Only**
+- Conviction: HIGH. But selective — NOT betting on AI model companies or data center operators directly
+- "Pick and shovel" preference: companies enabling AI (connectivity chips, cybersecurity, power infrastructure, AI-powered software tools)
+- Semis: Cautious — "probably behind" (NVDA has run; TSM still valid as foundry pick/shovel)
+- Data centers: Skeptical on direct plays (operators like APLD may underperform vs enablers)
+- **Sweet spot:** ALAB (AI optical connectivity), AXON (AI-powered public safety), CRWD/OKTA/ZS (AI security infrastructure), GEV/VST (AI power infrastructure)
+
+**Defense — Bullish**
+- Conviction: HIGH for next 12 months
+- Geopolitical tailwinds, defense budget expansion
+- Prefers defense-tech crossover (AXON), aerospace (RTX), rare earth supply chain (MP)
+- Space defense overlap: ASTS, RKLB qualify here as dual-use
+
+**Healthcare — Bullish**
+- Conviction: MEDIUM-HIGH for next 12 months
+- Pharma: selectively bullish (MRK, ABBV — dividend + pipeline); cautious on weight-loss narrative (NVO ITM position reflects this)
+- MedTech/diagnostics: NTRA (genomics), GEHC (imaging)
+- Avoids pure biotech speculation
+
+**Space — Emerging, Building Conviction**
+- Conviction: MEDIUM, actively increasing scrutiny
+- Transition from Tier 3 toward Tier 2 for proven names
+- Commercial launch (RKLB), direct-to-satellite mobile (ASTS), eVTOL adjacent (ACHR, JOBY)
+- Nuclear power for space/defense adjacent: OKLO, SMR
+- "Looking very seriously" = increased research, not yet full conviction
+
+**Utilities — Pick and Shovel, Not Original Utilities**
+- Does NOT favor traditional utility companies (NEE, Duke) for this cycle
+- Favors power enablers: GEV (turbines/grid for AI data centers), VST (competitive power gen)
+- Nuclear new-build: SMR, OKLO as emerging speculative plays
+
+**Value Opportunism — Jumps When Seen**
+- Restaurants/Consumer: CCL (cruise recovery), CAVA, BROS — jumped in on recent value dip
+- International ETFs: EWZ (Brazil), EWY (South Korea) — emerging market value when dislocated
+- India financials: HDB, IBN — long-term EM growth at reasonable premium
+- China e-commerce: JD, BABA — value plays when sentiment is negative
+
+### The Pick-and-Shovel Filter (Apply to Any New Sector)
+
+When evaluating a new trend, ask:
+1. Who sells the picks and shovels to the gold rush participants?
+2. Who enables the trend vs who is a direct commodity participant?
+3. Which enabling companies have pricing power and recurring revenue?
+
+> Examples: AI gold rush → ALAB (connectivity), not data center operators
+> Utility AI demand → GEV (turbines), not NEE (regulated utility)
+> Space race → RKLB (launch infrastructure), not satellite operators
+
+---
+
 ## Current Market Regime (Trader View — as of Apr 2026)
 
 **Regime:** Bear to Sideways
@@ -215,20 +271,51 @@ The trader has not used a hard stop in 5 years of live trading. Loss management 
 
 ---
 
-## Recommended 10-Stock Core Universe
+## Recommended Core Universe (Sector-Aligned)
 
-| Rank | Ticker | Account | Rationale |
-|------|--------|---------|-----------|
-| 1 | AXON | A | Highest IV, recurring, 3 positions active |
-| 2 | PYPL | A | Most active name (5 positions); liquid |
-| 3 | CRM | A + B | Both accounts; bull conviction; good premium |
-| 4 | ADBE | A | 4-strike sophistication; consistent |
-| 5 | HOOD | B | Recurring; high IV; fintech |
-| 6 | CRWD | B | Cybersecurity; high IV; recurring |
-| 7 | TSM | B | Large premium; semis; multiple rolls |
-| 8 | UBER | B | Recurring; mobility; liquid |
-| 9 | OKTA | A | 3 CC positions; consistent |
-| 10 | GEV | B | Large per-contract premium; industrial AI |
+Organized by macro thesis fit, not just activity frequency.
+
+### Tier 1 — Core Book (Established Growth, High Conviction)
+
+| Ticker | Sector Thesis | Account | Notes |
+|--------|--------------|---------|-------|
+| AXON | AI pick/shovel + Defense | A | AI-powered public safety; defense crossover; highest IV; most active |
+| CRM | AI pick/shovel (enterprise) | A + B | Enterprise AI platform; $280 conviction; active in both accounts |
+| ADBE | AI pick/shovel (creative) | A | AI-powered creative tools; 4-strike ladder; consistent premium |
+| CRWD | AI pick/shovel (security) | B | Cybersecurity infrastructure; high IV; recurring |
+| TSM | AI pick/shovel (foundry) | B | Semiconductor foundry; largest pick/shovel for all chip demand |
+| OKTA | AI pick/shovel (identity) | A | Identity security for AI era; 3 CC positions |
+| GEV | AI power pick/shovel | B | Grid/turbine infrastructure for AI data centers; large premium |
+
+### Tier 2 — Emerging Conviction (Building Position)
+
+| Ticker | Sector Thesis | Account | Notes |
+|--------|--------------|---------|-------|
+| HOOD | Fintech AI | B | Retail brokerage + crypto infrastructure; high IV |
+| ALAB | AI connectivity pick/shovel | B | Optical interconnects for AI data centers; proving out |
+| VST | AI power pick/shovel | B | Competitive power generation for data center demand |
+| SHOP | AI commerce infrastructure | B | Emerging AI tools layer on commerce |
+| ZS | AI security pick/shovel | B | Cloud security infrastructure |
+| RTX | Defense | A | Aerospace + defense; premium name |
+| NTRA | Healthcare / genomics | A | Genetic diagnostics; recurring revenue |
+
+### Tier 3 — Speculative / Exploratory (1 contract max, watching)
+
+| Ticker | Sector Thesis | Notes |
+|--------|--------------|-------|
+| ASTS | Space + Defense | Direct-to-satellite; dual-use potential; building conviction |
+| RKLB | Space launch infrastructure | Pick/shovel for space economy |
+| ACHR | eVTOL / Air mobility | Early; watching FAA certification progress |
+| OKLO | Nuclear / Space power | Small modular reactor; long thesis |
+| IONQ | Quantum computing | Watching for commercial proof points |
+| QBTS / RGTI / QUBT | Quantum computing | Very speculative; small bets only |
+| EWZ / EWY | International value ETFs | Opportunistic; not thesis-driven |
+| IBIT | Bitcoin / Crypto infrastructure | Trend exposure only |
+
+### Value Opportunism (Ad-hoc, not universe-permanent)
+
+Tickers the trader enters when value appears regardless of sector thesis:
+> CCL, CAVA, BROS (restaurants/consumer), HDB/IBN (India financials), JD/BABA (China value), EXPE (travel)
 
 ---
 
