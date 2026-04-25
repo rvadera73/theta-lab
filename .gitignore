@@ -22,8 +22,8 @@ config/accounts.yaml
 
 # Environment and secrets
 .env
-.env.*
 secrets/
+# .env.example IS tracked (template only, no real values)
 *.key
 *.pem
 
