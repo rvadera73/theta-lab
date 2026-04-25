@@ -1,0 +1,31 @@
+# Risk parameters — committed to repo (no sensitive data)
+# Adjust these after persona analysis is complete.
+
+position_sizing:
+  max_pct_per_trade: 0.05        # 5% of account per position (hard cap)
+  default_pct_per_trade: 0.03    # 3% default target
+  max_open_positions: 10         # across both accounts combined
+  max_correlated_positions: 3    # same sector/ticker family
+
+greeks_limits:
+  portfolio_delta_max: 0.30      # per $10k of account value
+  portfolio_vega_max: 200        # per $10k (controls vol-spike exposure)
+  single_position_gamma_max: 0.05
+
+exit_rules:
+  profit_target_pct: 0.50        # close at 50% of max profit (short premium)
+  stop_loss_multiplier: 2.0      # stop at 2x credit received
+  dte_close_threshold: 21        # close short options at 21 DTE minimum
+
+signal_filters:
+  iv_rank_min_for_short_premium: 50   # IVR > 50 required to sell options
+  min_open_interest: 500              # per strike
+  max_bid_ask_spread_pct: 0.10        # max 10% of mid-price
+
+regime_gates:
+  vix_pause_level: 35            # pause new entries above this VIX level
+  vix_reduce_level: 25           # reduce position size above this level
+
+earnings:
+  blackout_days_before: 7        # no new positions within 7 days of earnings
+  blackout_days_after: 2

@@ -1,0 +1,31 @@
+# accounts.example.yaml — TEMPLATE ONLY
+# Copy to accounts.yaml (gitignored) and fill in real values.
+# Never commit accounts.yaml.
+
+accounts:
+  account_a:
+    label: "Schwab Margin"
+    type: "margin"
+    broker: "schwab"
+    options_level: 3
+    max_capital_pct: 1.0         # 100% of account deployable
+    max_position_pct: 0.05       # 5% max per position
+    strategies:
+      - vertical_spread
+      - iron_condor
+      - debit_spread
+
+  account_b:
+    label: "Schwab IRA"
+    type: "ira"
+    broker: "schwab"
+    options_level: 2             # Confirm actual level in Schwab portal
+    max_capital_pct: 1.0
+    max_position_pct: 0.05
+    strategies:
+      - cash_secured_put
+      - covered_call
+
+mcp:
+  provider: "open-stocks-mcp"
+  dry_run_before_execute: true   # Always run dry_run() pre-flight check

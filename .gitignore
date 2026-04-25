@@ -1,0 +1,41 @@
+# Trade data and financial documents — never commit
+data/*.csv
+data/*.xlsx
+data/*.txt
+
+# Brokerage statements, tax docs, portfolios — stay local only
+*.PDF
+*.pdf
+*.xlsx
+*.xls
+*Zone.Identifier
+
+# Live and paper trade logs
+logs/*.log
+logs/*.json
+
+# Real account configuration
+config/accounts.yaml
+
+# Environment and secrets
+.env
+.env.*
+secrets/
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
