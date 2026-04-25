@@ -135,6 +135,12 @@ This is the fundamental research layer that drives stock universe selection. Sec
 - Favors power enablers: GEV (turbines/grid for AI data centers), VST (competitive power gen)
 - Nuclear new-build: SMR, OKLO as emerging speculative plays
 
+**Crypto — Bullish, High Conviction**
+- Confirmed high conviction on crypto for next 6-12 months
+- Post-halving cycle + institutional adoption + regulatory tailwinds
+- Best expressions: COIN (exchange, direct revenue play), HOOD (crypto + retail fintech), IBIT (cleanest BTC exposure for IRA CSPs), HUT/CIFR/RIOT (Tier 3 high-beta miners)
+- Trigger to scale: Bitcoin sustained above $100K = add CSPs on COIN and HOOD
+
 **Value Opportunism — Jumps When Seen**
 - Restaurants/Consumer: CCL (cruise recovery), CAVA, BROS — jumped in on recent value dip
 - International ETFs: EWZ (Brazil), EWY (South Korea) — emerging market value when dislocated
@@ -179,13 +185,23 @@ When evaluating a new trend, ask:
 
 | Position | Account | Status | Trader Plan |
 |----------|---------|--------|-------------|
-| MRNA calls ($26/$35) | A (232) | Deep ITM; stock above strikes | Natural exit via CC assignment in 2-3 months. Do not intervene. |
-| NVO put ($55) | B (275) | ITM; stock ~$44-55 range | Similar to MRNA — let CC cycle complete the exit naturally |
-| CRM put ($220) | B (275) | ITM; stock ~$178 | Conviction: stock returns to $280. Maximize CC premium while waiting. Roll put down if needed. |
-| CRWD put ($430) | B (275) | Near ATM | Monitor; standard roll management |
-| BA put ($190) | B (275) | Watch stock recovery | Standard wheel management |
+| MRNA calls ($26/$35) | A (232) | Deep ITM — **actively exiting** | Natural CC assignment in progress. COMPLETE EXIT. Do not re-enter. |
+| PYPL calls + stock | A (232) | **Thesis broken — minimize loss exit** | Fintech, not growth. Selling CCs aggressively to reduce cost basis. Exit fully when breakeven or near. Do not re-enter. |
+| NVO put ($55) | B (275) | ITM; stock ~$44 range | Roll down to $45-47 while IV elevated. Natural exit cycle. |
+| CRM put ($220) | B (275) | ITM; stock ~$178 | Conviction: stock returns to $280. Maximize CC premium while waiting. |
+| CRWD put ($430) | B (275) | Near ATM; watch $440 | Monitor; roll if CRWD closes below $440 two consecutive days. |
+| BA put ($190) | B (275) | Watch stock recovery | Standard wheel management. |
 
-**General rule confirmed:** Do NOT force-close losers unless account cash flow is impaired. IRA has no margin = no cash flow pressure. Account A has margin capacity. Roll, wait, collect premium.
+**General rule confirmed:** Do NOT force-close losers unless account cash flow is impaired.
+
+### Permanent Exits (Do Not Re-Enter)
+
+| Ticker | Reason | Status |
+|--------|--------|--------|
+| MRNA | Continued execution failures; pipeline misses; thesis broken | Exiting via natural CC assignment |
+| PYPL | Fintech, not growth; losing competitive moat to Apple Pay/Stripe; no path to premium valuation | Minimize loss exit via CC; will not re-enter |
+| SMCI | Governance fraud — immediate exit trigger | Already exited |
+| INMD | Israel conflict + execution disappointment | Already exited |
 
 ---
 
@@ -316,6 +332,34 @@ Organized by macro thesis fit, not just activity frequency.
 
 Tickers the trader enters when value appears regardless of sector thesis:
 > CCL, CAVA, BROS (restaurants/consumer), HDB/IBN (India financials), JD/BABA (China value), EXPE (travel)
+
+---
+
+## Software Sector — Moat Reassessment (Apr 2026)
+
+**Trader thesis update:** Software no longer has the blanket margin and moat it had in 2020-2023.
+AI is compressing margins in generic software. The question is not "is it software?" but
+"does this company have a defensible moat that AI cannot easily replicate?"
+
+### Moat Assessment by Name
+
+| Ticker | Moat Type | Moat Strength | AI Threat | Verdict |
+|--------|-----------|---------------|-----------|---------|
+| AXON | Data network + monopoly-like in law enforcement | **STRONG** | Low — government switching costs are extreme | **Core. Not software risk.** |
+| CRM | Deep enterprise integrations + data network effects | **STRONG** | Medium — Copilot/AI rivals, but switching cost is 3-5 years | **Hold. $280 conviction intact.** |
+| CRWD | Falcon platform + security telemetry data moat | **STRONG** | Low — security data is proprietary; AI enhances not replaces | **Core. AI pick/shovel play.** |
+| OKTA | Identity infrastructure + enterprise integrations | **MODERATE** | Medium — Microsoft Entra competes; but multi-cloud identity sticky | **Hold. Watch MSFT pressure.** |
+| ADBE | Creative tools + enterprise contracts | **MODERATE→WEAK** | HIGH — Canva, Midjourney, Firefly eroding consumer; enterprise stickier | **Reassess. Still earning premium; watch margin trends.** |
+| SHOP | Merchant ecosystem + payments network + long tail | **STRONG** | Low — commerce infrastructure is sticky; AI enhances Shopify | **Emerging core. Pick/shovel for commerce.** |
+| PYPL | Payment network | **WEAK** | Medium — but Apple Pay, Stripe, Block already winning | **EXIT. Not growth. Not value moat.** |
+| TWLO | Communication APIs | **WEAK** | High — API layer commoditizing rapidly | **Not in active universe.** |
+| NFLX | Content library + personalization | **MODERATE** | Medium — content moat but competition fierce | **Hold for premium; not conviction core.** |
+
+### Software Decision Rule
+
+> Before selling a new CC or strangle on any software name, ask:
+> "Does this company charge more per user/seat every year AND are customers getting locked in deeper?"
+> If YES → moat likely intact. If NO or unclear → treat as value play with exit plan, not core hold.
 
 ---
 
