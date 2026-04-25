@@ -14,6 +14,8 @@ data/*.txt
 # Live and paper trade logs
 logs/*.log
 logs/*.json
+# Action reports are tracked (no sensitive data)
+# logs/*.md is intentionally NOT ignored
 
 # Real account configuration
 config/accounts.yaml
