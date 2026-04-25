@@ -9,6 +9,7 @@ data/*.txt
 *.xlsx
 *.xls
 *Zone.Identifier
+*:Zone.Identifier
 
 # Live and paper trade logs
 logs/*.log
