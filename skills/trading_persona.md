@@ -1,115 +1,128 @@
 # Trading Persona — Rahul Vadera
 
 **Generated:** 2026-04-25
-**Source:** Schwab brokerage statements (Jan–Mar 2026), 1099 (2025), portfolio watchlists
+**Last Updated:** 2026-04-25 (session 2 — trader confirmations incorporated)
+**Source:** Schwab brokerage statements (Jan–Mar 2026), 1099 (2025), portfolio watchlists, trader input
 **Status:** ACTIVE — use this file as the guardrail for all trade decisions
 
 ---
 
 ## Account Map
 
-| Account | Holder | Type | Account # | Size (Mar 2026) |
-|---------|--------|------|-----------|-----------------|
-| Account A | Rahul Vadera | Schwab One® (Margin) | ****-*232 | ~$421K total value |
-| Account B | Pinky Vadera | Contributory IRA | ****-*275 | ~$233K total value |
+| Account | Holder | Type | Account # | Size (Mar 2026) | Return Target |
+|---------|--------|------|-----------|-----------------|---------------|
+| Account A | Rahul Vadera | Schwab One® (Margin) | ****-*232 | ~$421K total value | 20% annualized |
+| Account B | Pinky Vadera | Contributory IRA | ****-*275 | ~$233K total value | 12% annualized |
 
-> **Important:** Account B (275) is a spouse's IRA. Both accounts are ACTIVELY trading options.
-> Account B already has options enabled (Level 2 at minimum: CSPs + CCs confirmed active).
-> The pilot focus should confirm authorization to automate on behalf of both account holders.
+**Account B authorization:** Confirmed. Rahul manages Pinky's IRA with full consent.
+**Account B options level:** Level 2 confirmed active (CSPs + CCs). No margin, no naked positions.
 
 ---
 
 ## Trader Profile: Core Principles
 
-1. **Not married to any stock** — positions are vehicles for premium, not conviction bets
-2. **Goal is to never own stock** — stock ownership is an accident of assignment, not intent
-3. **If assigned, use as commodity** — immediately switch to covered calls, exit at first opportunity
-4. **Short premium bias** — sells options, rarely buys; no long options observed in either account
-5. **Income-first mindset** — theta decay is the engine; directional view is secondary
+1. **Not married to any stock** — positions are vehicles for premium collection, not conviction bets
+2. **Goal is to never own stock** — stock ownership is an accident of assignment, not strategic intent
+3. **If assigned, use stock as a commodity** — sell CCs immediately, reduce cost basis, exit at first opportunity
+4. **Short premium bias only** — sells options exclusively; has never bought options in 5 years
+5. **Income-first mindset** — theta decay is the engine; directional bias is input, not thesis
+6. **Loss minimization, not stop-loss** — does not use hard stops; manages losses through rolling, time, and premium collection
+7. **Macro-regime-driven DTE** — selects expiration based on market environment, not fixed rules
 
-**Classification:** Pure Short Premium Income Trader / Systematic Wheel Operator
-
----
-
-## Strategy Breakdown by Account
-
-### Account A (232 — Rahul, Margin)
-**Primary strategy:** Covered Calls on owned equities
-
-- Holds equities, sells calls against them at multiple strikes and expirations
-- Ladders strikes aggressively (example: ADBE calls at $300/$320/$330/$370 simultaneously)
-- Multiple contracts per underlying (PYPL: 5 active call positions; AXON: 3; OKTA: 3)
-- Stocks held: ADBE, APP, AXON, JD, LYFT, MRNA, NFLX, NKE, OKTA, PYPL, CRM, ZBH, INMD
-- Prefers tech/growth names with elevated IV
-- **Caution flag:** As of Feb 2026, unrealized options liability = $402K against $365K in equities.
-  Several calls appear to be deep ITM (MRNA at $26/$35 strike; AXON at $560/$600). This is the
-  "commodity stock" principle in action — but requires active management to avoid forced assignment.
-
-### Account B (275 — Pinky, IRA)
-**Primary strategy:** Wheel (Cash-Secured Puts → assignment → Covered Calls)
-
-- Sells CSPs on stocks at OTM strikes; accepts assignment when needed
-- When assigned, immediately sells CCs to reduce cost basis and exit
-- Example cycle observed: LYFT CSP assigned → sold stock + CC assignment → exited Jan 2026
-- DVN cycle: held 100 shares → sold CC at $35 → assigned away Mar 2026 (booked $608 loss, premium offset)
-- FMC: still held 100 shares as of Mar 2026, selling CCs against it
-- Wide universe of CSP tickers (35+ names) — diversified premium collection approach
-- Bias toward longer-dated options (6–18 month expirations common)
+**Classification:** Systematic Short Premium Income Trader | Short Strangle + Wheel Operator
 
 ---
 
-## Active Ticker Universe
+## Strategy Architecture (Confirmed by Trader)
 
-### Account A — Covered Call Stocks (confirmed held with active CCs)
-| Ticker | Notes |
-|--------|-------|
-| ADBE | Most active; 4 CC strikes laddered |
-| AXON | 3 CC strikes; high IV |
-| PYPL | 5 CC positions; aggressive laddering |
-| OKTA | 3 CC strikes |
-| CRM | 3 CC positions; also in IRA as CSP |
-| APP | Active CC; high-beta |
-| MRNA | 2 CC positions; very high IV; monitor ITM risk |
-| NFLX | 2 contracts CC |
-| NKE | CC position |
-| LYFT | 4 CC contracts; also appears in IRA |
-| JD | 2 contracts CC |
-| INMD | 5 contracts CC |
-| ZBH | CC position |
+### Account A (232 — Rahul, Margin) — Short Strangle Engine
+**Key insight confirmed:** Account A is NOT just covered calls. It runs **short strangles** — simultaneously selling both puts AND calls on the same underlying. The naked calls are hedged by the short puts (and vice versa), collecting premium on both sides.
 
-### Account B — Active CSP Universe (confirmed trades Jan–Mar 2026)
-| Ticker | Category |
-|--------|----------|
-| HOOD | Fintech; recurring |
-| TSM | Semis; large premium, multiple rolls |
-| CRWD | Cybersecurity; high IV |
-| GEV | Industrials; large notional ($560 strike) |
-| ASTS | Space/speculative; high IV |
-| RKLB | Space/speculative |
-| UBER | Mobility |
-| BA | Aerospace; recovery play |
-| FSLR | Solar/energy |
-| NVO | Healthcare/pharma |
-| NBIS | AI infrastructure |
-| CCL | Consumer/leisure |
-| QUBT / RGTI / QBTS | Quantum computing; small premium, speculative |
-| DVN | Energy; assigned → became CC position |
-| FMC | Assigned; running CC to exit |
-| ACHR / JOBY | eVTOL/aviation; speculative |
-| ALAB | Semis/AI |
-| ETSY | E-commerce |
-| ELF | Consumer beauty |
-| SHOP | E-commerce |
-| APLD | AI infrastructure |
-| IONQ | Quantum computing |
-| IBIT | Bitcoin ETF |
-| EWZ / EWY | EM ETFs |
-| MRK | Pharma |
-| ZS | Cybersecurity |
-| VST | Utilities/energy |
-| LAC | Lithium/mining |
-| CAVA | Restaurant/consumer |
-| NU | Fintech |
+- Where stock is owned: Covered calls against long equity (traditional CC leg)
+- Where stock is NOT owned: Naked calls sold alongside cash-secured puts = short strangle
+- This explains the $402K unrealized options liability — short strangles on volatile names (AXON, MRNA, APP) with stocks moving significantly
+- Margin account enables naked call positions that Account B cannot replicate
+
+**Risk characteristic:** Short strangle exposure means unlimited upside risk on calls AND downside risk on puts. The "hedge" is that premium collected on both sides widens the break-even range.
+
+### Account B (275 — Pinky, IRA) — Pure Wheel
+- Sells CSPs only (no naked calls, no margin)
+- Accepts assignment when thesis intact; immediately sells CCs to reduce cost basis
+- Exits stock position via CC assignment or buyback when profitable
+- 12% annualized target is achievable with pure CSP/CC wheel in this account size
+
+---
+
+## Current Market Regime (Trader View — as of Apr 2026)
+
+**Regime:** Bear to Sideways
+**Duration:** ~6 months out (through Oct/Nov 2026)
+**Implication for new positions:** NO new sell entries until regime shifts to bullish
+
+### Regime-Driven Behavior Rules
+
+| Regime | New Entries | DTE Target | Strategy |
+|--------|------------|------------|----------|
+| Bear/Sideways (current) | None — reducing existing | N/A | Let time decay work, close profitable positions, roll losers |
+| Transition (watch signals) | Selective, small size | 45-90 DTE | Restart with core universe only |
+| Bull (2023-2025 style) | Active | 3-12 months | Full strangle + wheel deployment |
+
+**Regime shift signals to watch:**
+- VIX sustained below 20 for 10+ days
+- S&P 500 reclaims 50-day and 200-day MA on volume
+- Put/Call ratio normalizing below 0.8
+
+---
+
+## Open ITM Position Plans (Trader Confirmed)
+
+| Position | Account | Status | Trader Plan |
+|----------|---------|--------|-------------|
+| MRNA calls ($26/$35) | A (232) | Deep ITM; stock above strikes | Natural exit via CC assignment in 2-3 months. Do not intervene. |
+| NVO put ($55) | B (275) | ITM; stock ~$44-55 range | Similar to MRNA — let CC cycle complete the exit naturally |
+| CRM put ($220) | B (275) | ITM; stock ~$178 | Conviction: stock returns to $280. Maximize CC premium while waiting. Roll put down if needed. |
+| CRWD put ($430) | B (275) | Near ATM | Monitor; standard roll management |
+| BA put ($190) | B (275) | Watch stock recovery | Standard wheel management |
+
+**General rule confirmed:** Do NOT force-close losers unless account cash flow is impaired. IRA has no margin = no cash flow pressure. Account A has margin capacity. Roll, wait, collect premium.
+
+---
+
+## DTE Selection Logic (Regime-Driven)
+
+```
+IF regime == BEAR_SIDEWAYS:
+    new_entries = FALSE
+    existing_positions: let run, take profits at 50%+, roll losers to avoid assignment
+
+IF regime == TRANSITIONING:
+    new_entries = selective (core 10 universe only)
+    dte_target = 45-90 days
+    size = 50% of normal
+
+IF regime == BULL:
+    new_entries = active
+    dte_target = 90-360 days (3-12 months)
+    size = full per risk_params.yaml
+```
+
+---
+
+## Stop-Loss Protocol (Confirmed)
+
+**Hard automatic stops: NEVER**
+
+The trader has not used a hard stop in 5 years of live trading. Loss management is done through:
+- Rolling (extending DTE, adjusting strikes)
+- Premium collection on both sides (strangle structure buffers drawdowns)
+- Time — "the market always comes back to fair value on quality names"
+- Cash flow management (if margin call risk emerges in Account A — only scenario for forced close)
+
+**Skill behavior on losing positions:**
+1. Flag any position where mark-to-market loss exceeds 2x premium received
+2. Present roll options (same strike + later DTE, or lower/higher strike)
+3. Ask trader for decision — NEVER auto-close
+4. Exception: If Account A margin utilization exceeds 80%, escalate with urgency
 
 ---
 
@@ -122,114 +135,100 @@
 | Mar 2026 Net | — | $4,113.06 |
 | Unrealized Options Liability | $(402,318.98) | $(16,587.07) |
 | Cash/Sweep Balance | $328,678 (Feb) | $272,932 (Mar) |
-| Equity Holdings | $365,518 (Feb) | $1,722 (Mar) |
+| Target annualized | 20% (~$84K/yr) | 12% (~$28K/yr) |
 
-> Account A's YTD of ~$59K on ~$421K deployed = ~14% annualized pace (Jan-Feb only).
-> Account B's $5.3K realized on ~$233K in 3 months = ~9% annualized pace.
-> Combined target pace needed: 20% annualized on total deployed capital.
-
----
-
-## Trading Style Fingerprint
-
-| Dimension | Observed Behavior |
-|-----------|-------------------|
-| Option type | Short only — puts and calls; no long options seen |
-| DTE preference | 1–18 months; mix of near-term (3 mo) and LEAPS-style (12-18 mo) |
-| Strike selection | OTM to slight OTM; not deep OTM (premium not worth it) |
-| Position sizing | 1–5 contracts per position; Account A more aggressive |
-| Rolling behavior | Active roller — closes and re-opens at new strikes/expirations |
-| Assignment response | Accepts assignment when thesis intact; sells CC immediately |
-| Diversification | Very wide (35+ tickers in B; 13+ in A); low concentration per name |
-| Sector bias | Tech, fintech, semis, AI/quantum, energy, pharma |
-| Speculative tolerance | High — ASTS, RKLB, QUBT, RGTI, ACHR in IRA |
+> Note: Account A's $59K in 2 months is ahead of the 20% pace. Current bear regime will slow
+> new premium collection — the existing book must carry returns through Oct/Nov.
 
 ---
 
-## Risk Flags (Requires Attention)
+## Active Ticker Universe
 
-1. **Account A deep ITM calls** — MRNA ($26/$35 strikes), AXON ($560/$600) — if stocks rallied, these
-   are capped gains; if stocks dropped, stock loss with no premium offset. Track delta weekly.
+### Account A — Core Holdings + Strangle Names
+| Ticker | Strategy | Notes |
+|--------|----------|-------|
+| ADBE | CC + strangle | 4 active call strikes; most sophisticated position |
+| AXON | CC + strangle | 3 CC strikes; high IV; deep ITM risk |
+| PYPL | CC + strangle | 5 active call positions; most active name |
+| OKTA | CC + strangle | 3 strikes laddered |
+| CRM | CC + strangle | Long-term bull conviction ($280 target) |
+| APP | CC + strangle | High-beta; aggressive |
+| MRNA | CC (exiting) | Deep ITM; natural exit in 2-3 months |
+| NFLX | CC | 2 contracts |
+| NKE | CC | 1 contract |
+| LYFT | CC | 4 contracts; recurring |
+| JD | CC | 2 contracts |
+| INMD | CC | 5 contracts; small-cap |
+| ZBH | CC | 1 contract |
 
-2. **Account B CRWD put at $430** — As of Mar 2026, CRWD at ~$448, put at $430 is near-the-money.
-   Mark-to-market loss of $2,895. Monitor for roll or close decision.
-
-3. **Account B CRM put at $220** — $3,453 mark-to-market loss as of Mar. CRM trading ~$178.
-   Significantly ITM. Needs roll-down or acceptance of assignment + CC strategy.
-
-4. **Account B NVO put at $55** — NVO trading ~$44 (based on watchlist). Deep ITM. Assignment likely.
-
-5. **No explicit stop-loss protocol observed** — positions are held through significant drawdowns.
-   Skill must enforce stop rules the trader currently lacks.
-
-6. **No IV rank filter observed** — trades appear to be placed without systematic IV screening.
-   Skill must add IVR gate before entries.
-
----
-
-## Guardrails for the Skill (Derived from Persona)
-
-```yaml
-account_a:
-  strategy: covered_call
-  max_contracts_per_ticker: 5
-  preferred_dte_range: [30, 180]
-  roll_trigger: profit_pct >= 0.50 or dte <= 21
-  assignment_response: immediate_cc_at_atm_or_otm
-
-account_b:
-  strategy: wheel
-  max_contracts_per_ticker: 1
-  preferred_dte_range: [45, 365]
-  iv_rank_minimum: 40
-  roll_trigger: profit_pct >= 0.50 or dte <= 21
-  assignment_response: immediate_cc_cost_basis_reduction
-  speculative_ticker_max_pct: 0.10  # Cap on QUBT/RGTI/ASTS type names
-
-shared_rules:
-  never_buy_options: true
-  max_position_pct_of_account: 0.05
-  earnings_blackout_days: 7
-  vix_pause_above: 35
-  stop_loss_multiplier: 2.5x  # Close if mark exceeds 2.5x premium received
-```
+### Account B — Active Wheel Universe
+| Tier | Tickers | Notes |
+|------|---------|-------|
+| Core (recurring) | HOOD, TSM, CRWD, GEV, AXON, UBER, BA, FSLR, NVO, CRM | High frequency, multiple rolls seen |
+| Active (occasional) | ASTS, RKLB, ALAB, SHOP, ZS, VST, IONQ, ELF, ETSY | Medium frequency |
+| Speculative (small size) | QUBT, RGTI, QBTS, ACHR, IBIT, EWZ, EWY | Cap at 10% of account B |
 
 ---
 
 ## Recommended 10-Stock Core Universe
 
-Based on frequency of appearance, liquidity, and IV characteristics:
-
 | Rank | Ticker | Account | Rationale |
 |------|--------|---------|-----------|
-| 1 | AXON | A | High IV, recurring, 3 positions active |
-| 2 | PYPL | A | Most active (5 positions); liquid; elevated IV |
-| 3 | CRM | A + B | Appears in both; large-cap; good premium |
-| 4 | ADBE | A | 4-strike ladder; consistent premium |
-| 5 | HOOD | B | Recurring; fintech; high IV |
-| 6 | CRWD | B | Recurring; cybersecurity; high IV |
-| 7 | TSM | B | Large notional; semis; multiple rolls |
-| 8 | UBER | B | Recurring; mobility; good premium |
+| 1 | AXON | A | Highest IV, recurring, 3 positions active |
+| 2 | PYPL | A | Most active name (5 positions); liquid |
+| 3 | CRM | A + B | Both accounts; bull conviction; good premium |
+| 4 | ADBE | A | 4-strike sophistication; consistent |
+| 5 | HOOD | B | Recurring; high IV; fintech |
+| 6 | CRWD | B | Cybersecurity; high IV; recurring |
+| 7 | TSM | B | Large premium; semis; multiple rolls |
+| 8 | UBER | B | Recurring; mobility; liquid |
 | 9 | OKTA | A | 3 CC positions; consistent |
-| 10 | GEV | B | Large premium per contract; industrial AI |
-
-**Satellite universe** (higher-risk, lower allocation): ASTS, RKLB, HOOD, RGTI, IONQ, SHOP
+| 10 | GEV | B | Large per-contract premium; industrial AI |
 
 ---
 
-## Open Questions for Trader Confirmation
+## Guardrails for the Skill
 
-1. **Account 275 authorization** — This is PINKYVADERA's IRA. Confirm you have authority to automate
-   trades in this account on her behalf.
+```yaml
+accounts:
+  account_a:
+    target_return_annualized: 0.20
+    strategy: [covered_call, short_strangle]
+    max_contracts_per_ticker: 5
+    margin_utilization_alert_pct: 0.80
+    stop_loss: flag_and_ask  # Never auto-close
 
-2. **ITM position strategy** — MRNA, CRWD, CRM, NVO positions are significantly ITM. What is the
-   current exit/roll plan? Do you want the skill to flag these for immediate action?
+  account_b:
+    target_return_annualized: 0.12
+    strategy: [cash_secured_put, covered_call]  # Wheel only
+    max_contracts_per_ticker: 1
+    no_naked_calls: true
+    no_margin: true
+    speculative_names_max_pct: 0.10
+    stop_loss: flag_and_ask  # Never auto-close
 
-3. **IV filter** — Do you want to add an IV Rank minimum (e.g., IVR > 40) before the skill suggests
-   new entries? You appear to sell in all IV environments currently.
+regime_gates:
+  current_regime: BEAR_SIDEWAYS
+  new_entries_allowed: false  # Until Oct/Nov 2026 or regime shift confirmed
+  bull_entry_triggers:
+    - vix_sustained_below: 20
+    - sp500_above_50d_and_200d_ma: true
+    - put_call_ratio_below: 0.80
 
-4. **DTE target** — You use a wide range (1 month to 18 months). Should the skill default to a specific
-   range (e.g., 45-90 DTE for Account B CSPs)?
+dte_by_regime:
+  BEAR_SIDEWAYS: null  # No new entries
+  TRANSITIONING: [45, 90]
+  BULL: [90, 360]
 
-5. **Stop loss** — No stop protocol observed. Confirm: should the skill enforce a 2x premium stop,
-   or do you prefer to roll rather than close at a loss?
+loss_management:
+  hard_stop: false
+  flag_threshold: 2.0x_premium_received
+  roll_preference: true
+  force_close_only_if: margin_utilization_above_80pct
+
+itm_positions:
+  MRNA: natural_exit_via_assignment
+  NVO: natural_exit_via_assignment
+  CRM: hold_and_maximize_cc_premium
+  CRWD: standard_roll_management
+```
