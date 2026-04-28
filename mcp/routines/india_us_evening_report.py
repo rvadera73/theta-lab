@@ -696,34 +696,33 @@ def build_us_section(us: dict) -> str:
     )
 
 
-def build_html(
+def build_india_html(
     index_prices: dict, india_vix: float | None, spx: float | None, us_vix: float | None,
     fno_rows: list[dict], eq_rows: list[dict], exit_rows: list[dict],
-    report_date: str, data_source: str, us_data: dict | None = None,
+    report_date: str, data_source: str,
 ) -> str:
+    """Build India-only evening report: F&O positions, equity P&L, exit triggers."""
 
     nifty     = index_prices.get("^NSEI")
     banknifty = index_prices.get("^NSEBANK")
 
-    # ── Market Snapshot ──
     def vstatus(v, lo, hi):
         if v is None: return "&#8212;"
         return "LOW" if v < lo else ("ELEVATED" if v > hi else "NORMAL")
 
+    # ── India Market Snapshot (S&P/VIX included as macro context for FII flows) ──
     mkt_body = (
-        _row(0, "NIFTY 50",   f"<b>{_inr(nifty)}</b>",             "India")
-        + _row(1, "BANKNIFTY", f"<b>{_inr(banknifty)}</b>",         "India")
-        + _row(2, "India VIX", f"<b>{india_vix:.2f}</b>" if india_vix else "&#8212;", vstatus(india_vix, 14, 20))
-        + _row(3, "S&amp;P 500", f"<b>${spx:,.0f}</b>" if spx else "&#8212;", "US")
-        + _row(4, "CBOE VIX",  f"<b>{us_vix:.2f}</b>" if us_vix else "&#8212;", vstatus(us_vix, 16, 25))
+        _row(0, "NIFTY 50",    f"<b>{_inr(nifty)}</b>",                                   "India")
+        + _row(1, "BANKNIFTY", f"<b>{_inr(banknifty)}</b>",                               "India")
+        + _row(2, "India VIX", f"<b>{india_vix:.2f}</b>" if india_vix else "&#8212;",     vstatus(india_vix, 14, 20))
+        + _row(3, "S&amp;P 500 (macro)", f"<b>${spx:,.0f}</b>" if spx else "&#8212;",    "US macro")
+        + _row(4, "CBOE VIX (macro)",    f"<b>{us_vix:.2f}</b>" if us_vix else "&#8212;", vstatus(us_vix, 16, 25))
     )
     mkt_html = (
         _tbl(_thead("Market", "Close", "Status"), mkt_body)
         + '<p style="font-size:12px;color:#888;margin:8px 0 0 0;">'
-        + 'India regime: <b>SIDEWAYS/BEARISH</b> — FII net sellers 18+ months. '
-        + 'Shift trigger: FII net buyer 10+ consecutive sessions.<br>'
-        + 'US regime: <b>APPROACHING TRANSITION</b> — VIX compressing. '
-        + 'Bull confirmed: VIX &lt; 20 sustained + S&amp;P above 50d &amp; 200d MA.</p>'
+        + 'Regime: <b>SIDEWAYS/BEARISH</b> — FII net sellers 18+ months. '
+        + 'Shift trigger: FII net buyer 10+ consecutive sessions + NIFTY above 200 DMA + India VIX &lt; 13.</p>'
     )
 
     # ── F&O Positions ──
@@ -807,19 +806,7 @@ def build_html(
         + f'<p style="font-size:13px;margin:8px 0 0 0;">'
         + f'Portfolio cost &#8377;{total_cost:,.0f} &rarr; mkt &#8377;{total_mkt:,.0f} '
         + f'(<b style="color:{_pcol(total_pl_pct)};">{_pct(total_pl_pct)}</b>)'
-        + ' &nbsp;|&nbsp; Target: 18% CAGR over 3 years &nbsp;|&nbsp; Target: 8-10 names.</p>'
-    )
-
-    # ── US Urgent ──
-    us_body = "".join(
-        _row(i, f'<b style="color:#1a1a2e;">{u["symbol"]}</b>', u["note"])
-        for i, u in enumerate(US_URGENT)
-    )
-    us_html = (
-        _tbl(_thead("Symbol", "Urgent Action"), us_body)
-        + '<p style="font-size:12px;color:#888;margin:6px 0 0 0;">'
-        + 'Account A: ~$401K assigned (danger zone &gt;$375K). '
-        + 'Each week without CCs on PYPL/ADBE = $3-5K foregone recovery income.</p>'
+        + ' &nbsp;|&nbsp; Target: 18% CAGR over 3 years &nbsp;|&nbsp; Overhaul target: 8-10 names.</p>'
     )
 
     # ── Alert badges ──
@@ -840,20 +827,86 @@ def build_html(
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:Arial,sans-serif;max-width:900px;margin:0 auto;color:#333;background:#fff;padding:10px;">
 <div style="background:#1a1a2e;color:white;padding:20px 24px;border-radius:6px 6px 0 0;">
-  <h1 style="margin:0;font-size:22px;">Trading Report &mdash; {report_date}</h1>
-  <div style="font-size:13px;color:#aaa;margin-top:4px;">India + US &nbsp;|&nbsp; 8 PM IST &nbsp;|&nbsp; {data_source}</div>
+  <h1 style="margin:0;font-size:22px;">India Trading Report &mdash; {report_date}</h1>
+  <div style="font-size:13px;color:#aaa;margin-top:4px;">ICICI Direct NRI &nbsp;|&nbsp; 8 PM IST &nbsp;|&nbsp; {data_source}</div>
   <div style="margin-top:10px;">{alert_bar}</div>
 </div>
 {_section("Market Snapshot", mkt_html)}
 {_section("India F&amp;O &mdash; Position Status (All Short Puts, Cash-Settled)", fno_html)}
 {_section("India Equity &mdash; Overhaul Exit Triggers", exit_html)}
 {_section("India Equity &mdash; Full Portfolio P&amp;L", eq_html)}
-{_section("US Accounts &mdash; Urgent Items", us_html)}
-{_section("US Portfolio &mdash; Empower Holdings", build_us_section(us_data)) if us_data else ""}
 <div style="padding:12px 16px;font-size:11px;color:#999;border-top:1px solid #eee;margin-top:20px;">
   Generated {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')} &nbsp;|&nbsp;
-  F&amp;O LTPs = Black-Scholes estimates; verify in ICICI Direct before acting. &nbsp;|&nbsp;
-  US items are semi-static; check Schwab for latest.
+  F&amp;O LTPs = Black-Scholes estimates using India VIX; verify in ICICI Direct before acting.
+</div>
+</body></html>"""
+
+
+def build_us_html(
+    spx: float | None, us_vix: float | None,
+    us_data: dict | None,
+    report_date: str, data_source: str,
+) -> str:
+    """Build US-only evening report: Empower portfolio + urgent actions."""
+
+    def vstatus(v, lo, hi):
+        if v is None: return "&#8212;"
+        return "LOW" if v < lo else ("ELEVATED" if v > hi else "NORMAL")
+
+    # ── US Market Snapshot ──
+    mkt_body = (
+        _row(0, "S&amp;P 500", f"<b>${spx:,.0f}</b>" if spx else "&#8212;", "US")
+        + _row(1, "CBOE VIX",  f"<b>{us_vix:.2f}</b>" if us_vix else "&#8212;", vstatus(us_vix, 16, 25))
+    )
+    mkt_html = (
+        _tbl(_thead("Market", "Close", "Status"), mkt_body)
+        + '<p style="font-size:12px;color:#888;margin:8px 0 0 0;">'
+        + 'Regime: <b>APPROACHING TRANSITION</b> — VIX compressing. '
+        + 'Bull confirmed: VIX &lt; 20 sustained + S&amp;P above 50d &amp; 200d MA.</p>'
+    )
+
+    # ── US Urgent Actions ──
+    urg_body = "".join(
+        _row(i, f'<b style="color:#e74c3c;">{u["symbol"]}</b>', u["note"])
+        for i, u in enumerate(US_URGENT)
+    )
+    urg_html = (
+        _tbl(_thead("Symbol", "Action Required"), urg_body)
+        + '<p style="font-size:12px;color:#888;margin:6px 0 0 0;">'
+        + 'YTD net options income: $324K &nbsp;|&nbsp; MTD Apr: $184K &nbsp;|&nbsp; '
+        + 'Capture rate: 59.8% (target 65-70%)</p>'
+    )
+
+    # ── Empower Portfolio ──
+    emp_html = build_us_section(us_data) if us_data else (
+        '<p style="color:#888;">No Empower file found in data/statements/. '
+        'Drop empower-holding*.xlsx there to populate this section.</p>'
+    )
+
+    # Alert bar
+    danger = us_data and us_data["equity_book"] > 375_000
+    alert_bar = (
+        '<span style="background:#e74c3c;color:white;padding:3px 8px;border-radius:3px;font-size:12px;">'
+        'ASSIGNED EQUITY DANGER ZONE &gt;$375K</span>'
+        if danger else
+        '<span style="color:#2ecc71;font-weight:bold;">Equity book within target range</span>'
+    )
+
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font-family:Arial,sans-serif;max-width:900px;margin:0 auto;color:#333;background:#fff;padding:10px;">
+<div style="background:#0d3b66;color:white;padding:20px 24px;border-radius:6px 6px 0 0;">
+  <h1 style="margin:0;font-size:22px;">US Portfolio Report &mdash; {report_date}</h1>
+  <div style="font-size:13px;color:#aaa;margin-top:4px;">Empower &amp; Schwab (Accounts A+B) &nbsp;|&nbsp; {data_source}</div>
+  <div style="margin-top:10px;">{alert_bar}</div>
+</div>
+{_section("US Market Snapshot", mkt_html)}
+{_section("Urgent Actions", urg_html)}
+{_section("Portfolio Holdings &mdash; Empower", emp_html)}
+<div style="padding:12px 16px;font-size:11px;color:#999;border-top:1px solid #eee;margin-top:20px;">
+  Generated {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')} &nbsp;|&nbsp;
+  Holdings from Empower export; verify live prices in Schwab before acting.
 </div>
 </body></html>"""
 
@@ -958,25 +1011,36 @@ def main():
     print(f"  F&O: {roll_n} roll candidates, {under_n} underwater")
     print(f"  Equity: {hit_n} exit triggers HIT")
 
-    # 7. Build HTML
+    # 7. Build HTML — two separate reports
     fno_src  = os.path.basename(fno_files[-1]) if fno_files else "no file"
     eq_src   = os.path.basename(eq_files[-1]) if eq_files else "no file"
     emp_src  = os.path.basename(emp_files[-1]) if emp_files else "no file"
-    data_source = f"F&O: {fno_src} | EQ: {eq_src} | US: {emp_src}"
-    html = build_html(index_prices, india_vix, spx, us_vix,
-                      fno_rows, eq_rows, exit_rows, report_date, data_source,
-                      us_data=us_data)
 
-    # 8. Send
+    india_html = build_india_html(
+        index_prices, india_vix, spx, us_vix,
+        fno_rows, eq_rows, exit_rows,
+        report_date, f"F&O: {fno_src} | EQ: {eq_src}",
+    )
+    us_html = build_us_html(
+        spx, us_vix, us_data,
+        report_date, f"Empower: {emp_src}",
+    )
+
+    # 8. Send — India report
     parts = []
     if hit_n:   parts.append(f"{hit_n} EXIT")
     if roll_n:  parts.append(f"{roll_n} ROLL")
     if under_n: parts.append(f"{under_n} UW")
     alert_tag = f" [{', '.join(parts)}]" if parts else ""
     nifty_s   = f"NIFTY {nifty_val:,.0f}" if nifty_val else "NIFTY —"
-    subject   = f"Trading Report {datetime.utcnow().strftime('%a %b %d')}{alert_tag} | {nifty_s} | India+US"
+    india_subject = f"India Report {datetime.utcnow().strftime('%a %b %d')}{alert_tag} | {nifty_s}"
+    send_report(india_html, india_subject)
 
-    send_report(html, subject)
+    # 9. Send — US report
+    spx_s = f"SPX {spx:,.0f}" if spx else "SPX —"
+    us_subject = f"US Portfolio {datetime.utcnow().strftime('%a %b %d')} | {spx_s}"
+    send_report(us_html, us_subject)
+
     print("  Done.")
 
 
@@ -986,17 +1050,17 @@ if __name__ == "__main__":
     parser.add_argument("--no-email", action="store_true", help="Skip sending email; save HTML to logs/ instead")
     args = parser.parse_args()
     if args.no_email:
-        # Monkey-patch send_report to save HTML file instead
-        import sys
-        _orig_send = send_report
+        _counter = [0]
+        _labels  = ["india", "us"]
         def _save_only(html, subject):
             logs_dir = os.path.join(DATA_DIR, "..", "logs")
             os.makedirs(logs_dir, exist_ok=True)
-            out = os.path.join(logs_dir, f"india_us_report_{date.today()}.html")
+            label = _labels[_counter[0]] if _counter[0] < len(_labels) else str(_counter[0])
+            out = os.path.join(logs_dir, f"{label}_report_{date.today()}.html")
             with open(out, "w") as f:
                 f.write(html)
             print(f"  Saved → {out}")
+            _counter[0] += 1
             return True
-        import builtins
         globals()["send_report"] = _save_only
     main()
