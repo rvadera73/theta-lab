@@ -1,0 +1,72 @@
+# India portfolio config — edit this file, commit + push to take effect.
+# Script reads this at runtime; no Python changes needed.
+
+# ICICI Direct symbols to mark as KEEP in the equity P&L table.
+# Everything else is shown as WATCH.
+core_portfolio:
+  - RELIND    # Reliance
+  - ADAPOR    # Adani Ports
+  - HDFBAN    # HDFC Bank
+  - BAJFI     # Bajaj Finance
+  - HINAER    # HAL
+  - APOHOS    # Apollo Hospitals
+  - TCS       # TCS
+
+# Overhaul exit triggers — 3-month phased plan.
+# trigger: 0 = sell immediately at any price.
+# shares: "all" or a number (for partial exits like NTPC).
+# Remove a row once the exit is executed in ICICI Direct.
+exit_triggers:
+  - icici_symbol: GENOVE
+    trigger: 0
+    shares: all
+    phase: 1
+    action: "Sell all — immediate, any price"
+
+  - icici_symbol: SUZENE
+    trigger: 0
+    shares: all
+    phase: 1
+    action: "Sell all — immediate, any price"
+
+  - icici_symbol: HCLTEC
+    trigger: 1265
+    shares: all
+    phase: 1
+    action: "Sell on bounce >= 1,265"
+
+  - icici_symbol: NTPC
+    trigger: 414
+    shares: 75
+    phase: 1
+    action: "Sell 75 of 150 shares >= 414"
+
+  - icici_symbol: MAZDOC
+    trigger: 2800
+    shares: all
+    phase: 2
+    action: "Exit all >= 2,800"
+
+  - icici_symbol: ANARAJ
+    trigger: 520
+    shares: all
+    phase: 2
+    action: "Exit all >= 520"
+
+  - icici_symbol: YATHOS
+    trigger: 750
+    shares: all
+    phase: 2
+    action: "Exit all >= 750"
+
+  - icici_symbol: ADAPOW
+    trigger: 230
+    shares: all
+    phase: 2
+    action: "Exit all >= 230"
+
+  - icici_symbol: HERHON
+    trigger: 5500
+    shares: all
+    phase: 2
+    action: "Exit all >= 5,500"
