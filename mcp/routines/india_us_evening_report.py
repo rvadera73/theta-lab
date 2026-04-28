@@ -2,8 +2,9 @@
 India + US Evening Trading Report — runs Sun-Thu at 8 PM IST via GitHub Actions.
 
 Data sources (drop in data/statements/ and commit):
-  7510078170_*.csv  — ICICI Direct F&O Portfolio Details export
-  7500069840_*.csv  — ICICI Direct Equity transaction history export
+  7510078170_*.csv    — ICICI Direct F&O Portfolio Details export
+  7500069840_*.csv    — ICICI Direct Equity transaction history export
+  empower-holding*.xlsx — Empower unified holdings export (all US accounts)
 
 Config (edit and commit — no Python changes needed):
   data/india_config.yaml  — core portfolio list + exit triggers
@@ -17,6 +18,12 @@ import math
 import os
 import re
 from datetime import datetime, date
+
+try:
+    import openpyxl
+    _OPENPYXL = True
+except ImportError:
+    _OPENPYXL = False
 
 try:
     from dotenv import load_dotenv
@@ -87,7 +94,7 @@ SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "SUZENE": ("Suzlon",         "SUZLON.NS"),
     "TCS":    ("TCS",            "TCS.NS"),
     "YATHOS": ("Yatharth",       "YATHARTH.NS"),
-    "ZOMLIM": ("Eternal/Zomato", "ZOMATO.NS"),
+    "ZOMLIM": ("Eternal/Zomato", "ETERNAL.NS"),
 }
 
 # F&O index codes as they appear in ICICI Direct contract names
@@ -289,6 +296,140 @@ def parse_equity_csv(filepath: str) -> list[dict]:
     holdings.sort(key=lambda h: order.index(h["icici_symbol"]) if h["icici_symbol"] in order else 999)
     return holdings
 
+# Known cost basis for assigned US equity (update when average cost changes).
+# Empower export does not include cost basis.
+US_COST_BASIS: dict[str, float] = {
+    "PYPL":  82.0,
+    "ADBE": 495.0,
+    "AXON": 628.0,
+    "CRM":  302.0,
+    "OKTA":  91.0,
+    "NKE":   86.0,
+    "LYFT":  30.0,
+    "MRNA":  96.0,
+    "UNH":  390.0,
+    "TWLO": 180.0,   # approximate — update when confirmed
+    "ZBH":  130.0,
+}
+
+CASH_SYMBOLS = {"VMFXX", "SPAXX", "VUSXX", "FDRXX", "FCASH", "FMPXX", "SPRXX"}
+OPT_RE = re.compile(r"^([A-Z0-9]+)(\d{6})([PC])(\d+)")
+TICKER_RE = re.compile(r"^[A-Z]{1,6}$")   # valid equity ticker
+
+# ---------------------------------------------------------------------------
+# Empower Holdings Parser  (empower-holding*.xlsx)
+# ---------------------------------------------------------------------------
+
+def parse_empower_xlsx(filepath: str) -> dict:
+    """
+    Parse Empower unified holdings Excel export.
+    Column A contains all data: 6 header rows then 7 rows per holding
+    (symbol, name, shares, price, change%, 1day$, value).
+
+    Returns {equity, options, cash, total, opt_by_underlying}.
+    """
+    if not _OPENPYXL:
+        return {"equity": [], "options": [], "cash": 0.0, "total": 0.0, "opt_by_underlying": {}}
+
+    wb = openpyxl.load_workbook(filepath)
+    ws = wb.active
+    vals = [row[0] for row in ws.iter_rows(values_only=True)]
+    raw = vals[6:]   # skip header labels
+
+    holdings = []
+    i = 0
+    while i + 6 < len(raw):
+        block = raw[i:i + 7]
+        if all(v is None for v in block):
+            i += 1
+            continue
+        sym = block[0]
+        if sym is None:
+            i += 1
+            continue
+        try:
+            shares = float(block[2]) if block[2] is not None else 0.0
+            price  = float(block[3]) if block[3] is not None else 0.0
+            chg    = float(block[4]) if block[4] is not None else 0.0
+            val    = float(block[6]) if block[6] is not None else 0.0
+        except (TypeError, ValueError):
+            i += 1
+            continue
+        holdings.append({
+            "symbol": str(sym).strip(),
+            "name":   str(block[1]).strip() if block[1] else "",
+            "shares": shares, "price": price, "change_pct": chg, "value": val,
+        })
+        i += 7
+
+    equity, options, cash_val = [], [], 0.0
+    opt_by_und: dict[str, float] = {}
+
+    for h in holdings:
+        sym = h["symbol"]
+
+        # Filter out totals rows (numeric symbols or zero-share large-value rows)
+        if not any(c.isalpha() for c in sym):
+            continue
+        # Skip money-market / cash
+        if sym in CASH_SYMBOLS or (abs(h["price"] - 1.0) < 0.02 and h["shares"] > 100):
+            cash_val += h["value"]
+            continue
+
+        m = OPT_RE.match(sym.split(".")[0])
+        if m:
+            und, exp, opt_type, stk = m.groups()
+            try:
+                expiry = datetime.strptime(exp, "%y%m%d").strftime("%Y-%m-%d")
+            except ValueError:
+                expiry = exp
+            strike = int(stk) / 1000
+            options.append({**h, "underlying": und, "expiry": expiry,
+                             "opt_type": opt_type, "strike": strike})
+            opt_by_und[und] = opt_by_und.get(und, 0.0) + h["value"]
+        elif TICKER_RE.match(sym) and h["shares"] > 0:
+            equity.append(h)
+
+    total = sum(h["value"] for h in holdings if any(c.isalpha() for c in h["symbol"]))
+    return {
+        "equity": sorted(equity, key=lambda x: -x["value"]),
+        "options": options,
+        "cash": cash_val,
+        "total": cash_val + sum(h["value"] for h in equity) + sum(h["value"] for h in options),
+        "opt_by_underlying": dict(sorted(opt_by_und.items(), key=lambda x: x[1])),
+    }
+
+
+def analyze_us(empower: dict) -> dict:
+    """Compute assigned equity P&L, options summary, and flag urgent names."""
+    assigned = []
+    for h in empower["equity"]:
+        sym = h["symbol"]
+        cost_per_share = US_COST_BASIS.get(sym)
+        if cost_per_share:
+            cost   = cost_per_share * h["shares"]
+            pl     = h["value"] - cost
+            pl_pct = pl / cost * 100 if cost > 0 else None
+        else:
+            cost = pl = pl_pct = None
+        assigned.append({**h, "cost_per_share": cost_per_share,
+                          "total_cost": cost, "pl": pl, "pl_pct": pl_pct})
+
+    # Top 15 options exposures
+    top_opts = list(empower["opt_by_underlying"].items())[:15]
+
+    equity_book = sum(h["value"] for h in empower["equity"])
+    opts_mark   = sum(h["value"] for h in empower["options"])
+
+    return {
+        "assigned":     assigned,
+        "top_opts":     top_opts,
+        "equity_book":  equity_book,
+        "opts_mark":    opts_mark,
+        "cash":         empower["cash"],
+        "total":        empower["total"],
+    }
+
 # ---------------------------------------------------------------------------
 # Market Data
 # ---------------------------------------------------------------------------
@@ -475,10 +616,90 @@ def _tbl(thead: str, tbody: str) -> str:
 # HTML Builder
 # ---------------------------------------------------------------------------
 
+def build_us_section(us: dict) -> str:
+    """Build US portfolio HTML section from analyzed Empower data."""
+    # Summary bar
+    total   = us["total"]
+    cash    = us["cash"]
+    eq_book = us["equity_book"]
+    opts_mk = us["opts_mark"]
+    danger  = eq_book > 375_000
+    book_col = "#e74c3c" if danger else "#e67e22" if eq_book > 300_000 else "#27ae60"
+
+    summary = (
+        f'<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px;">'
+        f'<div style="padding:10px 16px;background:#f4f4f4;border-radius:5px;">'
+        f'<div style="font-size:11px;color:#888;">Total Portfolio</div>'
+        f'<div style="font-size:20px;font-weight:bold;">${total:,.0f}</div></div>'
+        f'<div style="padding:10px 16px;background:#f4f4f4;border-radius:5px;">'
+        f'<div style="font-size:11px;color:#888;">Cash / MM</div>'
+        f'<div style="font-size:20px;font-weight:bold;">${cash:,.0f}</div></div>'
+        f'<div style="padding:10px 16px;background:#f4f4f4;border-radius:5px;">'
+        f'<div style="font-size:11px;color:#888;">Equity Book</div>'
+        f'<div style="font-size:20px;font-weight:bold;color:{book_col};">${eq_book:,.0f}</div>'
+        f'<div style="font-size:11px;color:#888;">{"DANGER &gt;$375K" if danger else "Target &le;$375K"}</div></div>'
+        f'<div style="padding:10px 16px;background:#f4f4f4;border-radius:5px;">'
+        f'<div style="font-size:11px;color:#888;">Options Liability</div>'
+        f'<div style="font-size:20px;font-weight:bold;color:#e74c3c;">${opts_mk:,.0f}</div></div>'
+        f'</div>'
+    )
+
+    # Assigned equity with P&L
+    eq_body = ""
+    for i, h in enumerate(us["assigned"][:15]):
+        bg   = "#fff3cd" if h["pl"] is not None and h["pl"] < -20000 else ""
+        pl_s = (f'<span style="color:{_pcol(h["pl"])};">${h["pl"]:+,.0f} ({_pct(h["pl_pct"])})</span>'
+                if h["pl"] is not None else '<span style="color:#888;">no basis</span>')
+        cb_s = f'${h["cost_per_share"]:.0f}' if h["cost_per_share"] else "—"
+        eq_body += _row(
+            i,
+            f'<b>{h["symbol"]}</b>',
+            h["name"][:30],
+            f'{h["shares"]:.0f}',
+            f'${h["price"]:.2f}',
+            cb_s,
+            f'<b>${h["value"]:,.0f}</b>',
+            pl_s,
+            f'<b style="color:{"#27ae60" if h["change_pct"]>=0 else "#e74c3c"};">{h["change_pct"]:+.1f}%</b>',
+            bg_override=bg,
+        )
+    eq_tbl = _tbl(_thead("Symbol","Name","Shares","Price","Cost/sh","Value","Unrealized P&L","Today"), eq_body)
+
+    # Top options exposures
+    opt_body = ""
+    for i, (und, mk) in enumerate(us["top_opts"]):
+        bar_w = min(100, int(abs(mk) / 1200))
+        bar = (f'<div style="background:#e74c3c;height:8px;border-radius:4px;'
+               f'width:{bar_w}%;display:inline-block;margin-right:6px;vertical-align:middle;"></div>')
+        opt_body += _row(i, f'<b>{und}</b>', f'${mk:,.0f}', bar)
+    opt_tbl = _tbl(_thead("Underlying","Net Mark","Exposure"), opt_body)
+
+    # Urgent items
+    urg_body = "".join(
+        _row(i, f'<b style="color:#e74c3c;">{u["symbol"]}</b>', u["note"])
+        for i, u in enumerate(US_URGENT)
+    )
+    urg_tbl = (
+        _tbl(_thead("Symbol","Action"), urg_body)
+        + '<p style="font-size:12px;color:#888;margin:6px 0 0 0;">'
+        + 'YTD net options income: $324K | MTD Apr: $184K | Capture rate: 59.8% (target 65-70%)</p>'
+    )
+
+    return (
+        summary
+        + '<h3 style="margin:16px 0 8px;font-size:14px;color:#1a1a2e;">Assigned Equity — CC Wheel Recovery</h3>'
+        + eq_tbl
+        + '<h3 style="margin:16px 0 8px;font-size:14px;color:#1a1a2e;">Top Options Exposures (Net Mark)</h3>'
+        + opt_tbl
+        + '<h3 style="margin:16px 0 8px;font-size:14px;color:#1a1a2e;">Urgent Actions</h3>'
+        + urg_tbl
+    )
+
+
 def build_html(
     index_prices: dict, india_vix: float | None, spx: float | None, us_vix: float | None,
     fno_rows: list[dict], eq_rows: list[dict], exit_rows: list[dict],
-    report_date: str, data_source: str,
+    report_date: str, data_source: str, us_data: dict | None = None,
 ) -> str:
 
     nifty     = index_prices.get("^NSEI")
@@ -628,6 +849,7 @@ def build_html(
 {_section("India Equity &mdash; Overhaul Exit Triggers", exit_html)}
 {_section("India Equity &mdash; Full Portfolio P&amp;L", eq_html)}
 {_section("US Accounts &mdash; Urgent Items", us_html)}
+{_section("US Portfolio &mdash; Empower Holdings", build_us_section(us_data)) if us_data else ""}
 <div style="padding:12px 16px;font-size:11px;color:#999;border-top:1px solid #eee;margin-top:20px;">
   Generated {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')} &nbsp;|&nbsp;
   F&amp;O LTPs = Black-Scholes estimates; verify in ICICI Direct before acting. &nbsp;|&nbsp;
@@ -707,7 +929,26 @@ def main():
     bnf_val   = index_prices.get("^NSEBANK")
     print(f"  NIFTY={nifty_val} | BANKNIFTY={bnf_val} | IndiaVIX={india_vix} | SPX={spx} | VIX={us_vix}")
 
-    # 5. Analyze
+    # 5. Parse Empower US holdings (empower-holding*.xlsx or empower-holidng*.xlsx)
+    emp_files = sorted(
+        glob.glob(os.path.join(statements_dir, "empower-holding*.xlsx"))
+        + glob.glob(os.path.join(statements_dir, "empower-holidng*.xlsx")),
+        key=os.path.getmtime,
+    )
+    if emp_files:
+        if not _OPENPYXL:
+            print("  Warning: openpyxl not installed — skipping Empower section")
+            us_data = None
+        else:
+            empower = parse_empower_xlsx(emp_files[-1])
+            us_data = analyze_us(empower)
+            print(f"  Empower: {len(empower['equity'])} equity, {len(empower['options'])} options "
+                  f"from {os.path.basename(emp_files[-1])}")
+    else:
+        us_data = None
+        print("  Warning: no empower-holding*.xlsx found in data/statements/")
+
+    # 6. Analyze
     fno_rows             = analyze_fno(fno_positions, index_prices, india_vix)
     eq_rows, exit_rows   = analyze_equity(holdings, trigger_cfg, core_symbols, prices)
 
@@ -717,14 +958,16 @@ def main():
     print(f"  F&O: {roll_n} roll candidates, {under_n} underwater")
     print(f"  Equity: {hit_n} exit triggers HIT")
 
-    # 6. Build HTML
+    # 7. Build HTML
     fno_src  = os.path.basename(fno_files[-1]) if fno_files else "no file"
     eq_src   = os.path.basename(eq_files[-1]) if eq_files else "no file"
-    data_source = f"F&O: {fno_src} | EQ: {eq_src}"
+    emp_src  = os.path.basename(emp_files[-1]) if emp_files else "no file"
+    data_source = f"F&O: {fno_src} | EQ: {eq_src} | US: {emp_src}"
     html = build_html(index_prices, india_vix, spx, us_vix,
-                      fno_rows, eq_rows, exit_rows, report_date, data_source)
+                      fno_rows, eq_rows, exit_rows, report_date, data_source,
+                      us_data=us_data)
 
-    # 7. Send
+    # 8. Send
     parts = []
     if hit_n:   parts.append(f"{hit_n} EXIT")
     if roll_n:  parts.append(f"{roll_n} ROLL")
@@ -738,4 +981,22 @@ def main():
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--no-email", action="store_true", help="Skip sending email; save HTML to logs/ instead")
+    args = parser.parse_args()
+    if args.no_email:
+        # Monkey-patch send_report to save HTML file instead
+        import sys
+        _orig_send = send_report
+        def _save_only(html, subject):
+            logs_dir = os.path.join(DATA_DIR, "..", "logs")
+            os.makedirs(logs_dir, exist_ok=True)
+            out = os.path.join(logs_dir, f"india_us_report_{date.today()}.html")
+            with open(out, "w") as f:
+                f.write(html)
+            print(f"  Saved → {out}")
+            return True
+        import builtins
+        globals()["send_report"] = _save_only
     main()
