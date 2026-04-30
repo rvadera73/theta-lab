@@ -28,6 +28,36 @@ from config import (
     RISK,
 )
 
+# yfinance tickers for NSE indices used as FNO underlyings
+_INDEX_TICKERS = {
+    "NIFTY":  "^NSEI",
+    "CNXBAN": "^NSEBANK",
+    "BANKNIFTY": "^NSEBANK",
+    "FINNIFTY": "NIFTY_FIN_SERVICE.NS",
+    "MIDCPNIFTY": "NIFTY_MIDCAP_100.NS",
+}
+
+
+def _fetch_index_prices(symbols: list[str]) -> dict[str, float]:
+    """Fetch current index prices from yfinance for FNO underlying indices."""
+    prices: dict[str, float] = {}
+    tickers = {sym: _INDEX_TICKERS[sym] for sym in symbols if sym in _INDEX_TICKERS}
+    if not tickers:
+        return prices
+    try:
+        import yfinance as yf
+        for sym, ticker in tickers.items():
+            try:
+                data = yf.Ticker(ticker).fast_info
+                lp = getattr(data, "last_price", None) or getattr(data, "regularMarketPrice", None)
+                if lp:
+                    prices[sym] = float(lp)
+            except Exception:
+                pass
+    except ImportError:
+        pass
+    return prices
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -239,6 +269,14 @@ async def generate_india_weekly_report(
         except Exception as e:
             lines.append(f"⚠️ Breeze API error ({e}) — falling back to local statements.\n")
             positions = build_positions_from_statements(india_cfg)
+
+    # Enrich index positions (NIFTY, CNXBAN) with live underlying price from yfinance
+    index_syms = [p.symbol for p in positions if p.symbol in _INDEX_TICKERS and p.current_price == 0.0]
+    if index_syms:
+        idx_prices = _fetch_index_prices(index_syms)
+        for pos in positions:
+            if pos.symbol in idx_prices:
+                pos.current_price = idx_prices[pos.symbol]
 
     for pos in positions:
         pri, label, reason = _priority(pos, regime)
