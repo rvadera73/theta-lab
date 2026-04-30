@@ -6,6 +6,7 @@ Wraps open-stocks-mcp Schwab tools + adds persona-aware analysis layer.
 Start: python mcp/server.py
 """
 
+import argparse
 import asyncio
 import json
 import os
@@ -18,16 +19,19 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
+from mcp.server.sse import SseServerTransport
 from mcp.types import Tool, TextContent
 
 from config import ACCOUNT_A, ACCOUNT_B, UNIVERSE, Tier, PERMANENT_EXITS, RISK
 from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
 from reports.weekly_report import generate_weekly_report
+from reports.india_weekly_report import generate_india_weekly_report
 
 # Account hashes from environment (set after Schwab API setup)
 ACCOUNT_A_HASH = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")
 ACCOUNT_B_HASH = os.getenv("SCHWAB_ACCOUNT_B_HASH", "")
+ACCOUNT_C_HASH = os.getenv("SCHWAB_ACCOUNT_C_HASH", "")
 
 app = Server("theta-lab")
 
@@ -181,6 +185,24 @@ async def list_tools():
                 },
             },
         ),
+        Tool(
+            name="generate_india_weekly_report",
+            description=(
+                "Generates the weekly action report for Indian stock/options portfolio via ICICI Breeze API. "
+                "Checks India VIX + Nifty 50 regime, pulls live NSE positions, calculates P&L, "
+                "and returns prioritised actions."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "save_to_file": {
+                        "type": "boolean",
+                        "description": "Save report to logs/ directory",
+                        "default": True,
+                    }
+                },
+            },
+        ),
     ]
 
 
@@ -188,7 +210,7 @@ async def list_tools():
 async def call_tool(name: str, arguments: dict):
     try:
         if name == "generate_weekly_action_report":
-            report = generate_weekly_report(ACCOUNT_A_HASH, ACCOUNT_B_HASH)
+            report = await generate_weekly_report(ACCOUNT_A_HASH, ACCOUNT_B_HASH, ACCOUNT_C_HASH)
             if arguments.get("save_to_file", True):
                 log_path = Path(__file__).parent.parent / "logs" / f"action_report_{date.today()}.md"
                 log_path.write_text(report)
@@ -310,6 +332,19 @@ async def call_tool(name: str, arguments: dict):
                 lines.append(f"- **{sym}**: IVR {d['iv_rank']:.0f} | IV {d['current_iv']}% | Entry: ✅")
             return [TextContent(type="text", text="\n".join(lines))]
 
+        elif name == "generate_india_weekly_report":
+            BREEZE_API_KEY = os.getenv("BREEZE_API_KEY", "")
+            BREEZE_API_SECRET = os.getenv("BREEZE_API_SECRET", "")
+            BREEZE_SESSION_TOKEN = os.getenv("BREEZE_SESSION_TOKEN", "")
+            report = await generate_india_weekly_report(
+                BREEZE_API_KEY, BREEZE_API_SECRET, BREEZE_SESSION_TOKEN
+            )
+            if arguments.get("save_to_file", True):
+                log_path = Path(__file__).parent.parent / "logs" / f"india_action_report_{date.today()}.md"
+                log_path.parent.mkdir(parents=True, exist_ok=True)
+                log_path.write_text(report)
+            return [TextContent(type="text", text=report)]
+
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
@@ -336,10 +371,83 @@ def _schwab_data_required(tool: str) -> str:
     return f"Tool `{tool}` requires live Schwab credentials. See `docs/schwab_api_setup.md`."
 
 
-async def main():
+async def _init_schwab_broker() -> None:
+    """Register and authenticate the Schwab broker in the open_stocks_mcp registry."""
+    api_key = os.getenv("SCHWAB_API_KEY")
+    app_secret = os.getenv("SCHWAB_APP_SECRET")
+    if not api_key or not app_secret:
+        return
+    try:
+        from open_stocks_mcp.brokers.registry import get_broker_registry
+        from open_stocks_mcp.brokers.schwab import SchwabBroker
+        registry = await get_broker_registry()
+        if "schwab" not in registry.list_brokers():
+            broker = SchwabBroker(api_key=api_key, app_secret=app_secret)
+            registry.register(broker)
+            await registry.authenticate_all()
+    except Exception as e:
+        # Non-fatal — server still starts; live data tools will return errors
+        sys.stderr.write(f"[theta-lab] Schwab broker init failed: {e}\n")
+
+
+async def _run_stdio():
+    await _init_schwab_broker()
     async with stdio_server() as streams:
         await app.run(streams[0], streams[1], app.create_initialization_options())
 
 
+async def _run_http(host: str, port: int, token: str | None):
+    import uvicorn
+    from starlette.applications import Starlette
+    from starlette.requests import Request
+    from starlette.responses import JSONResponse
+    from starlette.routing import Mount, Route
+
+    await _init_schwab_broker()
+
+    sse = SseServerTransport("/messages/")
+
+    async def handle_sse(request: Request):
+        if token:
+            auth = request.headers.get("Authorization", "")
+            if auth != f"Bearer {token}":
+                return JSONResponse({"error": "unauthorized"}, status_code=401)
+        async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
+            await app.run(streams[0], streams[1], app.create_initialization_options())
+
+    async def handle_messages(request: Request):
+        await sse.handle_post_message(request.scope, request.receive, request._send)
+
+    starlette_app = Starlette(
+        routes=[
+            Route("/sse", endpoint=handle_sse),
+            Mount("/messages/", app=sse.handle_post_message),
+        ]
+    )
+
+    config = uvicorn.Config(starlette_app, host=host, port=port, log_level="info")
+    server = uvicorn.Server(config)
+    sys.stderr.write(f"[theta-lab] HTTP/SSE server listening on http://{host}:{port}/sse\n")
+    if token:
+        sys.stderr.write(f"[theta-lab] Auth: Bearer token required (THETA_LAB_TOKEN)\n")
+    else:
+        sys.stderr.write(f"[theta-lab] Auth: NONE — set THETA_LAB_TOKEN env var to enable\n")
+    await server.serve()
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Theta-Lab MCP Server")
+    parser.add_argument(
+        "--transport", choices=["stdio", "http"], default="stdio",
+        help="Transport mode: stdio (default, for Claude Code) or http (for remote agents)",
+    )
+    parser.add_argument("--host", default="0.0.0.0", help="HTTP bind host (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8765, help="HTTP port (default: 8765)")
+    args = parser.parse_args()
+
+    token = os.getenv("THETA_LAB_TOKEN")  # optional bearer token for HTTP mode
+
+    if args.transport == "http":
+        asyncio.run(_run_http(args.host, args.port, token))
+    else:
+        asyncio.run(_run_stdio())

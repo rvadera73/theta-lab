@@ -26,8 +26,8 @@ class Tier(int, Enum):
 ACCOUNT_A = {
     "label": "Rahul — Schwab One Margin",
     "type": "margin",
-    "target_annual_return": 0.20,
-    "target_weekly_pnl": 1619,       # $84K/yr ÷ 52
+    "target_annual_return": 0.40,    # $100K/month combined across all accounts
+    "target_weekly_pnl": 5769,       # $300K/yr ÷ 52 (Account A share of $100K/mo target)
     "max_contracts_by_tier": {1: 5, 2: 3, 3: 1},
     "margin_alert_pct": 0.80,
     "strategies": ["covered_call", "short_strangle"],
@@ -36,13 +36,48 @@ ACCOUNT_A = {
 ACCOUNT_B = {
     "label": "Pinky — Schwab IRA",
     "type": "ira",
-    "target_annual_return": 0.12,
-    "target_weekly_pnl": 537,        # $28K/yr ÷ 52
+    "target_annual_return": 0.15,
+    "target_weekly_pnl": 962,        # $50K/yr ÷ 52
     "max_contracts_by_tier": {1: 1, 2: 1, 3: 1},
     "no_margin": True,
     "no_naked_calls": True,
     "speculative_max_pct": 0.10,
     "strategies": ["cash_secured_put", "covered_call"],
+}
+
+ACCOUNT_C = {
+    "label": "Designated Beneficiary — Schwab (account 8634)",
+    "type": "designated_beneficiary",  # No naked calls; Level 1/2 options
+    "target_annual_return": 0.12,
+    "target_weekly_pnl": 500,          # ~$26K/yr ÷ 52 (smaller account)
+    "max_contracts_by_tier": {1: 1, 2: 1, 3: 1},
+    "no_margin": True,
+    "no_naked_calls": True,
+    "speculative_max_pct": 0.10,
+    "token_path": "~/.tokens/schwab_token_c.json",
+    "strategies": ["cash_secured_put", "covered_call"],
+    # Universe includes value/recovery names not in A or B
+    "extra_names": ["ATEN", "NIO", "CMG", "TWLO", "LYFT", "BABA", "ABNB", "ANET"],
+}
+
+# ---------------------------------------------------------------------------
+# Portfolio-level targets ($3M across all 14 accounts)
+# ---------------------------------------------------------------------------
+
+PORTFOLIO = {
+    "total_aum": 3_000_000,
+    "target_monthly_combined": 100_000,   # $100K/month = premium + equity appreciation
+    "target_annual_return": 0.40,          # $1.2M/year = 40% of $3M
+    "historical_annual_return": 0.30,      # 3-year average
+    "active_options_aum_estimate": 1_500_000,  # Schwab A+B + RH IRA + Fidelity active
+    # Assigned equity caps
+    "assigned_equity_cap_bull": 0.15,      # 15% of active options AUM
+    "assigned_equity_cap_sideways": 0.20,  # 20%
+    "assigned_equity_cap_bear": 0.25,      # 25% = ~$375K at current AUM estimate
+    "assigned_equity_danger_zone": 0.30,   # >30% = freeze new puts
+    "per_name_cap_dollars": 100_000,       # $100K max per assigned name
+    "per_name_cap_shares": 2_000,          # 2,000 shares max per name
+    "deliberate_equity_cap": 0,            # $0 — never buy stock intentionally
 }
 
 # ---------------------------------------------------------------------------
@@ -116,4 +151,23 @@ ITM_POSITION_PLANS = {
     "NVO":  "natural_exit_via_assignment",
     "MRNA": "natural_exit_complete",
     "CRWD": "standard_roll_management",
+}
+
+# ---------------------------------------------------------------------------
+# India Account (ICICI Breeze)
+# ---------------------------------------------------------------------------
+INDIA_ACCOUNT = {
+    "label": "Rahul — ICICI Direct",
+    "type": "margin",
+    "target_weekly_pnl": 25000,   # ₹25,000/week target (~₹13L/yr)
+    "max_contracts_by_tier": {1: 5, 2: 3, 3: 1},
+    "strategies": ["covered_call", "short_strangle", "cash_secured_put"],
+}
+
+INDIA_PERMANENT_EXITS: list[str] = []   # populate as needed
+
+INDIA_REGIME_THRESHOLDS = {
+    "indiavix_bull_threshold": 15.0,
+    "indiavix_pause_threshold": 25.0,
+    "ma_days": [50, 200],
 }

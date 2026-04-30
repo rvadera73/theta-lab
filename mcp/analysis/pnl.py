@@ -109,6 +109,32 @@ class Position:
         return {"flag": False}
 
 
+def _parse_osi_symbol(symbol: str) -> tuple[str, str, float]:
+    """Parse OSI option symbol into (expiry YYYY-MM-DD, option_type PUT/CALL, strike float).
+
+    OSI format: {underlying 6 chars}{YYMMDD}{C/P}{strike * 1000, 8 digits}
+    Example:    'AXON  260618P00470000' → ('2026-06-18', 'PUT', 470.0)
+    """
+    s = symbol.strip()
+    if len(s) < 15:
+        return "", "", 0.0
+    # Find where the date starts: scan right-to-left for the 6-digit date block
+    # OSI = last 15 chars are always {YYMMDD}{C/P}{8-digit strike}
+    body = s[-15:]  # YYMMDDX00000000
+    yymmdd = body[:6]
+    opt_char = body[6]
+    strike_str = body[7:]
+    try:
+        yy, mm, dd = int(yymmdd[:2]), int(yymmdd[2:4]), int(yymmdd[4:6])
+        year = 2000 + yy
+        expiry = f"{year:04d}-{mm:02d}-{dd:02d}"
+        option_type = "CALL" if opt_char.upper() == "C" else "PUT"
+        strike = int(strike_str) / 1000.0
+        return expiry, option_type, strike
+    except (ValueError, IndexError):
+        return "", "", 0.0
+
+
 def parse_schwab_positions(raw_positions: list[dict], account_label: str, quotes: dict) -> list[Position]:
     """
     Convert raw Schwab position data into Position objects.
@@ -136,10 +162,12 @@ def parse_schwab_positions(raw_positions: list[dict], account_label: str, quotes
             )
 
         elif asset_type == "OPTION":
-            underlying = instrument.get("underlyingSymbol", symbol.split()[0])
-            option_type = instrument.get("putCall", "")
-            strike = instrument.get("strikePrice", 0)
-            expiry = instrument.get("expirationDate", "")[:10]
+            underlying = instrument.get("underlyingSymbol") or symbol.split()[0]
+            # putCall is present in the instrument; strike/expiry come from OSI symbol
+            osi_expiry, osi_type, osi_strike = _parse_osi_symbol(symbol)
+            option_type = instrument.get("putCall", osi_type) or osi_type
+            strike = osi_strike
+            expiry = osi_expiry
 
             from datetime import date
             try:
@@ -148,11 +176,14 @@ def parse_schwab_positions(raw_positions: list[dict], account_label: str, quotes
             except Exception:
                 dte = 0
 
-            # Short position = credit received = negative shortQuantity
             short_qty = int(pos.get("shortQuantity", 0))
             is_short = short_qty > 0
-            premium = abs(avg_price * 100 * short_qty) if is_short else 0
-            mark = abs(current_price * 100 * short_qty) if is_short else 0
+            # averageShortPrice = per-share credit received when position was opened
+            avg_short_price = pos.get("averageShortPrice", avg_price)
+            # marketValue is the current total value (negative for short positions in Schwab)
+            market_val = abs(pos.get("marketValue", 0))
+            premium = avg_short_price * 100 * short_qty if is_short else 0
+            mark = market_val if is_short else 0
 
             leg = OptionLeg(
                 description=f"{option_type} {strike} {expiry}",

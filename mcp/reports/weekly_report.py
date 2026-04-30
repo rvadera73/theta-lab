@@ -14,7 +14,7 @@ from analysis.pnl import Position, parse_schwab_positions
 from analysis.regime import detect_regime
 from analysis.iv_rank import batch_iv_rank
 from config import (
-    ACCOUNT_A, ACCOUNT_B, PERMANENT_EXITS,
+    ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, PERMANENT_EXITS,
     ITM_POSITION_PLANS, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
 )
 
@@ -48,9 +48,10 @@ def _priority(position: Position, regime_str: str) -> tuple[int, str, str]:
     return 5, "WATCH", "No immediate action needed"
 
 
-def generate_weekly_report(
+async def generate_weekly_report(
     account_a_hash: str,
     account_b_hash: str,
+    account_c_hash: str = "",
     schwab_client=None,
 ) -> str:
     """
@@ -92,20 +93,26 @@ def generate_weekly_report(
     for acct_hash, acct_cfg, acct_label in [
         (account_a_hash, ACCOUNT_A, "A"),
         (account_b_hash, ACCOUNT_B, "B"),
+        (account_c_hash, ACCOUNT_C, "C"),
     ]:
         if not acct_hash:
             continue
         try:
             if schwab_client:
-                raw = schwab_client.get_all_positions(acct_hash)
+                raw = await schwab_client.get_all_positions(acct_hash)
                 quotes_raw = {}
             else:
                 from schwab_client import get_all_positions, get_quotes, get_balances
-                raw = get_all_positions(acct_hash)
-                symbols = list({p.get("instrument", {}).get("symbol", "").split()[0]
-                                for p in raw if p.get("instrument", {}).get("assetType") == "EQUITY"})
-                quotes_raw = get_quotes(symbols)
-                balances = get_balances(acct_hash)
+                raw = await get_all_positions(acct_hash)
+                # Fetch quotes for ALL underlying symbols (equities + option underlyings)
+                symbols = list({
+                    (p.get("instrument", {}).get("underlyingSymbol")
+                     or p.get("instrument", {}).get("symbol", "").split()[0])
+                    for p in raw
+                    if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                })
+                quotes_raw = await get_quotes(symbols)
+                balances = await get_balances(acct_hash)
 
             positions = parse_schwab_positions(raw, acct_label, quotes_raw)
 

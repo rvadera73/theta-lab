@@ -17,6 +17,25 @@ This skill activates when the user asks about:
 
 ---
 
+## Weekly Data Pipeline
+
+**Sources (two files from Empower + Schwab):**
+- `data/statements/Individual-Positions*.csv` — Schwab Account A (232) positions, cost basis, open options
+- `data/statements/YYYY-MM-DD thru YYYY-MM-DD transactions.csv` — Empower unified export, all 14 accounts
+
+**Weekly prep (do before Monday email):**
+1. Export Schwab positions CSV → drop in `data/statements/`
+2. Export Empower transactions CSV (YTD range) → drop in `data/statements/`
+3. `python3 scripts/update_snapshot.py`
+4. Set `month_to_date_equity_change` manually in `data/portfolio_snapshot.yaml`
+5. `git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push`
+
+**Email automation:** GitHub Actions runs every Monday 8AM ET via `mcp/routines/weekly_dashboard.py`. Sends to ravjdpr@gmail.com via Resend API. Secret: `RESEND_API_KEY` in GitHub repo secrets.
+
+**Account B gap:** No positions CSV for XXX275 yet — export separately from Schwab IRA account to get accurate Account B open positions and trade recommendations.
+
+---
+
 ## Mandatory Pre-Flight Protocol (Every Session)
 
 1. Load `trading_persona.md` — confirm regime, profit targets, permanent exits
@@ -61,6 +80,32 @@ This skill activates when the user asks about:
 - MRNA: let natural CC assignment complete. Do not re-enter.
 - PYPL: sell CCs on any bounce. No re-entry after exit.
 
+### Account A — Margin and Cash Management
+
+**Ideal equity % by regime (never a static number):**
+| Regime | Target Equity % | Hard Floor |
+|--------|----------------|-----------|
+| Bull | 55–60% | 45% |
+| Sideways | 60–65% | 50% |
+| Bear (current) | 65% | 50% |
+
+**Option requirement ratio:** Target below 80% of net liq in bear regime. Above 100% is alert territory; above 130% is structural risk requiring active reduction over time.
+
+**Emergency fund ($200K):** Keep separate from trading account. Deploy only if cash to trade drops below $75K AND VIX is elevated simultaneously. Not a source for new positions.
+
+**Cash to trade — weekly policy (check every Monday morning):**
+| Cash to Trade | Action |
+|--------------|--------|
+| ≥ $125K | No action — let all positions run |
+| $100K–$124K | Monitor; close profitable puts ≥ 40% only if VIX elevated (not compressing) |
+| $75K–$99K | Close profitable puts ≥ 40%; consider $50K emergency fund deposit |
+| $50K–$74K | Close profitable puts ≥ 30%; deposit $75–100K from emergency fund |
+| < $50K | Emergency — close what you can; deploy emergency fund immediately |
+
+**Why cash fluctuates without structural change:** Cash to trade = Total equity − Option requirement used. Both sides move daily. A VIX spike inflates option marks and requirement simultaneously, pulling $30–60K from available cash in a single week. When VIX normalizes, cash returns. Do NOT force closes to solve a temporary VIX-driven cash drop — closing at the bottom of a VIX spike gives away earned premium.
+
+**Calls vs puts on margin impact:** Far OTM short calls carry low margin requirement — closing them locks in profit but has minimal effect on cash to trade. Short puts (closer to ATM) carry much larger margin requirement — closing puts meaningfully frees pledged collateral and improves available cash. Prioritize put closes when cash improvement is the goal.
+
 ---
 
 ## Account B Strategy (Pinky — IRA — 12% target)
@@ -68,7 +113,7 @@ This skill activates when the user asks about:
 ### Primary: Wheel (CSP → Assignment → CC → Exit)
 
 **Entry (when regime allows):**
-- IVR must be ≥ 40 (call `get_iv_rank` first)
+- IVR must be ≥ 40 (call `get_iv_rank` first) — this gate applies to NEW entries only; existing positions are held regardless of current IVR
 - Tier 1/2 names only for new wheels; Tier 3 max 1 contract
 - Sell CSP at delta 0.15-0.20 (80-85% PoP)
 - DTE: 45-60 days (not the 6-18 month DTE of legacy positions)
@@ -76,9 +121,10 @@ This skill activates when the user asks about:
 
 **When assigned (stock received):**
 1. Do NOT panic — this is the wheel working
-2. Immediately sell CC at delta 0.25-0.30 (ATM to slight OTM)
-3. Target: recover full premium cost in 3-5 CC cycles
-4. Accept CC assignment and exit when profitable; do not hold the stock
+2. Assignment in Schwab is automatic — no action needed to accept; focus immediately on the CC
+3. Immediately sell CC at delta 0.25-0.30 (ATM to slight OTM)
+4. Target: recover full premium cost in 3-5 CC cycles
+5. Accept CC assignment and exit when profitable; do not hold the stock
 
 **Profit take:**
 - Bear: close CSP at 40-60% of max premium — redeploy into next CSP
@@ -126,13 +172,28 @@ When approaching 21 DTE or position goes ITM:
 
 | Situation | Roll Action | Target |
 |-----------|------------|--------|
-| Short put ITM, thesis intact | Roll down + out (lower strike, further DTE) | Net credit only — never pay to roll |
+| Short put ITM, thesis intact, DTE > 45 | **HOLD** — do not roll | Time is working; rolling down when bullish surrenders premium for no reason |
+| Short put ITM, thesis intact, DTE ≤ 21 | Roll down + out (lower strike, further DTE) | Net credit only — never pay to roll |
 | Short put ITM, thesis broken | Close and redeploy | Exit cleanly |
 | Short call ITM (CC) | Roll up + out (higher strike, further DTE) | Net credit or small debit OK if bull |
 | Short call ITM (strangle leg) | Roll up aggressively to recapture delta | Keep strangle balanced |
 | At 21 DTE with 50%+ profit | Roll out same strike for more premium | Collect additional credit |
 
 **Roll golden rule:** Never pay a net debit to roll unless the position is being turned from loser to winner with strong conviction.
+
+**Hold vs Roll test:** Before recommending a roll on an ITM put, ask — am I bullish on the underlying? If yes and DTE > 45, the answer is always hold. Rolling down when bullish = locking in a realized loss + collecting less future premium. That is an emotional trade, not a strategic one.
+
+---
+
+## Stagger vs Roll — Critical Distinction
+
+**Stagger IS the strategy.** Stagger = selling the same underlying at different strikes and different expiries across time, creating a ladder of exposure. Each leg matures independently. This is intentional risk distribution — not a problem to fix. Do NOT unwind a stagger by rolling legs into each other.
+
+**Roll is for a single contract in a specific situation** — approaching ≤21 DTE, assignment risk, or thesis broken. Rolling is a single-contract adjustment, not a stagger-wide operation.
+
+**When you see AXON $470P Jun / $660P Sep / $540P Dec / $420P Jan — that is a stagger. Let each leg run on its own schedule.**
+
+**Profit close thresholds are independent per leg.** Each leg of a stagger is evaluated individually against the profit close target. Closing one leg does not require closing others.
 
 ---
 
@@ -164,6 +225,13 @@ These are inputs, not overrides. Trader makes the final call.
 - IRA (Account B): IBIT CSPs preferred (cleanest, no exchange risk)
 - Margin (Account A): COIN strangles when IVR elevated
 
+**Recovery bets (beaten-down consumer/value names):**
+- Pattern: stock down 50%+ from 52W high, near 52W low, value segment that benefits from consumer trade-down in bear/sideways markets
+- Strategy: hold the CSP, accept assignment, wheel out with CCs — elevated HV from the slide means CC premiums are fat
+- Do NOT roll down just because it's ITM — that surrenders the recovery premium
+- Example: ELF at $66 vs 52W high $147 — value beauty gains share when consumers trade down from premium brands
+- IVR < 40 on these names is fine for holding; do not use as a reason to close or roll
+
 **Permanent exits (MRNA, PYPL):**
 - Sell CCs aggressively to recover premium
 - Do NOT open any new puts on these names
@@ -181,6 +249,131 @@ These are inputs, not overrides. Trader makes the final call.
 5. Update profit-take targets if regime shifted
 6. Review upcoming earnings for all active positions
 ```
+
+---
+
+## Portfolio Tracking System
+
+Three watchlist portfolios are maintained alongside the options accounts. These are pre-deployment analysis pipelines — when cash becomes available, the reports tell you exactly what to buy and at what price.
+
+### Portfolio Definitions
+
+| Portfolio | File | Names | Review Cadence | Purpose |
+|-----------|------|-------|---------------|---------|
+| Portfolio-1 | `Portfolio-1 2026-04-25.xlsx` | 66 names | **Monthly** | Full investment universe; regime-filtered entry candidates |
+| Holdings (Q1-2025) | `Holdings-Portfolio 2026-04-25.xlsx` | 11 names | **Quarterly** | Actual held positions across all accounts; recovery tracking |
+| 10-Year | `10-Year Portfolio 2026-04-25.xlsx` | 13 names | **Semi-annual** | Long-term conviction holds; accumulation thesis check |
+
+### Report Cadence and Log Files
+
+```
+Portfolio-1 (monthly):   logs/portfolio_review_P1_YYYY-MM.md
+Holdings (quarterly):    logs/portfolio_review_holdings_YYYY-QN.md
+10-Year (semi-annual):   logs/portfolio_review_10yr_YYYY-HN.md
+```
+
+### Report Structure for Each Portfolio
+
+**Portfolio-1 Monthly:**
+1. Regime filter — which names qualify under current regime (bear = Tier 1/2 only, IVR ≥ 40 for options)
+2. 52W range positioning — flag names in bottom 25% of range as potential entries
+3. Thesis changes — any names where the investment thesis has shifted
+4. Top-5 deployment candidates — specific entry prices, options vs outright buy recommendation
+5. Names to remove from universe — thesis broken or no longer fits strategy
+
+**Holdings Quarterly:**
+1. Current price vs cost basis for each held name
+2. Recovery progress — how far from breakeven? At current CC/wheel pace, when is breakeven?
+3. Thesis check — is the original reason for holding still valid?
+4. Next quarter targets — what price action or events would change the hold/exit decision
+
+**10-Year Semi-annual:**
+1. Price vs 52W range position for each name
+2. Thesis validation — is the 10-year thesis still intact (technology shift, market leadership)?
+3. Accumulation zones — at what price is this a compelling add vs a hold
+4. Risk flags — any existential threats to the thesis (regulation, competition, leadership)?
+5. Position sizing guidance — given current regime, how to size an entry
+
+### Entry Strategy by Regime
+
+| Regime | Entry Method | Sizing | Timing |
+|--------|-------------|--------|--------|
+| Bull | Buy shares directly or sell ATM puts | Full position | On breakout or dip |
+| Sideways | Sell puts 5-10% OTM | 50% of target | On IV spikes |
+| **Bear (current)** | **Sell puts 10-15% OTM; never buy outright** | **25% of target per tranche** | **Wait for VIX > 25 to sell puts (higher premium)** |
+
+**Bear regime deployment rule:** Do not buy any position outright in a bear/sideways regime. Sell puts instead — this sets a lower effective entry price AND collects premium. If the put expires worthless, keep premium and repeat. If assigned, you own at a discount.
+
+**Cash deployment sequence (when cash becomes available):**
+1. Check current regime — confirms strategy
+2. Check IVR for target names — ≥ 40 required before opening puts
+3. Open at 25% of target position size — do not deploy all at once
+4. Stage remaining 75% across 3-6 months via new puts as regime confirms
+
+### Loser Identification (Remove from Portfolios)
+
+A name is a loser to remove when **two or more** of these apply:
+- Thesis broken: company-specific headwind that wasn't present at entry (regulatory, competitive displacement, management failure)
+- Price > 40% below 52W high with no recovery catalyst visible within 6 months
+- 3+ consecutive quarters of underperformance vs sector ETF without explanation
+- Better name available in the same theme (remove the weaker, keep the stronger)
+- Position has reached terminal stage (e.g., acquisition closed, permanent exit completed)
+
+**Not a loser:** Being near 52W low alone is not a removal trigger — it is often a buying opportunity if thesis is intact.
+
+### Portfolio-1 Turnover Rules (15-20% Annually)
+
+With 66 names: target 10-13 rotations per year = 2-4 names per quarter (removed + added).
+
+| Review | Target Removals | Target Additions |
+|--------|----------------|-----------------|
+| Monthly | Flag candidates | Flag replacements |
+| Quarterly | Execute 2-4 removals | Add 2-4 replacements |
+| Annual | Full portfolio audit | Rebalance to 60-70 names |
+
+Monthly report must include: **Remove list** (names leaving), **Add list** (names entering), **Watchlist** (names on probation — one more bad quarter triggers removal).
+
+### Holdings Portfolio Rules (Q1-2025)
+
+**Core principle:** Never deliberately hold equity. Options premium is the strategy. Equity is only acceptable as an involuntary byproduct of put assignment. All assigned positions must be exited via CC wheel as the priority.
+
+Two separate equity buckets — governed independently:
+
+---
+
+**Bucket 1 — Deliberate Equity (intentional stock purchases)**
+
+**Hard cap: $0**
+
+Never buy stock outright in an active options account. All exposure enters via put selling only. If you want a name, sell a put — do not buy shares. No exceptions without explicit conscious authorization for a stated reason.
+
+---
+
+**Bucket 2 — Assigned Equity (CC wheel byproduct)**
+
+**Per-name cap:** $100K OR 2,000 shares — whichever hits first. Applies to every assigned position regardless of how bullish the thesis.
+
+**Total assigned book cap — regime-dependent** (anchored to active options accounts AUM ≈ $1.0–1.5M combined: Account A, Account B, Robinhood IRA, active Fidelity accounts):
+
+| Regime | Assigned Equity Cap | Action Trigger |
+|--------|--------------------|----|
+| Bull | 15% of active options AUM ≈ $150–225K | Exits are fast; keep tight |
+| Sideways | 20% of active options AUM ≈ $200–300K | CCs work normally; monitor weekly |
+| **Bear (current)** | **25% of active options AUM ≈ $250–375K** | High assignment rate; CC exits mandatory |
+| Danger zone | >30% of active options AUM | Freeze new puts on ALL assigned names; accelerate every CC exit |
+
+**Current bear target:** ≤$300–375K total assigned book across all active options accounts.
+**Current state (Apr 2026):** ~$401K in Account A alone — in danger zone; CC exits in progress.
+
+**Rules for assigned equity:**
+- Accelerate CC exits when total book approaches the regime cap
+- Do not open new puts on any name that already has an assigned position, until that name's CC exit completes
+- If any single name exceeds $100K or 2,000 shares: only CCs allowed on that name — no new puts
+- Quarterly close candidates: any assigned name where thesis has broken — do not wheel a broken thesis; take the loss and redeploy
+
+---
+
+**Passive accounts (401K, Vanguard funds, minor Roth IRA) are excluded from these caps** — equity is the strategy in those accounts and these rules do not apply there.
 
 ---
 
