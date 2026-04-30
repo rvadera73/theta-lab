@@ -12,10 +12,36 @@ from typing import Any
 
 def _breeze_connect(api_key: str, api_secret: str, session_token: str):
     """Initialise and return an authenticated BreezeConnect instance."""
-    from breeze_connect import BreezeConnect  # type: ignore
+    import sys
+    import importlib.util
 
-    breeze = BreezeConnect(api_key=api_key)
-    breeze.generate_session(api_secret=api_secret, session_token=session_token)
+    # breeze_connect/breeze_connect.py uses bare `import config` (not relative),
+    # which collides with theta-lab's config.py on sys.path.
+    # Fix: load breeze_connect's own config.py and inject it as sys.modules['config']
+    # before BreezeConnect is imported.
+    _breeze_pkg = "/home/rahulvadera/.local/lib/python3.12/site-packages/breeze_connect"
+    spec = importlib.util.spec_from_file_location("config", f"{_breeze_pkg}/config.py")
+    breeze_config = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(breeze_config)
+
+    original_config = sys.modules.get("config")
+    sys.modules["config"] = breeze_config
+
+    # Evict any cached breeze_connect modules so they re-import with correct config
+    for key in list(sys.modules):
+        if key.startswith("breeze_connect"):
+            sys.modules.pop(key)
+
+    try:
+        from breeze_connect import BreezeConnect  # type: ignore
+        breeze = BreezeConnect(api_key=api_key)
+        breeze.generate_session(api_secret=api_secret, session_token=session_token)
+    finally:
+        if original_config is not None:
+            sys.modules["config"] = original_config
+        elif "config" in sys.modules:
+            del sys.modules["config"]
+
     return breeze
 
 
@@ -51,17 +77,40 @@ def get_portfolio_positions(api_key: str, api_secret: str, session_token: str) -
         expiry_raw = p.get("expiry_date", "") or ""
         expiry_date = _normalise_expiry(expiry_raw)
 
+        # Quantity: Breeze returns absolute qty; action="Sell" means short → negative
+        qty = int(p.get("quantity", 0) or 0)
+        if str(p.get("action", "")).strip().lower() == "sell":
+            qty = -qty
+
+        # avg_price: live Breeze uses "average_price" not "average_cost"
+        avg_price = float(p.get("average_price", 0) or p.get("average_cost", 0) or 0)
+
+        # ltp: current price
+        ltp = float(p.get("ltp", 0) or 0)
+
+        # market_value derived from ltp * abs(qty)
+        market_value = ltp * abs(qty)
+
+        # option_type: Breeze returns "Put"/"Call" — normalise to CE/PE
+        right_raw = str(p.get("right", "") or "").strip().lower()
+        if right_raw in ("put", "pe"):
+            option_type = "PE"
+        elif right_raw in ("call", "ce"):
+            option_type = "CE"
+        else:
+            option_type = ""
+
         positions.append({
             "symbol":       p.get("stock_code", ""),
             "exchange":     p.get("exchange_code", "NSE"),
             "product_type": p.get("product_type", "cash"),
-            "quantity":     int(p.get("quantity", 0) or 0),
-            "avg_price":    float(p.get("average_cost", 0) or 0),
-            "market_value": float(p.get("market_value", 0) or 0),
-            "option_type":  p.get("right", "") or "",       # "CE" | "PE" | ""
+            "quantity":     qty,
+            "avg_price":    avg_price,
+            "ltp":          ltp,
+            "market_value": market_value,
+            "option_type":  option_type,
             "strike_price": str(p.get("strike_price", "") or ""),
             "expiry_date":  expiry_date,
-            # Carry raw fields in case caller needs them
             "_raw": p,
         })
 

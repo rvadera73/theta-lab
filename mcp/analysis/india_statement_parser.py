@@ -8,6 +8,7 @@ Contract name format (FNO): OPT-{UNDERLYING}-{DD-Mon-YYYY}-{STRIKE}-{CE|PE}-E
 """
 
 import csv
+import glob
 import os
 import re
 import yaml
@@ -26,8 +27,19 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 _DATA_DIR = os.path.join(_PROJECT_ROOT, "data", "statements")
 _INDIA_CONFIG = os.path.join(_PROJECT_ROOT, "data", "india_config.yaml")
 
-EQUITY_CSV = os.path.join(_DATA_DIR, "7500069840_PortFolioEqtAll.csv")
-FNO_CSV    = os.path.join(_DATA_DIR, "7510078170_FNOPortfolioDetails.csv")
+def _find_statement_file(account_number: str) -> str | None:
+    """Find the latest CSV in data/statements/ whose name contains the account number."""
+    pattern = os.path.join(_DATA_DIR, f"*{account_number}*.csv")
+    matches = sorted(glob.glob(pattern), reverse=True)  # latest first if multiple
+    return matches[0] if matches else None
+
+
+EQUITY_ACCOUNT = "7500069840"
+FNO_ACCOUNT    = "7510078170"
+
+# Resolved at import time; may be None if files don't exist yet
+EQUITY_CSV = _find_statement_file(EQUITY_ACCOUNT) or os.path.join(_DATA_DIR, f"{EQUITY_ACCOUNT}_PortFolioEqtAll.csv")
+FNO_CSV    = _find_statement_file(FNO_ACCOUNT)    or os.path.join(_DATA_DIR, f"{FNO_ACCOUNT}_FNOPortfolioDetails.csv")
 
 
 # ---------------------------------------------------------------------------
@@ -82,12 +94,14 @@ def _dte(expiry: date) -> int:
 # Equity CSV parser — transaction history → net holdings
 # ---------------------------------------------------------------------------
 
-def parse_equity_positions(csv_path: str = EQUITY_CSV) -> dict[str, dict]:
+def parse_equity_positions(csv_path: str | None = None) -> dict[str, dict]:
     """
     Reads ICICI equity transaction CSV and returns net holdings dict:
         {symbol: {"qty": int, "avg_cost": float, "name": str}}
     Only symbols with qty > 0 are returned.
     """
+    if csv_path is None:
+        csv_path = _find_statement_file(EQUITY_ACCOUNT) or EQUITY_CSV
     holdings: dict[str, dict[str, Any]] = defaultdict(
         lambda: {"qty": 0, "cost_total": 0.0, "name": ""}
     )
@@ -134,13 +148,15 @@ def parse_equity_positions(csv_path: str = EQUITY_CSV) -> dict[str, dict]:
 # FNO CSV parser — open position snapshot
 # ---------------------------------------------------------------------------
 
-def parse_fno_positions(csv_path: str = FNO_CSV) -> list[dict]:
+def parse_fno_positions(csv_path: str | None = None) -> list[dict]:
     """
     Reads ICICI FNO portfolio snapshot and returns open option legs:
         [{"underlying", "expiry", "strike", "right", "qty", "avg_price", "ltp",
           "unrealized_pnl", "realized_pnl"}]
     Skips rows with qty == 0 (closed positions in history).
     """
+    if csv_path is None:
+        csv_path = _find_statement_file(FNO_ACCOUNT) or FNO_CSV
     legs = []
     try:
         with open(csv_path, newline="", encoding="utf-8-sig") as f:

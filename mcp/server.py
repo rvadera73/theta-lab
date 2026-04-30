@@ -14,6 +14,21 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
+# Load .env from project root before anything else
+_env_file = Path(__file__).resolve().parent.parent / ".env"
+if _env_file.exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_env_file)
+    except ImportError:
+        # Fallback: parse .env manually
+        with open(_env_file) as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _, _v = _line.partition("=")
+                    os.environ.setdefault(_k.strip(), _v.strip())
+
 # Add mcp dir to path so relative imports work
 sys.path.insert(0, str(Path(__file__).parent))
 
