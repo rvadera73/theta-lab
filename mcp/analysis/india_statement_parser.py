@@ -220,9 +220,13 @@ def parse_fno_positions(csv_path: str | None = None) -> list[dict]:
 
 def build_positions_from_statements(
     india_cfg: dict | None = None,
+    equity_only: bool = False,
+    fno_only: bool = False,
 ) -> list[Position]:
     """
     Constructs Position objects from local CSV exports.
+    equity_only: return only equity positions (no FNO index positions)
+    fno_only: return only FNO index positions (no equity)
     Uses india_config.yaml for exit_trigger metadata if provided.
     """
     if india_cfg is None:
@@ -235,8 +239,8 @@ def build_positions_from_statements(
         if "icici_symbol" in e
     }
 
-    equity = parse_equity_positions()
-    fno_legs = parse_fno_positions()
+    equity = parse_equity_positions() if not fno_only else {}
+    fno_legs = parse_fno_positions() if not equity_only else []
 
     # Group FNO legs by underlying
     legs_by_underlying: dict[str, list[OptionLeg]] = defaultdict(list)
@@ -281,19 +285,20 @@ def build_positions_from_statements(
         seen.add(sym)
 
     # Index-based FNO positions (NIFTY, CNXBAN, NIFSEL) — no equity leg
-    for underlying, legs in legs_by_underlying.items():
-        if underlying not in seen:
-            pos = Position(
-                symbol=underlying,
-                account="INDIA",
-                shares=0,
-                stock_cost_basis=0.0,
-                current_price=0.0,
-            )
-            pos.option_legs = legs
-            pos._exit_trigger = None
-            pos._is_core      = False
-            positions.append(pos)
-            seen.add(underlying)
+    if not equity_only:
+        for underlying, legs in legs_by_underlying.items():
+            if underlying not in seen:
+                pos = Position(
+                    symbol=underlying,
+                    account="INDIA",
+                    shares=0,
+                    stock_cost_basis=0.0,
+                    current_price=0.0,
+                )
+                pos.option_legs = legs
+                pos._exit_trigger = None
+                pos._is_core      = False
+                positions.append(pos)
+                seen.add(underlying)
 
     return positions

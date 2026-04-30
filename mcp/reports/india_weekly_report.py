@@ -192,9 +192,35 @@ def _map_breeze_to_positions(raw_positions: list[dict]) -> list[Position]:
     return list(equity_map.values())
 
 
-# ---------------------------------------------------------------------------
-# Main report generator
-# ---------------------------------------------------------------------------
+def _map_breeze_equity_to_positions(raw_holdings: list[dict], india_cfg: dict) -> list[Position]:
+    """Convert live demat holdings from get_demat_holdings() into Position objects."""
+    core_portfolio = set(india_cfg.get("core_portfolio", []))
+    exit_triggers  = {e["symbol"]: e for e in india_cfg.get("exit_triggers", [])}
+    permanent_exits = set(india_cfg.get("permanent_exits", []))
+
+    positions = []
+    for h in raw_holdings:
+        symbol = h.get("symbol", "").strip()
+        if not symbol:
+            continue
+        qty   = int(h.get("quantity", 0) or 0)
+        avg   = float(h.get("avg_price", 0) or 0)
+        ltp   = float(h.get("ltp", 0) or 0)
+        pos = Position(
+            symbol=symbol,
+            account="INDIA",
+            shares=qty,
+            stock_cost_basis=avg,
+            current_price=ltp if ltp else avg,
+        )
+        pos._is_core      = symbol in core_portfolio
+        pos._exit_trigger = exit_triggers.get(symbol)
+        if symbol in permanent_exits:
+            pos._permanent_exit = True
+        positions.append(pos)
+    return positions
+
+
 
 async def generate_india_weekly_report(
     api_key: str,
@@ -263,9 +289,24 @@ async def generate_india_weekly_report(
     else:
         india_cfg = load_india_config()
         try:
-            from breeze_client import get_portfolio_positions
-            raw_positions = get_portfolio_positions(api_key, api_secret, session_token)
-            positions = _map_breeze_to_positions(raw_positions)
+            from breeze_client import get_portfolio_positions, get_demat_holdings
+
+            # FNO positions — always live from account 7510078170
+            raw_fno = get_portfolio_positions(api_key, api_secret, session_token)
+            positions = _map_breeze_to_positions(raw_fno)
+
+            # Equity holdings — live from account 7500069840 during market hours,
+            # CSV fallback outside market hours ("No Data Found" → empty list)
+            raw_equity = get_demat_holdings(api_key, api_secret, session_token)
+            if raw_equity:
+                equity_positions = _map_breeze_equity_to_positions(raw_equity, india_cfg)
+                positions.extend(equity_positions)
+                lines.append(f"_Live equity: {len(raw_equity)} holdings from ICICI demat._\n")
+            else:
+                equity_positions = build_positions_from_statements(india_cfg, fno_only=False, equity_only=True)
+                positions.extend(equity_positions)
+                lines.append("_Equity: loaded from local statement (demat API unavailable outside market hours)._\n")
+
         except Exception as e:
             lines.append(f"⚠️ Breeze API error ({e}) — falling back to local statements.\n")
             positions = build_positions_from_statements(india_cfg)

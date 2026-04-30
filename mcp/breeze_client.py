@@ -9,9 +9,22 @@ at https://api.icicidirect.com/apiuser/login
 from datetime import date, datetime
 from typing import Any
 
+# Single cached connection — re-used across all calls within the same process.
+# Key: (api_key, session_token) so a new day's token gets a fresh connection.
+_connection_cache: dict[tuple, Any] = {}
+
 
 def _breeze_connect(api_key: str, api_secret: str, session_token: str):
-    """Initialise and return an authenticated BreezeConnect instance."""
+    """Return a cached (or new) authenticated BreezeConnect instance.
+
+    One session serves both ICICI accounts (equity 7500069840 and FNO 7510078170)
+    since the session token is at user level.  Caching avoids the ~10s reconnect
+    overhead on every API call.
+    """
+    cache_key = (api_key, session_token)
+    if cache_key in _connection_cache:
+        return _connection_cache[cache_key]
+
     import sys
     import importlib.util
 
@@ -42,6 +55,7 @@ def _breeze_connect(api_key: str, api_secret: str, session_token: str):
         elif "config" in sys.modules:
             del sys.modules["config"]
 
+    _connection_cache[cache_key] = breeze
     return breeze
 
 
@@ -115,6 +129,45 @@ def get_portfolio_positions(api_key: str, api_secret: str, session_token: str) -
         })
 
     return positions
+
+
+def get_demat_holdings(api_key: str, api_secret: str, session_token: str) -> list[dict]:
+    """
+    Returns equity demat holdings from ICICI Direct (account 7500069840).
+
+    NOTE: ICICI's API only returns data during/shortly after market hours
+    (9:15 AM – ~6:00 PM IST).  Returns empty list with a warning outside those hours.
+
+    Each item has: symbol, isin, quantity, avg_price, ltp, market_value
+    """
+    breeze = _breeze_connect(api_key, api_secret, session_token)
+    resp = breeze.get_demat_holdings()
+
+    if not isinstance(resp, dict) or resp.get("Status") != 200:
+        error = resp.get("Error", "") if isinstance(resp, dict) else str(resp)
+        if "No Data Found" in str(error):
+            return []   # likely outside market hours — caller uses CSV fallback
+        return []
+
+    raw = resp.get("Success") or []
+    holdings = []
+    for h in raw:
+        if not isinstance(h, dict):
+            continue
+        qty = int(h.get("quantity", 0) or h.get("demat_quantity", 0) or 0)
+        avg = float(h.get("average_price", 0) or h.get("avg_price", 0) or 0)
+        ltp = float(h.get("ltp", 0) or 0)
+        holdings.append({
+            "symbol":       h.get("stock_code", "") or h.get("symbol", ""),
+            "isin":         h.get("isin_code", ""),
+            "exchange":     h.get("exchange_code", "NSE"),
+            "quantity":     qty,
+            "avg_price":    avg,
+            "ltp":          ltp,
+            "market_value": ltp * qty if ltp else avg * qty,
+            "_raw":         h,
+        })
+    return holdings
 
 
 def get_quotes(
