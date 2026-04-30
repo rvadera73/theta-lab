@@ -2,71 +2,133 @@
 # Script reads this at runtime; no Python changes needed.
 
 # ICICI Direct symbols to mark as KEEP in the equity P&L table.
-# Everything else is shown as WATCH.
+# Updated 2026-04-30: aligned to 5 growth themes —
+#   Power/Electricity | Defense | Hospitals | Real Estate | Value (Banking/Infra)
 core_portfolio:
-  - RELIND    # Reliance
-  - ADAPOR    # Adani Ports
-  - HDFBAN    # HDFC Bank
-  - BAJFI     # Bajaj Finance
-  - HINAER    # HAL
-  - APOHOS    # Apollo Hospitals
-  - TCS       # TCS
+  - HINAER    # HAL — Defense (zero debt, 30% profit growth)
+  - BHAELE    # BEL — Defense (zero debt, 20% profit growth)
+  - MAZDOC    # Mazagon Dock — Defense/Navy (zero debt)
+  - ADAPOW    # Adani Power — Electricity (92% profit growth)
+  - NTPC      # NTPC — Electricity (fwd PE 14.9x, value)
+  - APOHOS    # Apollo Hospitals — Healthcare
+  - YATHOS    # Yatharth Hospital — Healthcare (46% revenue growth)
+  - ADAPOR    # Adani Ports — Infrastructure (22% revenue growth)
+  - RELIND    # Reliance — Conglomerate (telecom/retail/renewables)
+  - HDFBAN    # HDFC Bank — Banking anchor (value)
+  - BAJFI     # Bajaj Finance — NBFC (48% revenue growth)
+  - DLFLIM    # DLF — Real Estate
+  - ZOMLIM    # Zomato — Consumer/Food Delivery (growth)
 
-# Overhaul exit triggers — 3-month phased plan.
-# trigger: 0 = sell immediately at any price.
-# shares: "all" or a number (for partial exits like NTPC).
-# Remove a row once the exit is executed in ICICI Direct.
+# Watchlist — target entry zones. Not yet purchased.
+watchlist:
+  - symbol: KAYNES
+    name: Kaynes Technology
+    sector: Electronics EMS / AI Hardware Supply Chain
+    thesis: India EMS boom, AI hardware supply chain, defence electronics
+    entry_zone_low: 3800
+    entry_zone_high: 4000
+    current_price: 4044
+    strategy: "2 tranches — buy 10 shares now near 4000, add 10 on dip to 3800"
+    max_position: 20  # shares
+
+  - symbol: SOLARINDS
+    name: Solar Industries
+    sector: Defense / Explosives / Ammunition
+    thesis: India defense indigenisation, ammunition demand surge
+    entry_zone_low: 14000
+    entry_zone_high: 14500
+    current_price: 15439
+    strategy: "Wait for pullback to 50 MA zone. Buy 5 shares."
+    max_position: 10  # shares
+
+  - symbol: GVTD
+    icici_symbol: "GE VERNOVA T&D"
+    name: GE Vernova T&D India Ltd
+    sector: Power T&D / Electricity Infrastructure
+    thesis: India power grid expansion, T&D capex supercycle
+    entry_zone_low: 3700
+    entry_zone_high: 4000
+    current_price: 4466
+    strategy: "Wait for 15-20% correction. Buy 5 shares per tranche."
+    max_position: 15  # shares
+
+  - symbol: POWERINDIA
+    name: Hitachi Energy India Ltd
+    sector: Power T&D / Electricity Infrastructure
+    thesis: Grid modernisation, transformer demand, energy transition
+    entry_zone_low: 25000
+    entry_zone_high: 27000
+    current_price: 33550
+    strategy: "Wait for 20%+ correction. At 52W high, don't chase."
+    max_position: 3  # shares (high price stock)
+
+# EXIT / REDUCE — data-driven portfolio cleanup
+# Phase 1 = act immediately / on bounce. Phase 2 = set limit orders.
 exit_triggers:
-  - icici_symbol: GENOVE
-    trigger: 0
-    shares: all
-    phase: 1
-    action: "Sell all — immediate, any price"
+  # --- Already executed — remove after confirming in ICICI Direct ---
+  # GENOVE: sold
+  # SUZENE: sold
+  # ANARAJ: not in holdings
 
-  - icici_symbol: SUZENE
-    trigger: 0
-    shares: all
-    phase: 1
-    action: "Sell all — immediate, any price"
-
+  # --- Phase 1: Cut losses / trim on bounce ---
   - icici_symbol: HCLTEC
     trigger: 1265
     shares: all
     phase: 1
-    action: "Sell on bounce >= 1,265"
+    action: "Cut loss on bounce >= 1,265 (IT headwinds, flat earnings)"
 
+  - icici_symbol: STABAN
+    trigger: 0
+    shares: all
+    phase: 1
+    action: "Exit immediately — -40% earnings growth, insurance sector headwinds, -43% loss"
+
+  - icici_symbol: DIXTEC
+    trigger: 12000
+    shares: all
+    phase: 1
+    action: "Sell on bounce >= 12,000 (2% revenue growth, fwd PE expensive, -32% in 1Y)"
+
+  - icici_symbol: DRREDD
+    trigger: 1350
+    shares: all
+    phase: 1
+    action: "Exit on bounce >= 1,350 — pharma not in core theme, -14% earnings growth"
+
+  # --- Phase 2: Near-trigger limit orders ---
   - icici_symbol: NTPC
     trigger: 414
     shares: 75
-    phase: 1
-    action: "Sell 75 of 150 shares >= 414"
-
-  - icici_symbol: MAZDOC
-    trigger: 2800
-    shares: all
     phase: 2
-    action: "Exit all >= 2,800"
-
-  - icici_symbol: ANARAJ
-    trigger: 520
-    shares: all
-    phase: 2
-    action: "Exit all >= 520"
-
-  - icici_symbol: YATHOS
-    trigger: 750
-    shares: all
-    phase: 2
-    action: "Exit all >= 750"
+    action: "Trim 75 of 200 shares >= 414 (reduce concentration, redeploy to KAYNES/GVT&D)"
 
   - icici_symbol: ADAPOW
     trigger: 230
     shares: all
     phase: 2
-    action: "Exit all >= 230"
+    action: "Exit >= 230 — take 38%+ gain, re-enter lower (stock ran 108% in 1Y)"
+
+  - icici_symbol: MAZDOC
+    trigger: 2800
+    shares: all
+    phase: 2
+    action: "Exit all >= 2,800 — redeploy to SOLARINDS/KAYNES for same defense theme"
 
   - icici_symbol: HERHON
     trigger: 5500
     shares: all
     phase: 2
-    action: "Exit all >= 5,500"
+    action: "Exit >= 5,500 — auto 2W not in core 5 themes, EV transition risk"
+
+  - icici_symbol: YATHOS
+    trigger: 820
+    shares: all
+    phase: 2
+    action: "Exit all at market — already above 750 trigger (sell at open)"
+
+  - icici_symbol: TCS
+    trigger: 2700
+    shares: 15
+    phase: 2
+    action: "Trim 15 of 30 shares >= 2,700 — IT headwinds, US slowdown risk, redeploy"
+
