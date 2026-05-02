@@ -28,9 +28,13 @@ _DATA_DIR = os.path.join(_PROJECT_ROOT, "data", "statements")
 _INDIA_CONFIG = os.path.join(_PROJECT_ROOT, "data", "india_config.yaml")
 
 def _find_statement_file(account_number: str) -> str | None:
-    """Find the latest CSV in data/statements/ whose name contains the account number."""
-    pattern = os.path.join(_DATA_DIR, f"*{account_number}*.csv")
-    matches = sorted(glob.glob(pattern), reverse=True)  # latest first if multiple
+    """Find the latest statement in data/statements/ whose name contains the account number.
+    Accepts .csv and .xls (ICICI exports both; both are plain text, tab- or comma-separated).
+    """
+    matches = []
+    for ext in ("*.csv", "*.xls"):
+        matches.extend(glob.glob(os.path.join(_DATA_DIR, f"*{account_number}*{ext[1:]}")))
+    matches = sorted(matches, key=os.path.getmtime, reverse=True)  # newest first
     return matches[0] if matches else None
 
 
@@ -108,7 +112,11 @@ def parse_equity_positions(csv_path: str | None = None) -> dict[str, dict]:
 
     try:
         with open(csv_path, newline="", encoding="utf-8-sig") as f:
-            reader = csv.DictReader(f)
+            # ICICI exports as tab-separated .xls or comma-separated .csv — auto-detect
+            sample = f.read(2048)
+            f.seek(0)
+            delimiter = "\t" if sample.count("\t") > sample.count(",") else ","
+            reader = csv.DictReader(f, delimiter=delimiter)
             for row in reader:
                 sym    = row.get("Stock Symbol", "").strip()
                 action = row.get("Action", "").strip()

@@ -48,6 +48,44 @@ ACCOUNT_A_HASH = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")
 ACCOUNT_B_HASH = os.getenv("SCHWAB_ACCOUNT_B_HASH", "")
 ACCOUNT_C_HASH = os.getenv("SCHWAB_ACCOUNT_C_HASH", "")
 
+# ── Startup credential audit ──────────────────────────────────────────────────
+def _audit_credentials() -> None:
+    """Log which credentials are present at startup. Never prints values."""
+    import logging
+    _log = logging.getLogger("theta-lab")
+    required = {
+        "SCHWAB_API_KEY": os.getenv("SCHWAB_API_KEY", ""),
+        "SCHWAB_APP_SECRET": os.getenv("SCHWAB_APP_SECRET", ""),
+        "SCHWAB_ACCOUNT_A_HASH": ACCOUNT_A_HASH,
+        "SCHWAB_ACCOUNT_B_HASH": ACCOUNT_B_HASH,
+    }
+    optional = {
+        "SCHWAB_ACCOUNT_C_HASH": ACCOUNT_C_HASH,
+        "BREEZE_API_KEY": os.getenv("BREEZE_API_KEY", ""),
+        "BREEZE_SESSION_TOKEN": os.getenv("BREEZE_SESSION_TOKEN", ""),
+    }
+    missing = [k for k, v in required.items() if not v]
+    present = [k for k, v in required.items() if v]
+    _log.info("[theta-lab] ── Credential audit ──────────────────────")
+    for k in present:
+        _log.info(f"[theta-lab]   ✅ {k} = ***loaded***")
+    for k in missing:
+        _log.warning(f"[theta-lab]   ❌ {k} = MISSING — live Schwab tools will fail")
+    for k, v in optional.items():
+        status = "✅ loaded" if v else "⚠️  not set"
+        _log.info(f"[theta-lab]   {status}: {k}")
+    if missing:
+        _log.warning(
+            "[theta-lab] Fix: add missing vars to ~/.claude.json "
+            "(mcpServers.theta-lab.env) or project .env, then restart."
+        )
+    else:
+        _log.info("[theta-lab] ✅ All required credentials present — live tools enabled")
+    _log.info("[theta-lab] ────────────────────────────────────────────")
+
+_audit_credentials()
+# ─────────────────────────────────────────────────────────────────────────────
+
 app = Server("theta-lab")
 
 
@@ -251,18 +289,155 @@ async def call_tool(name: str, arguments: dict):
         elif name == "get_portfolio_pnl":
             if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            # Full implementation requires live Schwab data
-            return [TextContent(type="text", text=_schwab_data_required("get_portfolio_pnl"))]
+            from schwab_client import get_all_positions, get_quotes
+            from analysis.pnl import parse_schwab_positions
+            from config import Regime, PROFIT_TARGETS
+            regime_data = detect_regime()
+            regime = regime_data["regime"]
+            account_filter = arguments.get("account", "both")
+            acct_map = []
+            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
+                acct_map.append((ACCOUNT_A_HASH, "A"))
+            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
+                acct_map.append((ACCOUNT_B_HASH, "B"))
+            lines = [f"## Portfolio P&L — Account {account_filter.upper()}", f"**Regime:** {regime} | **Profit target:** {int(PROFIT_TARGETS[Regime(regime)][0]*100)}-{int(PROFIT_TARGETS[Regime(regime)][1]*100)}%", ""]
+            for acct_hash, acct_label in acct_map:
+                try:
+                    raw = await get_all_positions(acct_hash)
+                    symbols = list({
+                        (p.get("instrument", {}).get("underlyingSymbol")
+                         or p.get("instrument", {}).get("symbol", "").split()[0])
+                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                    })
+                    quotes = await get_quotes(symbols)
+                    positions = parse_schwab_positions(raw, acct_label, quotes)
+                    positions.sort(key=lambda p: p.combined_net_pnl)
+                    lines.append(f"### Account {acct_label}")
+                    lines.append("| Symbol | Price | Net P&L | Premium Rcvd | Cost-to-Close | % Captured | Signal |")
+                    lines.append("|--------|-------|---------|-------------|---------------|-----------|--------|")
+                    for pos in positions:
+                        pnl = pos.combined_net_pnl
+                        pct = pos.profit_pct_of_max
+                        sig = pos.profit_take_signal(regime)
+                        loss = pos.loss_flag()
+                        flag = "🔴 LOSS FLAG" if loss["flag"] else ("✅ TAKE PROFIT" if sig["signal"] else "🟢 HOLD")
+                        lines.append(
+                            f"| {pos.symbol} | ${pos.current_price:,.2f} | {'+'if pnl>=0 else ''}{pnl:,.0f} "
+                            f"| ${pos.total_premium_received:,.0f} | ${pos.total_cost_to_close_options:,.0f} "
+                            f"| {round(pct*100,1) if pct else 'N/A'}% | {flag} |"
+                        )
+                    lines.append("")
+                except Exception as e:
+                    lines.append(f"⚠️ Account {acct_label} error: {e}")
+            return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "scan_profit_take_candidates":
-            if not ACCOUNT_A_HASH:
+            if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            return [TextContent(type="text", text=_schwab_data_required("scan_profit_take_candidates"))]
+            from schwab_client import get_all_positions, get_quotes
+            from analysis.pnl import parse_schwab_positions
+            from config import Regime, PROFIT_TARGETS
+            regime_data = detect_regime()
+            regime = regime_data["regime"]
+            low, high = PROFIT_TARGETS[Regime(regime)]
+            account_filter = arguments.get("account", "both")
+            acct_map = []
+            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
+                acct_map.append((ACCOUNT_A_HASH, "A"))
+            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
+                acct_map.append((ACCOUNT_B_HASH, "B"))
+            candidates = []
+            for acct_hash, acct_label in acct_map:
+                try:
+                    raw = await get_all_positions(acct_hash)
+                    symbols = list({
+                        (p.get("instrument", {}).get("underlyingSymbol")
+                         or p.get("instrument", {}).get("symbol", "").split()[0])
+                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                    })
+                    quotes = await get_quotes(symbols)
+                    positions = parse_schwab_positions(raw, acct_label, quotes)
+                    for pos in positions:
+                        sig = pos.profit_take_signal(regime)
+                        if sig["signal"]:
+                            candidates.append((pos, acct_label, sig))
+                except Exception as e:
+                    pass
+            candidates.sort(key=lambda x: x[2]["pct_captured"], reverse=True)
+            lines = [
+                f"## Profit-Take Candidates",
+                f"**Regime:** {regime} | **Threshold:** {int(low*100)}-{int(high*100)}% of premium received",
+                f"**{len(candidates)} position(s) at or past profit target**", ""
+            ]
+            if not candidates:
+                lines.append("✅ No positions currently at profit target.")
+            for pos, acct, sig in candidates:
+                lines += [
+                    f"### {pos.symbol} — Account {acct} — {sig['pct_captured']}% captured",
+                    f"- Premium received: ${pos.total_premium_received:,.0f}",
+                    f"- Cost to close: ${pos.total_cost_to_close_options:,.0f}",
+                    f"- Net P&L (combined): ${pos.combined_net_pnl:,.0f}",
+                    f"- **Action:** {sig['recommendation']}",
+                    ""
+                ]
+            return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "scan_roll_candidates":
-            if not ACCOUNT_A_HASH:
+            if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            return [TextContent(type="text", text=_schwab_data_required("scan_roll_candidates"))]
+            from schwab_client import get_all_positions, get_quotes
+            from analysis.pnl import parse_schwab_positions
+            from config import RISK
+            account_filter = arguments.get("account", "both")
+            acct_map = []
+            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
+                acct_map.append((ACCOUNT_A_HASH, "A"))
+            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
+                acct_map.append((ACCOUNT_B_HASH, "B"))
+            roll_items = []
+            for acct_hash, acct_label in acct_map:
+                try:
+                    raw = await get_all_positions(acct_hash)
+                    symbols = list({
+                        (p.get("instrument", {}).get("underlyingSymbol")
+                         or p.get("instrument", {}).get("symbol", "").split()[0])
+                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                    })
+                    quotes = await get_quotes(symbols)
+                    positions = parse_schwab_positions(raw, acct_label, quotes)
+                    for pos in positions:
+                        roll = pos.roll_signal()
+                        loss = pos.loss_flag()
+                        itm_legs = [lg for lg in pos.option_legs if
+                                    (lg.option_type == "PUT" and pos.current_price < lg.strike) or
+                                    (lg.option_type == "CALL" and pos.current_price > lg.strike)]
+                        if roll["signal"] or loss["flag"] or itm_legs:
+                            roll_items.append({
+                                "pos": pos, "acct": acct_label,
+                                "roll": roll, "loss": loss,
+                                "itm_legs": itm_legs,
+                                "priority": 1 if (loss["flag"] or any(lg.dte <= 13 for lg in pos.option_legs)) else 2,
+                            })
+                except Exception as e:
+                    pass
+            roll_items.sort(key=lambda x: (x["priority"], min((lg.dte for lg in x["pos"].option_legs), default=999)))
+            lines = [f"## Roll Candidates — {len(roll_items)} position(s) need attention", ""]
+            if not roll_items:
+                lines.append("✅ No roll candidates. All positions healthy.")
+            for item in roll_items:
+                pos, acct = item["pos"], item["acct"]
+                lines.append(f"### {'🚨' if item['priority']==1 else '🔶'} {pos.symbol} — Account {acct} | ${pos.current_price:,.2f}")
+                if item["loss"]["flag"]:
+                    lf = item["loss"]
+                    lines.append(f"- ⚠️ Loss flag: {lf['multiplier']}x premium | Premium: ${lf['premium_received']:,.0f} → Cost to close: ${lf['current_cost_to_close']:,.0f}")
+                if item["roll"]["signal"]:
+                    for leg_str in item["roll"]["legs"]:
+                        lines.append(f"- 🔄 Roll needed: {leg_str}")
+                for lg in item["itm_legs"]:
+                    pct = abs(pos.current_price - lg.strike) / pos.current_price * 100
+                    lines.append(f"- 🔴 ITM: {lg.option_type} ${lg.strike} exp {lg.expiry} ({lg.dte} DTE) — {pct:.1f}% in the money")
+                lines.append("")
+            return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "dry_run_order":
             symbol = arguments.get("symbol", "")
