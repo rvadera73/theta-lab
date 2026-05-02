@@ -300,6 +300,73 @@ def _action_card(symbol: str, action: str, reason: str, priority: str, details: 
 </div>"""
 
 
+def _build_screener_section(candidates: list[dict], title: str) -> str:
+    visible = [c for c in candidates if c.get("signal") in {"ENTER_NOW", "WATCH"}]
+    visible.sort(
+        key=lambda c: (
+            {"ENTER_NOW": 0, "WATCH": 1}.get(c.get("signal", "WATCH"), 1),
+            -float(c.get("opportunity_score", 0) or 0),
+        )
+    )
+    source = visible[0] if visible else (candidates[0] if candidates else {})
+    regime = source.get("regime", "TRANSITIONING")
+    heavy_sectors = source.get("heavy_sectors") or []
+    concentration = ", ".join(heavy_sectors) if heavy_sectors else "None"
+    currency = "₹" if "India" in title else "$"
+
+    if not visible:
+        return f"""
+<div style="background:white;margin-top:8px;padding:20px 24px;">
+  <div style="font-size:18px;font-weight:bold;margin-bottom:6px;">{title}</div>
+  <div style="font-size:13px;color:#666;line-height:1.8;">
+    Regime: <b>{regime}</b> &nbsp;|&nbsp; Portfolio concentration: <b>{concentration}</b><br>
+    No ENTER_NOW or WATCH candidates cleared the live filters this run.
+  </div>
+</div>"""
+
+    cards = ""
+    for candidate in visible:
+        signal = candidate.get("signal", "WATCH")
+        badge_color = "#1a7a1a" if signal == "ENTER_NOW" else "#b87800"
+        tier = candidate.get("tier", "—")
+        price = candidate.get("price")
+        price_text = f"{currency}{float(price):,.2f}" if price is not None else "—"
+        rsi = candidate.get("rsi")
+        rsi_text = f"{float(rsi):.1f}" if rsi is not None else "—"
+        ivr = candidate.get("ivr")
+        ivr_text = f"{float(ivr):.1f}" if ivr is not None else "—"
+        est_monthly_pct = candidate.get("est_monthly_pct")
+        est_text = f"{float(est_monthly_pct):.1f}%/mo" if est_monthly_pct is not None else "—"
+        pct_off_high = candidate.get("pct_off_high")
+        pct_off_high_text = f"{float(pct_off_high):.1f}% off 52w high" if pct_off_high is not None else "52w high n/a"
+        earnings_days = candidate.get("earnings_days")
+        earnings_line = (
+            f'<div style="font-size:12px;color:#b87800;margin-top:6px;">⚠️ earnings in {earnings_days} days</div>'
+            if candidate.get("earnings_soon") and earnings_days is not None
+            else ""
+        )
+        cards += f"""
+  <div style="border:1px solid #ececec;border-radius:8px;padding:14px 16px;margin-top:10px;background:#fcfcfc;">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div style="font-size:15px;font-weight:bold;"><span style="background:{badge_color};color:white;padding:3px 8px;border-radius:4px;font-size:11px;">{signal}</span> {candidate.get('symbol', '')} <span style="font-size:12px;color:#666;font-weight:normal;">{candidate.get('sector', '')}</span></div>
+      <div><span style="background:#e9eef5;color:#334;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:bold;">Tier {tier}</span></div>
+    </div>
+    <div style="font-size:13px;color:#444;line-height:1.8;margin-top:6px;">
+      Price: <b>{price_text}</b> &nbsp;|&nbsp; RSI: <b>{rsi_text}</b> &nbsp;|&nbsp; IVR: <b>{ivr_text}</b> &nbsp;|&nbsp; ~<b>{est_text}</b> premium est.<br>
+      Strategy: <b>{candidate.get('strategy', '—')}</b> &nbsp;|&nbsp; {pct_off_high_text}
+    </div>
+    <div style="font-size:12px;color:#666;margin-top:6px;line-height:1.7;">{candidate.get('reason', '')}</div>
+    {earnings_line}
+  </div>"""
+
+    return f"""
+<div style="background:white;margin-top:8px;padding:20px 24px;">
+  <div style="font-size:18px;font-weight:bold;margin-bottom:6px;">{title}</div>
+  <div style="font-size:13px;color:#666;line-height:1.8;">Regime: <b>{regime}</b> &nbsp;|&nbsp; Portfolio concentration: <b>{concentration}</b></div>
+  {cards}
+</div>"""
+
+
 def build_weekly_combined_html(data: dict, report_date: str = None) -> str:
     """Build a readable weekly combined report email."""
     import re
@@ -710,6 +777,9 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
     india_section = _progress_bar(float(india.get("pace", 0) or 0), float(india.get("target", 1) or 1), "India F&O pace")
     india_section += _table(["Symbol", "Premium", "Current P&L", "Alignment"], india.get("rows", []))
 
+    us_screener_section = _build_screener_section(data.get("us_screener", []), "🔍 New Entry Opportunities — US")
+    india_screener_section = _build_screener_section(data.get("india_screener", []), "🔍 New Entry Opportunities — India NSE")
+
     bev_table = _table(["Symbol", "Shares", "Remaining Loss", "CC / Month", "Months to Breakeven"], data.get("breakeven_rows", []))
 
     # --- Gap Closure Section ---
@@ -909,6 +979,8 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
   </div>
   {ytd_section}
   {gap_closure_section}
+  {us_screener_section}
+  {india_screener_section}
   <div style="background:white;margin-top:8px;padding:20px 24px;">
     <div style="font-size:18px;font-weight:bold;margin-bottom:12px;">How did {header.get('previous_month', 'last month')} go?</div>
     <div style="font-size:13px;line-height:1.9;color:#444;">{'<br>'.join(traffic_lines)}</div>

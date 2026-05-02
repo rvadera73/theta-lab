@@ -23,7 +23,10 @@ from reports.report_utils import (
     project_value,
     save_html,
 )
+from analysis.india_regime import detect_india_regime
+from analysis.regime import detect_regime
 from config import ACCOUNT_A, ACCOUNT_B, ACCOUNT_C
+from reports.dynamic_screener import screen_india_opportunities, screen_us_opportunities
 from routines.email_report import build_monthly_objectives_html
 
 
@@ -36,6 +39,8 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
     snapshot = load_snapshot()
     txns = us.get("transactions", {})
     kpis = combined_kpis(txns, snapshot)
+    regime_data = detect_regime()
+    india_regime_data = detect_india_regime()
 
     account_a_last = monthly_premium(txns.get("A", []), prior_month)
     account_b_last = monthly_premium(txns.get("B", []), prior_month)
@@ -283,6 +288,11 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
         "active_aum": active_aum_estimate,
     }
 
+    india_vix = (
+        india_regime_data.get("signals", {}).get("india_vix", {}).get("value")
+        if isinstance(india_regime_data.get("signals", {}).get("india_vix", {}), dict)
+        else None
+    )
     data = {
         "title": "Theta-Lab Monthly Objectives Report",
         "data_source": f"US: {us['data_source']} | India: {india['data_source']}",
@@ -294,6 +304,9 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
         "breakeven_rows": assigned_rows,
         "gap_actions": gap_actions,
         "india_objectives": india_summary,
+        "regime": regime_data,
+        "india_regime": india_regime_data,
+        "india_vix": india_vix if india_vix is not None else 15.0,
         "ytd": {
             "income": ytd_income,
             "annual_target": annual_target,
@@ -305,6 +318,18 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
         },
         "gap_closure": gap_closure,
     }
+
+    # Dynamic screener — regime-aware new entry candidates
+    regime_str = data.get("regime", {}).get("regime", "TRANSITIONING")
+    current_us_symbols = [p.symbol for p in us.get("positions", [])]
+    current_india_symbols = [p.symbol for p in india.get("positions", [])] if india.get("positions") else []
+
+    us_candidates = screen_us_opportunities(regime_str, current_us_symbols, top_n=8)
+    india_candidates = screen_india_opportunities(
+        data.get("india_vix", 15.0), current_india_symbols, top_n=6
+    )
+    data["us_screener"] = us_candidates
+    data["india_screener"] = india_candidates
 
     html = build_monthly_objectives_html(data, today.strftime("%B %d, %Y"))
     path = save_html("monthly_objectives", html, today) if save_to_file else None
