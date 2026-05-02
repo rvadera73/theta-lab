@@ -22,6 +22,7 @@ from reports.report_utils import (
     project_value,
     save_html,
 )
+from config import ACCOUNT_A, ACCOUNT_B, ACCOUNT_C
 from routines.email_report import build_monthly_objectives_html
 
 
@@ -37,18 +38,24 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
 
     account_a_last = monthly_premium(txns.get("A", []), prior_month)
     account_b_last = monthly_premium(txns.get("B", []), prior_month)
+    account_c_last = monthly_premium(txns.get("C", []), prior_month)
     account_a_pace = project_value(monthly_premium(txns.get("A", []), current_month), today)
     account_b_pace = project_value(monthly_premium(txns.get("B", []), current_month), today)
+    account_c_pace = project_value(monthly_premium(txns.get("C", []), current_month), today)
     india_last = sum(max(0.0, leg.premium_received) for pos in india["positions"] for leg in pos.option_legs)
     india_pace = india_last
 
-    combined_last = account_a_last + account_b_last
-    combined_pace = account_a_pace + account_b_pace
+    account_a_target = round(ACCOUNT_A["target_weekly_pnl"] * 4.33)
+    account_b_target = round(ACCOUNT_B["target_weekly_pnl"] * 4.33)
+    account_c_target = ACCOUNT_C["target_weekly_pnl"]
+    combined_last = account_a_last + account_b_last + account_c_last
+    combined_pace = account_a_pace + account_b_pace + account_c_pace
 
     income_rows = [
         ["Combined monthly income", "$100,000", f"${combined_last:,.0f}", f"${combined_pace:,.0f}", f"${100000 - combined_pace:,.0f}", "ON TRACK" if combined_pace >= 100000 else "BEHIND"],
-        ["Account A premium", "$7,000", f"${account_a_last:,.0f}", f"${account_a_pace:,.0f}", f"${7000 - account_a_pace:,.0f}", "ON TRACK" if account_a_pace >= 7000 else "BEHIND"],
-        ["Account B premium", "$2,000", f"${account_b_last:,.0f}", f"${account_b_pace:,.0f}", f"${2000 - account_b_pace:,.0f}", "ON TRACK" if account_b_pace >= 2000 else "BEHIND"],
+        ["Account A premium", f"${account_a_target:,.0f}", f"${account_a_last:,.0f}", f"${account_a_pace:,.0f}", f"${account_a_target - account_a_pace:,.0f}", "ON TRACK" if account_a_pace >= account_a_target else "BEHIND"],
+        ["Account B premium", f"${account_b_target:,.0f}", f"${account_b_last:,.0f}", f"${account_b_pace:,.0f}", f"${account_b_target - account_b_pace:,.0f}", "ON TRACK" if account_b_pace >= account_b_target else "BEHIND"],
+        ["Account C premium", f"${account_c_target:,.0f}", f"${account_c_last:,.0f}", f"${account_c_pace:,.0f}", f"${account_c_target - account_c_pace:,.0f}", "ON TRACK" if account_c_pace >= account_c_target else "BEHIND"],
         ["India FNO premium", "₹50,000", f"₹{india_last:,.0f}", f"₹{india_pace:,.0f}", f"₹{50000 - india_pace:,.0f}", "ON TRACK" if india_pace >= 50000 else "BEHIND"],
     ]
 
@@ -108,11 +115,11 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
                     "priority": "WATCH",
                     "details": f"Current CC income {row[3]} against {row[2]} remaining loss.",
                 })
-    if account_a_pace < 7000:
+    if account_a_pace < account_a_target:
         gap_actions.append({
             "symbol": "Account A",
             "action": "Increase premium harvest from best liquid strangles / CCs",
-            "reason": f"Projected ${account_a_pace:,.0f} vs $7,000 target.",
+            "reason": f"Projected ${account_a_pace:,.0f} vs ${account_a_target:,.0f} target.",
             "priority": "WATCH",
             "details": "Only in compliant regime; otherwise recycle capital from profit-takes.",
         })

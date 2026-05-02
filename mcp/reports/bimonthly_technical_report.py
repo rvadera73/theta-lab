@@ -70,7 +70,7 @@ async def generate_bimonthly_technical_report(send_email: bool = True, save_to_f
 
     option_rows = []
     for pos in sorted(us["positions"], key=lambda p: (p.symbol, min([leg.dte for leg in p.option_legs] or [999]))):
-        tier = "A" if pos.account == "A" else "B"
+        account_label = pos.account
         tech = technical_snapshot(pos.symbol)
         for leg in pos.option_legs:
             moneyness = ((pos.current_price - leg.strike) / pos.current_price * 100) if pos.current_price else 0
@@ -83,7 +83,7 @@ async def generate_bimonthly_technical_report(send_email: bool = True, save_to_f
                 f"{moneyness:.1f}%",
                 str(tech.get("rsi") or "—"),
                 "Above" if tech.get("above_50") else "Below" if tech.get("above_50") is False else "—",
-                tier,
+                account_label,
                 f"${leg.current_mark:,.0f}",
                 action_for_option_leg(pos.current_price, leg.strike, leg.option_type, leg.dte),
             ])

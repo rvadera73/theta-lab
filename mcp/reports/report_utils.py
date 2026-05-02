@@ -29,6 +29,7 @@ FROM_EMAIL = "onboarding@resend.dev"
 _ACCOUNT_FILES = {
     "A": "Individual_XXX232_Transactions_*.csv",
     "B": "Contributory_XXX275_Transactions_*.csv",
+    "C": "Designated_XXX8634_Transactions_*.csv",
 }
 
 _INDIA_SYMBOL_MAP = {
@@ -421,8 +422,13 @@ def fallback_us_positions() -> dict[str, Any]:
         symbol = item.get("symbol")
         if not symbol:
             continue
-        key = (item.get("account", "A"), symbol)
-        account = "A" if "232" in item.get("account", "") else "B"
+        raw_account = str(item.get("account", "A"))
+        if "8634" in raw_account or "634" in raw_account or raw_account.strip().upper() == "C":
+            account = "C"
+        elif "275" in raw_account or raw_account.strip().upper() == "B":
+            account = "B"
+        else:
+            account = "A"
         positions[(account, symbol)] = Position(
             symbol=symbol,
             account=account,
@@ -456,7 +462,7 @@ def fallback_us_positions() -> dict[str, Any]:
             pos.current_price = float(leg.get("underlying_price") or pos.current_price)
     return {
         "positions": list(positions.values()),
-        "balances": {"A": {}, "B": {}},
+        "balances": {"A": {}, "B": {}, "C": {}},
         "data_source": "SNAPSHOT (LIVE API UNAVAILABLE)",
         "warning": f"Using snapshot dated {snapshot.get('last_updated', 'unknown')} plus statement fallbacks.",
         "snapshot": snapshot,
@@ -467,14 +473,15 @@ def fallback_us_positions() -> dict[str, Any]:
 async def load_us_positions() -> dict[str, Any]:
     account_a_hash = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")
     account_b_hash = os.getenv("SCHWAB_ACCOUNT_B_HASH", "")
+    account_c_hash = os.getenv("SCHWAB_ACCOUNT_C_HASH", "")
     try:
-        if not account_a_hash and not account_b_hash:
+        if not account_a_hash and not account_b_hash and not account_c_hash:
             raise RuntimeError("Schwab account hashes not configured")
         from schwab_client import get_all_positions, get_quotes, get_balances
 
         all_positions: list[Position] = []
         balances: dict[str, dict[str, Any]] = {}
-        for acct_hash, label in ((account_a_hash, "A"), (account_b_hash, "B")):
+        for acct_hash, label in ((account_a_hash, "A"), (account_b_hash, "B"), (account_c_hash, "C")):
             if not acct_hash:
                 continue
             raw = await get_all_positions(acct_hash)

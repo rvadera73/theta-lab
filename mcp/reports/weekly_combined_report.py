@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from analysis.india_regime import detect_india_regime
 from analysis.regime import detect_regime
-from config import ACCOUNT_A, ACCOUNT_B, PROFIT_TARGETS, Regime
+from config import ACCOUNT_B, ACCOUNT_C
 from routines.email_report import build_weekly_combined_html
 from reports.report_utils import (
     combined_kpis,
@@ -77,6 +77,16 @@ async def generate_weekly_combined_report(send_email: bool = True, save_to_file:
     if not account_b_rows:
         account_b_rows = [["Data unavailable", "Fallback statements only", "—", "—", "Monitor manually"]]
 
+    account_c_positions = [p for p in us["positions"] if p.account == "C"]
+    account_c_rows = []
+    for pos in sorted(account_c_positions, key=lambda p: min([leg.dte for leg in p.option_legs] or [999])):
+        wheel_state = "CC" if pos.shares > 0 and any(leg.option_type == "CALL" for leg in pos.option_legs) else "CSP" if any(leg.option_type == "PUT" for leg in pos.option_legs) else "Assigned"
+        next_dte = min([leg.dte for leg in pos.option_legs] or [0])
+        alert = "⚠️ ≤21 DTE" if next_dte and next_dte <= 21 else "OK"
+        account_c_rows.append([pos.symbol, wheel_state, str(pos.shares), str(next_dte or "—"), alert])
+    if not account_c_rows:
+        account_c_rows = [["No positions", "—", "—", "—", "—"]]
+
     india_rows = []
     for pos in sorted(india_positions, key=lambda p: min([leg.dte for leg in p.option_legs] or [999])):
         if not pos.option_legs:
@@ -101,16 +111,25 @@ async def generate_weekly_combined_report(send_email: bool = True, save_to_file:
     if not earnings_rows:
         earnings_rows = [["None found", "—", "—", "Clear"]]
 
-    current_month = today.replace(day=1)
-    month_target = 100_000
     current_mtd = float(snapshot.get("month_to_date_premium", 0) or 0)
-    weekly_target = round(month_target / max(1, (today.replace(day=28) + timedelta(days=4)).day / 7), 0)
     ytd_target = round((today.timetuple().tm_yday / 365) * 1_200_000, 0)
+    weekly_target = 20_000
+    daily_target = 5_000
+    days_elapsed_this_week = today.weekday() + 1
+    days_remaining = max(0, 5 - today.weekday())
+    weekly_mtd = current_mtd / max(1, today.day) * 7
+    daily_pace = current_mtd / max(1, today.day)
     income_pace = {
-        "weekly_premium": current_mtd / max(1, today.day) * 7,
-        "weekly_target": 6731,
+        "weekly_premium": weekly_mtd,
+        "weekly_target": weekly_target,
+        "daily_pace": daily_pace,
+        "daily_target": daily_target,
+        "days_elapsed_this_week": days_elapsed_this_week,
+        "days_remaining_week": days_remaining,
+        "need_per_remaining_day": (weekly_target - current_mtd) / max(1, days_remaining) if days_remaining else 0,
         "ytd_premium": float(snapshot.get("ytd_net_options_income", 0) or 0),
         "ytd_target": ytd_target,
+        "mtd_premium": current_mtd,
     }
 
     balances = us.get("balances", {}).get("A", {})
@@ -138,6 +157,7 @@ async def generate_weekly_combined_report(send_email: bool = True, save_to_file:
         "india_regime": india_regime,
         "account_a_actions": account_a_actions,
         "account_b": {"rows": account_b_rows, "note": f"Target annual return: {ACCOUNT_B['target_annual_return']:.0%}"},
+        "account_c": {"rows": account_c_rows, "note": "Designated Beneficiary — CSP/CC only, no naked calls. Target: 12% annual."},
         "india_actions": india_rows,
         "income_pace": income_pace,
         "earnings_blackout": earnings_rows,
