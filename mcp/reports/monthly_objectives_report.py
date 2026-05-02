@@ -183,6 +183,106 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
         "rows": india_rows,
     }
 
+    # --- Gap Closure Analysis ---
+    months_remaining = max(0.5, 12 - months_elapsed)
+    remaining_to_target = max(0, annual_target - ytd_income)
+    required_monthly = round(remaining_to_target / months_remaining)
+
+    # Estimate idle CC potential per assigned position
+    _CC_YIELD = {  # approx monthly CC yield as % of market price × shares
+        "PYPL": 0.030,   # permanent exit — sell near-money aggressively
+        "MRNA": 0.030,   # permanent exit — aggressive CCs
+        "ADBE": 0.015,   # sell 5% OTM monthly
+        "CRM":  0.015,
+        "UNH":  0.015,
+        "JD":   0.020,
+        "XYZ":  0.020,
+        "ZBH":  0.020,
+    }
+    idle_cc_opportunities = []
+    total_idle_cc_potential = 0.0
+    for item in snapshot.get("assigned_positions", []):
+        sym = item["symbol"]
+        cc = float(item.get("monthly_cc", 0) or 0)
+        if cc > 0:
+            continue  # already active
+        shares = int(item.get("shares", 0) or 0)
+        price = current_price(sym) or float(item.get("cost_basis", 0) or 0)
+        if not shares or not price:
+            continue
+        yield_pct = _CC_YIELD.get(sym, 0.015)
+        potential = round(shares * price * yield_pct)
+        is_exit = sym in ("PYPL", "MRNA")
+        idle_cc_opportunities.append({
+            "symbol": sym,
+            "shares": shares,
+            "price": round(price, 2),
+            "potential": potential,
+            "note": "permanent exit — ATM calls to accelerate" if is_exit else "write 30d OTM call",
+        })
+        total_idle_cc_potential += potential
+
+    # Efficiency lever: improving capture rate 58% → 65%
+    current_capture = float((capture.get("capture_rate") or 0))
+    # Gross credits implied: ytd_income / capture_rate
+    gross_credits_est = ytd_income / max(current_capture / 100, 0.01) if current_capture else 0
+    improved_income_est = round(gross_credits_est * 0.65 - ytd_income) if gross_credits_est else 0
+    efficiency_monthly_gain = round(improved_income_est / max(months_elapsed, 1))
+
+    # Scenario projections (what year-end looks like under each path)
+    scenarios = [
+        {
+            "name": "Current pace (no change)",
+            "monthly": round(ytd_income / max(months_elapsed, 1)),
+            "color": "#cc2200",
+            "note": "Assumes Feb-level months recur. Needs discipline to avoid.",
+        },
+        {
+            "name": "Activate all idle CCs",
+            "monthly": round(ytd_income / max(months_elapsed, 1) + total_idle_cc_potential),
+            "color": "#b87800",
+            "note": f"Write CCs on {', '.join(i['symbol'] for i in idle_cc_opportunities[:4])} + others = +${total_idle_cc_potential:,.0f}/mo",
+        },
+        {
+            "name": "Idle CCs + improve capture to 65%",
+            "monthly": round(ytd_income / max(months_elapsed, 1) + total_idle_cc_potential + efficiency_monthly_gain),
+            "color": "#b87800",
+            "note": f"Tighten BTC discipline (+${efficiency_monthly_gain:,.0f}/mo from efficiency gains)",
+        },
+        {
+            "name": "Stretch: sustain April pace",
+            "monthly": 110_000,
+            "color": "#1a7a1a",
+            "note": "April was $110K — achievable if no more Feb-type months",
+        },
+    ]
+    for s in scenarios:
+        projected = round(ytd_income + s["monthly"] * months_remaining)
+        s["projected_year_end"] = projected
+        s["pct_of_target"] = round(projected / annual_target * 100)
+        s["gap_to_target"] = annual_target - projected
+
+    # Capital lever: how much extra AUM needed to close gap at current yield rate
+    active_aum_estimate = float(snapshot.get("active_options_aum") or 700_000)
+    if active_aum_estimate <= 0:
+        active_aum_estimate = 700_000
+    current_monthly_yield_pct = (ytd_income / max(months_elapsed, 1)) / active_aum_estimate
+    monthly_gap_to_close = max(0, required_monthly - (ytd_income / max(months_elapsed, 1) + total_idle_cc_potential + efficiency_monthly_gain))
+    capital_needed_to_close = round(monthly_gap_to_close / max(current_monthly_yield_pct, 0.001)) if monthly_gap_to_close > 0 else 0
+
+    gap_closure = {
+        "required_monthly": required_monthly,
+        "months_remaining": round(months_remaining, 1),
+        "remaining_to_target": remaining_to_target,
+        "idle_cc_opportunities": idle_cc_opportunities,
+        "total_idle_cc_potential": round(total_idle_cc_potential),
+        "efficiency_monthly_gain": efficiency_monthly_gain,
+        "scenarios": scenarios,
+        "capital_needed": capital_needed_to_close,
+        "monthly_yield_pct": round(current_monthly_yield_pct * 100, 2),
+        "active_aum": active_aum_estimate,
+    }
+
     data = {
         "title": "Theta-Lab Monthly Objectives Report",
         "data_source": f"US: {us['data_source']} | India: {india['data_source']}",
@@ -203,6 +303,7 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
             "monthly_breakdown": monthly_breakdown,
             "run_rate_annual": round(ytd_income / max(months_elapsed, 0.5) * 12),
         },
+        "gap_closure": gap_closure,
     }
 
     html = build_monthly_objectives_html(data, today.strftime("%B %d, %Y"))

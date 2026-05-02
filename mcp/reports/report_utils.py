@@ -29,7 +29,15 @@ FROM_EMAIL = "onboarding@resend.dev"
 _ACCOUNT_FILES = {
     "A": "Individual_XXX232_Transactions_*.csv",
     "B": "Contributory_XXX275_Transactions_*.csv",
-    "C": "Designated_XXX8634_Transactions_*.csv",
+    "C": "Designated_Bene_Individual_XXX634_Transactions_*.csv",  # fixed: actual filename prefix
+}
+
+# Files to NEVER load for premium calculations.
+# The Empower consolidated export mixes 14+ accounts (Robinhood IRAs, 401k mutual funds,
+# Traditional/Roth IRAs) in a different CSV format (Date,Account,Description,Category,Tags,Amount).
+# Parsing it as Schwab transactions produces garbage premium data.
+_EXCLUDED_FILE_STEMS = {
+    "2026-01-01 thru 2026-04-25 transactions",  # Empower all-account export
 }
 
 _INDIA_SYMBOL_MAP = {

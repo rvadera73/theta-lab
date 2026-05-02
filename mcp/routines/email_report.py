@@ -665,6 +665,9 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
     kpi_rows = data.get("kpi_rows", [])
     assigned = data.get("assigned_book", {})
     ytd = data.get("ytd", {})
+    # Extract ytd_income early — used in both ytd_section and gap_closure_section
+    ytd_income = float(ytd.get("income", 0) or 0)
+    months_elapsed = float(ytd.get("months_elapsed", 1) or 1)
     combined_row = income_rows[0] if income_rows else ["Combined monthly income", "$100,000", "$0", "$0", "$0", "BEHIND"]
     combined_target = max(1.0, _number(combined_row[1]))
     last_month_combined = _number(combined_row[2])
@@ -709,12 +712,116 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
 
     bev_table = _table(["Symbol", "Shares", "Remaining Loss", "CC / Month", "Months to Breakeven"], data.get("breakeven_rows", []))
 
+    # --- Gap Closure Section ---
+    gc = data.get("gap_closure", {})
+    req_monthly = float(gc.get("required_monthly", 0) or 0)
+    months_rem = float(gc.get("months_remaining", 8) or 8)
+    remaining = float(gc.get("remaining_to_target", 0) or 0)
+    idle_opps = gc.get("idle_cc_opportunities", [])
+    total_idle = float(gc.get("total_idle_cc_potential", 0) or 0)
+    eff_gain = float(gc.get("efficiency_monthly_gain", 0) or 0)
+    capital_needed = float(gc.get("capital_needed", 0) or 0)
+    aum = float(gc.get("active_aum", 700000) or 700000)
+    yield_pct = float(gc.get("monthly_yield_pct", 0) or 0)
+    gc_scenarios = gc.get("scenarios", [])
+
+    # Idle CC table
+    idle_rows_html = ""
+    for opp in idle_opps:
+        idle_rows_html += f"""
+<tr>
+  <td style="padding:7px 10px;border-bottom:1px solid #eee;font-weight:bold;">{opp['symbol']}</td>
+  <td style="padding:7px 10px;border-bottom:1px solid #eee;">{opp['shares']} sh @ ${opp['price']:,.0f}</td>
+  <td style="padding:7px 10px;border-bottom:1px solid #eee;color:#1a7a1a;font-weight:bold;">+${opp['potential']:,.0f}/mo</td>
+  <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:12px;color:#666;">{opp['note']}</td>
+</tr>"""
+    if idle_rows_html:
+        idle_table = f"""
+<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;">
+  <thead><tr style="background:#333;color:white;">
+    <th style="padding:7px 10px;text-align:left;">Symbol</th>
+    <th style="padding:7px 10px;text-align:left;">Position</th>
+    <th style="padding:7px 10px;text-align:left;">Potential</th>
+    <th style="padding:7px 10px;text-align:left;">Action</th>
+  </tr></thead>
+  <tbody>{idle_rows_html}</tbody>
+  <tfoot><tr style="background:#f0faf0;">
+    <td colspan="2" style="padding:7px 10px;font-weight:bold;">Total idle CC potential</td>
+    <td style="padding:7px 10px;color:#1a7a1a;font-weight:bold;">+${total_idle:,.0f}/mo</td>
+    <td style="padding:7px 10px;font-size:12px;color:#666;">= +${total_idle*12:,.0f}/year</td>
+  </tr></tfoot>
+</table>"""
+    else:
+        idle_table = '<div style="font-size:13px;color:#666;">All positions have active CC coverage.</div>'
+
+    # Scenario bars
+    scenario_html = ""
+    for s in gc_scenarios:
+        s_pct = min(100, int(s.get("pct_of_target", 0) or 0))
+        s_color = s.get("color", "#888")
+        yr_end = float(s.get("projected_year_end", 0) or 0)
+        gap = float(s.get("gap_to_target", 0) or 0)
+        gap_str = (f'<span style="color:#1a7a1a;">beat by ${abs(gap):,.0f}</span>' if gap <= 0
+                   else f'<span style="color:#cc2200;">${gap:,.0f} short</span>')
+        scenario_html += f"""
+<div style="margin:10px 0;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+    <span style="font-size:13px;font-weight:bold;">{s.get('name','')}</span>
+    <span style="font-size:13px;font-weight:bold;color:{s_color};">${yr_end:,.0f} ({s_pct}%) — {gap_str}</span>
+  </div>
+  <div style="background:#e8e8e8;height:12px;border-radius:6px;">
+    <div style="background:{s_color};width:{s_pct}%;height:12px;border-radius:6px;"></div>
+  </div>
+  <div style="font-size:11px;color:#888;margin-top:2px;">{s.get('note','')}</div>
+</div>"""
+
+    # Capital lever
+    monthly_gap_to_close = max(0, req_monthly - (round(ytd_income / max(months_elapsed, 1)) + total_idle + eff_gain))
+    if capital_needed > 0:
+        capital_html = f"""
+<div style="background:#fff8f7;border:1px solid #fde0de;border-radius:6px;padding:14px 16px;margin-top:14px;">
+  <div style="font-size:14px;font-weight:bold;color:#cc2200;margin-bottom:6px;">💰 Capital Alternative</div>
+  <div style="font-size:13px;color:#444;line-height:1.8;">
+    If you max out idle CCs and efficiency gains but still face a gap:<br>
+    <b>Additional capital needed: ${capital_needed:,.0f}</b> at your current {yield_pct:.1f}%/month yield on ${aum:,.0f} AUM.<br>
+    Deploying this into new strangle/CSP positions would generate the remaining ${monthly_gap_to_close:,.0f}/month needed.
+  </div>
+</div>"""
+    else:
+        capital_html = '<div style="font-size:13px;color:#1a7a1a;padding:10px 0;">✅ Gap can be closed through operational improvements — no additional capital required.</div>'
+
+    gap_closure_section = f"""
+<div style="background:white;margin-top:8px;padding:20px 24px;">
+  <div style="font-size:18px;font-weight:bold;margin-bottom:4px;">🎯 Gap Closure Plan — How to Hit $1.2M</div>
+  <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin:12px 0;font-size:13px;line-height:1.8;">
+    <b>The math:</b> You need <b>${remaining:,.0f}</b> more over <b>{months_rem:.0f} months</b> = <b>${req_monthly:,.0f}/month</b> required.<br>
+    Current average: <b>${round(ytd_income/max(months_elapsed,1)):,.0f}/month</b> &nbsp;·&nbsp;
+    Monthly gap to close: <b>${max(0, req_monthly - round(ytd_income/max(months_elapsed,1))):,.0f}</b>
+  </div>
+
+  <div style="font-size:15px;font-weight:bold;margin:16px 0 8px;">Lever 1 — Activate Idle CC Positions</div>
+  <div style="font-size:13px;color:#444;margin-bottom:6px;">
+    {len(idle_opps)} assigned positions have <b>$0 covered call income</b> this month. Writing monthly calls generates:
+  </div>
+  {idle_table}
+
+  <div style="font-size:15px;font-weight:bold;margin:16px 0 8px;">Lever 2 — Tighten Capture Rate (58% → 65%)</div>
+  <div style="background:#f9f9f9;border-radius:6px;padding:12px 14px;font-size:13px;color:#444;line-height:1.8;">
+    Closing positions at 50-60% of premium received (bear target) instead of letting them run or expire:<br>
+    Estimated additional income: <b>+${eff_gain:,.0f}/month</b> from recycling capital faster.
+  </div>
+
+  <div style="font-size:15px;font-weight:bold;margin:16px 0 8px;">Scenario Projections — Year-End Outcomes</div>
+  {scenario_html}
+
+  {capital_html}
+</div>"""
+
     # --- YTD Section ---
-    ytd_income = float(ytd.get("income", 0) or 0)
     ytd_annual_target = float(ytd.get("annual_target", 1_200_000) or 1_200_000)
     ytd_expected = float(ytd.get("ytd_expected", 0) or 0)
     ytd_gap = float(ytd.get("gap", 0) or 0)
-    ytd_months = float(ytd.get("months_elapsed", 1) or 1)
+    ytd_months = months_elapsed  # already extracted above
     ytd_run_rate = float(ytd.get("run_rate_annual", 0) or 0)
     ytd_pct = min(100, int(ytd_income / ytd_annual_target * 100)) if ytd_annual_target else 0
     ytd_bar_color = "#1a7a1a" if ytd_gap >= 0 else ("#b87800" if ytd_gap >= -50000 else "#cc2200")
@@ -801,6 +908,7 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
     </div>
   </div>
   {ytd_section}
+  {gap_closure_section}
   <div style="background:white;margin-top:8px;padding:20px 24px;">
     <div style="font-size:18px;font-weight:bold;margin-bottom:12px;">How did {header.get('previous_month', 'last month')} go?</div>
     <div style="font-size:13px;line-height:1.9;color:#444;">{'<br>'.join(traffic_lines)}</div>
