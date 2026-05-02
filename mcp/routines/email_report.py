@@ -267,3 +267,157 @@ def send_email(
         return {"success": False, "error": str(response)}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+def _progress_bar(current: float, target: float, label: str = "") -> str:
+    pct = min(100, int(current / target * 100)) if target else 0
+    color = "#1a7a1a" if pct >= 80 else ("#b87800" if pct >= 50 else "#cc2200")
+    return f"""
+<div style="margin:8px 0;">
+  <div style="font-size:12px;color:#666;">{label}</div>
+  <div style="background:#e0e0e0;height:10px;border-radius:5px;margin:4px 0;">
+    <div style="background:{color};width:{pct}%;height:10px;border-radius:5px;"></div>
+  </div>
+  <div style="font-size:11px;color:#666;">${current:,.0f} / ${target:,.0f} ({pct}%)</div>
+</div>"""
+
+
+def _warning_banner(message: str) -> str:
+    return f"""
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:10px 14px;margin:10px 0;font-size:13px;">
+  ⚠️ <b>DATA WARNING:</b> {message}
+</div>"""
+
+
+def _action_card(symbol: str, action: str, reason: str, priority: str, details: str = "") -> str:
+    color = _color(priority)
+    return f"""
+<div style="border-left:4px solid {color};padding:10px 14px;margin:8px 0;background:#fafafa;border-radius:0 4px 4px 0;">
+  <div style="font-size:14px;font-weight:bold;">{symbol} — {_badge(priority)}</div>
+  <div style="font-size:13px;color:#333;margin-top:4px;"><b>Action:</b> {action}</div>
+  <div style="font-size:12px;color:#666;margin-top:2px;">{reason}</div>
+  {f'<div style="font-size:12px;color:#444;margin-top:4px;">{details}</div>' if details else ''}
+</div>"""
+
+
+def build_weekly_combined_html(data: dict, report_date: str = None) -> str:
+    """Build HTML for the Sunday weekly combined US+India report."""
+    if not report_date:
+        report_date = datetime.now().strftime("%B %d, %Y")
+    header = data.get("header", {})
+    us_regime = data.get("us_regime", {})
+    india_regime = data.get("india_regime", {})
+    warning = _warning_banner(data["warning"]) if data.get("warning") else ""
+    header_html = f"""
+<div style="font-size:13px;line-height:1.7;">
+  <div><b>Date:</b> {header.get('date', report_date)}</div>
+  <div><b>US Regime:</b> {_badge(header.get('us_regime', 'WATCH'))} &nbsp; New entries: <b>{'YES' if header.get('us_entries') else 'NO'}</b></div>
+  <div><b>India Regime:</b> {_badge(header.get('india_regime', 'WATCH'))} &nbsp; New entries: <b>{'YES' if header.get('india_entries') else 'NO'}</b></div>
+  <div><b>Source:</b> {data.get('data_source', '—')}</div>
+</div>"""
+    us_table = _table(["Signal", "Value", "Status"], [
+        ["VIX", str(us_regime.get('signals', {}).get('vix', {}).get('value', '—')), us_regime.get('signals', {}).get('vix', {}).get('detail', 'Data unavailable')],
+        ["SPX vs 50d/200d", f"{us_regime.get('signals', {}).get('sp500_ma', {}).get('current', '—')} / {us_regime.get('signals', {}).get('sp500_ma', {}).get('ma50', '—')} / {us_regime.get('signals', {}).get('sp500_ma', {}).get('ma200', '—')}", us_regime.get('note', '')],
+    ])
+    india_table = _table(["Signal", "Value", "Status"], [
+        ["India VIX", str(india_regime.get('signals', {}).get('india_vix', {}).get('value', '—')), india_regime.get('signals', {}).get('india_vix', {}).get('detail', 'Data unavailable')],
+        ["Nifty vs 50d/200d", f"{india_regime.get('signals', {}).get('nifty50_ma', {}).get('current', '—')} / {india_regime.get('signals', {}).get('nifty50_ma', {}).get('ma50', '—')} / {india_regime.get('signals', {}).get('nifty50_ma', {}).get('ma200', '—')}", india_regime.get('note', '')],
+    ])
+    account_a_cards = "".join(_action_card(a.get("symbol", "?"), a.get("action", "Review"), a.get("reason", ""), a.get("priority", "WATCH"), a.get("details", "")) for a in data.get("account_a_actions", [])) or "<p style='font-size:13px;color:#666;'>No Account A actions flagged.</p>"
+    account_b_html = _table(["Symbol", "Wheel status", "Shares", "Next DTE", "Alert"], data.get("account_b", {}).get("rows", []))
+    if data.get("account_b", {}).get("note"):
+        account_b_html += f"<div style='font-size:12px;color:#666;margin-top:8px;'>{data['account_b']['note']}</div>"
+    india_actions_html = _table(["Symbol", "DTE", "Current P&L", "Action"], data.get("india_actions", []))
+    pace = data.get("income_pace", {})
+    income_html = _progress_bar(pace.get("weekly_premium", 0), pace.get("weekly_target", 1), "Weekly premium pace") + _progress_bar(pace.get("ytd_premium", 0), pace.get("ytd_target", 1), "YTD premium pace")
+    blackout_html = _table(["Symbol", "Earnings date", "Account", "Action"], data.get("earnings_blackout", []))
+    margin = data.get("margin_health", {})
+    margin_html = f"""
+<div style="font-size:13px;line-height:1.8;">
+  <div><b>Buying power:</b> ${margin.get('buying_power', 0):,.0f}</div>
+  <div><b>Option requirement ratio:</b> {margin.get('option_requirement_ratio', '—')}%</div>
+  <div style="color:#666;">{margin.get('note', '')}</div>
+</div>"""
+    kpis = data.get("kpis", {})
+    kpi_html = _table(["KPI", "Value", "Status"], [
+        ["Premium capture", f"{kpis.get('capture', {}).get('capture_rate', '—')}%", _badge(kpis.get('capture', {}).get('signal', 'WATCH'))],
+        ["Profit factor", str(kpis.get('profit_factor', {}).get('profit_factor', '—')), _badge(kpis.get('profit_factor', {}).get('signal', 'WATCH'))],
+        ["Sortino", str(kpis.get('sortino', {}).get('sortino_annualized', '—')), _badge(kpis.get('sortino', {}).get('signal', 'WATCH'))],
+    ])
+    return f"""
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:880px;margin:0 auto;color:#222;background:#fff;">
+  <div style="background:#1a1a2e;color:white;padding:20px 24px;border-radius:6px 6px 0 0;">
+    <h1 style="margin:0;font-size:22px;">Theta-Lab Weekly Combined Report</h1>
+    <div style="font-size:13px;color:#bbb;margin-top:4px;">{report_date}</div>
+  </div>
+  {warning}
+  {_section("Header", header_html)}
+  {_section("US Market Regime", us_table)}
+  {_section("India Regime", india_table)}
+  {_section("Account A Top 5 Actions", account_a_cards)}
+  {_section("Account B Summary", account_b_html)}
+  {_section("India FNO Actions", india_actions_html)}
+  {_section("Income Pace", income_html)}
+  {_section("Earnings Blackout (next 14 days)", blackout_html)}
+  {_section("Margin / Cash Health", margin_html)}
+  {_section("Portfolio KPIs", kpi_html)}
+  <div style="padding:12px 16px;font-size:11px;color:#999;border-top:1px solid #eee;margin-top:20px;">Generated by Theta-Lab on {datetime.now().strftime('%Y-%m-%d %H:%M')}.</div>
+</body></html>"""
+
+
+def build_bimonthly_technical_html(data: dict, report_date: str = None) -> str:
+    """Build HTML for the 15th bi-monthly technical analysis report."""
+    if not report_date:
+        report_date = datetime.now().strftime("%B %d, %Y")
+    warning = _warning_banner(data["warning"]) if data.get("warning") else ""
+    exits_html = "".join(_action_card(item.get("symbol", "?"), item.get("status", "Monitor"), item.get("progress", ""), "WATCH") for item in data.get("permanent_exits", []))
+    return f"""
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:980px;margin:0 auto;color:#222;background:#fff;">
+  <div style="background:#102542;color:white;padding:20px 24px;border-radius:6px 6px 0 0;">
+    <h1 style="margin:0;font-size:22px;">Theta-Lab Bi-monthly Technical Report</h1>
+    <div style="font-size:13px;color:#cfd8dc;margin-top:4px;">{report_date} &nbsp;|&nbsp; {data.get('data_source', '—')}</div>
+  </div>
+  {warning}
+  {_section("Assigned Stocks", _table(["Symbol", "Shares", "Cost Basis", "Current Price", "Unrealized P&L", "RSI(14)", "50d MA", "200d MA", "% off 52W high", "Breakeven Velocity", "CC Coverage", "Thesis", "Action"], data.get("assigned_stocks", [])))}
+  {_section("Option Legs by Symbol", _table(["Symbol", "Type", "Strike", "Expiry", "DTE", "% OTM/ITM", "RSI", "MA vs 50d", "Tier", "Current premium", "Action"], data.get("option_legs", [])))}
+  {_section("Permanent Exits — PYPL / MRNA", exits_html or "<p style='font-size:13px;color:#666;'>No permanent exit details available.</p>")}
+  {_section("India Equity Holdings", _table(["Symbol", "Shares", "Avg Cost", "CMP", "Unrealized P&L", "RSI", "% off 52W high", "P/E", "Thesis", "Action"], data.get("india_equities", [])))}
+  {_section("India FNO Positions", _table(["Symbol", "Type", "Strike", "Expiry", "DTE", "Delta", "Premium received", "Current P&L", "Action"], data.get("india_fno", [])))}
+  {_section("India Sector Scorecard", _table(["Sector", "Outlook", "Note"], data.get("india_sector_scorecard", [])))}
+</body></html>"""
+
+
+def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
+    """Build HTML for the monthly objectives gap analysis report."""
+    if not report_date:
+        report_date = datetime.now().strftime("%B %d, %Y")
+    warning = _warning_banner(data["warning"]) if data.get("warning") else ""
+    assigned = data.get("assigned_book", {})
+    assigned_html = f"""
+<div style="font-size:13px;line-height:1.8;">
+  <div><b>Assigned book value:</b> ${assigned.get('value', 0):,.0f} vs bear cap ${assigned.get('cap', 375000):,.0f}</div>
+  <div><b>Idle positions:</b> {', '.join(assigned.get('idle_positions', [])) or 'None'}</div>
+</div>""" + _progress_bar(assigned.get("value", 0), assigned.get("cap", 1), "Assigned equity book vs cap")
+    actions_html = "".join(_action_card(a.get("symbol", "?"), a.get("action", "Review"), a.get("reason", ""), a.get("priority", "WATCH"), a.get("details", "")) for a in data.get("gap_actions", [])) or "<p style='font-size:13px;color:#666;'>No gap actions generated.</p>"
+    india = data.get("india_objectives", {})
+    india_html = _progress_bar(india.get("pace", 0), india.get("target", 1), "India FNO pace") + _table(["Symbol", "Premium", "Current P&L", "Thesis alignment"], india.get("rows", []))
+    return f"""
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;max-width:920px;margin:0 auto;color:#222;background:#fff;">
+  <div style="background:#1f3b4d;color:white;padding:20px 24px;border-radius:6px 6px 0 0;">
+    <h1 style="margin:0;font-size:22px;">Theta-Lab Monthly Objectives Gap Analysis</h1>
+    <div style="font-size:13px;color:#d7e3ea;margin-top:4px;">Previous month: {data.get('header', {}).get('previous_month', '—')} &nbsp;|&nbsp; Current pace: {data.get('header', {}).get('current_month', '—')}</div>
+  </div>
+  {warning}
+  {_section("Income Objectives", _table(["Metric", "Target", "Last Month Actual", "Current Month Pace", "Gap", "Status"], data.get("income_rows", [])))}
+  {_section("Portfolio KPIs (YTD)", _table(["Metric", "Target", "Actual", "Status"], data.get("kpi_rows", [])))}
+  {_section("Assigned Book Health", assigned_html)}
+  {_section("Breakeven Velocity", _table(["Symbol", "Shares", "Remaining Loss", "CC / month", "Months to breakeven"], data.get("breakeven_rows", [])))}
+  {_section("Gap Analysis & Actions", actions_html)}
+  {_section("India Objectives", india_html)}
+</body></html>"""

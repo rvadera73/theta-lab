@@ -42,6 +42,9 @@ from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
 from reports.weekly_report import generate_weekly_report
 from reports.india_weekly_report import generate_india_weekly_report
+from reports.weekly_combined_report import generate_weekly_combined_report
+from reports.bimonthly_technical_report import generate_bimonthly_technical_report
+from reports.monthly_objectives_report import generate_monthly_objectives_report
 
 # Account hashes from environment (set after Schwab API setup)
 ACCOUNT_A_HASH = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")
@@ -244,6 +247,57 @@ async def list_tools():
                 "Generates the weekly action report for Indian stock/options portfolio via ICICI Breeze API. "
                 "Checks India VIX + Nifty 50 regime, pulls live NSE positions, calculates P&L, "
                 "and returns prioritised actions."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "save_to_file": {
+                        "type": "boolean",
+                        "description": "Save report to logs/ directory",
+                        "default": True,
+                    }
+                },
+            },
+        ),
+        Tool(
+            name="generate_weekly_combined_report",
+            description=(
+                "Generates the Sunday combined US + India report. Tries live Schwab and Breeze APIs first, "
+                "falls back to snapshot/statement data, saves HTML to logs/, and emails via Resend when configured."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "save_to_file": {
+                        "type": "boolean",
+                        "description": "Save report to logs/ directory",
+                        "default": True,
+                    }
+                },
+            },
+        ),
+        Tool(
+            name="generate_bimonthly_technical_report",
+            description=(
+                "Generates the 15th bi-monthly technical analysis report for US assigned names, option legs, and India holdings. "
+                "Uses live APIs when available, otherwise falls back to snapshot and statements."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "save_to_file": {
+                        "type": "boolean",
+                        "description": "Save report to logs/ directory",
+                        "default": True,
+                    }
+                },
+            },
+        ),
+        Tool(
+            name="generate_monthly_objectives_report",
+            description=(
+                "Generates the monthly objectives gap analysis report with prior month actuals and current month pace projection. "
+                "Uses live APIs first, falls back to snapshot/statements, saves HTML, and emails via Resend when configured."
             ),
             inputSchema={
                 "type": "object",
@@ -534,6 +588,27 @@ async def call_tool(name: str, arguments: dict):
                 log_path.parent.mkdir(parents=True, exist_ok=True)
                 log_path.write_text(report)
             return [TextContent(type="text", text=report)]
+
+        elif name == "generate_weekly_combined_report":
+            result = await generate_weekly_combined_report(
+                send_email=bool(os.getenv("RESEND_API_KEY", "")),
+                save_to_file=arguments.get("save_to_file", True),
+            )
+            return [TextContent(type="text", text=result["summary"])]
+
+        elif name == "generate_bimonthly_technical_report":
+            result = await generate_bimonthly_technical_report(
+                send_email=bool(os.getenv("RESEND_API_KEY", "")),
+                save_to_file=arguments.get("save_to_file", True),
+            )
+            return [TextContent(type="text", text=result["summary"])]
+
+        elif name == "generate_monthly_objectives_report":
+            result = await generate_monthly_objectives_report(
+                send_email=bool(os.getenv("RESEND_API_KEY", "")),
+                save_to_file=arguments.get("save_to_file", True),
+            )
+            return [TextContent(type="text", text=result["summary"])]
 
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]

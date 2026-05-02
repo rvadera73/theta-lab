@@ -1,0 +1,38 @@
+name: Monthly Objectives Report
+on:
+  schedule:
+    - cron: '30 0 2 * *'
+  workflow_dispatch:
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - name: Run monthly objectives report
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SCHWAB_API_KEY: ${{ secrets.SCHWAB_API_KEY }}
+          SCHWAB_APP_SECRET: ${{ secrets.SCHWAB_APP_SECRET }}
+          SCHWAB_ACCOUNT_A_HASH: ${{ secrets.SCHWAB_ACCOUNT_A_HASH }}
+          SCHWAB_ACCOUNT_B_HASH: ${{ secrets.SCHWAB_ACCOUNT_B_HASH }}
+          BREEZE_API_KEY: ${{ secrets.BREEZE_API_KEY }}
+          BREEZE_API_SECRET: ${{ secrets.BREEZE_API_SECRET }}
+          BREEZE_SESSION_TOKEN: ${{ secrets.BREEZE_SESSION_TOKEN }}
+        run: |
+          set +e
+          python3 mcp/reports/monthly_objectives_report.py --send
+          status=$?
+          ls -1 logs/monthly_objectives_*.html
+          exit $status
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: monthly-objectives-${{ github.run_id }}
+          path: logs/monthly_objectives_*.html
