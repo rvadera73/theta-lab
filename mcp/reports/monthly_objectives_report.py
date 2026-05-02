@@ -17,6 +17,7 @@ from reports.report_utils import (
     load_us_positions,
     maybe_send,
     month_name,
+    monthly_option_pnl_series,
     monthly_premium,
     previous_month,
     project_value,
@@ -50,6 +51,46 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
     account_c_target = ACCOUNT_C["target_weekly_pnl"]
     combined_last = account_a_last + account_b_last + account_c_last
     combined_pace = account_a_pace + account_b_pace + account_c_pace
+
+    # --- YTD calculations ---
+    annual_target = 1_200_000  # $1.2M/year = $100K/month × 12
+    months_elapsed = today.month - 1 + (today.day / 30)  # fractional months through today
+    ytd_expected = round(annual_target / 12 * months_elapsed)  # what you should have at this point
+    # Sum all completed months this year for each account
+    all_txns = [row for rows in txns.values() for row in rows]
+    ytd_series = monthly_option_pnl_series(all_txns)  # list of monthly net premiums, all-time
+    # Filter to current year only (series items are sorted by month key)
+    ytd_income = float(snapshot.get("ytd_net_options_income", 0) or 0)
+    # If transactions available, prefer computed sum over snapshot
+    if all_txns:
+        from reports.report_utils import parse_txn_date, parse_option_symbol, parse_amount
+        ytd_income = 0.0
+        for row in all_txns:
+            txn_date = parse_txn_date(row.get("Date", ""))
+            if not txn_date or txn_date.year != today.year:
+                continue
+            parsed = parse_option_symbol(row.get("Symbol", ""))
+            if not parsed:
+                continue
+            action = str(row.get("Action", "")).strip()
+            amount = parse_amount(row.get("Amount", 0))
+            if "Sell to Open" in action and amount > 0:
+                ytd_income += amount
+            elif action == "Buy to Close" and amount < 0:
+                ytd_income -= abs(amount)
+    ytd_income = round(ytd_income, 0)
+    ytd_vs_expected_gap = ytd_income - ytd_expected
+    # Monthly breakdown for the bar chart (Jan→current month)
+    import calendar
+    monthly_breakdown = []
+    for m in range(1, today.month + 1):
+        month_start = today.replace(month=m, day=1)
+        m_income = monthly_premium(all_txns, month_start) if all_txns else 0.0
+        monthly_breakdown.append({
+            "label": calendar.month_abbr[m],
+            "income": round(m_income, 0),
+            "target": 100_000,
+        })
 
     income_rows = [
         ["Combined monthly income", "$100,000", f"${combined_last:,.0f}", f"${combined_pace:,.0f}", f"${100000 - combined_pace:,.0f}", "ON TRACK" if combined_pace >= 100000 else "BEHIND"],
@@ -153,6 +194,15 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
         "breakeven_rows": assigned_rows,
         "gap_actions": gap_actions,
         "india_objectives": india_summary,
+        "ytd": {
+            "income": ytd_income,
+            "annual_target": annual_target,
+            "ytd_expected": ytd_expected,
+            "gap": ytd_vs_expected_gap,
+            "months_elapsed": round(months_elapsed, 1),
+            "monthly_breakdown": monthly_breakdown,
+            "run_rate_annual": round(ytd_income / max(months_elapsed, 0.5) * 12),
+        },
     }
 
     html = build_monthly_objectives_html(data, today.strftime("%B %d, %Y"))

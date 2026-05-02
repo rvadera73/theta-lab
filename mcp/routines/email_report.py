@@ -664,6 +664,7 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
     income_rows = data.get("income_rows", [])
     kpi_rows = data.get("kpi_rows", [])
     assigned = data.get("assigned_book", {})
+    ytd = data.get("ytd", {})
     combined_row = income_rows[0] if income_rows else ["Combined monthly income", "$100,000", "$0", "$0", "$0", "BEHIND"]
     combined_target = max(1.0, _number(combined_row[1]))
     last_month_combined = _number(combined_row[2])
@@ -707,6 +708,57 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
     india_section += _table(["Symbol", "Premium", "Current P&L", "Alignment"], india.get("rows", []))
 
     bev_table = _table(["Symbol", "Shares", "Remaining Loss", "CC / Month", "Months to Breakeven"], data.get("breakeven_rows", []))
+
+    # --- YTD Section ---
+    ytd_income = float(ytd.get("income", 0) or 0)
+    ytd_annual_target = float(ytd.get("annual_target", 1_200_000) or 1_200_000)
+    ytd_expected = float(ytd.get("ytd_expected", 0) or 0)
+    ytd_gap = float(ytd.get("gap", 0) or 0)
+    ytd_months = float(ytd.get("months_elapsed", 1) or 1)
+    ytd_run_rate = float(ytd.get("run_rate_annual", 0) or 0)
+    ytd_pct = min(100, int(ytd_income / ytd_annual_target * 100)) if ytd_annual_target else 0
+    ytd_bar_color = "#1a7a1a" if ytd_gap >= 0 else ("#b87800" if ytd_gap >= -50000 else "#cc2200")
+    ytd_gap_str = (f"<b style='color:#1a7a1a;'>+${ytd_gap:,.0f} ahead</b>" if ytd_gap >= 0
+                   else f"<b style='color:#cc2200;'>${abs(ytd_gap):,.0f} behind</b>")
+    # Monthly mini-bars
+    breakdown = ytd.get("monthly_breakdown", [])
+    month_bars = ""
+    for m in breakdown:
+        m_inc = float(m.get("income", 0) or 0)
+        m_tgt = float(m.get("target", 100000) or 100000)
+        bar_h = max(4, min(60, int(m_inc / m_tgt * 60)))
+        bar_c = "#1a7a1a" if m_inc >= m_tgt else ("#b87800" if m_inc >= m_tgt * 0.7 else "#cc2200")
+        month_bars += f"""
+<div style="display:inline-block;text-align:center;margin:0 4px;vertical-align:bottom;width:44px;">
+  <div style="font-size:10px;color:#555;margin-bottom:2px;">${m_inc/1000:.0f}K</div>
+  <div style="background:{bar_c};height:{bar_h}px;border-radius:3px 3px 0 0;"></div>
+  <div style="font-size:10px;color:#888;margin-top:2px;">{m.get('label','')}</div>
+</div>"""
+    ytd_section = f"""
+<div style="background:white;margin-top:8px;padding:20px 24px;">
+  <div style="font-size:18px;font-weight:bold;margin-bottom:4px;">📈 Year-to-Date Progress</div>
+  <div style="font-size:12px;color:#888;margin-bottom:16px;">{ytd_months:.0f} months elapsed · annual goal: $1.2M</div>
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+    <div style="font-size:32px;font-weight:bold;color:{ytd_bar_color};">${ytd_income:,.0f}</div>
+    <div style="font-size:14px;color:#666;">collected so far this year</div>
+  </div>
+  <div style="background:#e8e8e8;height:10px;border-radius:5px;margin:10px 0 6px;">
+    <div style="background:{ytd_bar_color};width:{ytd_pct}%;height:10px;border-radius:5px;"></div>
+  </div>
+  <div style="font-size:12px;color:#888;display:flex;justify-content:space-between;margin-bottom:14px;">
+    <span>$0</span>
+    <span>{ytd_pct}% of $1.2M annual target</span>
+    <span>$1.2M</span>
+  </div>
+  <div style="background:#f9f9f9;border-radius:6px;padding:10px 14px;font-size:13px;color:#444;line-height:1.9;margin-bottom:16px;">
+    📌 Expected at this point: <b>${ytd_expected:,.0f}</b> &nbsp;·&nbsp; Actual: <b>${ytd_income:,.0f}</b> &nbsp;·&nbsp; {ytd_gap_str}<br>
+    🏃 Annual run rate: <b>${ytd_run_rate:,.0f}/year</b> ({'on track for $1.2M' if ytd_run_rate >= 1_200_000 else f'${1_200_000 - ytd_run_rate:,.0f} short of $1.2M annual pace'})
+  </div>
+  <div style="font-size:12px;color:#999;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Monthly breakdown</div>
+  <div style="line-height:1;white-space:nowrap;overflow-x:auto;">{month_bars}</div>
+  <div style="font-size:11px;color:#bbb;margin-top:6px;">Bar height = % of $100K monthly target</div>
+</div>"""
+
     generated = datetime.now().strftime('%Y-%m-%d %H:%M')
 
     return f"""
@@ -720,28 +772,35 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
   </div>
   {warning}
   <div style="display:flex;gap:12px;flex-wrap:wrap;padding:20px 24px;background:white;margin-top:8px;">
-    <div style="flex:1;min-width:140px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
+    <div style="flex:1;min-width:130px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
       <div style="font-size:11px;color:#999;text-transform:uppercase;">{header.get('previous_month', 'Last Month')} Income</div>
       <div style="font-size:28px;font-weight:bold;color:{last_color};">${last_month_combined:,.0f}</div>
       <div style="font-size:12px;color:#666;">of ${combined_target:,.0f} target</div>
       <div style="font-size:12px;font-weight:bold;color:{last_color};">{last_pct}% {'✓' if last_pct >= 100 else ''}</div>
     </div>
-    <div style="flex:1;min-width:140px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
+    <div style="flex:1;min-width:130px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
       <div style="font-size:11px;color:#999;text-transform:uppercase;">{header.get('current_month', 'This Month')} Pace</div>
       <div style="font-size:28px;font-weight:bold;color:{'#1a7a1a' if current_pace >= combined_target else '#b87800'};">${current_pace:,.0f}</div>
       <div style="font-size:12px;color:#666;">projected this month</div>
     </div>
-    <div style="flex:1;min-width:140px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
+    <div style="flex:1;min-width:130px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
       <div style="font-size:11px;color:#999;text-transform:uppercase;">Capture Rate</div>
       <div style="font-size:28px;font-weight:bold;color:{capture_color};">{capture_val:.1f}%</div>
       <div style="font-size:12px;color:#666;">target: 65-70%</div>
     </div>
-    <div style="flex:1;min-width:140px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
+    <div style="flex:1;min-width:130px;border:1px solid #eee;border-radius:8px;padding:16px;text-align:center;">
       <div style="font-size:11px;color:#999;text-transform:uppercase;">Profit Factor</div>
       <div style="font-size:28px;font-weight:bold;color:{pf_color};">{pf_val:.1f}</div>
       <div style="font-size:12px;color:#666;">target: &gt;2.0</div>
     </div>
+    <div style="flex:1;min-width:130px;border:2px solid {ytd_bar_color};border-radius:8px;padding:16px;text-align:center;">
+      <div style="font-size:11px;color:#999;text-transform:uppercase;">YTD vs $1.2M</div>
+      <div style="font-size:28px;font-weight:bold;color:{ytd_bar_color};">{ytd_pct}%</div>
+      <div style="font-size:12px;color:#666;">${ytd_income:,.0f} collected</div>
+      <div style="font-size:11px;color:{ytd_bar_color};font-weight:bold;">{'ahead ✓' if ytd_gap >= 0 else f'${abs(ytd_gap):,.0f} behind'}</div>
+    </div>
   </div>
+  {ytd_section}
   <div style="background:white;margin-top:8px;padding:20px 24px;">
     <div style="font-size:18px;font-weight:bold;margin-bottom:12px;">How did {header.get('previous_month', 'last month')} go?</div>
     <div style="font-size:13px;line-height:1.9;color:#444;">{'<br>'.join(traffic_lines)}</div>
