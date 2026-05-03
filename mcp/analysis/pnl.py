@@ -3,7 +3,10 @@ Combined net P&L per position: stock cost basis + all option premiums collected/
 This is the metric that matters — not just options P&L in isolation.
 """
 
+import csv
+import re
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Optional
 
 
@@ -265,6 +268,219 @@ def parse_robinhood_positions(
                 shares=0,
                 stock_cost_basis=0,
                 current_price=0,
+            )
+        equity_map[underlying].option_legs.extend(legs)
+
+    return list(equity_map.values())
+
+
+# ---------------------------------------------------------------------------
+# Fidelity / generic CSV parser
+# ---------------------------------------------------------------------------
+
+_FIDELITY_OPT_RE = re.compile(r"^([A-Z]+)(\d{2})(\d{2})(\d{2})([CP])([\d.]+)$")
+
+
+def _parse_fidelity_symbol(raw: str):
+    """Parse Fidelity option symbol e.g. ' -INFY270115C18' → (underlying, expiry, type, strike) or None."""
+    s = raw.strip().lstrip("-").strip()
+    m = _FIDELITY_OPT_RE.match(s)
+    if not m:
+        return None
+    underlying, yy, mm, dd, cp, strike_s = m.groups()
+    expiry = f"20{yy}-{mm}-{dd}"
+    option_type = "CALL" if cp == "C" else "PUT"
+    return underlying, expiry, option_type, float(strike_s)
+
+
+def parse_fidelity_csv(csv_path: str, account_filter: str | None = None) -> dict[str, list["Position"]]:
+    """
+    Parse a Fidelity Portfolio Positions CSV export.
+    One CSV can contain multiple accounts — returns dict {account_number: [Position]}.
+    Pass account_filter to restrict to one account number (string).
+
+    CSV columns: Account Number, Account Name, Symbol, Quantity,
+                 Last Price, Cost Basis Total, Average Cost Basis
+    """
+    from datetime import date, datetime
+
+    today = date.today()
+    # per-account accumulators
+    equity_maps: dict[str, dict[str, "Position"]] = {}
+    option_legs: dict[str, dict[str, list["OptionLeg"]]] = {}
+
+    with open(csv_path, newline="", encoding="utf-8-sig") as fh:
+        # Skip disclaimer rows until we hit the header
+        lines = fh.readlines()
+
+    header_idx = next(
+        (i for i, l in enumerate(lines) if l.strip().startswith("Account Number")), None
+    )
+    if header_idx is None:
+        return {}
+
+    import io
+    reader = csv.DictReader(io.StringIO("".join(lines[header_idx:])))
+
+    for row in reader:
+        acct_num = row.get("Account Number", "").strip()
+        if not acct_num or not acct_num.isdigit():
+            continue
+        if account_filter and acct_num != account_filter:
+            continue
+
+        raw_sym = row.get("Symbol", "").strip()
+        if not raw_sym or raw_sym.endswith("**"):
+            continue  # skip money market rows
+
+        acct_name = row.get("Account Name", acct_num).strip()
+
+        def _f(key):
+            return row.get(key, "").replace("$", "").replace(",", "").replace("+", "").strip()
+
+        try:
+            qty = float(_f("Quantity")) if _f("Quantity") else 0.0
+            price = float(_f("Last Price")) if _f("Last Price") else 0.0
+            cost_total = float(_f("Cost Basis Total")) if _f("Cost Basis Total") else 0.0
+            avg_cost = float(_f("Average Cost Basis")) if _f("Average Cost Basis") else 0.0
+        except ValueError:
+            continue
+
+        equity_maps.setdefault(acct_num, {})
+        option_legs.setdefault(acct_num, {})
+
+        parsed = _parse_fidelity_symbol(raw_sym)
+        if parsed:
+            underlying, expiry, option_type, strike = parsed
+            try:
+                dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+            except ValueError:
+                dte = 0
+            contracts = int(abs(qty))
+            is_short = qty < 0
+            leg = OptionLeg(
+                description=f"{option_type} {strike} {expiry}",
+                strike=strike,
+                expiry=expiry,
+                option_type=option_type,
+                quantity=-contracts if is_short else contracts,
+                premium_received=abs(cost_total) if is_short else 0.0,
+                current_mark=price * 100 * contracts,
+                dte=dte,
+            )
+            option_legs[acct_num].setdefault(underlying, []).append(leg)
+        else:
+            symbol = raw_sym.lstrip("-").strip()
+            equity_maps[acct_num][symbol] = Position(
+                symbol=symbol,
+                account=acct_num,
+                shares=int(abs(qty)) if qty else 0,
+                stock_cost_basis=avg_cost,
+                current_price=price,
+            )
+
+    # Merge legs into positions
+    result: dict[str, list[Position]] = {}
+    all_accts = set(equity_maps) | set(option_legs)
+    for acct_num in all_accts:
+        eq = equity_maps.get(acct_num, {})
+        for underlying, legs in option_legs.get(acct_num, {}).items():
+            if underlying not in eq:
+                eq[underlying] = Position(
+                    symbol=underlying, account=acct_num,
+                    shares=0, stock_cost_basis=0.0, current_price=0.0,
+                )
+            eq[underlying].option_legs.extend(legs)
+        result[acct_num] = list(eq.values())
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Robinhood CSV parser
+# Format detected from exported CSV — will be confirmed when user provides file.
+# Robinhood exports: Symbol, Average Cost, Quantity, Equity, Percent Change, etc.
+# Option rows typically: "{ticker} $STRIKE {call/put} {date}"
+# ---------------------------------------------------------------------------
+
+def parse_robinhood_csv(csv_path: str, account_label: str) -> list["Position"]:
+    """
+    Parse a Robinhood positions CSV export into Position objects.
+    Call this once a real CSV is provided; format will be confirmed then.
+    Currently returns empty list if file format is unrecognised — non-fatal.
+    """
+    equity_map: dict[str, "Position"] = {}
+    option_legs: dict[str, list["OptionLeg"]] = {}
+    today = date.today()
+
+    with open(csv_path, newline="", encoding="utf-8-sig") as fh:
+        lines = fh.readlines()
+
+    # Detect header row
+    header_idx = next(
+        (i for i, l in enumerate(lines) if "Symbol" in l and ("Quantity" in l or "Average Cost" in l)),
+        None,
+    )
+    if header_idx is None:
+        return []  # Unknown format — skip silently
+
+    import io
+    reader = csv.DictReader(io.StringIO("".join(lines[header_idx:])))
+
+    for row in reader:
+        symbol = row.get("Symbol", "").strip()
+        if not symbol:
+            continue
+
+        def _f(key):
+            return row.get(key, "").replace("$", "").replace(",", "").strip()
+
+        try:
+            qty = float(_f("Quantity")) if _f("Quantity") else 0.0
+            avg_cost = float(_f("Average Cost")) if _f("Average Cost") else 0.0
+            price = float(_f("Last Price") or _f("Price") or "0")
+        except ValueError:
+            continue
+
+        # Robinhood option rows: symbol looks like "AAPL 01/17/2025 Call $200.00"
+        opt_match = re.match(
+            r"^([A-Z]+)\s+(\d{2}/\d{2}/\d{4})\s+(Call|Put)\s+\$([\d.]+)$", symbol, re.IGNORECASE
+        )
+        if opt_match:
+            underlying, date_str, cp, strike_s = opt_match.groups()
+            try:
+                expiry = datetime.strptime(date_str, "%m/%d/%Y").strftime("%Y-%m-%d")
+                dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+            except ValueError:
+                expiry, dte = "", 0
+            contracts = int(abs(qty))
+            is_short = qty < 0
+            avg_cost_per_contract = avg_cost * 100
+            leg = OptionLeg(
+                description=f"{cp.upper()} {strike_s} {expiry}",
+                strike=float(strike_s),
+                expiry=expiry,
+                option_type="CALL" if cp.lower() == "call" else "PUT",
+                quantity=-contracts if is_short else contracts,
+                premium_received=avg_cost_per_contract * contracts if is_short else 0.0,
+                current_mark=price * 100 * contracts,
+                dte=dte,
+            )
+            option_legs.setdefault(underlying, []).append(leg)
+        else:
+            equity_map[symbol] = Position(
+                symbol=symbol,
+                account=account_label,
+                shares=int(abs(qty)) if qty else 0,
+                stock_cost_basis=avg_cost,
+                current_price=price,
+            )
+
+    for underlying, legs in option_legs.items():
+        if underlying not in equity_map:
+            equity_map[underlying] = Position(
+                symbol=underlying, account=account_label,
+                shares=0, stock_cost_basis=0.0, current_price=0.0,
             )
         equity_map[underlying].option_legs.extend(legs)
 

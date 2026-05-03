@@ -80,11 +80,19 @@ ACCOUNT_D = {
 # To add a new account: add one entry here. No other code changes needed.
 # ---------------------------------------------------------------------------
 ACCOUNTS: dict[str, dict] = {
-    "A": {**ACCOUNT_A, "broker": "schwab", "hash_env": "SCHWAB_ACCOUNT_A_HASH"},
-    "B": {**ACCOUNT_B, "broker": "schwab", "hash_env": "SCHWAB_ACCOUNT_B_HASH"},
-    "C": {**ACCOUNT_C, "broker": "schwab", "hash_env": "SCHWAB_ACCOUNT_C_HASH"},
-    "D": {**ACCOUNT_D, "broker": "robinhood", "username_env": "ROBINHOOD_USERNAME", "password_env": "ROBINHOOD_PASSWORD"},
-    # Future: "E": {"label": "Fidelity IRA", "broker": "fidelity_csv", "csv_path_env": "FIDELITY_CSV_PATH", ...}
+    "A":  {**ACCOUNT_A, "broker": "schwab",       "hash_env": "SCHWAB_ACCOUNT_A_HASH"},
+    "B":  {**ACCOUNT_B, "broker": "schwab",       "hash_env": "SCHWAB_ACCOUNT_B_HASH"},
+    "C":  {**ACCOUNT_C, "broker": "schwab",       "hash_env": "SCHWAB_ACCOUNT_C_HASH"},
+    "D":  {**ACCOUNT_D, "broker": "robinhood_csv", "csv_path_env": "ROBINHOOD_INDIVIDUAL_CSV", "label": "Robinhood Individual"},
+    # Robinhood Traditional IRA — CSV export (API does not support IRA; app MFA too disruptive)
+    "E":  {**ACCOUNT_D, "broker": "robinhood_csv", "csv_path_env": "ROBINHOOD_IRA_CSV",        "label": "Robinhood Traditional IRA", "type": "ira"},
+    # Fidelity CSV 1: two accounts in same file
+    "F1": {"label": "Fidelity Traditional IRA",   "broker": "fidelity_csv",  "csv_path_env": "FIDELITY_CSV_1",          "fidelity_account_number": "225798148", "type": "ira",      "no_margin": True, "no_naked_calls": True},
+    "F2": {"label": "Fidelity ROTH IRA (Minor)",  "broker": "fidelity_csv",  "csv_path_env": "FIDELITY_CSV_1",          "fidelity_account_number": "258240575", "type": "roth_ira", "no_margin": True, "no_naked_calls": True},
+    # Fidelity CSV 2: two accounts in same file
+    "G1": {"label": "Fidelity ROTH IRA",          "broker": "fidelity_csv",  "csv_path_env": "FIDELITY_CSV_2",          "fidelity_account_number": "233461172", "type": "roth_ira", "no_margin": True, "no_naked_calls": True},
+    "G2": {"label": "Fidelity Rollover IRA",      "broker": "fidelity_csv",  "csv_path_env": "FIDELITY_CSV_2",          "fidelity_account_number": "263508923", "type": "ira",      "no_margin": True, "no_naked_calls": True},
+    # To add a new account: one entry here, zero other file changes needed.
 }
 
 # ---------------------------------------------------------------------------

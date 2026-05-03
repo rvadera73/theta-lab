@@ -132,6 +132,10 @@ def _get_configured_accounts() -> dict[str, dict]:
             password = os.getenv(cfg.get("password_env", ""), "")
             if username and password:
                 result[label] = {**cfg}
+        elif broker in ("fidelity_csv", "robinhood_csv"):
+            csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+            if csv_path and os.path.exists(csv_path):
+                result[label] = {**cfg}
         # Future brokers: add elif here
     return result
 
@@ -203,12 +207,31 @@ async def _load_positions_all(account_filter: str = "all") -> list:
             continue  # already handled above
         try:
             if broker == "robinhood":
+                # Legacy API path — kept for fallback but accounts D/E now use robinhood_csv
                 from robinhood_client import get_robinhood_positions
                 equity, options = await asyncio.wait_for(
                     asyncio.get_event_loop().run_in_executor(None, get_robinhood_positions),
                     timeout=15,
                 )
                 all_positions.extend(parse_robinhood_positions(equity, options, label))
+            elif broker == "fidelity_csv":
+                from analysis.pnl import parse_fidelity_csv
+                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+                if not csv_path or not os.path.exists(csv_path):
+                    continue
+                acct_filter = cfg.get("fidelity_account_number")
+                per_acct = parse_fidelity_csv(csv_path, account_filter=acct_filter)
+                for acct_num, positions in per_acct.items():
+                    for pos in positions:
+                        pos.account = label
+                    all_positions.extend(positions)
+            elif broker == "robinhood_csv":
+                from analysis.pnl import parse_robinhood_csv
+                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+                if not csv_path or not os.path.exists(csv_path):
+                    continue  # CSV not yet exported — skip silently
+                positions = parse_robinhood_csv(csv_path, account_label=label)
+                all_positions.extend(positions)
             # Future brokers: add elif here
         except Exception:
             pass
