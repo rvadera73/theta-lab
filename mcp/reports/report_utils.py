@@ -19,7 +19,7 @@ from bootstrap import load_credentials as _load_credentials
 _load_credentials()
 
 from analysis.metrics import breakeven_velocity, premium_capture_rate, profit_factor, sortino_ratio
-from analysis.pnl import OptionLeg, Position, parse_schwab_positions
+from analysis.pnl import OptionLeg, Position, parse_schwab_positions, parse_robinhood_positions
 from analysis.india_statement_parser import build_positions_from_statements, load_india_config
 from config import PORTFOLIO, RISK, PERMANENT_EXITS
 from routines.email_report import send_email
@@ -511,6 +511,19 @@ async def load_us_positions() -> dict[str, Any]:
             all_positions.extend(parse_schwab_positions(raw, label, quotes))
         if not all_positions:
             raise RuntimeError("No live positions returned")
+
+        # Robinhood Account D — optional, non-fatal if credentials missing
+        try:
+            rh_user = os.getenv("ROBINHOOD_USERNAME", "")
+            rh_pass = os.getenv("ROBINHOOD_PASSWORD", "")
+            if rh_user and rh_pass:
+                from robinhood_client import get_robinhood_positions
+                rh_equity, rh_options = get_robinhood_positions()
+                rh_positions = parse_robinhood_positions(rh_equity, rh_options, account_label="D")
+                all_positions.extend(rh_positions)
+        except Exception:
+            pass  # Robinhood is best-effort; never blocks the Schwab data
+
         return {
             "positions": all_positions,
             "balances": balances,

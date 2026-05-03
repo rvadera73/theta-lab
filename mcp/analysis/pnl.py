@@ -211,3 +211,61 @@ def parse_schwab_positions(raw_positions: list[dict], account_label: str, quotes
         equity_map[underlying].option_legs.extend(legs)
 
     return list(equity_map.values())
+
+
+def parse_robinhood_positions(
+    equity_holdings: dict,
+    option_positions: list[dict],
+    account_label: str = "D",
+) -> list[Position]:
+    """
+    Convert robin_stocks data into Position objects.
+    equity_holdings: from rh.account.build_holdings() → {symbol: {price, quantity, average_buy_price}}
+    option_positions: from robinhood_client.get_option_positions() — already enriched with strike/expiry/type/mark
+    """
+    equity_map: dict[str, Position] = {}
+    option_legs: dict[str, list[OptionLeg]] = {}
+
+    for symbol, data in equity_holdings.items():
+        shares = int(float(data.get("quantity", 0) or 0))
+        if shares <= 0:
+            continue
+        avg_cost = float(data.get("average_buy_price", 0) or 0)
+        current = float(data.get("price", avg_cost) or avg_cost)
+        equity_map[symbol] = Position(
+            symbol=symbol,
+            account=account_label,
+            shares=shares,
+            stock_cost_basis=avg_cost,
+            current_price=current,
+        )
+
+    for opt in option_positions:
+        underlying = opt.get("underlying", "")
+        if not underlying:
+            continue
+        leg = OptionLeg(
+            description=f"{opt['option_type']} {opt['strike']} {opt['expiry']}",
+            strike=opt["strike"],
+            expiry=opt["expiry"],
+            option_type=opt["option_type"],
+            quantity=-opt["contracts"] if opt["is_short"] else opt["contracts"],
+            premium_received=opt["premium_received"],
+            current_mark=opt["current_mark"],
+            dte=opt["dte"],
+        )
+        option_legs.setdefault(underlying, []).append(leg)
+
+    # Merge legs into equity positions (create stub position if no shares held at RH)
+    for underlying, legs in option_legs.items():
+        if underlying not in equity_map:
+            equity_map[underlying] = Position(
+                symbol=underlying,
+                account=account_label,
+                shares=0,
+                stock_cost_basis=0,
+                current_price=0,
+            )
+        equity_map[underlying].option_legs.extend(legs)
+
+    return list(equity_map.values())

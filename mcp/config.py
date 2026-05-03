@@ -61,6 +61,20 @@ ACCOUNT_C = {
     "extra_names": ["ATEN", "NIO", "CMG", "TWLO", "LYFT", "BABA", "ABNB", "ANET"],
 }
 
+ACCOUNT_D = {
+    "label": "Robinhood IRA",
+    "broker": "robinhood",
+    "type": "ira",
+    "target_annual_return": 0.15,
+    "target_weekly_pnl": 500,          # adjust once account size is known
+    "max_contracts_by_tier": {1: 1, 2: 1, 3: 1},
+    "no_margin": True,
+    "no_naked_calls": True,
+    "speculative_max_pct": 0.10,
+    "token_path": "~/.tokens/robinhood.pickle",
+    "strategies": ["cash_secured_put", "covered_call"],
+}
+
 # ---------------------------------------------------------------------------
 # Portfolio-level targets ($3M across all 14 accounts)
 # ---------------------------------------------------------------------------

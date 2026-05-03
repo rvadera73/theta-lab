@@ -72,6 +72,8 @@ from reports.monthly_objectives_report import generate_monthly_objectives_report
 ACCOUNT_A_HASH = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")
 ACCOUNT_B_HASH = os.getenv("SCHWAB_ACCOUNT_B_HASH", "")
 ACCOUNT_C_HASH = os.getenv("SCHWAB_ACCOUNT_C_HASH", "")
+RH_USERNAME = os.getenv("ROBINHOOD_USERNAME", "")
+RH_PASSWORD = os.getenv("ROBINHOOD_PASSWORD", "")
 
 # ── Startup credential audit ──────────────────────────────────────────────────
 def _audit_credentials() -> None:
@@ -86,6 +88,7 @@ def _audit_credentials() -> None:
     }
     optional = {
         "SCHWAB_ACCOUNT_C_HASH": ACCOUNT_C_HASH,
+        "ROBINHOOD_USERNAME": RH_USERNAME,
         "BREEZE_API_KEY": os.getenv("BREEZE_API_KEY", ""),
         "BREEZE_SESSION_TOKEN": os.getenv("BREEZE_SESSION_TOKEN", ""),
     }
