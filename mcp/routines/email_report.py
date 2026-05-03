@@ -674,6 +674,14 @@ def build_bimonthly_technical_html(data: dict, report_date: str = None) -> str:
     india_fno = _table(["Symbol", "Type", "Strike", "Expiry", "DTE", "Delta", "Premium", "P&L", "Action"], data.get("india_fno", []))
     sectors = _table(["Sector", "Outlook", "Note"], data.get("india_sector_scorecard", []))
 
+    heat_section = data.get("portfolio_heat_html", "")
+    if heat_section:
+        heat_section = f"""
+  <div style="background:white;padding:20px 24px;margin-top:8px;">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">🌡️ Position Heat Scan</div>
+    {heat_section}
+  </div>"""
+
     return f"""
 <!DOCTYPE html>
 <html>
@@ -685,6 +693,7 @@ def build_bimonthly_technical_html(data: dict, report_date: str = None) -> str:
     <div style="font-size:12px;color:#d7e6f2;margin-top:6px;">Grouped by symbol so each name has one clear read.</div>
   </div>
   {warning}
+  {heat_section}
   <div style="background:white;padding:20px 24px;margin-top:8px;">
     <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">🔎 US Positions — By Symbol</div>
     {symbol_cards}
@@ -705,6 +714,130 @@ def build_bimonthly_technical_html(data: dict, report_date: str = None) -> str:
     <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">🏭 India Sector Scorecard</div>
     {sectors}
   </div>
+</body>
+</html>"""
+
+
+def build_weekly_action_html(data: dict, report_date: str = None) -> str:
+    """Build HTML email for the Monday weekly action report."""
+    if not report_date:
+        report_date = datetime.now().strftime("%B %d, %Y")
+
+    regime = data.get("regime", "—")
+    week_label = data.get("week_label", report_date)
+    regime_color = {"BULL": "#1a7a1a", "CAUTIOUS_BULL": "#2d7a2d", "TRANSITIONING": "#b87800", "BEAR_SIDEWAYS": "#cc2200"}.get(regime, "#444")
+    new_entries = data.get("new_entries_allowed", False)
+    profit_low = int((data.get("profit_low", 0.4)) * 100)
+    profit_high = int((data.get("profit_high", 0.5)) * 100)
+
+    # Market signals
+    sigs = data.get("signals", {})
+    vix_row = ""
+    if "vix" in sigs:
+        v = sigs["vix"]
+        vix_row = f"<tr><td style='padding:8px;border-bottom:1px solid #eee;font-weight:bold;'>VIX</td><td style='padding:8px;border-bottom:1px solid #eee;'>{v.get('value','—')}</td><td style='padding:8px;border-bottom:1px solid #eee;color:#666;'>{v.get('detail','')}</td></tr>"
+    ma_row = ""
+    if "sp500_ma" in sigs:
+        m = sigs["sp500_ma"]
+        trend = "✅ above 50d & 200d" if m.get("above_50d") and m.get("above_200d") else ("⚠️ below 50d" if not m.get("above_50d") else "⚠️ below 200d")
+        ma_row = f"<tr><td style='padding:8px;font-weight:bold;'>S&P 500</td><td style='padding:8px;'>{m.get('current',0):,.0f}</td><td style='padding:8px;color:#666;'>{trend} | 50d {m.get('ma50',0):,.0f} · 200d {m.get('ma200',0):,.0f}</td></tr>"
+
+    # Action cards
+    action_cards = ""
+    for i, act in enumerate(data.get("top5", []), 1):
+        sym = act["symbol"]
+        acct = act["account"]
+        cpnl = act["combined_pnl"]
+        pnl_str = f"+${cpnl:,.0f}" if cpnl >= 0 else f"-${abs(cpnl):,.0f}"
+        pnl_color = "#1a7a1a" if cpnl >= 0 else "#cc2200"
+        label = act["label"]
+        label_color = "#cc2200" if label == "URGENT" else "#b87800" if label == "REVIEW" else "#444"
+        legs_html = ""
+        for lg in act.get("legs", []):
+            dte_color = "#cc2200" if lg.dte <= 7 else "#b87800" if lg.dte <= 21 else "#1a7a1a"
+            legs_html += f"<span style='display:inline-block;background:#f5f5f5;border-radius:4px;padding:3px 7px;margin:2px;font-size:11px;'>{lg.option_type} <b>${lg.strike:g}</b> {lg.expiry} <span style='color:{dte_color};font-weight:bold;'>{lg.dte}d</span></span>"
+        if not legs_html:
+            legs_html = "<span style='font-size:12px;color:#999;'>Equity only</span>"
+        alerts = ""
+        if act.get("permanent_exit"):
+            alerts += "<div style='color:#cc2200;font-size:12px;margin-top:6px;'>🔴 PERMANENT EXIT — accelerate exit via covered calls</div>"
+        ps = act.get("profit_signal", {})
+        if ps.get("signal"):
+            alerts += f"<div style='color:#1a7a1a;font-size:12px;margin-top:4px;'>✅ Profit target hit: {ps.get('recommendation','')}</div>"
+        lf = act.get("loss_flag", {})
+        if lf.get("flag"):
+            alerts += f"<div style='color:#cc2200;font-size:12px;margin-top:4px;'>⚠️ Loss flag: {lf.get('multiplier','?')}x premium. {lf.get('action','')}</div>"
+        rs = act.get("roll_signal", {})
+        if rs.get("signal"):
+            alerts += f"<div style='color:#b87800;font-size:12px;margin-top:4px;'>🔄 Roll: {rs.get('recommendation','')}</div>"
+        action_cards += f"""
+<div style="background:white;border:1px solid #eee;border-radius:8px;padding:16px;margin:0 0 10px 0;border-left:4px solid {label_color};">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+    <div>
+      <span style="font-size:11px;color:{label_color};font-weight:bold;text-transform:uppercase;background:#f9f9f9;padding:2px 6px;border-radius:3px;">{label}</span>
+      <span style="font-size:17px;font-weight:bold;margin-left:8px;">#{i} {sym}</span>
+      <span style="font-size:12px;color:#888;margin-left:6px;">Acct {acct}</span>
+    </div>
+    <div style="text-align:right;font-weight:bold;color:{pnl_color};">{pnl_str}</div>
+  </div>
+  <div style="font-size:13px;color:#555;margin-bottom:8px;">{act.get('reason','')}</div>
+  <div style="margin-bottom:6px;">{legs_html}</div>
+  {alerts}
+</div>"""
+
+    # Watching section
+    watching_html = ""
+    for act in data.get("watching", []):
+        cpnl = act["combined_pnl"]
+        pnl_str = f"+${cpnl:,.0f}" if cpnl >= 0 else f"-${abs(cpnl):,.0f}"
+        watching_html += f"<div style='padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;'><b>{act['symbol']}</b> <span style='color:#888;'>Acct {act['account']}</span> — {act['reason']} <span style='float:right;color:{'#1a7a1a' if cpnl>=0 else '#cc2200'};'>{pnl_str}</span></div>"
+    watching_section = f"""
+  <div style="background:white;padding:20px 24px;margin-top:8px;">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">👁 Also Watching</div>
+    {watching_html}
+  </div>""" if watching_html else ""
+
+    heat_section = ""
+    if data.get("portfolio_heat_html"):
+        heat_section = f"""
+  <div style="background:white;padding:20px 24px;margin-top:8px;">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">🌡️ Position Heat Scan</div>
+    {data['portfolio_heat_html']}
+  </div>"""
+
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;max-width:680px;margin:0 auto;background:#f5f5f5;color:#222;padding:0;">
+  <div style="background:linear-gradient(135deg,#102542,#1b4965);color:white;padding:24px;border-radius:8px 8px 0 0;">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#9fd3ff;margin-bottom:4px;">THETA-LAB WEEKLY ACTION REPORT</div>
+    <div style="font-size:20px;font-weight:bold;">Week of {week_label}</div>
+    <div style="font-size:12px;color:#d7e6f2;margin-top:6px;">
+      Regime: <b style="color:white;">{regime}</b> &nbsp;|&nbsp;
+      New entries: <b style="color:{'#90ee90' if new_entries else '#ff9999'};">{'YES' if new_entries else 'NO'}</b> &nbsp;|&nbsp;
+      Profit-take: <b style="color:white;">{profit_low}–{profit_high}%</b>
+    </div>
+  </div>
+  <div style="background:white;padding:20px 24px;margin-top:8px;">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">📊 Market Signals</div>
+    <table style="width:100%;font-size:13px;border-collapse:collapse;">
+      {vix_row}{ma_row}
+    </table>
+  </div>
+  <div style="background:white;padding:20px 24px;margin-top:8px;">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">🎯 Top 5 Actions This Week</div>
+    {action_cards or '<div style="color:#666;font-size:13px;">No live positions — Schwab credentials required.</div>'}
+  </div>
+  {watching_section}
+  {heat_section}
+  <div style="background:white;padding:20px 24px;margin-top:8px;">
+    <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">📈 Weekly P&L Tracker</div>
+    <table style="width:100%;font-size:13px;border-collapse:collapse;">
+      <tr style="background:#f5f5f5;"><th style="padding:8px;text-align:left;">Account</th><th style="padding:8px;text-align:right;">Weekly Target</th><th style="padding:8px;text-align:right;">Realized</th></tr>
+      {''.join(f"<tr><td style='padding:8px;border-bottom:1px solid #eee;'>{r[0]}</td><td style='padding:8px;border-bottom:1px solid #eee;text-align:right;'>{r[1]}</td><td style='padding:8px;border-bottom:1px solid #eee;text-align:right;color:#666;'>{r[2]}</td></tr>" for r in data.get('pnl_rows', []))}
+    </table>
+  </div>
+  <div style="font-size:11px;color:#999;padding:12px 24px;text-align:center;">Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} · Theta-Lab</div>
 </body>
 </html>"""
 

@@ -939,11 +939,8 @@ async def list_tools():
 async def call_tool(name: str, arguments: dict):
     try:
         if name == "generate_weekly_action_report":
-            report = await generate_weekly_report(ACCOUNT_A_HASH, ACCOUNT_B_HASH, ACCOUNT_C_HASH)
-            if arguments.get("save_to_file", True):
-                log_path = Path(__file__).parent.parent / "logs" / f"action_report_{date.today()}.md"
-                log_path.write_text(report)
-            return [TextContent(type="text", text=report)]
+            result = await generate_weekly_report(ACCOUNT_A_HASH, ACCOUNT_B_HASH, ACCOUNT_C_HASH, save_to_file=arguments.get("save_to_file", True))
+            return [TextContent(type="text", text=result.get("text") or result.get("html", ""))]
 
         elif name == "check_market_regime":
             regime_data = detect_regime()

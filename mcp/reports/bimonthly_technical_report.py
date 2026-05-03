@@ -11,6 +11,8 @@ from typing import Any
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from routines.email_report import build_bimonthly_technical_html
+from analysis.heat_scanner import heat_from_positions, format_heat_html
+from analysis.regime import detect_regime
 from config import PERMANENT_EXITS
 from reports.report_utils import (
     action_for_option_leg,
@@ -170,6 +172,15 @@ async def generate_bimonthly_technical_report(send_email: bool = True, save_to_f
         "india_fno": india_fno_rows,
         "india_sector_scorecard": sector_rows,
     }
+
+    # Heat scanner — wired from live positions
+    try:
+        all_live = us["positions"] + list(india["positions"])
+        regime_str = detect_regime()["regime"]
+        heat = heat_from_positions(all_live, regime_str)
+        data["portfolio_heat_html"] = format_heat_html(heat)
+    except Exception as _e:
+        data["portfolio_heat_html"] = f"<p><em>Heat scanner unavailable: {_e}</em></p>"
     html = build_bimonthly_technical_html(data, today.strftime("%B %d, %Y"))
     path = save_html("bimonthly_technical", html, today) if save_to_file else None
     subject = f"Theta-Lab Bi-monthly Technical Report — {today:%B %d, %Y}"

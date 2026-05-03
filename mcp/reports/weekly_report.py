@@ -13,7 +13,7 @@ from typing import Any
 from analysis.pnl import Position, parse_schwab_positions
 from analysis.regime import detect_regime
 from analysis.iv_rank import batch_iv_rank
-from analysis.heat_scanner import heat_from_positions, format_heat_block
+from analysis.heat_scanner import heat_from_positions, format_heat_html
 from config import (
     ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, PERMANENT_EXITS,
     LEGACY_EXIT_RULES, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
@@ -54,11 +54,14 @@ async def generate_weekly_report(
     account_b_hash: str,
     account_c_hash: str = "",
     schwab_client=None,
-) -> str:
+    save_to_file: bool = True,
+) -> dict:
     """
-    Main report generator. Returns markdown-formatted weekly action report.
+    Main report generator. Returns dict with keys: html, text, data, path.
     schwab_client: optional mock for testing without live credentials.
     """
+    from routines.email_report import build_weekly_action_html
+    from reports.report_utils import save_html, maybe_send
     today = date.today()
     week_label = f"{today.strftime('%B %d')} – {(today + __import__('datetime').timedelta(days=4)).strftime('%B %d, %Y')}"
 
@@ -68,29 +71,10 @@ async def generate_weekly_report(
     new_entries = regime_data["new_entries_allowed"]
     profit_low, profit_high = PROFIT_TARGETS[Regime(regime)]
 
-    lines = [
-        f"# THETA-LAB Weekly Action Report",
-        f"**Week of:** {week_label}",
-        f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-        f"**Regime:** {regime} | New entries: {'YES' if new_entries else 'NO'}",
-        f"**Profit-take target:** {int(profit_low*100)}-{int(profit_high*100)}% of max premium",
-        "",
-    ]
-
-    # --- Market signals ---
-    sigs = regime_data.get("signals", {})
-    lines += ["## Market Signals", ""]
-    if "vix" in sigs:
-        v = sigs["vix"]
-        lines.append(f"- **VIX:** {v['value']} — {v['detail']}")
-    if "sp500_ma" in sigs:
-        m = sigs["sp500_ma"]
-        lines.append(f"- **S&P 500:** {m['current']:,.0f} | 50-day MA: {m['ma50']:,.0f} ({'✅ above' if m['above_50d'] else '❌ below'}) | 200-day MA: {m['ma200']:,.0f} ({'✅ above' if m['above_200d'] else '❌ below'})")
-    lines.append("")
-
     # --- Pull positions ---
     all_actions = []
     all_positions: list = []
+    text_warnings = []
 
     for acct_hash, acct_cfg, acct_label in [
         (account_a_hash, ACCOUNT_A, "A"),
@@ -106,7 +90,6 @@ async def generate_weekly_report(
             else:
                 from schwab_client import get_all_positions, get_quotes, get_balances
                 raw = await get_all_positions(acct_hash)
-                # Fetch quotes for ALL underlying symbols (equities + option underlyings)
                 symbols = list({
                     (p.get("instrument", {}).get("underlyingSymbol")
                      or p.get("instrument", {}).get("symbol", "").split()[0])
@@ -114,7 +97,6 @@ async def generate_weekly_report(
                     if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
                 })
                 quotes_raw = await get_quotes(symbols)
-                balances = await get_balances(acct_hash)
 
             positions = parse_schwab_positions(raw, acct_label, quotes_raw)
             all_positions.extend(positions)
@@ -125,8 +107,7 @@ async def generate_weekly_report(
                 profit_sig = pos.profit_take_signal(regime)
                 loss_sig = pos.loss_flag()
                 roll_sig = pos.roll_signal()
-
-                action = {
+                all_actions.append({
                     "priority": pri,
                     "label": label,
                     "reason": reason,
@@ -141,87 +122,91 @@ async def generate_weekly_report(
                     "loss_flag": loss_sig,
                     "roll_signal": roll_sig,
                     "legs": pos.option_legs,
-                    "itm_plan": "slow_exit" if pos.symbol in PERMANENT_EXITS else None,
                     "permanent_exit": pos.symbol in PERMANENT_EXITS,
-                }
-                all_actions.append(action)
+                })
         except Exception as e:
-            lines.append(f"⚠️ Could not load Account {acct_label}: {e}")
+            text_warnings.append(f"⚠️ Could not load Account {acct_label}: {e}")
 
-    # Sort by priority and take top 5
     all_actions.sort(key=lambda x: (x["priority"], -abs(x["combined_pnl"])))
     top5 = all_actions[:5]
+    watching = [a for a in all_actions[5:] if a["priority"] <= 3][:5]
 
-    lines.append("## TOP 5 ACTIONS THIS WEEK")
-    lines.append("")
+    # --- Heat scanner ---
+    portfolio_heat_html = ""
+    if all_positions:
+        try:
+            heat_result = heat_from_positions(all_positions, regime)
+            portfolio_heat_html = format_heat_html(heat_result)
+        except Exception as e:
+            portfolio_heat_html = f"<p><em>Heat scanner unavailable: {e}</em></p>"
 
+    # --- P&L rows ---
+    pnl_rows = [
+        ["A (Rahul)", f"${ACCOUNT_A['target_weekly_pnl']:,}", "— (order history needed)"],
+        ["B (Pinky)", f"${ACCOUNT_B['target_weekly_pnl']:,}", "—"],
+        ["Combined", f"${ACCOUNT_A['target_weekly_pnl'] + ACCOUNT_B['target_weekly_pnl']:,}", "—"],
+    ]
+
+    report_data = {
+        "regime": regime,
+        "week_label": week_label,
+        "new_entries_allowed": new_entries,
+        "profit_low": profit_low,
+        "profit_high": profit_high,
+        "signals": regime_data.get("signals", {}),
+        "top5": top5,
+        "watching": watching,
+        "portfolio_heat_html": portfolio_heat_html,
+        "pnl_rows": pnl_rows,
+    }
+
+    html = build_weekly_action_html(report_data, today.strftime("%B %d, %Y"))
+
+    # --- Markdown text (kept for MCP text response) ---
+    lines = [
+        f"# THETA-LAB Weekly Action Report",
+        f"**Week of:** {week_label}",
+        f"**Regime:** {regime} | New entries: {'YES' if new_entries else 'NO'}",
+        f"**Profit-take target:** {int(profit_low*100)}-{int(profit_high*100)}%",
+        "",
+    ]
+    lines += text_warnings
+    lines.append("## TOP 5 ACTIONS THIS WEEK\n")
     for i, act in enumerate(top5, 1):
         sym = act["symbol"]
-        acct = act["account"]
-        price = act["current_price"]
         cpnl = act["combined_pnl"]
         pnl_str = f"+${cpnl:,.0f}" if cpnl >= 0 else f"-${abs(cpnl):,.0f}"
         legs_str = " | ".join(
             f"{lg.option_type} ${lg.strike} {lg.expiry} ({_dte_label(lg.dte)})"
             for lg in act["legs"]
         ) or "equity only"
-
         lines += [
-            f"### #{i} {act['label']} — {sym} | Account {acct}",
-            f"**Price:** ${price:,.2f} | **Net P&L:** {pnl_str} | **Reason:** {act['reason']}",
+            f"### #{i} {act['label']} — {sym} | Account {act['account']}",
+            f"**Price:** ${act['current_price']:,.2f} | **Net P&L:** {pnl_str} | **Reason:** {act['reason']}",
             f"**Legs:** {legs_str}",
         ]
-
         if act["permanent_exit"]:
-            lines.append(f"🔴 **PERMANENT EXIT** — {sym} is on no-re-entry list. Accelerate exit via CC premium collection.")
-        if act["itm_plan"]:
-            lines.append(f"📋 **ITM Plan:** {act['itm_plan'].replace('_', ' ')}")
+            lines.append(f"🔴 **PERMANENT EXIT** — accelerate exit via CC premium collection.")
         if act["profit_signal"]["signal"]:
             lines.append(f"✅ **Profit target hit:** {act['profit_signal']['recommendation']}")
         if act["loss_flag"]["flag"]:
             lf = act["loss_flag"]
-            lines.append(f"⚠️ **Loss flag:** {lf['multiplier']}x premium received. Premium: ${lf['premium_received']:,.0f} | Cost to close: ${lf['current_cost_to_close']:,.0f}")
-            lines.append(f"   → {lf['action']}")
+            lines.append(f"⚠️ **Loss flag:** {lf['multiplier']}x premium. → {lf['action']}")
         if act["roll_signal"]["signal"]:
             rs = act["roll_signal"]
-            lines.append(f"🔄 **Roll needed:** {', '.join(rs['legs'])} — {rs['recommendation']}")
+            lines.append(f"🔄 **Roll needed:** {rs['recommendation']}")
         lines.append("")
 
-    # --- Also watching ---
-    watching = [a for a in all_actions[5:] if a["priority"] <= 3]
-    if watching:
-        lines.append("## ALSO WATCHING")
-        for act in watching[:5]:
-            cpnl = act["combined_pnl"]
-            pnl_str = f"+${cpnl:,.0f}" if cpnl >= 0 else f"-${abs(cpnl):,.0f}"
-            lines.append(f"- **{act['symbol']}** (Acct {act['account']}): {act['reason']} | Net P&L: {pnl_str}")
-        lines.append("")
+    text = "\n".join(lines)
 
-    # --- Position heat ---
-    if all_positions:
-        try:
-            heat_result = heat_from_positions(all_positions, regime)
-            heat_text = format_heat_block(heat_result)
-            if heat_text.strip():
-                lines += ["## 🌡️ POSITION HEAT SCAN", "", heat_text, ""]
-        except Exception as e:
-            lines.append(f"_Heat scanner unavailable: {e}_\n")
+    path = None
+    if save_to_file:
+        path = save_html("action_report", html, today)
 
-    # --- P&L tracker ---
-    total_realized_week = 0  # Would need order history to compute
-    lines += [
-        "## WEEKLY P&L TRACKER",
-        "",
-        f"| Account | Weekly Target | Realized This Week | YTD Pace |",
-        f"|---------|--------------|-------------------|---------|",
-        f"| A (Rahul) | ${ACCOUNT_A['target_weekly_pnl']:,} | — (pull from order history) | — |",
-        f"| B (Pinky) | ${ACCOUNT_B['target_weekly_pnl']:,} | — (pull from order history) | — |",
-        f"| **Combined** | **${ACCOUNT_A['target_weekly_pnl'] + ACCOUNT_B['target_weekly_pnl']:,}** | — | — |",
-        "",
-        "_Note: Schwab API credentials required for live P&L. See setup guide._",
-    ]
+    subject = f"Theta-Lab Weekly Action Report — {today:%B %d, %Y}"
+    email_result = maybe_send(subject, html)
 
-    return "\n".join(lines)
+    return {"html": html, "text": text, "data": report_data, "path": str(path) if path else None, "email": email_result}
 
 
 if __name__ == "__main__":
