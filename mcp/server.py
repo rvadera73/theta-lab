@@ -51,7 +51,7 @@ from config import ACCOUNT_A, ACCOUNT_B, UNIVERSE, Tier, PERMANENT_EXITS, RISK
 from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
 from analysis.india_regime import detect_india_regime
-from analysis.strategy_engine import recommend_trade
+from analysis.strategy_engine import WARN_FLAGS, check_flags, recommend_trade
 from models.vix_regime import entry_timing_score
 from reports.dynamic_screener import screen_india_opportunities, screen_us_opportunities
 from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
@@ -231,6 +231,8 @@ def _format_strategy_line(trade: dict[str, Any]) -> str:
         structure = f"STRANGLE ${put_strike:.0f}P / ${call_strike:.0f}C / {dte} DTE"
     elif strategy == "CSP" and put_strike is not None:
         structure = f"CSP ${put_strike:.0f}P / {dte} DTE"
+    elif strategy == "SKIP":
+        structure = "SKIP — blocked"
     else:
         structure = f"WAIT / {dte} DTE"
 
@@ -243,6 +245,26 @@ def _roll_summary(roll_triggers: dict[str, Any]) -> str:
     profit = roll_triggers.get("profit_close", "")
     upgrade = roll_triggers.get("regime_upgrade", "")
     return f"Roll: {profit} | {upgrade}".strip()
+
+
+def _format_flag_banner(symbol: str, flag_state: dict[str, Any], include_size_note: bool = True) -> list[str]:
+    if flag_state.get("is_blocked"):
+        lines = [f"🚫 {symbol.upper()} — BLOCKED"]
+        for flag in flag_state.get("hard_blocks", []):
+            lines.append(f"   {flag}: {flag_state['descriptions'].get(flag, '')}")
+        lines.append("   Action: Remove from watchlist. Do not open new premium-selling exposure.")
+        return lines
+
+    warnings = flag_state.get("warnings", [])
+    if not warnings:
+        return []
+
+    lines = [f"   ⚠️ FLAGS: {', '.join(warnings)}"]
+    for flag in warnings:
+        lines.append(f"   {flag}: {flag_state['descriptions'].get(flag, WARN_FLAGS.get(flag, ''))}")
+    if include_size_note:
+        lines.append("   Size: Reduce to half-size; speculative names stay at 1 contract max.")
+    return lines
 
 
 async def _load_live_portfolio() -> dict[str, Any]:
@@ -394,6 +416,7 @@ def _recommended_trade(symbol: str, tech: dict[str, Any], iv_data: dict[str, Any
         held_shares=held_shares,
         tier=tier,
         account=engine_account,
+        flags=meta.get("flags", []),
     )
     trade = rec.__dict__.copy()
     trade["account"] = display_account or rec.account
@@ -406,6 +429,7 @@ def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) 
     sector_text = meta.get("sector", "Unmapped")
     emoji, signal_text = _signal_display(portfolio_check.get("signal", "SKIP"))
     trade = portfolio_check.get("trade", {})
+    flag_state = portfolio_check.get("flags") or check_flags(symbol, meta)
     price = _safe_float(tech.get("current")) or _safe_float(portfolio_check.get("price"))
     rsi = _safe_float(tech.get("rsi"))
     ivr_value = _safe_float(ivr.get("iv_rank")) or _safe_float(portfolio_check.get("ivr"))
@@ -448,14 +472,19 @@ def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) 
     price_text = _format_price(price)
     rsi_text = f"{rsi:.0f}" if rsi is not None else "n/a"
     ivr_text = f"{ivr_value:.0f}" if ivr_value is not None else "n/a"
+    if flag_state.get("is_blocked"):
+        return "\n".join(_format_flag_banner(symbol, flag_state, include_size_note=False))
+
     top_line = f"{emoji} {signal_text:<10} {symbol.upper():<6} {price_text}  RSI {rsi_text}  IVR {ivr_text}"
 
+    flag_lines = _format_flag_banner(symbol, flag_state)
     strategy_line = f"   {_strategy_regime_label(regime)} → {_format_strategy_line(trade)}"
     if current_iv is not None:
         strategy_line += f"  |  IV {current_iv:.1f}%"
 
     return "\n".join([
         top_line,
+        *flag_lines,
         strategy_line,
         f"   Rationale: {trade.get('rationale', 'n/a')}",
         f"   {_roll_summary(trade.get('roll_triggers', {}))}",
@@ -1283,8 +1312,12 @@ async def call_tool(name: str, arguments: dict):
                     timing = await _run_sync(entry_timing_score, symbol, ivr_value)
                 except Exception:
                     timing = None
+            flag_state = check_flags(symbol, meta)
+            if flag_state.get("is_blocked"):
+                signal = "SKIP"
             portfolio_check.update({
                 "signal": signal,
+                "flags": flag_state,
                 "trade": _recommended_trade(symbol, tech, iv_data, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                 "timing": timing,
                 "earnings_days": earnings_days,
@@ -1308,7 +1341,10 @@ async def call_tool(name: str, arguments: dict):
                 symbol = candidate["symbol"]
                 meta = _SYMBOL_META.get(symbol, candidate)
                 portfolio_check = await _get_portfolio_check(symbol, portfolio, meta)
+                flag_state = check_flags(symbol, meta)
                 signal = (candidate.get("signal") or "SKIP").replace("_", " ")
+                if flag_state.get("is_blocked"):
+                    signal = "SKIP"
                 if not regime_data.get("new_entries_allowed") and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
                     signal = "WATCH"
                 if portfolio_check.get("short_puts", 0) > 0 and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
@@ -1317,6 +1353,7 @@ async def call_tool(name: str, arguments: dict):
                     signal = "WATCH"
                 portfolio_check.update({
                     "signal": signal,
+                    "flags": flag_state,
                     "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                     "price": candidate.get("price"),
                     "ivr": candidate.get("ivr"),
@@ -1359,7 +1396,10 @@ async def call_tool(name: str, arguments: dict):
                     symbol = candidate["symbol"]
                     meta = _SYMBOL_META.get(symbol, candidate)
                     portfolio_check = await _get_portfolio_check(symbol, portfolio, meta)
+                    flag_state = check_flags(symbol, meta)
                     signal = (candidate.get("signal") or "SKIP").replace("_", " ")
+                    if flag_state.get("is_blocked"):
+                        signal = "SKIP"
                     if not regime_data.get("new_entries_allowed") and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
                         signal = "WATCH"
                     if portfolio_check.get("short_puts", 0) > 0 and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
@@ -1368,6 +1408,7 @@ async def call_tool(name: str, arguments: dict):
                         signal = "WATCH"
                     portfolio_check.update({
                         "signal": signal,
+                        "flags": flag_state,
                         "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                         "price": candidate.get("price"),
                         "ivr": candidate.get("ivr"),
@@ -1401,6 +1442,7 @@ async def call_tool(name: str, arguments: dict):
                     for candidate in india_candidates:
                         symbol = candidate["symbol"]
                         meta = _SYMBOL_META.get(symbol, candidate)
+                        flag_state = check_flags(symbol, meta)
                         portfolio_check = {
                             "meta": meta,
                             "shares": 0,
@@ -1411,7 +1453,8 @@ async def call_tool(name: str, arguments: dict):
                             "sector": meta.get("sector"),
                             "sector_count": 0,
                             "sector_warning": False,
-                            "signal": (candidate.get("signal") or "SKIP").replace("_", " "),
+                            "signal": "SKIP" if flag_state.get("is_blocked") else (candidate.get("signal") or "SKIP").replace("_", " "),
+                            "flags": flag_state,
                             "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, {"meta": meta, "shares": 0, "accounts": [], "share_accounts": [], "short_puts": 0, "short_calls": 0, "sector": meta.get("sector"), "sector_count": 0, "sector_warning": False}, india_regime_data.get("regime", "TRANSITIONING")),
                             "price": candidate.get("price"),
                             "ivr": candidate.get("ivr"),

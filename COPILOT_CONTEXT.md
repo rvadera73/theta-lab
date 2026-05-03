@@ -135,6 +135,17 @@ Track against these in ALL reports. Never use different numbers.
 **Current concern**: Portfolio ~80% AI/tech + biotech — diversification is a priority.
 **AI/tech view**: Overpriced, risky. Do not add more pure AI/chip exposure.
 
+## 🚩 Fundamental Flags System
+
+- Flags live in `mcp/reports/screener_universe.py` on each universe entry (`flags`) plus symbol overrides for existing exits.
+- `HARD_BLOCK_FLAGS` = immediate `SKIP` / no recommendation.
+- `WARN_FLAGS` = show before trade recommendation, downgrade conviction, reduce size.
+- Most important persona flags:
+  - `PERMANENT_EXIT`: PYPL/MRNA style names — CC only to reduce/exit, never new CSPs.
+  - `AI_CONCENTRATION`: avoid adding more pure AI/tech into an already ~80% tech-heavy book.
+  - `THIN_MARGINS`: commodity assemblers like DELL/HPE are not premium-selling "quality" just because IV is high.
+- Rule: screener never recommends a `HARD_BLOCK` symbol and always surfaces `WARN_FLAGS` before any trade idea.
+
 ---
 
 ## 🇮🇳 India Market Rules

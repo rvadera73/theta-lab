@@ -11,8 +11,68 @@ from dataclasses import dataclass
 from math import exp, log, sqrt
 from typing import Literal
 
+from reports.screener_universe import INDIA_UNIVERSE_BY_SYMBOL, QUALITY_FLAGS_BY_SYMBOL, US_UNIVERSE_BY_SYMBOL
+
 RegimeType = Literal["BULL", "BEAR_SIDEWAYS", "TRANSITIONING", "RISKY_BULL"]
-StrategyType = Literal["CSP", "CC", "STRANGLE", "WAIT"]
+StrategyType = Literal["CSP", "CC", "STRANGLE", "WAIT", "SKIP"]
+
+
+HARD_BLOCK_FLAGS: dict[str, str] = {
+    "ACCOUNTING_RISK": "Active accounting irregularities, auditor resignation, or DOJ/SEC investigation. Assignment risk = holding fraudulent-company shares.",
+    "DELISTING_RISK": "Active Nasdaq/NYSE compliance failure or delisting notice.",
+    "PERMANENT_EXIT": "Owner has designated this as an exit position. Run CC only to reduce/exit. No new CSPs.",
+    "HALTED": "Trading halted or suspended.",
+    "GOING_CONCERN": "Auditor has issued going-concern warning or company burning cash with no path to profitability.",
+}
+
+WARN_FLAGS: dict[str, str] = {
+    "THIN_MARGINS": "Commodity assembler or price-taker with <5% operating margins. Assignment means owning a low-moat business with compression risk.",
+    "HIGH_DEBT": "Debt/equity > 3x or interest coverage < 2x. Rate sensitivity or revenue dip could impair equity value quickly.",
+    "BINARY_EVENT_RISK": "Pending FDA approval, merger vote, regulatory ruling, or launch event. IV is elevated but outcome is binary — not theta-friendly.",
+    "CHINA_EXPOSURE": ">30% revenue from China. Current trade war environment creates binary tariff/ban risk.",
+    "LOW_MOAT": "No pricing power, easily substituted, or commoditized product. If assigned, stock may keep falling with no fundamental floor.",
+    "SPECULATIVE_STORY": "Trades on narrative/hype, not current earnings. Volatile and hard to model. Keep to Tier 3, 1-2 contracts max.",
+    "RECENT_DILUTION": "Has issued >10% new shares in past 12 months. Shareholder value being diluted.",
+    "LOW_OPTIONS_LIQUIDITY": "Options bid/ask spread typically >$0.50 or open interest <500 at key strikes. Execution risk.",
+    "REGULATORY_RISK": "Active regulatory threat, antitrust probe, or sector-specific legislation risk.",
+    "AI_CONCENTRATION": "Adding this increases your already-heavy AI/tech exposure (currently ~80% of portfolio). Diversification goal at risk.",
+    "OVERWEIGHT_SECTOR": "Portfolio already has 3+ positions in this sector. Adding more increases correlation risk.",
+    "TURNAROUND_UNPROVEN": "Company in multi-year turnaround with uncertain execution. Elevated downside risk if turnaround stalls.",
+    "COMMODITY_PRICE_RISK": "Revenue directly tied to commodity price (oil, gas, power). Can swing 40-60% with commodity moves.",
+    "IDLE_CC_AVAILABLE": "You already hold 100+ shares with NO covered call running. This is free money — activate CC before opening new CSPs.",
+}
+
+
+def check_flags(symbol: str, universe_entry: dict | None = None) -> dict:
+    """
+    Returns:
+      hard_blocks: list of active hard-block flag keys
+      warnings: list of active warn flag keys
+      descriptions: {flag_key: description_string}
+      is_blocked: bool
+    """
+    symbol = symbol.upper()
+    entry = universe_entry or US_UNIVERSE_BY_SYMBOL.get(symbol) or INDIA_UNIVERSE_BY_SYMBOL.get(symbol)
+    active_flags = [str(flag).upper() for flag in (entry or {}).get("flags", [])]
+    if not active_flags and symbol in QUALITY_FLAGS_BY_SYMBOL:
+        active_flags = [str(flag).upper() for flag in QUALITY_FLAGS_BY_SYMBOL[symbol]]
+
+    hard_blocks = [flag for flag in active_flags if flag in HARD_BLOCK_FLAGS]
+    warnings = [flag for flag in active_flags if flag in WARN_FLAGS]
+    descriptions = {
+        flag: HARD_BLOCK_FLAGS.get(flag) or WARN_FLAGS.get(flag, "")
+        for flag in [*hard_blocks, *warnings]
+    }
+    return {
+        "hard_blocks": hard_blocks,
+        "warnings": warnings,
+        "descriptions": descriptions,
+        "is_blocked": bool(hard_blocks),
+    }
+
+
+def _flag_summary(flag_state: dict, keys: list[str]) -> str:
+    return "; ".join(f"{flag}: {flag_state['descriptions'][flag]}" for flag in keys)
 
 
 @dataclass
@@ -142,6 +202,8 @@ def _otm_for(regime: RegimeType, iv_rank: float, rsi: float, tier: int) -> float
 
 
 def _estimate_premium(strategy: StrategyType, price: float, strike_put: float | None, strike_call: float | None, dte: int, iv: float) -> float | None:
+    if strategy == "SKIP":
+        return None
     if strategy == "WAIT":
         return None
     term = max(dte, 1) / 365.0
@@ -174,6 +236,14 @@ def _bull_upgrade_ratio(strategy: StrategyType, price: float, iv: float, current
 
 
 def _roll_triggers(symbol: str, strategy: StrategyType, strike_put: float | None, strike_call: float | None, dte: int, price: float, iv: float, current_premium: float | None) -> dict:
+    if strategy == "SKIP":
+        return {
+            "profit_close": "No trade — symbol is blocked by a hard fundamental flag.",
+            "regime_upgrade": "Remove from watchlist until the hard block clears.",
+            "time_based": "Recheck only after the underlying issue is resolved.",
+            "defense": "Do not open new premium-selling exposure.",
+        }
+
     bull_put, bull_call, ratio = _bull_upgrade_ratio(strategy if strategy != "WAIT" else "CSP", price, iv, current_premium)
     if strategy == "CC":
         defense = f"If {symbol} loses ${price * 0.93:.0f}: roll the call out for credit or reduce overwrite size."
@@ -214,6 +284,8 @@ def _rationale(symbol: str, strategy: StrategyType, regime: RegimeType, rsi: flo
     premium_text = f"~${premium:.0f}/contract" if premium is not None else "thin premium"
     yield_text = f" (~{monthly_yield:.2f}%/mo)" if monthly_yield is not None else ""
 
+    if strategy == "SKIP":
+        return f"{lead}: hard fundamental block active — do not open new premium-selling exposure."
     if strategy == "WAIT":
         return f"{lead}: IVR {iv_rank:.0f} is below the 25 floor, so premium is too thin to justify risk right now."
     if strategy == "CC":
@@ -233,6 +305,7 @@ def recommend_trade(
     held_shares: int = 0,
     tier: int = 2,
     account: str = "A",
+    flags: list[str] | None = None,
 ) -> TradeRecommendation:
     iv_rank = _clamp(float(iv_rank or 0.0), 0.0, 100.0)
     iv = _normalized_iv(iv)
@@ -240,6 +313,26 @@ def recommend_trade(
     price = float(price or 0.0)
     tier = int(tier or 2)
     regime = regime if regime in _DTE_RANGES else "TRANSITIONING"
+    flag_state = check_flags(symbol, {"symbol": symbol.upper(), "flags": flags or []} if flags is not None else None)
+    if flag_state["is_blocked"]:
+        blocked_text = _flag_summary(flag_state, flag_state["hard_blocks"])
+        return TradeRecommendation(
+            strategy="SKIP",
+            strike_put=None,
+            strike_call=None,
+            dte=0,
+            otm_pct=0.0,
+            est_premium=None,
+            est_monthly_yield=None,
+            rationale=f"Blocked: {blocked_text}",
+            roll_triggers={
+                "profit_close": "No trade — hard block active.",
+                "regime_upgrade": "Keep off watchlist until the fundamental issue clears.",
+                "time_based": "Recheck only after the hard block is resolved.",
+                "defense": "Do not sell new premium here.",
+            },
+            account=account,
+        )
 
     dte = _dte_for(regime, tier, iv_rank)
     otm_pct = _otm_for(regime, iv_rank, rsi, tier)
@@ -269,6 +362,9 @@ def recommend_trade(
     est_monthly_yield = _monthly_yield(est_premium, reference_strike, dte)
     bull_put, bull_call, _ = _bull_upgrade_ratio(strategy if strategy != "WAIT" else "CSP", price, iv, est_premium)
     rationale = _rationale(symbol, strategy, regime, rsi, iv_rank, otm_pct, dte, est_premium, est_monthly_yield, bull_put, bull_call, held_shares)
+    if flag_state["warnings"]:
+        warning_text = _flag_summary(flag_state, flag_state["warnings"])
+        rationale += f" Warnings: {warning_text}. Reduce size by at least 50%; keep speculative names to 1 contract where possible."
     roll_triggers = _roll_triggers(symbol, strategy, strike_put, strike_call, dte, price, iv, est_premium)
 
     return TradeRecommendation(
