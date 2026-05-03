@@ -300,6 +300,55 @@ def _action_card(symbol: str, action: str, reason: str, priority: str, details: 
 </div>"""
 
 
+def _build_strategic_focus_section(strategic_focus: dict) -> str:
+    """Render the 3-month macro focus watchlist (PBR/CCJ/SHOP/LASR/NU/MUFG)."""
+    if not strategic_focus or not strategic_focus.get("config", {}).get("active"):
+        return ""
+    cfg = strategic_focus["config"]
+    symbols = strategic_focus.get("symbols", [])
+    alloc_lo, alloc_hi = cfg.get("new_trade_allocation_pct", (60, 70))
+    ai_max = cfg.get("ai_max_pct", 60)
+    horizon = cfg.get("horizon_months", 3)
+    thesis = cfg.get("thesis", "")
+
+    cards = ""
+    for item in symbols:
+        sym = item.get("symbol", "")
+        ivr = item.get("ivr")
+        ivr_text = f"{float(ivr):.1f}" if ivr is not None else "—"
+        ivr_color = "#1a7a1a" if (ivr or 0) >= 40 else ("#b87800" if (ivr or 0) >= 25 else "#999")
+        rsi = item.get("rsi")
+        rsi_text = f"{float(rsi):.1f}" if rsi is not None else "—"
+        price = item.get("price")
+        price_text = f"${float(price):,.2f}" if price is not None else "—"
+        pct_off = item.get("pct_off_high")
+        pct_text = f"{float(pct_off):.1f}% off 52w high" if pct_off is not None else "—"
+        rationale = item.get("rationale", "")
+        ivr_signal = "✅ IVR ready" if (ivr or 0) >= 40 else ("⏳ Watch IVR" if (ivr or 0) >= 25 else "⏸ IVR low")
+        cards += f"""
+  <div style="border:1px solid #d0e8d0;border-radius:8px;padding:14px 16px;margin-top:10px;background:#f7fff7;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:15px;font-weight:bold;">{sym}</div>
+      <div style="font-size:12px;color:{ivr_color};font-weight:bold;">{ivr_signal}</div>
+    </div>
+    <div style="font-size:13px;color:#444;line-height:1.8;margin-top:6px;">
+      Price: <b>{price_text}</b> &nbsp;|&nbsp; RSI: <b>{rsi_text}</b> &nbsp;|&nbsp; IVR: <b style="color:{ivr_color};">{ivr_text}</b> &nbsp;|&nbsp; {pct_text}
+    </div>
+    <div style="font-size:12px;color:#555;margin-top:5px;line-height:1.7;">{rationale}</div>
+  </div>"""
+
+    return f"""
+<div style="background:white;margin-top:8px;padding:20px 24px;border-left:4px solid #1a7a1a;">
+  <div style="font-size:18px;font-weight:bold;margin-bottom:4px;">🎯 {horizon}-Month Strategic Focus — Anti-AI + Iran War Macro</div>
+  <div style="font-size:13px;color:#444;line-height:1.8;margin-bottom:10px;">
+    {thesis}<br>
+    <b>Allocation target:</b> {alloc_lo}–{alloc_hi}% of new premium into focus names &nbsp;|&nbsp;
+    <b>AI cap:</b> ≤{ai_max}% (existing positions only, no new AI CSPs/strangles)
+  </div>
+  {cards}
+</div>"""
+
+
 def _build_screener_section(candidates: list[dict], title: str) -> str:
     visible = [c for c in candidates if c.get("signal") in {"ENTER_NOW", "WATCH"}]
     visible.sort(
@@ -682,6 +731,8 @@ def build_bimonthly_technical_html(data: dict, report_date: str = None) -> str:
     {heat_section}
   </div>"""
 
+    strategic_focus_section = _build_strategic_focus_section(data.get("strategic_focus", {}))
+
     return f"""
 <!DOCTYPE html>
 <html>
@@ -693,6 +744,7 @@ def build_bimonthly_technical_html(data: dict, report_date: str = None) -> str:
     <div style="font-size:12px;color:#d7e6f2;margin-top:6px;">Grouped by symbol so each name has one clear read.</div>
   </div>
   {warning}
+  {strategic_focus_section}
   {heat_section}
   <div style="background:white;padding:20px 24px;margin-top:8px;">
     <div style="font-size:15px;font-weight:bold;margin-bottom:12px;">🔎 US Positions — By Symbol</div>
@@ -912,6 +964,7 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
 
     us_screener_section = _build_screener_section(data.get("us_screener", []), "🔍 New Entry Opportunities — US")
     india_screener_section = _build_screener_section(data.get("india_screener", []), "🔍 New Entry Opportunities — India NSE")
+    strategic_focus_section = _build_strategic_focus_section(data.get("strategic_focus", {}))
 
     bev_table = _table(["Symbol", "Shares", "Remaining Loss", "CC / Month", "Months to Breakeven"], data.get("breakeven_rows", []))
 
@@ -1112,6 +1165,7 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
   </div>
   {ytd_section}
   {gap_closure_section}
+  {strategic_focus_section}
   {us_screener_section}
   {india_screener_section}
   <div style="background:white;margin-top:8px;padding:20px 24px;">

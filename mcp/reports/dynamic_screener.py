@@ -10,7 +10,12 @@ from typing import Any
 from analysis.iv_rank import batch_iv_rank
 from config import INDIA_REGIME_THRESHOLDS, RISK, PERMANENT_EXITS
 from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
-from reports.screener_universe import INDIA_UNIVERSE, US_UNIVERSE
+from reports.screener_universe import INDIA_UNIVERSE, US_UNIVERSE, STRATEGIC_MACRO_FOCUS
+
+_FOCUS_SYMBOLS: frozenset[str] = frozenset(
+    STRATEGIC_MACRO_FOCUS["symbols"] if STRATEGIC_MACRO_FOCUS.get("active") else []
+)
+_FOCUS_SCORE_BOOST = 15  # lift focus names so they surface even at moderate IVR
 
 
 def _quiet_call(func, *args, **kwargs):
@@ -247,6 +252,9 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
         tier_component = _tier_score(meta["tier"])
         ivr_value = float(ivr) if ivr is not None else 0.0
         score = (ivr_value * 0.4) + (rsi_component * 0.3) + (regime_fit * 0.2) + (tier_component * 0.1)
+        # Boost Rahul's macro-focus names so they surface prominently in screener
+        if symbol in _FOCUS_SYMBOLS:
+            score = min(score + _FOCUS_SCORE_BOOST, 100)
         strategy = _resolve_strategy(meta, in_portfolio, ivr, regime)
 
         if ivr is not None and ivr >= RISK.get("iv_rank_min_new_entry", 40) and not earnings_soon and regime_fit >= 50:

@@ -21,6 +21,10 @@ US_FLAGS_BY_SYMBOL = {
     "SLB": ['COMMODITY_PRICE_RISK'],
     "HAL": ['COMMODITY_PRICE_RISK'],
     "OXY": ['COMMODITY_PRICE_RISK'],
+    "PBR": ['COMMODITY_PRICE_RISK', 'REGULATORY_RISK'],    # Brazil nationalization risk
+    "CCJ": ['COMMODITY_PRICE_RISK'],                        # uranium price cycle
+    "LASR": ['SPECULATIVE_STORY', 'LOW_MOAT'],              # emerging defense-laser tech
+    "MUFG": ['REGULATORY_RISK'],                            # Japan financial regulation
     "MRNA": ['PERMANENT_EXIT'],
     "NVDA": ['AI_CONCENTRATION', 'CHINA_EXPOSURE'],
     "META": ['AI_CONCENTRATION', 'REGULATORY_RISK'],
@@ -53,6 +57,39 @@ EXTRA_SYMBOL_FLAGS = {
 QUALITY_FLAGS_BY_SYMBOL = {**US_FLAGS_BY_SYMBOL, **INDIA_FLAGS_BY_SYMBOL, **EXTRA_SYMBOL_FLAGS}
 
 
+# ── 3-Month Strategic Macro Focus ─────────────────────────────────────────────
+# Rahul's thesis: Anti-AI rotation + Iran war macro.
+# Direct 60-70% of NEW premium capital into focus names for next 3 months.
+# Keep existing AI positions for covered-call income — add NO new AI CSPs/strangles.
+# AI concentration in portfolio should stay ≤50-60% (existing positions only).
+STRATEGIC_MACRO_FOCUS: dict = {
+    "active": True,
+    "horizon_months": 3,
+    "new_trade_allocation_pct": (60, 70),   # target % of new premium into focus names
+    "ai_max_pct": 60,                        # hard cap on AI-sector concentration
+    "thesis": (
+        "Anti-AI rotation + Iran war macro: direct 60-70% of new premium capital "
+        "into focus names for the next 3 months. Keep existing AI positions for "
+        "covered-call income but add no new AI-sector CSPs/strangles."
+    ),
+    "symbols": ["PBR", "CCJ", "SHOP", "LASR", "NU", "MUFG"],
+    "rationale": {
+        "PBR":  ("Brazilian oil major; Iran geopolitical premium + EM energy torque; "
+                 "anti-AI macro hedge; low P/E with high FCF yield."),
+        "CCJ":  ("Uranium leader; nuclear power demand secular + AI data-center power "
+                 "irony; clean-energy inflection; tier-1 quality."),
+        "SHOP": ("Quality e-commerce infrastructure; merchant lock-in moat; orphaned "
+                 "by AI mania — rotation target when AI trade deflates."),
+        "LASR": ("Laser/directed-energy defense tech; Iran war escalation beneficiary; "
+                 "DoD directed-energy spend ramp; small-cap with liquid options."),
+        "NU":   ("LatAm digital bank; 100M+ users; quality non-AI growth; "
+                 "EM credit-cycle expansion; liquid ADR."),
+        "MUFG": ("Japanese megabank ADR; yen-appreciation play; international "
+                 "diversification; non-US financial exposure; liquid options."),
+    },
+}
+
+
 def _entry(symbol: str, sector: str, tier: int, preferred_strategy: str, min_capital: int, notes: str, flags: list[str] | None = None) -> dict:
     return {
         "symbol": symbol,
@@ -78,6 +115,7 @@ US_UNIVERSE = [
     _entry('EXC', 'Nuclear & Clean Energy', 1, 'CSP', 7000, 'Utility cash flow + nuclear footprint.', US_FLAGS_BY_SYMBOL.get('EXC')),
     _entry('PCG', 'Nuclear & Clean Energy', 2, 'CSP', 5000, 'Higher-beta California utility.', US_FLAGS_BY_SYMBOL.get('PCG')),
     _entry('SO', 'Nuclear & Clean Energy', 1, 'CSP', 7000, 'Defensive regulated utility income name.', US_FLAGS_BY_SYMBOL.get('SO')),
+    _entry('CCJ', 'Nuclear & Clean Energy', 1, 'CSP', 10000, 'Uranium leader; nuclear power demand secular + AI data-center power irony; clean-energy inflection.', US_FLAGS_BY_SYMBOL.get('CCJ')),
     _entry('LMT', 'Defense & Aerospace', 1, 'CSP', 15000, 'Prime defense contractor, resilient backlog.', US_FLAGS_BY_SYMBOL.get('LMT')),
     _entry('RTX', 'Defense & Aerospace', 1, 'CSP_or_strangle', 12000, 'Defense + commercial aero diversification.', US_FLAGS_BY_SYMBOL.get('RTX')),
     _entry('GD', 'Defense & Aerospace', 1, 'CSP', 15000, 'Submarine/business jet exposure.', US_FLAGS_BY_SYMBOL.get('GD')),
@@ -89,6 +127,7 @@ US_UNIVERSE = [
     _entry('LDOS', 'Defense & Aerospace', 2, 'CSP', 9000, 'Services + cyber adjacencies.', US_FLAGS_BY_SYMBOL.get('LDOS')),
     _entry('KTOS', 'Defense & Aerospace', 3, 'CSP', 4000, 'Emerging defense tech.', US_FLAGS_BY_SYMBOL.get('KTOS')),
     _entry('AXON', 'Defense & Aerospace', 1, 'CC', 15000, 'Existing portfolio name; prefer covered calls over new puts.', US_FLAGS_BY_SYMBOL.get('AXON')),
+    _entry('LASR', 'Defense & Aerospace', 2, 'CSP', 5000, 'Laser/directed-energy defense tech; Iran war escalation beneficiary; DoD directed-energy spend ramp.', US_FLAGS_BY_SYMBOL.get('LASR')),
     _entry('VRT', 'AI Infrastructure & Data Center', 1, 'CSP_or_strangle', 12000, 'Power/cooling beneficiary of AI buildout.', US_FLAGS_BY_SYMBOL.get('VRT')),
     _entry('APH', 'AI Infrastructure & Data Center', 1, 'CSP', 11000, 'Connectivity/infrastructure quality compounder.', US_FLAGS_BY_SYMBOL.get('APH')),
     _entry('ALAB', 'AI Infrastructure & Data Center', 2, 'strangle', 8000, 'High-beta AI networking exposure.', US_FLAGS_BY_SYMBOL.get('ALAB')),
@@ -116,6 +155,7 @@ US_UNIVERSE = [
     _entry('V', 'Financials', 1, 'CSP', 14000, 'Toll-booth payments franchise.', US_FLAGS_BY_SYMBOL.get('V')),
     _entry('MA', 'Financials', 1, 'CSP', 17000, 'High-quality payments compounder.', US_FLAGS_BY_SYMBOL.get('MA')),
     _entry('AXP', 'Financials', 1, 'CSP', 14000, 'Affluent spend + lending.', US_FLAGS_BY_SYMBOL.get('AXP')),
+    _entry('MUFG', 'Financials', 2, 'CSP', 9000, 'Japanese megabank ADR; yen-appreciation play; international financial diversification; non-US exposure.', US_FLAGS_BY_SYMBOL.get('MUFG')),
     _entry('XOM', 'Energy', 1, 'CSP', 11000, 'Integrated major, strong cash returns.', US_FLAGS_BY_SYMBOL.get('XOM')),
     _entry('CVX', 'Energy', 1, 'CSP', 13000, 'Integrated major, lower beta.', US_FLAGS_BY_SYMBOL.get('CVX')),
     _entry('COP', 'Energy', 1, 'CSP', 11000, 'E&P torque to oil/gas.', US_FLAGS_BY_SYMBOL.get('COP')),
@@ -124,6 +164,7 @@ US_UNIVERSE = [
     _entry('OXY', 'Energy', 2, 'CSP', 6000, 'Buffett-backed oil beta.', US_FLAGS_BY_SYMBOL.get('OXY')),
     _entry('MPC', 'Energy', 1, 'CSP', 14000, 'Refining + midstream cash flow.', US_FLAGS_BY_SYMBOL.get('MPC')),
     _entry('PSX', 'Energy', 1, 'CSP', 13000, 'Refining/chemicals quality name.', US_FLAGS_BY_SYMBOL.get('PSX')),
+    _entry('PBR', 'Energy', 2, 'CSP', 7000, 'Brazilian oil major; Iran geopolitical premium + EM energy torque; anti-AI macro hedge; high FCF yield.', US_FLAGS_BY_SYMBOL.get('PBR')),
     _entry('CAT', 'Industrials & Infrastructure', 1, 'CSP', 15000, 'Construction/mining cyclicality.', US_FLAGS_BY_SYMBOL.get('CAT')),
     _entry('DE', 'Industrials & Infrastructure', 1, 'CSP', 17000, 'Ag + construction machinery.', US_FLAGS_BY_SYMBOL.get('DE')),
     _entry('URI', 'Industrials & Infrastructure', 1, 'CSP', 20000, 'Rental equipment leader.', US_FLAGS_BY_SYMBOL.get('URI')),

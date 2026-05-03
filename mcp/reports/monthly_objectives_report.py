@@ -27,6 +27,7 @@ from analysis.india_regime import detect_india_regime
 from analysis.regime import detect_regime
 from config import ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, PERMANENT_EXITS
 from reports.dynamic_screener import screen_india_opportunities, screen_us_opportunities
+from reports.screener_universe import STRATEGIC_MACRO_FOCUS
 from routines.email_report import build_monthly_objectives_html
 
 
@@ -369,6 +370,35 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
     )
     data["us_screener"] = us_candidates
     data["india_screener"] = india_candidates
+
+    # Strategic macro focus — live IVR + technicals for Rahul's 6 focus names
+    if STRATEGIC_MACRO_FOCUS.get("active"):
+        from analysis.iv_rank import batch_iv_rank
+        focus_symbols = STRATEGIC_MACRO_FOCUS["symbols"]
+        try:
+            focus_ivr = batch_iv_rank(focus_symbols) or {}
+        except Exception:
+            focus_ivr = {}
+        focus_data = []
+        for sym in focus_symbols:
+            ivr_info = focus_ivr.get(sym, {})
+            try:
+                from reports.report_utils import technical_snapshot as _snap
+                snap = _snap(sym)
+            except Exception:
+                snap = {}
+            focus_data.append({
+                "symbol": sym,
+                "ivr": ivr_info.get("iv_rank"),
+                "iv_pct": ivr_info.get("iv_pct"),
+                "rsi": snap.get("rsi"),
+                "price": snap.get("current"),
+                "pct_off_high": snap.get("pct_off_high"),
+                "rationale": STRATEGIC_MACRO_FOCUS["rationale"].get(sym, ""),
+            })
+        data["strategic_focus"] = {"config": STRATEGIC_MACRO_FOCUS, "symbols": focus_data}
+    else:
+        data["strategic_focus"] = {}
 
     # Portfolio heat scan — uses live positions already loaded above
     try:

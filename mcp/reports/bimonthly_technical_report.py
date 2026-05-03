@@ -24,6 +24,7 @@ from reports.report_utils import (
     save_html,
     technical_snapshot,
 )
+from reports.screener_universe import STRATEGIC_MACRO_FOCUS
 
 SECTOR_MAP = {
     "Power": ["ADAPOW", "NTPC"],
@@ -181,6 +182,34 @@ async def generate_bimonthly_technical_report(send_email: bool = True, save_to_f
         data["portfolio_heat_html"] = format_heat_html(heat)
     except Exception as _e:
         data["portfolio_heat_html"] = f"<p><em>Heat scanner unavailable: {_e}</em></p>"
+
+    # Strategic macro focus — live IVR + technicals for Rahul's 6 focus names
+    if STRATEGIC_MACRO_FOCUS.get("active"):
+        from analysis.iv_rank import batch_iv_rank
+        focus_symbols = STRATEGIC_MACRO_FOCUS["symbols"]
+        try:
+            focus_ivr = batch_iv_rank(focus_symbols) or {}
+        except Exception:
+            focus_ivr = {}
+        focus_data = []
+        for sym in focus_symbols:
+            ivr_info = focus_ivr.get(sym, {})
+            try:
+                snap = technical_snapshot(sym)
+            except Exception:
+                snap = {}
+            focus_data.append({
+                "symbol": sym,
+                "ivr": ivr_info.get("iv_rank"),
+                "iv_pct": ivr_info.get("iv_pct"),
+                "rsi": snap.get("rsi"),
+                "price": snap.get("current"),
+                "pct_off_high": snap.get("pct_off_high"),
+                "rationale": STRATEGIC_MACRO_FOCUS["rationale"].get(sym, ""),
+            })
+        data["strategic_focus"] = {"config": STRATEGIC_MACRO_FOCUS, "symbols": focus_data}
+    else:
+        data["strategic_focus"] = {}
     html = build_bimonthly_technical_html(data, today.strftime("%B %d, %Y"))
     path = save_html("bimonthly_technical", html, today) if save_to_file else None
     subject = f"Theta-Lab Bi-monthly Technical Report — {today:%B %d, %Y}"
