@@ -485,55 +485,105 @@ def fallback_us_positions() -> dict[str, Any]:
 
 
 async def load_us_positions() -> dict[str, Any]:
-    account_a_hash = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")
-    account_b_hash = os.getenv("SCHWAB_ACCOUNT_B_HASH", "")
-    account_c_hash = os.getenv("SCHWAB_ACCOUNT_C_HASH", "")
-    try:
-        if not account_a_hash and not account_b_hash and not account_c_hash:
-            raise RuntimeError("Schwab account hashes not configured")
-        from schwab_client import get_all_positions, get_quotes, get_balances
+    """
+    Load all US positions from every configured account in the ACCOUNTS registry.
+    Schwab accounts fetched live in parallel; CSV-based accounts loaded from file.
+    Non-fatal per account — one failure never blocks others.
+    """
+    from config import ACCOUNTS
+    from analysis.pnl import (
+        parse_schwab_positions, parse_fidelity_csv,
+        parse_vanguard_pdf, parse_vanguard_csv,
+    )
 
-        all_positions: list[Position] = []
-        balances: dict[str, dict[str, Any]] = {}
-        for acct_hash, label in ((account_a_hash, "A"), (account_b_hash, "B"), (account_c_hash, "C")):
-            if not acct_hash:
-                continue
-            raw = await get_all_positions(acct_hash)
-            if not raw:
-                continue
-            symbols = sorted({
-                (p.get("instrument", {}).get("underlyingSymbol") or p.get("instrument", {}).get("symbol", "").split()[0])
-                for p in raw
-                if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
-            })
-            quotes = await get_quotes(symbols)
-            balances[label] = await get_balances(acct_hash)
-            all_positions.extend(parse_schwab_positions(raw, label, quotes))
-        if not all_positions:
-            raise RuntimeError("No live positions returned")
+    all_positions: list[Position] = []
+    balances: dict[str, dict[str, Any]] = {}
 
-        # Robinhood Account D — optional, non-fatal if credentials missing
+    # ── Schwab (live, parallel) ──────────────────────────────────────────────
+    schwab_accounts = {
+        label: os.getenv(cfg.get("hash_env", ""), "")
+        for label, cfg in ACCOUNTS.items()
+        if cfg.get("broker") == "schwab"
+    }
+    schwab_accounts = {k: v for k, v in schwab_accounts.items() if v}
+
+    if schwab_accounts:
         try:
-            rh_user = os.getenv("ROBINHOOD_USERNAME", "")
-            rh_pass = os.getenv("ROBINHOOD_PASSWORD", "")
-            if rh_user and rh_pass:
-                from robinhood_client import get_robinhood_positions
-                rh_equity, rh_options = get_robinhood_positions()
-                rh_positions = parse_robinhood_positions(rh_equity, rh_options, account_label="D")
-                all_positions.extend(rh_positions)
-        except Exception:
-            pass  # Robinhood is best-effort; never blocks the Schwab data
+            from schwab_client import get_all_positions, get_quotes, get_balances
 
-        return {
-            "positions": all_positions,
-            "balances": balances,
-            "data_source": "LIVE",
-            "warning": None,
-            "snapshot": load_snapshot(),
-            "transactions": load_account_transactions(),
-        }
-    except Exception:
+            async def _fetch(label: str, acct_hash: str) -> list[Position]:
+                try:
+                    raw = await get_all_positions(acct_hash)
+                    if not raw:
+                        return []
+                    symbols = sorted({
+                        (p.get("instrument", {}).get("underlyingSymbol")
+                         or p.get("instrument", {}).get("symbol", "").split()[0])
+                        for p in raw
+                        if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                    })
+                    quotes = await get_quotes(symbols) if symbols else {}
+                    balances[label] = await get_balances(acct_hash)
+                    return parse_schwab_positions(raw, label, quotes)
+                except Exception:
+                    return []
+
+            results = await asyncio.gather(*[_fetch(l, h) for l, h in schwab_accounts.items()])
+            for r in results:
+                all_positions.extend(r)
+        except Exception:
+            pass
+
+    # ── CSV-based accounts (non-fatal each) ──────────────────────────────────
+    csv_brokers = ("fidelity_csv", "robinhood_csv", "vanguard_csv")
+    for label, cfg in ACCOUNTS.items():
+        broker = cfg.get("broker")
+        if broker not in csv_brokers:
+            continue
+        try:
+            if broker == "fidelity_csv":
+                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+                if not csv_path or not os.path.exists(csv_path):
+                    continue
+                acct_filter = cfg.get("fidelity_account_number")
+                per_acct = parse_fidelity_csv(csv_path, account_filter=acct_filter)
+                for _, positions in per_acct.items():
+                    for pos in positions:
+                        pos.account = label
+                    all_positions.extend(positions)
+
+            elif broker == "robinhood_csv":
+                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+                if not csv_path or not os.path.exists(csv_path):
+                    continue
+                from analysis.pnl import parse_robinhood_csv
+                positions = parse_robinhood_csv(csv_path, account_label=label)
+                all_positions.extend(positions)
+
+            elif broker == "vanguard_csv":
+                pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
+                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+                if pdf_path and os.path.exists(pdf_path):
+                    positions = parse_vanguard_pdf(pdf_path, account_label=label)
+                elif csv_path and os.path.exists(csv_path):
+                    positions = parse_vanguard_csv(csv_path, account_label=label)
+                else:
+                    continue
+                all_positions.extend(positions)
+        except Exception:
+            pass  # never block on one account
+
+    if not all_positions:
         return fallback_us_positions()
+
+    return {
+        "positions": all_positions,
+        "balances": balances,
+        "data_source": "LIVE",
+        "warning": None,
+        "snapshot": load_snapshot(),
+        "transactions": load_account_transactions(),
+    }
 
 
 def _dte_from_expiry(expiry: str) -> int:

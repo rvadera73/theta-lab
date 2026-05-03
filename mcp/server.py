@@ -161,100 +161,20 @@ def _target_accounts(account: str) -> list[tuple[str, str]]:
 
 async def _load_positions_all(account_filter: str = "all") -> list:
     """
-    Central position loader — handles ALL registered brokers.
-    account_filter: "all" | specific label e.g. "A", "B", "C", "D"
-    Adding a new broker account only requires registering it in config.ACCOUNTS.
+    Delegates to load_us_positions() — the single canonical position loader.
+    account_filter: "all" | "both" (A+B only) | specific label e.g. "A", "F1"
+    To add a new broker: update config.ACCOUNTS + load_us_positions() only.
     """
-    from analysis.pnl import parse_schwab_positions, parse_robinhood_positions
-    from schwab_client import get_all_positions, get_quotes
+    from reports.report_utils import load_us_positions
+    us_data = await load_us_positions()
+    positions = us_data.get("positions", [])
 
-    configured = _get_configured_accounts()
-
-    # Apply filter
     if account_filter == "all":
-        targets = configured
+        return positions
     elif account_filter == "both":
-        targets = {k: v for k, v in configured.items() if k in ("A", "B")}
+        return [p for p in positions if p.account in ("A", "B")]
     else:
-        targets = {k: v for k, v in configured.items() if k == account_filter}
-
-    all_positions: list = []
-
-    # Schwab: parallel fetch
-    schwab_accounts = {k: v for k, v in targets.items() if v.get("broker") == "schwab" and v.get("hash")}
-
-    async def _fetch_schwab(label: str, acct_hash: str) -> list:
-        try:
-            raw = await get_all_positions(acct_hash)
-            if not raw:
-                return []
-            quote_symbols = sorted({
-                (p.get("instrument", {}).get("underlyingSymbol")
-                 or p.get("instrument", {}).get("symbol", "").split()[0])
-                for p in raw
-                if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
-            })
-            quotes = await get_quotes(quote_symbols) if quote_symbols else {}
-            return parse_schwab_positions(raw, label, quotes)
-        except Exception:
-            return []
-
-    schwab_results = await asyncio.gather(*[
-        _fetch_schwab(label, v["hash"]) for label, v in schwab_accounts.items()
-    ])
-    for result in schwab_results:
-        all_positions.extend(result)
-
-    # Non-Schwab: sync in executor
-    for label, cfg in targets.items():
-        broker = cfg.get("broker")
-        if broker == "schwab":
-            continue  # already handled above
-        try:
-            if broker == "robinhood":
-                # Legacy API path — kept for fallback but accounts D/E now use robinhood_csv
-                from robinhood_client import get_robinhood_positions
-                equity, options = await asyncio.wait_for(
-                    asyncio.get_event_loop().run_in_executor(None, get_robinhood_positions),
-                    timeout=15,
-                )
-                all_positions.extend(parse_robinhood_positions(equity, options, label))
-            elif broker == "fidelity_csv":
-                from analysis.pnl import parse_fidelity_csv
-                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-                if not csv_path or not os.path.exists(csv_path):
-                    continue
-                acct_filter = cfg.get("fidelity_account_number")
-                per_acct = parse_fidelity_csv(csv_path, account_filter=acct_filter)
-                for acct_num, positions in per_acct.items():
-                    for pos in positions:
-                        pos.account = label
-                    all_positions.extend(positions)
-            elif broker == "robinhood_csv":
-                from analysis.pnl import parse_robinhood_csv
-                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-                if not csv_path or not os.path.exists(csv_path):
-                    continue
-                positions = parse_robinhood_csv(csv_path, account_label=label)
-                all_positions.extend(positions)
-            elif broker == "vanguard_csv":
-                # Prefer PDF (has cost basis) over CSV (no cost basis)
-                pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
-                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-                if pdf_path and os.path.exists(pdf_path):
-                    from analysis.pnl import parse_vanguard_pdf
-                    positions = parse_vanguard_pdf(pdf_path, account_label=label)
-                elif csv_path and os.path.exists(csv_path):
-                    from analysis.pnl import parse_vanguard_csv
-                    positions = parse_vanguard_csv(csv_path, account_label=label)
-                else:
-                    continue
-                all_positions.extend(positions)
-            # Future brokers: add elif here
-        except Exception:
-            pass
-
-    return all_positions
+        return [p for p in positions if p.account == account_filter]
 
 
 def _position_action(position, regime: str) -> str:

@@ -11,12 +11,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from datetime import date, datetime
 from typing import Any
 
-from analysis.pnl import Position, parse_robinhood_positions, parse_schwab_positions
+from analysis.pnl import Position
 from analysis.regime import detect_regime
 from analysis.iv_rank import batch_iv_rank
 from analysis.heat_scanner import heat_from_positions, format_heat_html
 from config import (
-    ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, ACCOUNT_D, ACCOUNTS, PERMANENT_EXITS,
+    ACCOUNTS, PERMANENT_EXITS,
     LEGACY_EXIT_RULES, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
 )
 
@@ -51,11 +51,12 @@ def _priority(position: Position, regime_str: str) -> tuple[int, str, str]:
 
 
 async def generate_weekly_report(
-    account_a_hash: str,
-    account_b_hash: str,
+    save_to_file: bool = True,
+    # Legacy params kept for backward compat — ignored, registry used instead
+    account_a_hash: str = "",
+    account_b_hash: str = "",
     account_c_hash: str = "",
     schwab_client=None,
-    save_to_file: bool = True,
 ) -> dict:
     """
     Main report generator. Returns dict with keys: html, text, data, path.
@@ -72,92 +73,39 @@ async def generate_weekly_report(
     new_entries = regime_data["new_entries_allowed"]
     profit_low, profit_high = PROFIT_TARGETS[Regime(regime)]
 
-    # --- Pull positions ---
+    # --- Pull positions via canonical registry loader ---
     all_actions = []
     all_positions: list = []
     text_warnings = []
 
-    for acct_hash, acct_cfg, acct_label in [
-        (account_a_hash, ACCOUNT_A, "A"),
-        (account_b_hash, ACCOUNT_B, "B"),
-        (account_c_hash, ACCOUNT_C, "C"),
-    ]:
-        if not acct_hash:
-            continue
-        try:
-            if schwab_client:
-                raw = await schwab_client.get_all_positions(acct_hash)
-                quotes_raw = {}
-            else:
-                from schwab_client import get_all_positions, get_quotes, get_balances
-                raw = await get_all_positions(acct_hash)
-                symbols = list({
-                    (p.get("instrument", {}).get("underlyingSymbol")
-                     or p.get("instrument", {}).get("symbol", "").split()[0])
-                    for p in raw
-                    if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
-                })
-                quotes_raw = await get_quotes(symbols)
+    try:
+        from reports.report_utils import load_us_positions
+        us_data = await load_us_positions()
+        all_positions = us_data.get("positions", [])
+        if us_data.get("warning"):
+            text_warnings.append(f"⚠️ {us_data['warning']}")
+    except Exception as e:
+        text_warnings.append(f"⚠️ Could not load positions: {e}")
 
-            positions = parse_schwab_positions(raw, acct_label, quotes_raw)
-            all_positions.extend(positions)
-
-            for pos in positions:
-                pri, label, reason = _priority(pos, regime)
-                combined_pnl = pos.combined_net_pnl
-                profit_sig = pos.profit_take_signal(regime)
-                loss_sig = pos.loss_flag()
-                roll_sig = pos.roll_signal()
-                all_actions.append({
-                    "priority": pri,
-                    "label": label,
-                    "reason": reason,
-                    "symbol": pos.symbol,
-                    "account": acct_label,
-                    "shares": pos.shares,
-                    "current_price": pos.current_price,
-                    "combined_pnl": combined_pnl,
-                    "premium_received": pos.total_premium_received,
-                    "cost_to_close": pos.total_cost_to_close_options,
-                    "profit_signal": profit_sig,
-                    "loss_flag": loss_sig,
-                    "roll_signal": roll_sig,
-                    "legs": pos.option_legs,
-                    "permanent_exit": pos.symbol in PERMANENT_EXITS,
-                })
-        except Exception as e:
-            text_warnings.append(f"⚠️ Could not load Account {acct_label}: {e}")
-
-    # Account D — Robinhood (if configured)
-    rh_user = os.getenv("ROBINHOOD_USERNAME", "")
-    rh_pass = os.getenv("ROBINHOOD_PASSWORD", "")
-    if rh_user and rh_pass:
-        try:
-            from robinhood_client import get_robinhood_positions
-            rh_equity, rh_opts = await asyncio.wait_for(
-                asyncio.get_event_loop().run_in_executor(None, get_robinhood_positions),
-                timeout=15,
-            )
-            rh_positions = parse_robinhood_positions(rh_equity, rh_opts, account_label="D")
-            all_positions.extend(rh_positions)
-            for pos in rh_positions:
-                pri, label, reason = _priority(pos, regime)
-                combined_pnl = pos.combined_net_pnl
-                all_actions.append({
-                    "priority": pri, "label": label, "reason": reason,
-                    "symbol": pos.symbol, "account": "D",
-                    "shares": pos.shares, "current_price": pos.current_price,
-                    "combined_pnl": combined_pnl,
-                    "premium_received": pos.total_premium_received,
-                    "cost_to_close": pos.total_cost_to_close_options,
-                    "profit_signal": pos.profit_take_signal(regime),
-                    "loss_flag": pos.loss_flag(),
-                    "roll_signal": pos.roll_signal(),
-                    "legs": pos.option_legs,
-                    "permanent_exit": pos.symbol in PERMANENT_EXITS,
-                })
-        except Exception:
-            pass
+    for pos in all_positions:
+        pri, lbl, reason = _priority(pos, regime)
+        all_actions.append({
+            "priority": pri,
+            "label": lbl,
+            "reason": reason,
+            "symbol": pos.symbol,
+            "account": pos.account,
+            "shares": pos.shares,
+            "current_price": pos.current_price,
+            "combined_pnl": pos.combined_net_pnl,
+            "premium_received": pos.total_premium_received,
+            "cost_to_close": pos.total_cost_to_close_options,
+            "profit_signal": pos.profit_take_signal(regime),
+            "loss_flag": pos.loss_flag(),
+            "roll_signal": pos.roll_signal(),
+            "legs": pos.option_legs,
+            "permanent_exit": pos.symbol in PERMANENT_EXITS,
+        })
 
     all_actions.sort(key=lambda x: (x["priority"], -abs(x["combined_pnl"])))
     top5 = all_actions[:5]
@@ -174,12 +122,10 @@ async def generate_weekly_report(
 
     # --- P&L rows ---
     pnl_rows = [
-        ["A (Rahul Schwab)", f"${ACCOUNT_A['target_weekly_pnl']:,}", "— (order history needed)"],
-        ["B (Pinky IRA)", f"${ACCOUNT_B['target_weekly_pnl']:,}", "—"],
-        ["C (Designated)", f"${ACCOUNT_C['target_weekly_pnl']:,}", "—"],
-        ["D (Robinhood IRA)", f"${ACCOUNT_D['target_weekly_pnl']:,}", "—"],
-        ["Combined", f"${sum(ACCOUNTS[k]['target_weekly_pnl'] for k in ACCOUNTS):,}", "—"],
-    ]
+        [f"{cfg['label']} ({lbl})", f"${cfg.get('target_weekly_pnl', 0):,}", "—"]
+        for lbl, cfg in ACCOUNTS.items()
+        if cfg.get("target_weekly_pnl")
+    ] + [["Combined", f"${sum(cfg.get('target_weekly_pnl',0) for cfg in ACCOUNTS.values()):,}", "—"]]
 
     report_data = {
         "regime": regime,
