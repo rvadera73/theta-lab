@@ -1,0 +1,624 @@
+{
+  "SMCI": {
+    "flags": [
+      {
+        "flag": "THIN_MARGINS",
+        "confidence": 0.95,
+        "source": "yfinance operatingMargins=3.7%",
+        "notes": "Operating margin 3.7% < 5% \u2014 price-taker / commodity assembler",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:10+00:00",
+        "expires_at": "2026-08-01T02:44:10+00:00"
+      },
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.75,
+        "source": "yfinance grossMargins=8.0%",
+        "notes": "Gross margin 8.0% \u2014 limited pricing power, easily substituted",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:10+00:00",
+        "expires_at": "2026-08-01T02:44:10+00:00"
+      },
+      {
+        "flag": "ACCOUNTING_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": true,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      },
+      {
+        "flag": "DELISTING_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": true,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ],
+    "last_updated": "2026-05-03T02:44:35+00:00"
+  },
+  "VRT": {
+    "flags": [],
+    "last_updated": "2026-05-03T02:44:11+00:00"
+  },
+  "BE": {
+    "flags": [
+      {
+        "flag": "SPECULATIVE_STORY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "GOING_CONCERN",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": true,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "PCG": {
+    "flags": [
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "BA": {
+    "flags": [
+      {
+        "flag": "TURNAROUND_UNPROVEN",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-07-02T02:44:12+00:00"
+      },
+      {
+        "flag": "BINARY_EVENT_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-17T02:44:12+00:00"
+      }
+    ]
+  },
+  "RKLB": {
+    "flags": [
+      {
+        "flag": "SPECULATIVE_STORY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "BINARY_EVENT_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-17T02:44:12+00:00"
+      }
+    ]
+  },
+  "ALAB": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      },
+      {
+        "flag": "SPECULATIVE_STORY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      }
+    ]
+  },
+  "DELL": {
+    "flags": [
+      {
+        "flag": "THIN_MARGINS",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      }
+    ]
+  },
+  "HPE": {
+    "flags": [
+      {
+        "flag": "THIN_MARGINS",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      }
+    ]
+  },
+  "WDC": {
+    "flags": [
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "COMMODITY_PRICE_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-07-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "CRWD": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      }
+    ]
+  },
+  "PANW": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      }
+    ]
+  },
+  "RBRK": {
+    "flags": [
+      {
+        "flag": "SPECULATIVE_STORY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "LOW_OPTIONS_LIQUIDITY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-17T02:44:12+00:00"
+      }
+    ]
+  },
+  "S": {
+    "flags": [
+      {
+        "flag": "SPECULATIVE_STORY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "LOW_OPTIONS_LIQUIDITY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-17T02:44:12+00:00"
+      }
+    ]
+  },
+  "ZS": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      },
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      }
+    ]
+  },
+  "SLB": {
+    "flags": [
+      {
+        "flag": "COMMODITY_PRICE_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-07-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "HAL": {
+    "flags": [
+      {
+        "flag": "COMMODITY_PRICE_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-07-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "OXY": {
+    "flags": [
+      {
+        "flag": "COMMODITY_PRICE_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-07-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "MRNA": {
+    "flags": [
+      {
+        "flag": "PERMANENT_EXIT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": true,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2036-04-30T02:44:12+00:00"
+      }
+    ]
+  },
+  "NVDA": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      },
+      {
+        "flag": "CHINA_EXPOSURE",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "META": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      },
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "GOOGL": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      },
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "COIN": {
+    "flags": [
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      },
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      }
+    ]
+  },
+  "MSTR": {
+    "flags": [
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "SPECULATIVE_STORY",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      }
+    ]
+  },
+  "NTPC": {
+    "flags": [
+      {
+        "flag": "COMMODITY_PRICE_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-07-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "POWERGRID": {
+    "flags": [
+      {
+        "flag": "COMMODITY_PRICE_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-07-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "ADANIGREEN": {
+    "flags": [
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "BAJFINANCE": {
+    "flags": [
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-08-01T02:44:12+00:00"
+      }
+    ]
+  },
+  "TATAMOTORS": {
+    "flags": [
+      {
+        "flag": "CHINA_EXPOSURE",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "PYPL": {
+    "flags": [
+      {
+        "flag": "PERMANENT_EXIT",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": true,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2036-04-30T02:44:12+00:00"
+      }
+    ]
+  },
+  "AAPL": {
+    "flags": [
+      {
+        "flag": "CHINA_EXPOSURE",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "QCOM": {
+    "flags": [
+      {
+        "flag": "CHINA_EXPOSURE",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "MRVL": {
+    "flags": [
+      {
+        "flag": "AI_CONCENTRATION",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-05-03T02:44:12+00:00"
+      }
+    ]
+  },
+  "MCHI": {
+    "flags": [
+      {
+        "flag": "CHINA_EXPOSURE",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "EWZ": {
+    "flags": [
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  },
+  "ADANIPORTS": {
+    "flags": [
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.9,
+        "source": "manual override: seeded from screener_universe initial state",
+        "notes": "seeded from screener_universe initial state",
+        "is_hard_block": false,
+        "evaluated_at": "2026-05-03T02:44:12+00:00",
+        "expires_at": "2026-06-02T02:44:12+00:00"
+      }
+    ]
+  }
+}

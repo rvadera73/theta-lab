@@ -45,30 +45,56 @@ WARN_FLAGS: dict[str, str] = {
 
 def check_flags(symbol: str, universe_entry: dict | None = None) -> dict:
     """
-    Returns:
-      hard_blocks: list of active hard-block flag keys
-      warnings: list of active warn flag keys
-      descriptions: {flag_key: description_string}
-      is_blocked: bool
+    Returns flag state for a symbol.
+    Delegates to flags_engine for dynamic evaluation with TTL-based caching.
+    Falls back to static screener_universe lookup if flags_engine fails.
     """
-    symbol = symbol.upper()
-    entry = universe_entry or US_UNIVERSE_BY_SYMBOL.get(symbol) or INDIA_UNIVERSE_BY_SYMBOL.get(symbol)
-    active_flags = [str(flag).upper() for flag in (entry or {}).get("flags", [])]
-    if not active_flags and symbol in QUALITY_FLAGS_BY_SYMBOL:
-        active_flags = [str(flag).upper() for flag in QUALITY_FLAGS_BY_SYMBOL[symbol]]
+    from analysis.flags_engine import check_flags_live
 
-    hard_blocks = [flag for flag in active_flags if flag in HARD_BLOCK_FLAGS]
-    warnings = [flag for flag in active_flags if flag in WARN_FLAGS]
-    descriptions = {
-        flag: HARD_BLOCK_FLAGS.get(flag) or WARN_FLAGS.get(flag, "")
-        for flag in [*hard_blocks, *warnings]
-    }
-    return {
-        "hard_blocks": hard_blocks,
-        "warnings": warnings,
-        "descriptions": descriptions,
-        "is_blocked": bool(hard_blocks),
-    }
+    symbol = symbol.upper()
+
+    # Gather seed flags from screener_universe for bootstrap
+    entry = universe_entry or US_UNIVERSE_BY_SYMBOL.get(symbol) or INDIA_UNIVERSE_BY_SYMBOL.get(symbol)
+    seed_flags = [str(f).upper() for f in (entry or {}).get("flags", [])]
+    if not seed_flags and symbol in QUALITY_FLAGS_BY_SYMBOL:
+        seed_flags = [str(f).upper() for f in QUALITY_FLAGS_BY_SYMBOL[symbol]]
+
+    try:
+        result = check_flags_live(symbol, seed_flags=seed_flags)
+        hard_block_keys = [f["flag"] for f in result["hard_blocks"]]
+        warning_keys = [f["flag"] for f in result["warnings"]]
+        descriptions = {
+            f["flag"]: (
+                HARD_BLOCK_FLAGS.get(f["flag"]) or WARN_FLAGS.get(f["flag"])
+                or f.get("notes") or f.get("source", "")
+            )
+            for f in result["hard_blocks"] + result["warnings"]
+        }
+        return {
+            "hard_blocks": hard_block_keys,
+            "warnings": warning_keys,
+            "descriptions": descriptions,
+            "is_blocked": bool(hard_block_keys),
+            "flag_details": result["hard_blocks"] + result["warnings"],
+            "stale_flags_refreshed": result.get("stale_flags_refreshed", []),
+        }
+    except Exception:
+        # Fallback to static lookup
+        active_flags = [str(f).upper() for f in seed_flags]
+        hard_blocks = [f for f in active_flags if f in HARD_BLOCK_FLAGS]
+        warnings = [f for f in active_flags if f in WARN_FLAGS]
+        descriptions = {
+            flag: HARD_BLOCK_FLAGS.get(flag) or WARN_FLAGS.get(flag, "")
+            for flag in hard_blocks + warnings
+        }
+        return {
+            "hard_blocks": hard_blocks,
+            "warnings": warnings,
+            "descriptions": descriptions,
+            "is_blocked": bool(hard_blocks),
+            "flag_details": [],
+            "stale_flags_refreshed": [],
+        }
 
 
 def _flag_summary(flag_state: dict, keys: list[str]) -> str:

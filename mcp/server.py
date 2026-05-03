@@ -51,11 +51,17 @@ from config import ACCOUNT_A, ACCOUNT_B, UNIVERSE, Tier, PERMANENT_EXITS, RISK
 from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
 from analysis.india_regime import detect_india_regime
+from analysis.flags_engine import (
+    check_flags_live,
+    get_flag_status,
+    review_all_stale as review_all_stale_flags,
+    update_flag as update_live_flag,
+)
 from analysis.strategy_engine import WARN_FLAGS, check_flags, recommend_trade
 from models.vix_regime import entry_timing_score
 from reports.dynamic_screener import screen_india_opportunities, screen_us_opportunities
 from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
-from reports.screener_universe import INDIA_UNIVERSE, US_UNIVERSE
+from reports.screener_universe import INDIA_UNIVERSE, QUALITY_FLAGS_BY_SYMBOL, US_UNIVERSE
 from reports.weekly_report import generate_weekly_report
 from reports.india_weekly_report import generate_india_weekly_report
 from reports.weekly_combined_report import generate_weekly_combined_report
@@ -821,6 +827,47 @@ async def list_tools():
                 },
             },
         ),
+        Tool(
+            name="review_flags",
+            description=(
+                "Reviews current dynamic flags for a symbol, refreshes stale entries via live evaluators, "
+                "and returns confidence, source, expiry, and what changed."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "description": "Ticker symbol e.g. SMCI",
+                    }
+                },
+                "required": ["symbol"],
+            },
+        ),
+        Tool(
+            name="update_flag",
+            description=(
+                "Manually add, remove, or extend a cached flag with an audit reason, then return updated state."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "symbol": {"type": "string"},
+                    "flag": {"type": "string"},
+                    "action": {"type": "string", "enum": ["add", "remove", "extend"]},
+                    "reason": {"type": "string"},
+                },
+                "required": ["symbol", "flag", "action", "reason"],
+            },
+        ),
+        Tool(
+            name="refresh_flags_cache",
+            description=(
+                "Refreshes stale cached flags across the full US and India screener universes. "
+                "Returns what was refreshed, cleared, newly flagged, or errored."
+            ),
+            inputSchema={"type": "object", "properties": {}},
+        ),
     ]
 
 
@@ -1478,6 +1525,122 @@ async def call_tool(name: str, arguments: dict):
                     )
 
             return [TextContent(type="text", text="\n\n".join(section for section in sections if section))]
+
+        elif name == "review_flags":
+            symbol = str(arguments.get("symbol", "") or "").upper()
+            if not symbol:
+                return [TextContent(type="text", text="symbol is required")]
+
+            before = get_flag_status(symbol)
+            seed_flags = [str(flag).upper() for flag in _SYMBOL_META.get(symbol, {}).get("flags", [])]
+            if not seed_flags:
+                seed_flags = [str(flag).upper() for flag in QUALITY_FLAGS_BY_SYMBOL.get(symbol, [])]
+            result = check_flags_live(symbol, seed_flags=seed_flags)
+            after = get_flag_status(symbol)
+
+            before_flags = {item.get("flag") for item in before.get("flags", [])}
+            active_flags = result.get("hard_blocks", []) + result.get("warnings", [])
+            active_flag_keys = {item.get("flag") for item in active_flags}
+            cleared_flags = sorted(flag for flag in before_flags - active_flag_keys if flag)
+            refreshed_flags = sorted(set(result.get("stale_flags_refreshed", [])))
+            new_flags = sorted(flag for flag in active_flag_keys - before_flags if flag)
+
+            lines = [f"## Flag review — {symbol}", f"Evaluated at: {result.get('evaluated_at', after.get('last_updated', 'n/a'))}", ""]
+            if active_flags:
+                for item in result.get("hard_blocks", []):
+                    lines.append(
+                        f"🚫 {item['flag']} | conf {item.get('confidence', 0):.2f} | expires {item.get('expires_at', 'n/a')}"
+                    )
+                    lines.append(f"   Source: {item.get('source', 'n/a')}")
+                    if item.get("notes"):
+                        lines.append(f"   Notes: {item['notes']}")
+                for item in result.get("warnings", []):
+                    lines.append(
+                        f"⚠️ {item['flag']} | conf {item.get('confidence', 0):.2f} | expires {item.get('expires_at', 'n/a')}"
+                    )
+                    lines.append(f"   Source: {item.get('source', 'n/a')}")
+                    if item.get("notes"):
+                        lines.append(f"   Notes: {item['notes']}")
+            else:
+                lines.append("✅ No active flags.")
+
+            if refreshed_flags:
+                lines.extend(["", f"🔄 Refreshed: {', '.join(refreshed_flags)}"])
+            if new_flags:
+                lines.extend(["", f"⚠️ New flags: {', '.join(new_flags)}"])
+            if cleared_flags:
+                lines.extend(["", f"✅ Cleared: {', '.join(cleared_flags)}"])
+            if after.get("removed_flags"):
+                last_removed = after["removed_flags"][-3:]
+                lines.append("")
+                lines.append("Recent removals:")
+                for item in last_removed:
+                    lines.append(f"✅ {item.get('flag')} removed at {item.get('removed_at')} — {item.get('reason', '')}")
+
+            return [TextContent(type="text", text="\n".join(lines))]
+
+        elif name == "update_flag":
+            symbol = str(arguments.get("symbol", "") or "").upper()
+            flag = str(arguments.get("flag", "") or "").upper()
+            action = str(arguments.get("action", "") or "").lower()
+            reason = str(arguments.get("reason", "") or "")
+            if not symbol or not flag or action not in {"add", "remove", "extend"} or not reason:
+                return [TextContent(type="text", text="symbol, flag, action(add|remove|extend), and reason are required")]
+
+            outcome = update_live_flag(symbol, flag, action, reason)
+            state = get_flag_status(symbol)
+            lines = [f"## Flag update — {symbol}", f"✅ {action.upper()} {flag}", f"Reason: {reason}", "", "Current cache state:"]
+            if state.get("flags"):
+                for item in state["flags"]:
+                    emoji = "🚫" if item.get("flag") in {"ACCOUNTING_RISK", "DELISTING_RISK", "GOING_CONCERN", "HALTED", "PERMANENT_EXIT"} and float(item.get("confidence", 0)) >= 0.60 else "⚠️"
+                    stale_note = " (stale)" if item.get("is_stale") else ""
+                    lines.append(
+                        f"{emoji} {item.get('flag')} | conf {item.get('confidence', 0):.2f} | expires {item.get('expires_at', 'n/a')}{stale_note}"
+                    )
+                    lines.append(f"   Source: {item.get('source', 'n/a')}")
+                    if item.get("notes"):
+                        lines.append(f"   Notes: {item.get('notes')}")
+            else:
+                lines.append("✅ No active flags.")
+            return [TextContent(type="text", text="\n".join(lines))]
+
+        elif name == "refresh_flags_cache":
+            universe_symbols = sorted({item["symbol"] for item in [*US_UNIVERSE, *INDIA_UNIVERSE]})
+            summary = review_all_stale_flags(universe_symbols)
+            lines = ["## Refresh flags cache"]
+            refreshed = summary.get("refreshed", [])
+            cleared = summary.get("cleared", [])
+            new_flags = summary.get("new_flags", [])
+            errors = summary.get("errors", [])
+
+            lines.append(f"🔄 Refreshed symbols: {len(refreshed)}")
+            lines.append(f"✅ Cleared symbols: {len(cleared)}")
+            lines.append(f"⚠️ Newly flagged symbols: {len(new_flags)}")
+            if errors:
+                lines.append(f"❌ Errors: {len(errors)}")
+
+            if refreshed:
+                lines.append("")
+                lines.append("Refreshed:")
+                for item in refreshed:
+                    lines.append(f"🔄 {item['symbol']}: {', '.join(item.get('flags', []))}")
+            if cleared:
+                lines.append("")
+                lines.append("Cleared:")
+                for item in cleared:
+                    lines.append(f"✅ {item['symbol']}: {', '.join(item.get('flags', []))}")
+            if new_flags:
+                lines.append("")
+                lines.append("New flags:")
+                for item in new_flags:
+                    lines.append(f"⚠️ {item['symbol']}: {', '.join(item.get('flags', []))}")
+            if errors:
+                lines.append("")
+                lines.append("Errors:")
+                for item in errors:
+                    lines.append(f"❌ {item['symbol']}: {item.get('error', 'unknown error')}")
+
+            return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "generate_india_weekly_report":
             BREEZE_API_KEY = os.getenv("BREEZE_API_KEY", "")
