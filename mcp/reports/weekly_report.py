@@ -16,7 +16,7 @@ from analysis.iv_rank import batch_iv_rank
 from analysis.heat_scanner import heat_from_positions, format_heat_block
 from config import (
     ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, PERMANENT_EXITS,
-    ITM_POSITION_PLANS, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
+    LEGACY_EXIT_RULES, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
 )
 
 
@@ -140,7 +140,7 @@ async def generate_weekly_report(
                     "loss_flag": loss_sig,
                     "roll_signal": roll_sig,
                     "legs": pos.option_legs,
-                    "itm_plan": ITM_POSITION_PLANS.get(pos.symbol),
+                    "itm_plan": "slow_exit" if pos.symbol in PERMANENT_EXITS else None,
                     "permanent_exit": pos.symbol in PERMANENT_EXITS,
                 }
                 all_actions.append(action)
