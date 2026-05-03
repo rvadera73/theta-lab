@@ -9,10 +9,16 @@ Start: python mcp/server.py
 import argparse
 import asyncio
 import json
+import math
 import os
 import sys
-from datetime import date, datetime
+from collections import Counter
+from datetime import date, datetime, timedelta
+from functools import partial
 from pathlib import Path
+from typing import Any
+
+import yfinance as yf
 
 # Load .env from project root before anything else
 _env_file = Path(__file__).resolve().parent.parent / ".env"
@@ -45,6 +51,10 @@ from mcp.types import Tool, TextContent
 from config import ACCOUNT_A, ACCOUNT_B, UNIVERSE, Tier, PERMANENT_EXITS, RISK
 from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
+from models.vix_regime import entry_timing_score
+from reports.dynamic_screener import screen_india_opportunities, screen_us_opportunities
+from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
+from reports.screener_universe import INDIA_UNIVERSE, US_UNIVERSE
 from reports.weekly_report import generate_weekly_report
 from reports.india_weekly_report import generate_india_weekly_report
 from reports.weekly_combined_report import generate_weekly_combined_report
@@ -124,6 +134,310 @@ def _position_action(position, regime: str) -> str:
     if position.shares > 0 and not position.option_legs:
         return "Covered-call candidate / hold shares"
     return "Hold / monitor"
+
+
+US_SECTOR_CHOICES = [
+    "Energy",
+    "Defense & Aerospace",
+    "Nuclear & Clean Energy",
+    "AI Infrastructure & Data Center",
+    "Cybersecurity",
+    "Financials",
+    "Industrials & Infrastructure",
+    "Healthcare & Biotech",
+    "Consumer & Retail",
+    "Tech",
+]
+
+_SYMBOL_META = {item["symbol"]: item for item in [*US_UNIVERSE, *INDIA_UNIVERSE]}
+
+
+def _safe_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+async def _run_sync(func, *args):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, partial(func, *args))
+
+
+def _tier_label(tier: Any) -> str:
+    try:
+        return f"Tier {int(tier)}"
+    except (TypeError, ValueError):
+        return "Tier ?"
+
+
+def _signal_display(signal: str) -> tuple[str, str]:
+    normalized = (signal or "SKIP").upper().replace("_", " ")
+    emoji = {
+        "ENTER NOW": "🟢",
+        "WATCH": "🟡",
+        "SKIP": "🔴",
+    }.get(normalized, "⚪")
+    return emoji, normalized
+
+
+def _strike_step(price: float) -> float:
+    if price >= 250:
+        return 5.0
+    if price >= 100:
+        return 2.5
+    if price >= 25:
+        return 1.0
+    if price >= 10:
+        return 0.5
+    return 0.25
+
+
+def _round_strike(price: float, direction: str = "down") -> float:
+    if price <= 0:
+        return 0.0
+    step = _strike_step(price)
+    scaled = price / step
+    rounded = math.floor(scaled) if direction == "down" else math.ceil(scaled)
+    value = rounded * step
+    return int(value) if float(value).is_integer() else round(value, 2)
+
+
+async def _load_live_portfolio() -> dict[str, Any]:
+    if not any(_account_hash_map().values()):
+        raise RuntimeError(_no_credentials_message())
+
+    from analysis.pnl import parse_schwab_positions
+    from schwab_client import get_all_positions, get_quotes
+
+    async def _load_account(acct_label: str, acct_hash: str) -> list[Any]:
+        if not acct_hash:
+            return []
+        raw = await get_all_positions(acct_hash)
+        quote_symbols = sorted({
+            (p.get("instrument", {}).get("underlyingSymbol") or p.get("instrument", {}).get("symbol", "").split()[0])
+            for p in raw
+            if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+        })
+        quotes = await get_quotes(quote_symbols) if quote_symbols else {}
+        return parse_schwab_positions(raw, acct_label, quotes)
+
+    loaded = await asyncio.gather(*[
+        _load_account(acct_label, acct_hash)
+        for acct_label, acct_hash in _target_accounts("all")
+        if acct_hash
+    ])
+
+    symbols: dict[str, dict[str, Any]] = {}
+    current_symbols: set[str] = set()
+    for account_positions in loaded:
+        for pos in account_positions:
+            current_symbols.add(pos.symbol)
+            item = symbols.setdefault(pos.symbol, {
+                "symbol": pos.symbol,
+                "shares": 0,
+                "accounts": set(),
+                "share_accounts": set(),
+                "short_puts": 0,
+                "short_calls": 0,
+            })
+            item["shares"] += int(pos.shares)
+            item["accounts"].add(pos.account)
+            if pos.shares > 0:
+                item["share_accounts"].add(pos.account)
+            for leg in pos.option_legs:
+                if leg.quantity < 0 and leg.option_type == "PUT":
+                    item["short_puts"] += abs(int(leg.quantity))
+                if leg.quantity < 0 and leg.option_type == "CALL":
+                    item["short_calls"] += abs(int(leg.quantity))
+
+    sector_counts: Counter[str] = Counter()
+    for symbol in current_symbols:
+        sector = _SYMBOL_META.get(symbol, {}).get("sector")
+        if sector:
+            sector_counts[sector] += 1
+
+    for item in symbols.values():
+        item["accounts"] = sorted(item["accounts"])
+        item["share_accounts"] = sorted(item["share_accounts"])
+
+    return {
+        "current_symbols": sorted(current_symbols),
+        "symbols": symbols,
+        "sector_counts": sector_counts,
+    }
+
+
+async def _get_portfolio_check(symbol: str, portfolio: dict[str, Any], meta: dict[str, Any] | None = None) -> dict[str, Any]:
+    symbol = symbol.upper()
+    meta = meta or _SYMBOL_META.get(symbol, {})
+    holding = portfolio.get("symbols", {}).get(symbol, {})
+    sector = meta.get("sector")
+    sector_count = int(portfolio.get("sector_counts", {}).get(sector, 0)) if sector else 0
+    return {
+        "symbol": symbol,
+        "meta": meta,
+        "shares": int(holding.get("shares", 0) or 0),
+        "accounts": holding.get("accounts", []),
+        "share_accounts": holding.get("share_accounts", []),
+        "short_puts": int(holding.get("short_puts", 0) or 0),
+        "short_calls": int(holding.get("short_calls", 0) or 0),
+        "sector": sector,
+        "sector_count": sector_count,
+        "sector_warning": sector_count >= 3 if sector else False,
+    }
+
+
+async def _current_india_vix() -> float | None:
+    loop = asyncio.get_event_loop()
+
+    def _fetch() -> float | None:
+        try:
+            hist = yf.Ticker("^INDIAVIX").history(period="5d")
+            if hist is None or hist.empty:
+                return None
+            return float(hist["Close"].iloc[-1])
+        except Exception:
+            return None
+
+    return await loop.run_in_executor(None, _fetch)
+
+
+def _research_signal(ivr_value: float | None, rsi: float | None, earnings_days: int | None,
+                     regime_data: dict[str, Any], portfolio_check: dict[str, Any], symbol: str) -> str:
+    if symbol in PERMANENT_EXITS and portfolio_check.get("shares", 0) <= 0:
+        return "SKIP"
+    if earnings_days is not None and earnings_days < RISK.get("earnings_blackout_days", 7):
+        return "SKIP"
+    if ivr_value is None or ivr_value < 25:
+        return "SKIP"
+
+    has_shares = portfolio_check.get("shares", 0) > 0
+    new_entries_allowed = bool(regime_data.get("new_entries_allowed"))
+    enter_ready = (
+        ivr_value >= RISK.get("iv_rank_min_new_entry", 40)
+        and (rsi is None or rsi < 65)
+        and (earnings_days is None or earnings_days >= RISK.get("earnings_blackout_days", 7))
+        and (new_entries_allowed or has_shares)
+    )
+    if enter_ready:
+        if portfolio_check.get("short_puts", 0) > 0 and not has_shares:
+            return "WATCH"
+        if portfolio_check.get("sector_warning") and not has_shares:
+            return "WATCH"
+        return "ENTER NOW"
+    return "WATCH"
+
+
+def _recommended_trade(symbol: str, tech: dict[str, Any], iv_data: dict[str, Any],
+                       portfolio_check: dict[str, Any], signal: str) -> dict[str, Any]:
+    price = float(tech.get("current") or 0)
+    meta = portfolio_check.get("meta", {})
+    tier = int(meta.get("tier", 3) or 3)
+    preferred = meta.get("preferred_strategy")
+    dte = 45 if signal == "ENTER NOW" else 30
+
+    if portfolio_check.get("shares", 0) > 0:
+        strike = _round_strike(price * 1.10, "up")
+        account = "/".join(portfolio_check.get("share_accounts") or portfolio_check.get("accounts") or ["A"])
+        return {"strategy": "CC", "strike": f"~${strike}C", "dte": dte, "account": account}
+
+    if portfolio_check.get("short_puts", 0) > 0:
+        account = "/".join(portfolio_check.get("accounts") or ["A"])
+        return {"strategy": "HOLD", "strike": "existing short put", "dte": dte, "account": account}
+
+    put_strike = _round_strike(price * 0.85, "down")
+    call_strike = _round_strike(price * 1.10, "up")
+    ivr_value = _safe_float(iv_data.get("iv_rank")) or 0.0
+    allow_strangle = tier <= 2 and preferred in {"strangle", "CSP_or_strangle"} and ivr_value >= 60
+    if allow_strangle:
+        return {"strategy": "STRANGLE", "strike": f"~${put_strike}P / ~${call_strike}C", "dte": dte, "account": "A"}
+    return {"strategy": "CSP", "strike": f"~${put_strike}P", "dte": dte, "account": "A"}
+
+
+def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) -> str:
+    meta = portfolio_check.get("meta", {})
+    tier_text = _tier_label(meta.get("tier"))
+    sector_text = meta.get("sector", "Unmapped")
+    emoji, signal_text = _signal_display(portfolio_check.get("signal", "SKIP"))
+    trade = portfolio_check.get("trade", {})
+    price = _safe_float(tech.get("current")) or _safe_float(portfolio_check.get("price")) or 0.0
+    rsi = _safe_float(tech.get("rsi"))
+    ivr_value = _safe_float(ivr.get("iv_rank")) or _safe_float(portfolio_check.get("ivr"))
+    current_iv = _safe_float(ivr.get("current_iv")) or _safe_float(portfolio_check.get("current_iv"))
+    week_high = _safe_float(tech.get("week_52_high"))
+    week_low = _safe_float(tech.get("week_52_low"))
+    pct_off_high = _safe_float(tech.get("pct_off_high"))
+    if pct_off_high is None:
+        pct_off_high = _safe_float(portfolio_check.get("pct_off_high"))
+
+    earnings_days = portfolio_check.get("earnings_days")
+    if earnings:
+        deltas = []
+        for item in earnings:
+            try:
+                deltas.append((date.fromisoformat(item) - date.today()).days)
+            except Exception:
+                continue
+        if deltas:
+            earnings_days = min(deltas)
+    earnings_line = (
+        f"Earnings in ~{earnings_days}d"
+        if earnings_days is not None
+        else f"No earnings in next {portfolio_check.get('earnings_window', 21)}d"
+    )
+
+    notes = []
+    shares = portfolio_check.get("shares", 0)
+    short_puts = portfolio_check.get("short_puts", 0)
+    short_calls = portfolio_check.get("short_calls", 0)
+    if shares > 0:
+        notes.append(f"Already own {shares} shares — CC opportunity")
+    elif short_puts > 0:
+        notes.append(f"Already have {short_puts} short put(s) — don't double up")
+    else:
+        notes.append("Not currently held")
+    if short_calls > 0:
+        notes.append(f"Open short calls: {short_calls}")
+    sector = portfolio_check.get("sector")
+    sector_count = portfolio_check.get("sector_count")
+    if sector:
+        if portfolio_check.get("sector_warning"):
+            notes.append(f"{sector}: {sector_count} positions — sector concentration warning")
+        else:
+            notes.append(f"{sector}: {sector_count} positions")
+    if symbol in PERMANENT_EXITS:
+        notes.append("Permanent-exit list: CC/exit only")
+
+    timing = portfolio_check.get("timing") or {}
+    timing_line = ""
+    if timing.get("composite_score") is not None:
+        timing_line = f"\n  Timing {timing['composite_score']}/100 | {timing.get('signal', 'WAIT')}"
+
+    range_line = ""
+    if week_low is not None and week_high is not None:
+        off_high_text = f" | {abs(pct_off_high):.1f}% off high" if pct_off_high is not None else ""
+        range_line = f"\n  52w range ${week_low:.2f}–${week_high:.2f}{off_high_text}"
+    elif pct_off_high is not None:
+        range_line = f"\n  {abs(pct_off_high):.1f}% off 52w high"
+
+    price_text = f"${price:.2f}" if price else "n/a"
+    rsi_text = f"{rsi:.1f}" if rsi is not None else "n/a"
+    ivr_text = f"{ivr_value:.1f}" if ivr_value is not None else "n/a"
+    iv_text = f"{current_iv:.1f}%" if current_iv is not None else "n/a"
+
+    return (
+        f"📊 {symbol.upper()} [{tier_text} · {sector_text}]\n\n"
+        f"{emoji} {signal_text}\n"
+        f"  Strategy: {trade.get('strategy', 'WATCH')} | Strike: {trade.get('strike', 'n/a')} | "
+        f"DTE: {trade.get('dte', 45)} | Account: {trade.get('account', 'A')}\n\n"
+        f"Key data:\n"
+        f"  Price {price_text} | RSI {rsi_text} | IVR {ivr_text} | IV {iv_text}"
+        f"{range_line}\n"
+        f"  {earnings_line}{timing_line}\n"
+        f"Portfolio check: {' | '.join(notes)}\n"
+        f"Regime: {regime}"
+    )
 
 
 app = Server("theta-lab")
@@ -398,6 +712,61 @@ async def list_tools():
                     }
                 },
                 "required": ["symbol"],
+            },
+        ),
+        Tool(
+            name="research_symbol",
+            description=(
+                "Deep-dive research on a specific symbol. Returns: signal (ENTER/WATCH/SKIP), "
+                "recommended trade with strike zone and DTE, and key supporting data. "
+                "Always cross-checks against your current portfolio."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "description": "Ticker symbol e.g. RKLB",
+                    }
+                },
+                "required": ["symbol"],
+            },
+        ),
+        Tool(
+            name="scan_sector",
+            description=(
+                "Scans a specific sector for the best entry opportunities right now. "
+                "Filters by current regime, IVR, RSI, and your portfolio concentration. "
+                "Returns top 3-5 names with signal and recommended trade."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "sector": {
+                        "type": "string",
+                        "enum": US_SECTOR_CHOICES,
+                        "description": "Sector from screener_universe.py",
+                    }
+                },
+                "required": ["sector"],
+            },
+        ),
+        Tool(
+            name="run_screener",
+            description=(
+                "Runs the full dynamic regime-aware screener on demand — same data as the monthly report's "
+                "New Entry Opportunities section, but available any time. Returns top US and/or India candidates "
+                "with signals and recommended trades."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "market": {
+                        "type": "string",
+                        "enum": ["US", "India", "both"],
+                        "default": "both",
+                    }
+                },
             },
         ),
     ]
@@ -767,7 +1136,6 @@ async def call_tool(name: str, arguments: dict):
                 return [TextContent(type="text", text=_no_credentials_message())]
             symbol = str(arguments.get("symbol", "")).strip().upper()
             from analysis.pnl import parse_schwab_positions
-            from reports.report_utils import technical_snapshot
             from schwab_client import get_all_positions, get_quotes
 
             regime = detect_regime()["regime"]
@@ -850,6 +1218,199 @@ async def call_tool(name: str, arguments: dict):
             if not accounts:
                 result["note"] = "No open position found across configured accounts."
             return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+        elif name == "research_symbol":
+            symbol = str(arguments.get("symbol", "")).strip().upper()
+            if not symbol:
+                return [TextContent(type="text", text="symbol is required")]
+
+            meta = _SYMBOL_META.get(symbol, {
+                "symbol": symbol,
+                "sector": "Unmapped",
+                "tier": 3,
+                "preferred_strategy": "CSP",
+            })
+            india = symbol in {item["symbol"] for item in INDIA_UNIVERSE}
+            iv_symbol = yf_symbol(symbol, india=True) if india else symbol
+            tech_symbol = symbol
+            loop = asyncio.get_event_loop()
+            iv_task = loop.run_in_executor(None, partial(get_iv_rank, iv_symbol))
+            tech_task = loop.run_in_executor(None, partial(technical_snapshot, tech_symbol, india))
+            iv_data, tech = await asyncio.gather(iv_task, tech_task)
+            earnings = await _run_sync(upcoming_earnings, iv_symbol, 21)
+            portfolio = await _load_live_portfolio()
+            portfolio_check = await _get_portfolio_check(symbol, portfolio, meta)
+            regime_data = detect_regime()
+            earnings_days = None
+            if earnings:
+                parsed = []
+                for item in earnings:
+                    try:
+                        parsed.append((date.fromisoformat(item) - date.today()).days)
+                    except Exception:
+                        continue
+                if parsed:
+                    earnings_days = min(parsed)
+            ivr_value = _safe_float(iv_data.get("iv_rank"))
+            rsi = _safe_float(tech.get("rsi"))
+            signal = _research_signal(ivr_value, rsi, earnings_days, regime_data, portfolio_check, symbol)
+            timing = None
+            if not india and ivr_value is not None:
+                try:
+                    timing = await _run_sync(entry_timing_score, symbol, ivr_value)
+                except Exception:
+                    timing = None
+            portfolio_check.update({
+                "signal": signal,
+                "trade": _recommended_trade(symbol, tech, iv_data, portfolio_check, signal),
+                "timing": timing,
+                "earnings_days": earnings_days,
+                "earnings_window": 21,
+            })
+            return [TextContent(type="text", text=_format_research_card(symbol, tech, iv_data, earnings, portfolio_check, regime_data.get("regime", "UNKNOWN")))]
+
+        elif name == "scan_sector":
+            sector = str(arguments.get("sector", "")).strip()
+            if sector not in US_SECTOR_CHOICES:
+                return [TextContent(type="text", text=f"Unknown sector: {sector}")]
+            portfolio = await _load_live_portfolio()
+            regime_data = detect_regime()
+            ranked = await _run_sync(screen_us_opportunities, regime_data.get("regime", "TRANSITIONING"), portfolio.get("current_symbols", []), len(US_UNIVERSE))
+            sector_candidates = [item for item in ranked if item.get("sector") == sector][:5]
+            if not sector_candidates:
+                return [TextContent(type="text", text=f"No candidates found for {sector}.")]
+
+            cards = []
+            for candidate in sector_candidates:
+                symbol = candidate["symbol"]
+                meta = _SYMBOL_META.get(symbol, candidate)
+                portfolio_check = await _get_portfolio_check(symbol, portfolio, meta)
+                signal = (candidate.get("signal") or "SKIP").replace("_", " ")
+                if not regime_data.get("new_entries_allowed") and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
+                    signal = "WATCH"
+                if portfolio_check.get("short_puts", 0) > 0 and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
+                    signal = "WATCH"
+                if portfolio_check.get("sector_warning") and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
+                    signal = "WATCH"
+                portfolio_check.update({
+                    "signal": signal,
+                    "trade": _recommended_trade(symbol, {"current": candidate.get("price")}, {"iv_rank": candidate.get("ivr")}, portfolio_check, signal),
+                    "price": candidate.get("price"),
+                    "ivr": candidate.get("ivr"),
+                    "current_iv": None,
+                    "pct_off_high": candidate.get("pct_off_high"),
+                    "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
+                    "earnings_window": 21,
+                })
+                tech = {
+                    "current": candidate.get("price"),
+                    "rsi": candidate.get("rsi"),
+                    "week_52_high": None,
+                    "week_52_low": None,
+                    "pct_off_high": candidate.get("pct_off_high"),
+                }
+                iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": None}
+                cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, regime_data.get("regime", "UNKNOWN")))
+
+            header = (
+                f"## {sector} scan\n"
+                f"Regime: {regime_data.get('regime', 'UNKNOWN')} | "
+                f"Portfolio concentration: {portfolio.get('sector_counts', {}).get(sector, 0)} active positions\n"
+            )
+            return [TextContent(type="text", text=header + "\n\n".join(cards))]
+
+        elif name == "run_screener":
+            market = str(arguments.get("market", "both") or "both")
+            market_key = market.lower()
+            if market_key not in {"us", "india", "both"}:
+                return [TextContent(type="text", text=f"Unknown market: {market}")]
+
+            portfolio = await _load_live_portfolio()
+            sections = []
+
+            if market_key in {"us", "both"}:
+                regime_data = detect_regime()
+                us_candidates = await _run_sync(screen_us_opportunities, regime_data.get("regime", "TRANSITIONING"), portfolio.get("current_symbols", []), 8)
+                us_cards = []
+                for candidate in us_candidates:
+                    symbol = candidate["symbol"]
+                    meta = _SYMBOL_META.get(symbol, candidate)
+                    portfolio_check = await _get_portfolio_check(symbol, portfolio, meta)
+                    signal = (candidate.get("signal") or "SKIP").replace("_", " ")
+                    if not regime_data.get("new_entries_allowed") and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
+                        signal = "WATCH"
+                    if portfolio_check.get("short_puts", 0) > 0 and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
+                        signal = "WATCH"
+                    if portfolio_check.get("sector_warning") and portfolio_check.get("shares", 0) <= 0 and signal == "ENTER NOW":
+                        signal = "WATCH"
+                    portfolio_check.update({
+                        "signal": signal,
+                        "trade": _recommended_trade(symbol, {"current": candidate.get("price")}, {"iv_rank": candidate.get("ivr")}, portfolio_check, signal),
+                        "price": candidate.get("price"),
+                        "ivr": candidate.get("ivr"),
+                        "current_iv": None,
+                        "pct_off_high": candidate.get("pct_off_high"),
+                        "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
+                        "earnings_window": 21,
+                    })
+                    tech = {
+                        "current": candidate.get("price"),
+                        "rsi": candidate.get("rsi"),
+                        "week_52_high": None,
+                        "week_52_low": None,
+                        "pct_off_high": candidate.get("pct_off_high"),
+                    }
+                    iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": None}
+                    us_cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, regime_data.get("regime", "UNKNOWN")))
+                sections.append(
+                    f"## US screener\nRegime: {regime_data.get('regime', 'UNKNOWN')}\n\n"
+                    + "\n\n".join(us_cards)
+                )
+
+            if market_key in {"india", "both"}:
+                india_vix = await _current_india_vix()
+                if india_vix is None:
+                    sections.append("## India screener\nIndia VIX unavailable right now.")
+                else:
+                    india_candidates = await _run_sync(screen_india_opportunities, india_vix, [], 6)
+                    india_cards = []
+                    for candidate in india_candidates:
+                        symbol = candidate["symbol"]
+                        meta = _SYMBOL_META.get(symbol, candidate)
+                        portfolio_check = {
+                            "meta": meta,
+                            "shares": 0,
+                            "accounts": [],
+                            "share_accounts": [],
+                            "short_puts": 0,
+                            "short_calls": 0,
+                            "sector": meta.get("sector"),
+                            "sector_count": 0,
+                            "sector_warning": False,
+                            "signal": (candidate.get("signal") or "SKIP").replace("_", " "),
+                            "trade": _recommended_trade(symbol, {"current": candidate.get("price")}, {"iv_rank": candidate.get("ivr")}, {"meta": meta, "shares": 0, "accounts": [], "share_accounts": [], "short_puts": 0, "short_calls": 0, "sector": meta.get("sector"), "sector_count": 0, "sector_warning": False}, (candidate.get("signal") or "SKIP").replace("_", " ")),
+                            "price": candidate.get("price"),
+                            "ivr": candidate.get("ivr"),
+                            "current_iv": None,
+                            "pct_off_high": candidate.get("pct_off_high"),
+                            "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
+                            "earnings_window": 21,
+                        }
+                        tech = {
+                            "current": candidate.get("price"),
+                            "rsi": candidate.get("rsi"),
+                            "week_52_high": None,
+                            "week_52_low": None,
+                            "pct_off_high": candidate.get("pct_off_high"),
+                        }
+                        iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": None}
+                        india_cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, f"India VIX {india_vix:.1f}"))
+                    sections.append(
+                        f"## India screener\nIndia VIX: {india_vix:.1f}\n\n"
+                        + "\n\n".join(india_cards)
+                    )
+
+            return [TextContent(type="text", text="\n\n".join(section for section in sections if section))]
 
         elif name == "generate_india_weekly_report":
             BREEZE_API_KEY = os.getenv("BREEZE_API_KEY", "")
