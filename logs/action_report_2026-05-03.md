@@ -1,6 +1,6 @@
 # THETA-LAB Weekly Action Report
 **Week of:** May 03 – May 07, 2026
-**Generated:** 2026-05-03 05:41
+**Generated:** 2026-05-03 05:52
 **Regime:** CAUTIOUS_BULL | New entries: YES
 **Profit-take target:** 40-50% of max premium
 

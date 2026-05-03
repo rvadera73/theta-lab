@@ -21,7 +21,7 @@ _load_credentials()
 from analysis.metrics import breakeven_velocity, premium_capture_rate, profit_factor, sortino_ratio
 from analysis.pnl import OptionLeg, Position, parse_schwab_positions
 from analysis.india_statement_parser import build_positions_from_statements, load_india_config
-from config import PORTFOLIO, RISK
+from config import PORTFOLIO, RISK, PERMANENT_EXITS
 from routines.email_report import send_email
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -713,7 +713,7 @@ def priority_from_position(position: Position, regime: str) -> tuple[int, str, s
         return 2, "URGENT", "At or inside 21 DTE"
     if profit.get("signal"):
         return 2, "STRONG", f"{profit.get('pct_captured')}% premium captured"
-    if position.symbol in ("PYPL", "MRNA"):
+    if position.symbol in PERMANENT_EXITS:
         return 2, "WATCH", "Permanent exit: accelerate covered call exit"
     return 5, "WATCH", "No immediate action"
 

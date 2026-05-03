@@ -90,6 +90,7 @@ async def generate_weekly_report(
 
     # --- Pull positions ---
     all_actions = []
+    all_positions: list = []
 
     for acct_hash, acct_cfg, acct_label in [
         (account_a_hash, ACCOUNT_A, "A"),
@@ -196,6 +197,16 @@ async def generate_weekly_report(
             lines.append(f"- **{act['symbol']}** (Acct {act['account']}): {act['reason']} | Net P&L: {pnl_str}")
         lines.append("")
 
+    # --- Position heat ---
+    if all_positions:
+        try:
+            heat_result = heat_from_positions(all_positions, regime)
+            heat_text = format_heat_block(heat_result)
+            if heat_text.strip():
+                lines += ["## 🌡️ POSITION HEAT SCAN", "", heat_text, ""]
+        except Exception as e:
+            lines.append(f"_Heat scanner unavailable: {e}_\n")
+
     # --- P&L tracker ---
     total_realized_week = 0  # Would need order history to compute
     lines += [
@@ -214,5 +225,5 @@ async def generate_weekly_report(
 
 
 if __name__ == "__main__":
-    # Demo mode — no credentials needed
-    print(generate_weekly_report("DEMO_A", "DEMO_B"))
+    import asyncio
+    asyncio.run(generate_weekly_report("DEMO_A", "DEMO_B"))

@@ -11,12 +11,12 @@ from typing import Any
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from routines.email_report import build_bimonthly_technical_html
+from config import PERMANENT_EXITS
 from reports.report_utils import (
     action_for_option_leg,
     current_price,
     estimate_delta,
     load_india_positions,
-    load_snapshot,
     load_us_positions,
     maybe_send,
     save_html,
@@ -36,26 +36,27 @@ async def generate_bimonthly_technical_report(send_email: bool = True, save_to_f
     today = date.today()
     us = await load_us_positions()
     india = load_india_positions()
-    snapshot = load_snapshot()
 
+    # assigned_rows: built from live Schwab equity positions — never stale snapshot
     assigned_rows = []
-    for item in snapshot.get("assigned_positions", []):
-        tech = technical_snapshot(item["symbol"])
-        current = tech.get("current") or current_price(item["symbol"])
-        unrealized = (current - float(item.get("cost_basis", 0) or 0)) * int(item.get("shares", 0) or 0)
-        months = None
-        cc = float(item.get("monthly_cc", 0) or 0)
-        if cc:
-            basis = float(item.get("cost_basis", 0) or 0) * int(item.get("shares", 0) or 0)
-            market_value = current * int(item.get("shares", 0) or 0)
-            remaining = max(0.0, basis - market_value - float(item.get("recovered", 0) or 0))
-            months = round(remaining / cc, 1) if cc else None
+    for pos in us["positions"]:
+        if pos.shares <= 0:
+            continue
+        tech = technical_snapshot(pos.symbol)
+        current = pos.current_price or tech.get("current") or 0
+        cost_basis_total = (pos.stock_cost_basis or 0) * pos.shares
+        unrealized = (current - (pos.stock_cost_basis or 0)) * pos.shares
+        open_calls = [lg for lg in pos.option_legs if lg.quantity < 0 and lg.option_type == "CALL"]
+        cc = sum(abs(lg.premium_received) / max(lg.dte + 30, 30) * 30 for lg in open_calls) if open_calls else 0.0
+        market_value = current * pos.shares
+        remaining = max(0.0, cost_basis_total - market_value)
+        months = round(remaining / cc, 1) if cc > 0 else None
         thesis = "BROKEN" if tech.get("above_200") is False and (tech.get("rsi") or 50) < 40 else "WATCH" if tech.get("above_50") is False else "INTACT"
         action = "Sell CC now" if cc == 0 else ("Tighten CCs" if thesis != "INTACT" else "Keep wheeling")
         assigned_rows.append([
-            item["symbol"],
-            str(item.get("shares", 0)),
-            f"${float(item.get('cost_basis', 0) or 0):,.2f}",
+            pos.symbol,
+            str(int(pos.shares)),
+            f"${pos.stock_cost_basis or 0:,.2f}",
             f"${current:,.2f}",
             f"${unrealized:,.0f}",
             str(tech.get("rsi") or "—"),
@@ -63,7 +64,7 @@ async def generate_bimonthly_technical_report(send_email: bool = True, save_to_f
             "Above" if tech.get("above_200") else "Below" if tech.get("above_200") is False else "—",
             f"{tech.get('pct_off_high')}%" if tech.get("pct_off_high") is not None else "—",
             f"{months} mo" if months is not None else "—",
-            f"${cc:,.0f}/mo" if cc else "$0 IDLE",
+            f"${cc:,.0f}/mo" if cc > 0 else "$0 IDLE",
             thesis,
             action,
         ])
@@ -91,7 +92,7 @@ async def generate_bimonthly_technical_report(send_email: bool = True, save_to_f
         option_rows = [["Data unavailable", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]]
 
     exit_items = []
-    for sym in ("PYPL", "MRNA"):
+    for sym in PERMANENT_EXITS:
         calls = []
         for pos in us["positions"]:
             if pos.symbol != sym:

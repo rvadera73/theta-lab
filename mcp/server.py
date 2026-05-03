@@ -298,9 +298,9 @@ async def _load_live_portfolio() -> dict[str, Any]:
         if acct_hash
     ])
 
-    symbols: dict[str, dict[str, Any]] = {}
-    current_symbols: set[str] = set()
+    all_positions: list[Any] = []
     for account_positions in loaded:
+        all_positions.extend(account_positions)
         for pos in account_positions:
             current_symbols.add(pos.symbol)
             item = symbols.setdefault(pos.symbol, {
@@ -335,6 +335,7 @@ async def _load_live_portfolio() -> dict[str, Any]:
         "current_symbols": sorted(current_symbols),
         "symbols": symbols,
         "sector_counts": sector_counts,
+        "_position_objects": all_positions,   # raw Position list for heat scanner
     }
 
 
@@ -357,6 +358,23 @@ async def _get_portfolio_check(symbol: str, portfolio: dict[str, Any], meta: dic
         "sector_warning": sector_count >= 3 if sector else False,
     }
 
+
+def _symbol_heat_from_portfolio(symbol: str, portfolio: dict[str, Any], regime: str) -> dict | None:
+    """Build a single-symbol heat scan from the already-loaded live portfolio dict."""
+    try:
+        from analysis.heat_scanner import heat_from_positions
+        positions = portfolio.get("_position_objects", [])
+        sym_positions = [p for p in positions if getattr(p, "symbol", "") == symbol.upper()]
+        if not sym_positions:
+            return None
+        result = heat_from_positions(sym_positions, regime)
+        # Return only this symbol's slice
+        for item in result.get("positions", []):
+            if item.get("symbol") == symbol.upper():
+                return item
+        return None
+    except Exception:
+        return None
 
 async def _current_india_vix() -> float | None:
     loop = asyncio.get_event_loop()
@@ -1492,6 +1510,7 @@ async def call_tool(name: str, arguments: dict):
                 "timing": timing,
                 "earnings_days": earnings_days,
                 "earnings_window": 21,
+                "position_heat": _symbol_heat_from_portfolio(symbol, portfolio, regime_data.get("regime", "TRANSITIONING")),
             })
             return [TextContent(type="text", text=_format_research_card(symbol, tech, iv_data, earnings, portfolio_check, regime_data.get("regime", "UNKNOWN")))]
 

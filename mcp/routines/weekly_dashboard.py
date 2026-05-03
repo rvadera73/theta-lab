@@ -28,8 +28,6 @@ from analysis.metrics import (
 )
 from models.vix_regime import get_vix_term_structure, entry_timing_score
 from models.monte_carlo import simulate_assignment_probability
-from models.kelly import batch_kelly
-from models.ev_model import batch_ev
 from analysis.regime import detect_regime
 from routines.email_report import build_html_email, send_email as send_email_fn
 
@@ -171,10 +169,10 @@ def run_weekly_dashboard(send_email: bool = True, save_log: bool = True) -> dict
         snap_puts = snapshot.get("open_puts", [])
         assigned_positions = [
             {**p, "recovered": p.get("recovered", 0)} for p in snap_positions
-        ] if snap_positions else ASSIGNED_POSITIONS
+        ]
         # Compute DTE at runtime from expiry dates — never stale
         open_puts_list = []
-        for p in (snap_puts if snap_puts else OPEN_PUTS):
+        for p in snap_puts:
             put = dict(p)
             if "expiry" in put and "dte" not in put:
                 try:
@@ -184,9 +182,9 @@ def run_weekly_dashboard(send_email: bool = True, save_log: bool = True) -> dict
                     put["dte"] = put.get("dte", 45)
             open_puts_list.append(put)
     else:
-        print("  No snapshot file found — using hardcoded defaults.")
-        assigned_positions = ASSIGNED_POSITIONS
-        open_puts_list = OPEN_PUTS
+        print("  No snapshot file found — running with empty position lists.")
+        assigned_positions = []
+        open_puts_list = []
 
     # 2. Load local CSVs if available (local runs only — not in GitHub Actions)
     txn_file = find_latest_file("*Transactions*.csv") or find_latest_file("*transactions*.csv")
@@ -271,9 +269,10 @@ def run_weekly_dashboard(send_email: bool = True, save_log: bool = True) -> dict
     mc_result = simulate_assignment_probability(open_puts_list, n_simulations=5000)
     print(f"  P(exceed danger zone): {mc_result['p_exceed_danger_zone']}%")
 
-    # 6. Kelly + EV for entry candidates
-    kelly_results = batch_kelly(ENTRY_CANDIDATES, account_size=ACCOUNT_A_SIZE)
-    ev_results = batch_ev(ENTRY_CANDIDATES)
+    # 6. Kelly + EV — screener drives entry candidates dynamically; no hardcoded list
+    # Entry candidates come from the dynamic screener via the weekly/monthly reports.
+    kelly_results = []
+    # (batch_kelly and batch_ev require position data — wired in weekly_report.py via live Schwab)
 
     # 7. Portfolio health summary
     assigned_book = compute_assigned_book_value(positions)

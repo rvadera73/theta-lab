@@ -115,20 +115,39 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
         ["Win rate", ">65%", f"{pf.get('win_rate', '—')}%", "GOOD" if (pf.get('win_rate') or 0) >= 65 else "WATCH"],
     ]
 
+    # Build assigned book from live Schwab positions (us["positions"]) — never stale snapshot.
+    # For each equity position: cost_basis from Schwab, monthly_cc from active short calls.
     assigned_rows = []
     idle_positions = []
     book_value = 0.0
-    for item in snapshot.get("assigned_positions", []):
-        current = current_price(item["symbol"]) or float(item.get("cost_basis", 0) or 0)
-        market_value = current * int(item.get("shares", 0) or 0)
+    _DEFAULT_CC_YIELD = 0.015   # fallback for when no calls are open
+    for pos in us.get("positions", []):
+        if pos.shares <= 0:
+            continue
+        cost_basis_total = (pos.stock_cost_basis or 0) * pos.shares
+        market_value = (pos.current_price or 0) * pos.shares
         book_value += market_value
-        cc = float(item.get("monthly_cc", 0) or 0)
-        recovered = float(item.get("recovered", 0) or 0)
-        remaining = max(0.0, float(item.get("cost_basis", 0) or 0) * int(item.get("shares", 0) or 0) - market_value - recovered)
-        months = round(remaining / cc, 1) if cc else None
-        assigned_rows.append([item["symbol"], str(item.get("shares", 0)), f"${remaining:,.0f}", f"${cc:,.0f}/mo" if cc else "$0 IDLE", f"{months} mo" if months is not None else "∞"])
+        # Monthly CC = sum of premium already received on open short calls / hold_days * 30
+        open_calls = [lg for lg in pos.option_legs if lg.quantity < 0 and lg.option_type == "CALL"]
+        if open_calls:
+            # Annualise: premium_received / original_dte * 30 per leg
+            cc = sum(
+                abs(lg.premium_received) / max(lg.dte + 30, 30) * 30
+                for lg in open_calls
+            )
+        else:
+            cc = 0.0
+        remaining = max(0.0, cost_basis_total - market_value)
+        months = round(remaining / cc, 1) if cc > 0 else None
+        assigned_rows.append([
+            pos.symbol,
+            str(int(pos.shares)),
+            f"${remaining:,.0f}",
+            f"${cc:,.0f}/mo" if cc > 0 else "$0 IDLE",
+            f"{months} mo" if months is not None else "∞",
+        ])
         if cc == 0:
-            idle_positions.append(item["symbol"])
+            idle_positions.append(pos.symbol)
 
     gap_actions = []
     if (capture.get("capture_rate") or 0) < 65:
@@ -169,6 +188,7 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
             "priority": "WATCH",
             "details": "Only in compliant regime; otherwise recycle capital from profit-takes.",
         })
+
 
     india_rows = []
     india_wins = 0
@@ -326,6 +346,18 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
     )
     data["us_screener"] = us_candidates
     data["india_screener"] = india_candidates
+
+    # Portfolio heat scan — uses live positions already loaded above
+    try:
+        from analysis.heat_scanner import heat_from_positions, format_heat_html
+        all_positions = us.get("positions", []) + list(india.get("positions", []))
+        if all_positions:
+            heat_result = heat_from_positions(all_positions, regime_str)
+            data["portfolio_heat"] = heat_result
+            data["portfolio_heat_html"] = format_heat_html(heat_result)
+    except Exception as e:
+        data["portfolio_heat"] = {}
+        data["portfolio_heat_html"] = f"<p style='color:#999'>Heat scanner unavailable: {e}</p>"
 
     html = build_monthly_objectives_html(data, today.strftime("%B %d, %Y"))
     path = save_html("monthly_objectives", html, today) if save_to_file else None

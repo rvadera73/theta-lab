@@ -982,6 +982,10 @@ def build_monthly_objectives_html(data: dict, report_date: str = None) -> str:
   {us_screener_section}
   {india_screener_section}
   <div style="background:white;margin-top:8px;padding:20px 24px;">
+    <div style="font-size:18px;font-weight:bold;margin-bottom:12px;">🌡️ Position Heat — Active Leg Management</div>
+    {data.get('portfolio_heat_html', '<p style="font-size:13px;color:#999">Heat data unavailable — Schwab live positions required.</p>')}
+  </div>
+  <div style="background:white;margin-top:8px;padding:20px 24px;">
     <div style="font-size:18px;font-weight:bold;margin-bottom:12px;">How did {header.get('previous_month', 'last month')} go?</div>
     <div style="font-size:13px;line-height:1.9;color:#444;">{'<br>'.join(traffic_lines)}</div>
   </div>
