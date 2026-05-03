@@ -8,7 +8,7 @@ from datetime import date
 from typing import Any
 
 from analysis.iv_rank import batch_iv_rank
-from config import INDIA_REGIME_THRESHOLDS, RISK
+from config import INDIA_REGIME_THRESHOLDS, RISK, PERMANENT_EXITS
 from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
 from reports.screener_universe import INDIA_UNIVERSE, US_UNIVERSE
 
@@ -103,7 +103,9 @@ def _sector_weight(sector: str, regime: str) -> int:
         "IT": 48,
     }
     # CAUTIOUS_BULL: near-bull sector weights but with macro caution applied.
-    # Platform & Subscription Growth is at full BULL weight — we're building rotation positions now.
+    # High-rate + recession risk environment: Industrials, Financials, Consumer Retail
+    # are WATCH-only (below 50 threshold) — not new entry candidates.
+    # Platform & Subscription Growth is at full BULL weight — rotation thesis active.
     cautious_bull = {
         "AI Infrastructure & Data Center": 88,
         "Cybersecurity": 82,
@@ -111,18 +113,18 @@ def _sector_weight(sector: str, regime: str) -> int:
         "Platform & Subscription Growth": 78,
         "Defense & Aerospace": 80,
         "Nuclear & Clean Energy": 80,
-        "Financials": 68,
-        "Industrials & Infrastructure": 62,
-        "Healthcare & Biotech": 70,
-        "Consumer & Retail": 55,
-        "Energy": 65,
+        "Healthcare & Biotech": 65,
+        "Energy": 60,
+        "Financials": 45,           # High rates hurt credit quality; recession risk — WATCH only
+        "Industrials & Infrastructure": 42, # Cyclical, capex slows in high-rate env — WATCH only
+        "Consumer & Retail": 38,    # Recession kills discretionary — WATCH only
         "IT": 82,
-        "Banking & NBFC": 78,
-        "Infrastructure & Capital Goods": 80,
-        "Auto": 72,
-        "Consumer": 60,
+        "Banking & NBFC": 72,
+        "Infrastructure & Capital Goods": 75,
+        "Auto": 68,
+        "Consumer": 40,
         "Energy & Power": 76,
-        "Pharma": 68,
+        "Pharma": 65,
     }
     if regime == "BULL":
         return bull.get(sector, 60)
@@ -201,6 +203,9 @@ def _reason(signal: str, meta: dict[str, Any], ivr: float | None, rsi: float | N
 
 def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[str], heavy_sectors: list[str], india: bool, iv_lookup: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
     symbol = meta["symbol"]
+    # Never recommend new entries on permanent-exit names
+    if symbol in PERMANENT_EXITS:
+        return None
     in_portfolio = symbol in set(current_symbols)
     preferred = meta["preferred_strategy"]
     if in_portfolio and (preferred == "CSP" or preferred == "CSP_or_strangle"):

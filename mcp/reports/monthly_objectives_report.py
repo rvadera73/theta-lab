@@ -150,14 +150,34 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
             idle_positions.append(pos.symbol)
 
     gap_actions = []
-    if (capture.get("capture_rate") or 0) < 65:
-        gap_actions.append({
-            "symbol": "Capture Rate",
-            "action": "Close earlier into the 40-60% bear target band",
-            "reason": f"Premium capture {capture.get('capture_rate', '—')}% vs 65% target.",
-            "priority": "WATCH",
-            "details": "Prioritise easy winners and avoid letting credits decay into assignment risk.",
-        })
+
+    # ── 1. Heat scanner: RED legs are highest priority ───────────────────────
+    try:
+        from analysis.heat_scanner import heat_from_positions
+        all_live = us.get("positions", []) + list(india.get("positions", []))
+        regime_str_early = regime_data.get("regime", "TRANSITIONING")
+        heat_early = heat_from_positions(all_live, regime_str_early)
+        for item in heat_early.get("by_color", {}).get("RED", [])[:3]:
+            gap_actions.append({
+                "symbol": item["symbol"],
+                "action": item["action"].replace("_", " ").title(),
+                "reason": item["reason"],
+                "priority": "URGENT",
+                "details": f"{item['type']} ${item['strike']} | {item['dte']}d DTE | {item['distance_pct']:.1f}% to strike",
+            })
+        for item in heat_early.get("top_actions", []):
+            if item.get("color") == "YELLOW" and len(gap_actions) < 5:
+                gap_actions.append({
+                    "symbol": item["symbol"],
+                    "action": item["action"].replace("_", " ").title(),
+                    "reason": item["reason"],
+                    "priority": "WATCH",
+                    "details": f"{item['type']} ${item['strike']} | {item['dte']}d DTE",
+                })
+    except Exception:
+        pass
+
+    # ── 2. Idle assigned names (no active calls) ─────────────────────────────
     if idle_positions:
         gap_actions.append({
             "symbol": "Idle Capital",
@@ -166,6 +186,8 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
             "priority": "URGENT",
             "details": "Target at least one call cycle per idle name this month.",
         })
+
+    # ── 3. Slow breakeven velocity ────────────────────────────────────────────
     for row in assigned_rows:
         if row[-1] != "∞":
             try:
@@ -180,6 +202,8 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
                     "priority": "WATCH",
                     "details": f"Current CC income {row[3]} against {row[2]} remaining loss.",
                 })
+
+    # ── 4. Pace gap ───────────────────────────────────────────────────────────
     if account_a_pace < account_a_target:
         gap_actions.append({
             "symbol": "Account A",
@@ -188,7 +212,6 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
             "priority": "WATCH",
             "details": "Only in compliant regime; otherwise recycle capital from profit-takes.",
         })
-
 
     india_rows = []
     india_wins = 0

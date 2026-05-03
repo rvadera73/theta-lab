@@ -43,6 +43,17 @@ class LegHeat:
         pr = self.premium_received
         ctc = self.cost_to_close
 
+        # Skip legs with no live price — can't compute distance
+        if not self.current_price or self.current_price <= 0:
+            self.distance_pct = 0.0
+            self.pnl_pct = 0.0
+            self.loss_multiple = 0.0
+            self.color = "GREEN"
+            self.action = "NO_PRICE"
+            self.reason = "No live price available — skipped"
+            self.stagger_dte = max(180, self.dte + 75)
+            return
+
         # Distance to strike (always positive)
         if self.option_type == "CALL":
             # How far stock is BELOW the call strike
