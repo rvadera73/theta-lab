@@ -13,6 +13,7 @@ from typing import Any
 from analysis.pnl import Position, parse_schwab_positions
 from analysis.regime import detect_regime
 from analysis.iv_rank import batch_iv_rank
+from analysis.heat_scanner import heat_from_positions, format_heat_block
 from config import (
     ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, PERMANENT_EXITS,
     ITM_POSITION_PLANS, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
@@ -115,6 +116,7 @@ async def generate_weekly_report(
                 balances = await get_balances(acct_hash)
 
             positions = parse_schwab_positions(raw, acct_label, quotes_raw)
+            all_positions.extend(positions)
 
             for pos in positions:
                 pri, label, reason = _priority(pos, regime)

@@ -429,7 +429,31 @@ def _recommended_trade(symbol: str, tech: dict[str, Any], iv_data: dict[str, Any
     return trade
 
 
-def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) -> str:
+def _format_symbol_heat(heat: dict | None) -> list[str]:
+    """Render existing leg heat for a single symbol inside a research card."""
+    if not heat or not heat.get("top_actions"):
+        return []
+    lines = [""]
+    stagger = heat.get("stagger_capacity", {})
+    if stagger:
+        for sym, status in stagger.items():
+            icon = "🔴" if "STOP" in status else ("🟡" if "HARVEST" in status else ("✅" if "OPEN" in status else "⏸️"))
+            lines.append(f"   {icon} Stagger: {status}")
+    c = heat.get("counts", {})
+    if c.get("RED", 0) + c.get("YELLOW", 0) > 0:
+        lines.append(f"   🌡️ Open legs: {c.get('RED',0)} RED · {c.get('YELLOW',0)} YELLOW · {c.get('GREEN',0)} GREEN")
+        for it in heat.get("top_actions", []):
+            color_icon = "🔴" if it["color"] == "RED" else "🟡"
+            lines.append(
+                f"     {color_icon} {it['option_type']} ${it['strike']:.0f} "
+                f"exp {it['expiry']} ({it['dte']}d) | "
+                f"{it['pnl_pct']:.0f}% captured | "
+                f"**{it['action']}** — {it['reason']}"
+            )
+    return lines
+
+
+
     meta = portfolio_check.get("meta", {})
     tier_text = _tier_label(meta.get("tier"))
     sector_text = meta.get("sector", "Unmapped")
@@ -495,6 +519,7 @@ def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) 
         f"   Rationale: {trade.get('rationale', 'n/a')}",
         f"   {_roll_summary(trade.get('roll_triggers', {}))}",
         f"   Notes: {' | '.join(notes)}",
+        *_format_symbol_heat(portfolio_check.get("position_heat")),
     ])
 
 
@@ -597,6 +622,27 @@ async def list_tools():
                 "Scans all open option positions and returns those at or within "
                 "21 DTE (roll threshold), ITM, or with mark > 2x premium received. "
                 "Returns prioritised roll recommendations."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "account": {
+                        "type": "string",
+                        "enum": ["A", "B", "both"],
+                        "default": "both",
+                    }
+                },
+            },
+        ),
+        Tool(
+            name="scan_position_heat",
+            description=(
+                "Scans all open short option legs and assigns a traffic light (RED/YELLOW/GREEN) "
+                "based on: distance of stock price to strike (primary), cost-to-close as multiple "
+                "of premium received, and DTE. Applies regime-aware protocol: in CAUTIOUS_BULL "
+                "(AI bull rally), tightens call monitoring and flags when to pause new strangles. "
+                "Management rules: calls ROLLED when stock falls (harvest+re-sell lower), puts CUT "
+                "at loss when stock falls through strike then re-enter fresh. Profit target: 40-50%."
             ),
             inputSchema={
                 "type": "object",
@@ -1048,6 +1094,83 @@ async def call_tool(name: str, arguments: dict):
                 for lg in item["itm_legs"]:
                     pct = abs(pos.current_price - lg.strike) / pos.current_price * 100
                     lines.append(f"- 🔴 ITM: {lg.option_type} ${lg.strike} exp {lg.expiry} ({lg.dte} DTE) — {pct:.1f}% in the money")
+                lines.append("")
+            return [TextContent(type="text", text="\n".join(lines))]
+
+        elif name == "scan_position_heat":
+            if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
+                return [TextContent(type="text", text=_no_credentials_message())]
+            from schwab_client import get_all_positions, get_quotes
+            from analysis.pnl import parse_schwab_positions
+            from analysis.regime import detect_regime
+            from analysis.heat_scanner import assess_portfolio_heat
+            account_filter = arguments.get("account", "both")
+            acct_map = []
+            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
+                acct_map.append((ACCOUNT_A_HASH, "A"))
+            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
+                acct_map.append((ACCOUNT_B_HASH, "B"))
+
+            regime_data = await detect_regime()
+            regime_str  = regime_data.get("regime", "CAUTIOUS_BULL")
+
+            all_legs = []
+            for acct_hash, acct_label in acct_map:
+                try:
+                    raw = await get_all_positions(acct_hash)
+                    syms = list({
+                        (p.get("instrument", {}).get("underlyingSymbol")
+                         or p.get("instrument", {}).get("symbol", "").split()[0])
+                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                    })
+                    quotes = await get_quotes(syms)
+                    positions = parse_schwab_positions(raw, acct_label, quotes)
+                    for pos in positions:
+                        for lg in pos.option_legs:
+                            premium = abs(lg.premium_received or 0)
+                            ctc     = abs(lg.current_value or 0)
+                            if premium <= 0:
+                                continue
+                            all_legs.append({
+                                "symbol":           pos.symbol,
+                                "option_type":      lg.option_type,
+                                "strike":           lg.strike,
+                                "dte":              lg.dte,
+                                "expiry":           lg.expiry,
+                                "premium_received": premium,
+                                "cost_to_close":    ctc,
+                                "current_price":    pos.current_price,
+                            })
+                except Exception:
+                    pass
+
+            if not all_legs:
+                return [TextContent(type="text", text="⚠️ No open option legs found (or live data unavailable).")]
+
+            result = assess_portfolio_heat(all_legs, regime_str)
+            lines  = [
+                f"## 🌡️ Position Heat Scan — Regime: {regime_str}",
+                f"**{result['counts']['RED']} RED** · **{result['counts']['YELLOW']} YELLOW** · {result['counts']['GREEN']} GREEN",
+                "",
+                result["protocol"],
+                "",
+            ]
+            if result["scale_back_new_entries"]:
+                lines.append("⛔ **Scale back new strangles until RED/YELLOW calls are resolved.**")
+                lines.append("")
+
+            for color, emoji in [("RED", "🔴"), ("YELLOW", "🟡"), ("GREEN", "🟢")]:
+                items = result["by_color"][color]
+                if not items:
+                    continue
+                lines.append(f"### {emoji} {color} ({len(items)})")
+                for item in items:
+                    lines.append(
+                        f"- **{item['symbol']} {item['type']} ${item['strike']:.0f}** exp {item['expiry']} ({item['dte']}d) | "
+                        f"price=${item['current_price']:,.2f} | {item['distance_pct']:.0f}% to strike | "
+                        f"P&L: {item['pnl_pct']:.0f}% captured | "
+                        f"**{item['action']}** — {item['reason']}"
+                    )
                 lines.append("")
             return [TextContent(type="text", text="\n".join(lines))]
 

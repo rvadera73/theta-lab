@@ -49,48 +49,24 @@ LOGS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs"
 )
 
-# Known assigned positions (update weekly from Account A)
-ASSIGNED_POSITIONS = [
-    {"symbol": "PYPL",  "shares": 1300, "cost_basis": 132.0, "monthly_cc": 1800,  "recovered": 15000},
-    {"symbol": "ADBE",  "shares": 300,  "cost_basis": 495.0, "monthly_cc": 2200,  "recovered": 8000},
-    {"symbol": "AXON",  "shares": 200,  "cost_basis": 628.0, "monthly_cc": 3500,  "recovered": 12000},
-    {"symbol": "CRM",   "shares": 200,  "cost_basis": 302.0, "monthly_cc": 1200,  "recovered": 5000},
-    {"symbol": "OKTA",  "shares": 600,  "cost_basis": 91.0,  "monthly_cc": 1800,  "recovered": 6000},
-    {"symbol": "NKE",   "shares": 100,  "cost_basis": 86.0,  "monthly_cc": 300,   "recovered": 1000},
-    {"symbol": "LYFT",  "shares": 400,  "cost_basis": 30.0,  "monthly_cc": 200,   "recovered": 500},
-    {"symbol": "MRNA",  "shares": 400,  "cost_basis": 96.0,  "monthly_cc": 1200,  "recovered": 4000},
-    {"symbol": "UNH",   "shares": 100,  "cost_basis": 390.0, "monthly_cc": 1500,  "recovered": 3000},
-]
+)
 
-# Open puts for Monte Carlo (update weekly)
-OPEN_PUTS = [
-    {"symbol": "AXON", "strike": 470, "dte": 54,  "contracts": 1},
-    {"symbol": "AXON", "strike": 660, "dte": 146, "contracts": 1},
-    {"symbol": "AXON", "strike": 540, "dte": 237, "contracts": 1},
-    {"symbol": "AXON", "strike": 420, "dte": 265, "contracts": 1},
-    {"symbol": "APP",  "strike": 580, "dte": 118, "contracts": 1},
-    {"symbol": "APP",  "strike": 460, "dte": 83,  "contracts": 1},
-    {"symbol": "ADBE", "strike": 310, "dte": 118, "contracts": 1},
-    {"symbol": "META", "strike": 550, "dte": 237, "contracts": 1},
-    {"symbol": "META", "strike": 520, "dte": 328, "contracts": 1},
-    {"symbol": "ZS",   "strike": 180, "dte": 237, "contracts": 1},
-    {"symbol": "IBM",  "strike": 270, "dte": 174, "contracts": 1},
-    {"symbol": "LMT",  "strike": 520, "dte": 328, "contracts": 1},
-    {"symbol": "OKTA", "strike": 70,  "dte": 118, "contracts": 1},
-]
+# ---------------------------------------------------------------------------
+# No hardcoded position data here.
+# ASSIGNED_POSITIONS, OPEN_PUTS, ENTRY_CANDIDATES, TOP_ACTIONS were removed.
+# All position data flows from:
+#   1. Live Schwab API  (schwab_client.get_all_positions)
+#   2. portfolio_snapshot.yaml  (fallback for offline runs)
+#   3. heat_scanner.py  (determines actions dynamically from live marks)
+#   4. weekly_report.py / dynamic_screener.py  (entry candidates)
+#
+# Adding a name here would mean it goes stale within days. The rules in
+# config.LEGACY_EXIT_RULES and config.HEAT_THRESHOLDS apply to ALL names
+# uniformly — AXON, APP, ADBE, CRM get the same treatment as any other
+# position. No name deserves special-cased logic in source code.
+# ---------------------------------------------------------------------------
 
-# Entry candidates for Kelly + EV screening
-ENTRY_CANDIDATES = [
-    {"symbol": "UBER",  "pop": 0.85, "premium_credit": 400, "strike": 68, "current_price": 74.64, "cc_monthly_premium": 150, "recovery_months": 6},
-    {"symbol": "MSFT",  "pop": 0.83, "premium_credit": 900, "strike": 390,"current_price": 424.62,"cc_monthly_premium": 800, "recovery_months": 12},
-    {"symbol": "META",  "pop": 0.84, "premium_credit": 1800,"strike": 620,"current_price": 675.03,"cc_monthly_premium": 1500,"recovery_months": 12},
-    {"symbol": "OKTA",  "pop": 0.82, "premium_credit": 500, "strike": 70, "current_price": 75.98, "cc_monthly_premium": 300, "recovery_months": 12},
-    {"symbol": "AXON",  "pop": 0.80, "premium_credit": 1200,"strike": 370,"current_price": 397.12,"cc_monthly_premium": 2000,"recovery_months": 18},
-    {"symbol": "COIN",  "pop": 0.82, "premium_credit": 800, "strike": 175,"current_price": 199.77,"cc_monthly_premium": 500, "recovery_months": 6},
-    {"symbol": "PLTR",  "pop": 0.83, "premium_credit": 500, "strike": 95, "current_price": 110.0, "cc_monthly_premium": 400, "recovery_months": 12},
-]
-
-ACCOUNT_A_SIZE = 429_659
+ACCOUNT_A_SIZE = 429_659   # updated via snapshot; used as fallback AUM estimate only
 
 SNAPSHOT_FILE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
@@ -173,15 +149,10 @@ def compute_assigned_book_value(positions: list[dict]) -> float:
 # Top Actions Builder (manual until live API)
 # ---------------------------------------------------------------------------
 
-TOP_ACTIONS = [
-    {"symbol": "COIN $250P May 15", "action": "Roll to Jul $210P or Close", "condition": "BTC > $90K → Roll; else Close", "priority": "URGENT"},
-    {"symbol": "MSFT $420P May 15", "action": "Roll to Jul $405P",         "condition": "Unconditional",                 "priority": "URGENT"},
-    {"symbol": "PYPL $45C May 15",  "action": "Accept assignment; sell new CCs on 1,000 shares", "condition": "Unconditional", "priority": "URGENT"},
-    {"symbol": "AXON $600C Dec 18", "action": "Buy to Close (56.6% profit)", "condition": "Unconditional",               "priority": "STRONG"},
-    {"symbol": "AXON $620C Jan 27", "action": "Buy to Close (53.5% profit)", "condition": "Unconditional",               "priority": "STRONG"},
-    {"symbol": "META $550P + $520P","action": "Close if cash improves margin", "condition": "Cash < $125K",              "priority": "WATCH"},
-    {"symbol": "LYFT shares",       "action": "Close all shares",            "condition": "Q2 2026 exit",                "priority": "WATCH"},
-]
+TOP_ACTIONS: list[dict] = []
+# Top actions are generated at runtime by heat_scanner.assess_portfolio_heat()
+# against live Schwab positions. No manual list — stale within days and
+# names like AXON / APP / ADBE / CRM get the same rules as everything else.
 
 
 # ---------------------------------------------------------------------------

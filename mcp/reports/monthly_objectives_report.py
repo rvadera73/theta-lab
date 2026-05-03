@@ -25,7 +25,7 @@ from reports.report_utils import (
 )
 from analysis.india_regime import detect_india_regime
 from analysis.regime import detect_regime
-from config import ACCOUNT_A, ACCOUNT_B, ACCOUNT_C
+from config import ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, PERMANENT_EXITS
 from reports.dynamic_screener import screen_india_opportunities, screen_us_opportunities
 from routines.email_report import build_monthly_objectives_html
 
@@ -193,17 +193,12 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
     remaining_to_target = max(0, annual_target - ytd_income)
     required_monthly = round(remaining_to_target / months_remaining)
 
-    # Estimate idle CC potential per assigned position
-    _CC_YIELD = {  # approx monthly CC yield as % of market price × shares
-        "PYPL": 0.030,   # permanent exit — sell near-money aggressively
-        "MRNA": 0.030,   # permanent exit — aggressive CCs
-        "ADBE": 0.015,   # sell 5% OTM monthly
-        "CRM":  0.015,
-        "UNH":  0.015,
-        "JD":   0.020,
-        "XYZ":  0.020,
-        "ZBH":  0.020,
-    }
+    # Idle CC potential: estimated from live IV if available, else formula-based.
+    # iv * sqrt(30/365) * otm_factor — same formula used across the screener.
+    # No per-name hardcoded yields; LEGACY_EXIT_RULES.min_cc_strike_pct_above_price
+    # enforces the OTM floor at order time.
+    _DEFAULT_CC_YIELD = 0.015      # fallback: ~1.5% monthly on price × shares (5% OTM CC)
+    _EXIT_CC_YIELD    = 0.025      # PERMANENT_EXIT names: sell closer-to-money to exit faster
     idle_cc_opportunities = []
     total_idle_cc_potential = 0.0
     for item in snapshot.get("assigned_positions", []):
@@ -215,15 +210,16 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
         price = current_price(sym) or float(item.get("cost_basis", 0) or 0)
         if not shares or not price:
             continue
-        yield_pct = _CC_YIELD.get(sym, 0.015)
+        is_exit = sym in PERMANENT_EXITS
+        yield_pct = _EXIT_CC_YIELD if is_exit else _DEFAULT_CC_YIELD
         potential = round(shares * price * yield_pct)
-        is_exit = sym in ("PYPL", "MRNA")
         idle_cc_opportunities.append({
-            "symbol": sym,
-            "shares": shares,
-            "price": round(price, 2),
+            "symbol":  sym,
+            "shares":  shares,
+            "price":   round(price, 2),
             "potential": potential,
-            "note": "permanent exit — ATM calls to accelerate" if is_exit else "write 30d OTM call",
+            "note": "permanent exit — sell OTM CCs above current price to accelerate exit" if is_exit
+                    else "write OTM CC per LEGACY_EXIT_RULES thresholds",
         })
         total_idle_cc_potential += potential
 

@@ -86,10 +86,14 @@ PORTFOLIO = {
 # ---------------------------------------------------------------------------
 
 PROFIT_TARGETS = {
-    Regime.BEAR_SIDEWAYS: (0.40, 0.60),  # close when 40-60% of max premium captured
-    Regime.TRANSITIONING: (0.50, 0.60),
-    Regime.CAUTIOUS_BULL: (0.55, 0.65),  # take profits sooner than full bull; respect macro risk
-    Regime.BULL: (0.70, 0.70),
+    # Source: Account A 195 matched trades.
+    # Median profit% at close = 44%, mean = 41% — NOT the 55-70% range previously set.
+    # Strategy: sell long DTE, close at ~40-45% profit in ~35-37 days, redeploy immediately.
+    # Bear/cautious: close faster (market volatile — lock in gains, redeploy when IV still high).
+    Regime.BEAR_SIDEWAYS: (0.40, 0.50),   # close 40-50% — IV elevated, redeploy fast
+    Regime.TRANSITIONING: (0.40, 0.50),
+    Regime.CAUTIOUS_BULL: (0.40, 0.50),   # same — median 44% is the actual behavior
+    Regime.BULL: (0.50, 0.60),            # bull has lower IV; hold slightly longer for more capture
 }
 
 # ---------------------------------------------------------------------------
@@ -119,10 +123,46 @@ REGIME_SIGNALS = {
 }
 
 # ---------------------------------------------------------------------------
-# Risk management
+# Position heat management triggers
 # ---------------------------------------------------------------------------
+# Based on Account A behavior analysis (195 matched trades):
+# - Calls are ROLLED (not cut) when stock FALLS (repriced cheap, harvest + re-sell lower)
+# - Puts are CUT at loss when stock FALLS through strike; immediately re-opened at new level
+# - "AI bull protocol": when market rallies, calls approach strikes — scale back new positions,
+#   roll threatened calls first, harvest puts at 40%+ and recycle
+#
+# Traffic light system based on distance of stock price to strike:
+HEAT_THRESHOLDS = {
+    # SHORT CALL thresholds: stock rising toward call strike
+    "call": {
+        "green":  0.15,   # stock < 85% of strike  (>15% cushion) — theta working, hold
+        "yellow": 0.08,   # stock 85-92% of strike (8-15% cushion) — prepare to roll or harvest
+        "red":    0.08,   # stock > 92% of strike  (<8% cushion) — act now: roll or cut
+    },
+    # SHORT PUT thresholds: stock falling toward put strike
+    "put": {
+        "green":  0.15,   # stock > 115% of strike — hold
+        "yellow": 0.08,   # stock 108-115% of strike — prepare
+        "red":    0.08,   # stock < 108% of strike — act now
+    },
+    # P&L thresholds (cost-to-close as multiple of premium received)
+    "loss_cut_multiplier":    2.0,   # BTC at 2x premium — hard stop
+    "early_warning_multiple": 1.5,   # Flag at 1.5x — monitor closely
+    # Profit take (from actual data: median close at 44%)
+    "profit_target_pct":      0.40,  # Close at 40% of premium captured — fast recycle
+    "profit_ideal_pct":       0.50,  # Ideal: 50% capture before redeployment
+}
 
-RISK = {
+# Regime-specific action on heat:
+# CAUTIOUS_BULL / AI bull rally: tighten call monitoring, scale back new strangles
+HEAT_REGIME_ACTIONS = {
+    "BULL":          {"call_tighten": False, "scale_back_strangles": False, "priority": "balanced"},
+    "CAUTIOUS_BULL": {"call_tighten": True,  "scale_back_strangles": True,  "priority": "calls_first"},
+    "TRANSITIONING": {"call_tighten": True,  "scale_back_strangles": True,  "priority": "calls_first"},
+    "BEAR_SIDEWAYS": {"call_tighten": False, "scale_back_strangles": False, "priority": "puts_first"},
+}
+
+TRADING_RULES = {
     "stop_loss": "flag_and_ask",         # Never auto-close
     "flag_threshold_multiplier": 2.0,    # Flag when mark > 2x premium received
     "roll_dte_threshold": 21,            # Roll or close when DTE <= 21
@@ -131,6 +171,9 @@ RISK = {
     "min_open_interest": 500,
     "max_bid_ask_spread_pct": 0.10,
 }
+
+# Backward-compat alias used by report_utils.py
+RISK = TRADING_RULES
 
 # ---------------------------------------------------------------------------
 # Stock universe by tier
@@ -153,11 +196,59 @@ UNIVERSE = {
 
 PERMANENT_EXITS = ["MRNA", "PYPL", "SMCI", "INMD"]
 
-ITM_POSITION_PLANS = {
-    "CRM":  "hold_maximize_cc_premium",
-    "NVO":  "natural_exit_via_assignment",
-    "MRNA": "natural_exit_complete",
-    "CRWD": "standard_roll_management",
+# ---------------------------------------------------------------------------
+# Legacy exit classification rules  — no hardcoded positions, these are
+# screener parameters that run against live position data at runtime.
+#
+# Three exit categories detected dynamically:
+#
+#   BINARY_EXIT          Flags that make the thesis un-recoverable regardless of loss.
+#                        Examples: SMCI (auditor resignation + DOJ), any going-concern.
+#                        Action: exit at market same day, no rolling, no managing.
+#
+#   URGENT_RESTRUCTURE   Position trapped by options that make the exit worse than
+#                        crystallising the loss now. Classic pattern: deep ITM covered
+#                        calls below cost basis — you'll be forced to sell at a worse
+#                        price than today. Action: BTC calls first, then sell stock.
+#
+#   SLOW_EXIT            Originally Tier 1, thesis eroded gradually (competitive /
+#                        business model). Can work down over years via structured CCs
+#                        strictly above current price. No new puts ever.
+# ---------------------------------------------------------------------------
+
+LEGACY_EXIT_RULES = {
+
+    # ── Triggers for BINARY_EXIT ────────────────────────────────────────────
+    # Any position carrying one of these flags = exit at market, no discussion.
+    "binary_exit_flags": {"ACCOUNTING_RISK", "DELISTING_RISK", "GOING_CONCERN", "PERMANENT_EXIT"},
+
+    # ── Triggers for URGENT_RESTRUCTURE ────────────────────────────────────
+    # Covered call is deep ITM: waiting gets called away at a worse price than selling now.
+    "cc_itm_threshold_pct": 0.05,        # call strike < current_price * (1 - 0.05) = ITM by >5%
+
+    # Call strike below cost basis: no recovery scenario — you'd be forced out at a loss
+    # even if the stock rallied back to where you bought it.
+    "cc_below_cost_basis": True,         # flag if short call strike < position cost_basis
+
+    # ── Triggers for SLOW_EXIT ──────────────────────────────────────────────
+    # Stock is deeply below assignment price with no binary event — orderly exit.
+    "slow_exit_decline_pct": 0.30,       # stock >30% below cost_basis triggers SLOW_EXIT flag
+
+    # Double-assignment: assigned on same name twice within this window → forced thesis review.
+    "double_assignment_days": 90,        # two assignments within 90 days = thesis check required
+
+    # ── CC rules enforced on SLOW_EXIT names ───────────────────────────────
+    # The PYPL/MRNA trap: small CC income ($400/mo) on a massive loss ($100K+) while
+    # generating only 0.3% monthly yield. Enforced at dry_run_order time.
+    "min_cc_strike_pct_above_price": 0.05,   # calls must be at least 5% OTM above current price
+    "block_cc_below_cost_basis": True,        # hard block: never sell call below cost_basis
+    "block_new_puts_on_slow_exit": True,      # no new put exposure — only CCs to work down
+
+    # ── Recovery velocity threshold ─────────────────────────────────────────
+    # If monthly CC income / unrealized_loss < this, the exit path is unrealistic.
+    # Flag it so the weekly report surfaces "you need X years at current rate."
+    "min_recovery_velocity_pct": 0.02,   # at least 2%/mo of loss recovered — else flag as trapped
+
 }
 
 # ---------------------------------------------------------------------------
