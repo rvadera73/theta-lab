@@ -529,7 +529,7 @@ async def list_tools():
         Tool(
             name="check_market_regime",
             description=(
-                "Detects current market regime (BEAR_SIDEWAYS, TRANSITIONING, BULL) "
+                "Detects current market regime (BEAR_SIDEWAYS, TRANSITIONING, CAUTIOUS_BULL, BULL) "
                 "using VIX level and S&P 500 vs 50/200-day moving averages. "
                 "Returns regime, signals, and whether new entries are allowed."
             ),
@@ -1110,7 +1110,7 @@ async def call_tool(name: str, arguments: dict):
                 return [TextContent(type="text", text=(
                     f"🚫 **No new entries allowed**\n\n"
                     f"Regime: {regime_data['regime']}\n"
-                    f"Trader override: BEAR_SIDEWAYS through Oct/Nov 2026\n\n"
+                    f"Note: {regime_data.get('note', '')}\n\n"
                     f"Action: Monitor universe, prepare watchlist for when regime shifts.\n\n"
                     f"**Regime shift signals to watch:**\n"
                     f"- VIX sustained below 20 for 10+ days\n"

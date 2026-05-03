@@ -1,6 +1,13 @@
 """
-Market regime detection: BEAR_SIDEWAYS / TRANSITIONING / BULL.
-Uses VIX, S&P 500 MA relationship, and put/call ratio.
+Market regime detection: BEAR_SIDEWAYS / TRANSITIONING / CAUTIOUS_BULL / BULL.
+
+Four-tier system calibrated for a theta-selling persona:
+  BULL          — VIX < 16, SPX above both MAs, not stretched. Full throttle.
+  CAUTIOUS_BULL — Technical bull but VIX 16-20 or SPX >12% above 200d MA.
+                  New entries allowed with tighter strikes (Tier 1-2 only).
+  TRANSITIONING — Mixed signals: VIX 20-25 or SPX above 200d but below 50d.
+                  Tier 1 only, reduced size.
+  BEAR_SIDEWAYS — Bear confirmed: VIX > 25 or SPX below 200d MA. No new entries.
 """
 
 import yfinance as yf
@@ -24,7 +31,7 @@ def _moving_average(closes: list[float], window: int) -> float:
 def detect_regime() -> dict:
     """
     Returns current regime assessment with supporting data.
-    Signals checked: VIX level, S&P 500 vs 50/200-day MA.
+    Signals checked: VIX level + trend, S&P 500 vs 50/200-day MA, SPX extension.
     """
     vix_closes = _get_closes("^VIX", "3mo")
     spx_closes = _get_closes("^GSPC", "1y")
@@ -71,27 +78,45 @@ def detect_regime() -> dict:
         else:
             bear_signals += 1
 
-    # Determine overall regime
+    # Determine base technical regime
     if bull_signals >= 3 and bear_signals == 0:
-        regime = Regime.BULL
+        tech_regime = Regime.BULL
     elif bear_signals >= 3:
-        regime = Regime.BEAR_SIDEWAYS
+        tech_regime = Regime.BEAR_SIDEWAYS
     elif bull_signals > bear_signals:
-        regime = Regime.TRANSITIONING
+        tech_regime = Regime.TRANSITIONING
     else:
-        regime = Regime.BEAR_SIDEWAYS
+        tech_regime = Regime.BEAR_SIDEWAYS
 
-    # Trader override: current stated view is BEAR_SIDEWAYS through Oct/Nov 2026
-    trader_override = Regime.BEAR_SIDEWAYS
-    final_regime = trader_override  # trader view takes precedence until override removed
+    # CAUTIOUS_BULL downgrade: technical signals are all green but environment is not clean.
+    # Triggers (any one sufficient):
+    #   1. VIX 16-20: elevated but sub-threshold — not truly complacent
+    #   2. SPX > 12% above 200d MA: stretched/overextended — asymmetric downside risk
+    # This replaces the manual trader override with data-driven caution.
+    caution_reasons = []
+    if tech_regime == Regime.BULL and current_vix is not None:
+        if current_vix >= 16.0:
+            caution_reasons.append(f"VIX {current_vix:.1f} ≥ 16 (elevated, not complacent)")
+        if spx_current and spx_ma200:
+            extension_pct = (spx_current / spx_ma200 - 1) * 100
+            signals["spx_extension"] = {"pct_above_200d": round(extension_pct, 1)}
+            if extension_pct > 12.0:
+                caution_reasons.append(f"SPX {extension_pct:.1f}% above 200d MA (stretched)")
+
+    if caution_reasons:
+        final_regime = Regime.CAUTIOUS_BULL
+        note = "CAUTIOUS_BULL: technical signals green but — " + "; ".join(caution_reasons) + ". New entries allowed, Tier 1-2 only, tighter strikes."
+    else:
+        final_regime = tech_regime
+        note = f"Regime auto-detected from data. No caution flags active."
 
     return {
         "regime": final_regime.value,
-        "technical_regime": regime.value,
-        "trader_override": trader_override.value,
+        "technical_regime": tech_regime.value,
+        "trader_override": None,
         "new_entries_allowed": final_regime != Regime.BEAR_SIDEWAYS,
         "signals": signals,
         "bull_signal_count": bull_signals,
         "bear_signal_count": bear_signals,
-        "note": "Trader override active: BEAR_SIDEWAYS through Oct/Nov 2026. Remove override in config when thesis changes.",
+        "note": note,
     }

@@ -102,8 +102,32 @@ def _sector_weight(sector: str, regime: str) -> int:
         "Auto": 64,
         "IT": 48,
     }
+    # CAUTIOUS_BULL: near-bull sector weights but with macro caution applied.
+    # Platform & Subscription Growth is at full BULL weight — we're building rotation positions now.
+    cautious_bull = {
+        "AI Infrastructure & Data Center": 88,
+        "Cybersecurity": 82,
+        "Tech": 78,
+        "Platform & Subscription Growth": 78,
+        "Defense & Aerospace": 80,
+        "Nuclear & Clean Energy": 80,
+        "Financials": 68,
+        "Industrials & Infrastructure": 62,
+        "Healthcare & Biotech": 70,
+        "Consumer & Retail": 55,
+        "Energy": 65,
+        "IT": 82,
+        "Banking & NBFC": 78,
+        "Infrastructure & Capital Goods": 80,
+        "Auto": 72,
+        "Consumer": 60,
+        "Energy & Power": 76,
+        "Pharma": 68,
+    }
     if regime == "BULL":
         return bull.get(sector, 60)
+    if regime == "CAUTIOUS_BULL":
+        return cautious_bull.get(sector, 58)
     if regime in {"BEAR_SIDEWAYS", "RISKY_BULL"}:
         return risky.get(sector, 50)
     return transitioning.get(sector, 55)

@@ -13,7 +13,7 @@ from typing import Literal
 
 from reports.screener_universe import INDIA_UNIVERSE_BY_SYMBOL, QUALITY_FLAGS_BY_SYMBOL, US_UNIVERSE_BY_SYMBOL
 
-RegimeType = Literal["BULL", "BEAR_SIDEWAYS", "TRANSITIONING", "RISKY_BULL"]
+RegimeType = Literal["BULL", "CAUTIOUS_BULL", "BEAR_SIDEWAYS", "TRANSITIONING", "RISKY_BULL"]
 StrategyType = Literal["CSP", "CC", "STRANGLE", "WAIT", "SKIP"]
 
 
@@ -119,13 +119,15 @@ _DTE_RANGES: dict[RegimeType, tuple[int, int]] = {
     "BEAR_SIDEWAYS": (90, 130),
     "RISKY_BULL": (90, 130),
     "TRANSITIONING": (60, 90),
+    "CAUTIOUS_BULL": (45, 90),
     "BULL": (30, 45),
 }
 
 _BASE_OTM: dict[RegimeType, float] = {
     "BEAR_SIDEWAYS": 0.20,
     "RISKY_BULL": 0.18,
-    "TRANSITIONING": 0.14,
+    "TRANSITIONING": 0.18,
+    "CAUTIOUS_BULL": 0.17,
     "BULL": 0.10,
 }
 
@@ -182,8 +184,9 @@ def _regime_label(regime: RegimeType) -> str:
         "BEAR_SIDEWAYS": "Bear regime",
         "RISKY_BULL": "Risky bull regime",
         "TRANSITIONING": "Transitioning regime",
+        "CAUTIOUS_BULL": "Cautious bull regime",
         "BULL": "Bull regime",
-    }[regime]
+    }.get(regime, "Transitioning regime")
 
 
 def _rsi_label(rsi: float) -> str | None:

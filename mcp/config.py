@@ -10,6 +10,7 @@ from enum import Enum
 class Regime(str, Enum):
     BEAR_SIDEWAYS = "BEAR_SIDEWAYS"
     TRANSITIONING = "TRANSITIONING"
+    CAUTIOUS_BULL = "CAUTIOUS_BULL"   # Technical bull + elevated macro caution (VIX 16-20 or SPX stretched)
     BULL = "BULL"
 
 
@@ -87,6 +88,7 @@ PORTFOLIO = {
 PROFIT_TARGETS = {
     Regime.BEAR_SIDEWAYS: (0.40, 0.60),  # close when 40-60% of max premium captured
     Regime.TRANSITIONING: (0.50, 0.60),
+    Regime.CAUTIOUS_BULL: (0.55, 0.65),  # take profits sooner than full bull; respect macro risk
     Regime.BULL: (0.70, 0.70),
 }
 
@@ -97,6 +99,7 @@ PROFIT_TARGETS = {
 DTE_TARGETS = {
     Regime.BEAR_SIDEWAYS: None,          # No new entries
     Regime.TRANSITIONING: (45, 90),
+    Regime.CAUTIOUS_BULL: (45, 90),      # Moderate duration; don't commit to 360-day risk in uncertain macro
     Regime.BULL: (90, 360),
 }
 
