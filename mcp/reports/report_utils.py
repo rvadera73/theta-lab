@@ -1,6 +1,7 @@
 import asyncio
 import calendar
 import csv
+import json
 import math
 import os
 from collections import defaultdict
@@ -11,6 +12,11 @@ from typing import Any, Iterable
 import yaml
 
 import yfinance as yf
+
+from bootstrap import load_credentials as _load_credentials
+
+
+_load_credentials()
 
 from analysis.metrics import breakeven_velocity, premium_capture_rate, profit_factor, sortino_ratio
 from analysis.pnl import OptionLeg, Position, parse_schwab_positions

@@ -5,6 +5,7 @@ Normalises responses and adds retry/error handling.
 
 import asyncio
 import os
+import sys
 from typing import Any
 
 from open_stocks_mcp.tools.schwab_account_tools import (
@@ -40,13 +41,13 @@ def _ok(resp: dict) -> bool:
     return isinstance(r, dict) and r.get("status") == "success"
 
 
-# Account number suffix → hash, built lazily from the env so we can match
-# accounts without hashValue in the /accounts response.
-_ACCT_SUFFIXES = {
-    os.getenv("SCHWAB_ACCOUNT_A_HASH", ""): ("232", "1232"),
-    os.getenv("SCHWAB_ACCOUNT_B_HASH", ""): ("275", "9275"),
-    os.getenv("SCHWAB_ACCOUNT_C_HASH", ""): ("634", "8634"),
-}
+def _acct_suffixes() -> dict[str, tuple[str, ...]]:
+    """Lazy: read account suffix mappings from env at call time."""
+    return {
+        os.getenv("SCHWAB_ACCOUNT_A_HASH", ""): ("232", "1232"),
+        os.getenv("SCHWAB_ACCOUNT_B_HASH", ""): ("275", "9275"),
+        os.getenv("SCHWAB_ACCOUNT_C_HASH", ""): ("634", "8634"),
+    }
 
 
 async def get_account_hashes() -> dict[str, str]:
@@ -57,11 +58,13 @@ async def get_account_hashes() -> dict[str, str]:
     return {a.get("account_id", ""): a.get("hash_value", "") for a in accounts}
 
 
-_TOKEN_PATHS = {
-    os.getenv("SCHWAB_ACCOUNT_A_HASH", ""): os.path.expanduser("~/.tokens/schwab_token.json"),
-    os.getenv("SCHWAB_ACCOUNT_B_HASH", ""): os.path.expanduser("~/.tokens/schwab_token_b.json"),
-    os.getenv("SCHWAB_ACCOUNT_C_HASH", ""): os.path.expanduser("~/.tokens/schwab_token_c.json"),
-}
+def _token_paths() -> dict[str, str]:
+    """Lazy: read token paths from env at call time."""
+    return {
+        os.getenv("SCHWAB_ACCOUNT_A_HASH", ""): os.path.expanduser("~/.tokens/schwab_token.json"),
+        os.getenv("SCHWAB_ACCOUNT_B_HASH", ""): os.path.expanduser("~/.tokens/schwab_token_b.json"),
+        os.getenv("SCHWAB_ACCOUNT_C_HASH", ""): os.path.expanduser("~/.tokens/schwab_token_c.json"),
+    }
 
 
 async def _get_accounts_direct(token_path: str) -> list[dict]:
@@ -91,25 +94,27 @@ async def _get_accounts_direct(token_path: str) -> list[dict]:
 async def get_all_positions(account_hash: str) -> list[dict]:
     """All positions (equity + options) for an account.
 
-    Account A uses the open_stocks_mcp broker registry (registered at server startup).
-    Accounts B and C use direct schwab-py calls with their own token files.
+    All accounts try schwab-py direct first (works whether MCP server is running or not).
+    Falls back to open_stocks_mcp broker registry only if direct fails (MCP server context).
     """
-    suffixes = _ACCT_SUFFIXES.get(account_hash, ())
-    token_path = _TOKEN_PATHS.get(account_hash, "")
+    suffixes = _acct_suffixes().get(account_hash, ())
+    token_path = _token_paths().get(account_hash, "")
 
-    # Accounts B and C: fetch directly using their own token
-    if token_path and token_path != os.path.expanduser("~/.tokens/schwab_token.json"):
-        if not os.path.exists(token_path):
-            return []
-        raw_accounts = await _get_accounts_direct(token_path)
-        for acct in raw_accounts:
-            sec = acct.get("securitiesAccount", {})
-            acct_num = str(sec.get("accountNumber", ""))
-            if not suffixes or any(acct_num.endswith(s) for s in suffixes):
-                return sec.get("positions", [])
-        return raw_accounts[0].get("securitiesAccount", {}).get("positions", []) if len(raw_accounts) == 1 else []
+    # Try direct schwab-py first — works for all accounts, no broker registry needed
+    if token_path and os.path.exists(token_path):
+        try:
+            raw_accounts = await _get_accounts_direct(token_path)
+            for acct in raw_accounts:
+                sec = acct.get("securitiesAccount", {})
+                acct_num = str(sec.get("accountNumber", ""))
+                if not suffixes or any(acct_num.endswith(s) for s in suffixes):
+                    return sec.get("positions", [])
+            if raw_accounts and not suffixes:
+                return raw_accounts[0].get("securitiesAccount", {}).get("positions", [])
+        except Exception:
+            pass  # fall through to open_stocks_mcp
 
-    # Account A: use open_stocks_mcp broker registry
+    # Fallback: open_stocks_mcp broker registry (only works when MCP server is running)
     resp = await get_schwab_accounts(include_positions=True)
     accounts = _result(resp).get("accounts", [])
     if not accounts:

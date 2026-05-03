@@ -29,6 +29,11 @@ if _env_file.exists():
                     _k, _, _v = _line.partition("=")
                     os.environ.setdefault(_k.strip(), _v.strip())
 
+# Bootstrap credentials from ~/.claude.json (fills gaps if .env is incomplete)
+from bootstrap import load_credentials as _load_credentials
+
+_load_credentials()
+
 # Add mcp dir to path so relative imports work
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -88,6 +93,38 @@ def _audit_credentials() -> None:
 
 _audit_credentials()
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def _account_hash_map() -> dict[str, str]:
+    return {
+        "A": ACCOUNT_A_HASH,
+        "B": ACCOUNT_B_HASH,
+        "C": ACCOUNT_C_HASH,
+    }
+
+
+def _target_accounts(account: str) -> list[tuple[str, str]]:
+    hashes = _account_hash_map()
+    if account == "all":
+        return list(hashes.items())
+    return [(account, hashes.get(account, ""))]
+
+
+def _position_action(position, regime: str) -> str:
+    if position.symbol in PERMANENT_EXITS:
+        return "Accelerate permanent exit"
+    if position.loss_flag().get("flag"):
+        return "Review / defend loss"
+    roll_signal = position.roll_signal()
+    if roll_signal.get("signal"):
+        return roll_signal.get("recommendation", "Roll")
+    profit_signal = position.profit_take_signal(regime)
+    if profit_signal.get("signal"):
+        return profit_signal.get("recommendation", "Take profit")
+    if position.shares > 0 and not position.option_legs:
+        return "Covered-call candidate / hold shares"
+    return "Hold / monitor"
+
 
 app = Server("theta-lab")
 
@@ -308,6 +345,59 @@ async def list_tools():
                         "default": True,
                     }
                 },
+            },
+        ),
+        Tool(
+            name="get_live_positions",
+            description=(
+                "Returns live positions from Schwab for a specific account (A, B, C, or 'all'). "
+                "Shows equities, open options, current prices, and unrealised P&L. "
+                "Use for ad-hoc 'show me my positions' questions."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "account": {
+                        "type": "string",
+                        "enum": ["A", "B", "C", "all"],
+                        "description": "Which account to query",
+                    }
+                },
+                "required": ["account"],
+            },
+        ),
+        Tool(
+            name="get_account_summary",
+            description=(
+                "Returns live account balances, buying power, and key metrics for Account A, B, C, or all. "
+                "Use for ad-hoc balance/margin questions."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "account": {
+                        "type": "string",
+                        "enum": ["A", "B", "C", "all"],
+                    }
+                },
+                "required": ["account"],
+            },
+        ),
+        Tool(
+            name="get_position_detail",
+            description=(
+                "Returns full detail for a specific symbol across all accounts: shares held, all open option legs, "
+                "cost basis, current price, unrealised P&L, and suggested next action based on persona."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "symbol": {
+                        "type": "string",
+                        "description": "Ticker symbol e.g. CRWD, ADBE",
+                    }
+                },
+                "required": ["symbol"],
             },
         ),
     ]
@@ -575,6 +665,191 @@ async def call_tool(name: str, arguments: dict):
             for sym, d in qualified[:10]:
                 lines.append(f"- **{sym}**: IVR {d['iv_rank']:.0f} | IV {d['current_iv']}% | Entry: ✅")
             return [TextContent(type="text", text="\n".join(lines))]
+
+        elif name == "get_live_positions":
+            if not any(_account_hash_map().values()):
+                return [TextContent(type="text", text=_no_credentials_message())]
+            account = arguments.get("account", "all")
+            from schwab_client import get_all_positions, get_quotes
+
+            results = {}
+            for acct_label, acct_hash in _target_accounts(account):
+                if not acct_hash:
+                    results[acct_label] = {"error": "hash not configured"}
+                    continue
+
+                positions = await get_all_positions(acct_hash)
+                quote_symbols = sorted({
+                    p.get("instrument", {}).get("symbol", "")
+                    for p in positions
+                    if p.get("instrument", {}).get("assetType") == "EQUITY"
+                })
+                quotes = await get_quotes(quote_symbols) if quote_symbols else {}
+                equities = []
+                options = []
+                for p in positions:
+                    inst = p.get("instrument", {})
+                    asset = inst.get("assetType", "")
+                    symbol = inst.get("symbol", "")
+                    qty = float(p.get("longQuantity", 0) or 0) - float(p.get("shortQuantity", 0) or 0)
+                    market_value = float(p.get("marketValue", 0) or 0)
+                    average_price = float(p.get("averagePrice", 0) or 0)
+
+                    if asset == "OPTION":
+                        short_qty = int(p.get("shortQuantity", 0) or 0)
+                        contracts = -short_qty if short_qty else int(qty)
+                        avg_short_price = float(p.get("averageShortPrice", average_price) or 0)
+                        unrealized = (
+                            avg_short_price * 100 * short_qty - abs(market_value)
+                            if short_qty
+                            else market_value - (average_price * max(int(qty), 0) * 100)
+                        )
+                        mark = abs(market_value) / (abs(contracts) * 100) if contracts else 0.0
+                        options.append({
+                            "symbol": inst.get("description", symbol),
+                            "underlying": inst.get("underlyingSymbol") or symbol.split()[0],
+                            "qty": contracts,
+                            "mark": round(mark, 2),
+                            "market_value": round(market_value, 2),
+                            "unrealized_pnl": round(unrealized, 2),
+                        })
+                    elif asset == "EQUITY":
+                        current_price = float(quotes.get(symbol, {}).get("lastPrice", average_price) or 0)
+                        equities.append({
+                            "symbol": symbol,
+                            "qty": int(qty),
+                            "current_price": round(current_price, 2),
+                            "average_price": round(average_price, 2),
+                            "market_value": round(market_value, 2),
+                            "unrealized_pnl": round((current_price - average_price) * qty, 2),
+                        })
+
+                results[acct_label] = {
+                    "equities": sorted(equities, key=lambda x: abs(x["market_value"]), reverse=True),
+                    "options": sorted(options, key=lambda x: abs(x["market_value"]), reverse=True),
+                    "total_positions": len(positions),
+                }
+            return [TextContent(type="text", text=json.dumps(results, indent=2))]
+
+        elif name == "get_account_summary":
+            if not any(_account_hash_map().values()):
+                return [TextContent(type="text", text=_no_credentials_message())]
+            account = arguments.get("account", "all")
+            from schwab_client import get_balances
+
+            results = {}
+            totals = {
+                "buying_power": 0.0,
+                "cash_balance": 0.0,
+                "liquidation_value": 0.0,
+                "available_funds": 0.0,
+            }
+            for acct_label, acct_hash in _target_accounts(account):
+                if not acct_hash:
+                    results[acct_label] = {"error": "hash not configured"}
+                    continue
+                balances = await get_balances(acct_hash)
+                summary = {
+                    "buying_power": round(float(balances.get("buyingPower", 0) or 0), 2),
+                    "cash_balance": round(float(balances.get("cashBalance", 0) or 0), 2),
+                    "liquidation_value": round(float(balances.get("liquidationValue", 0) or 0), 2),
+                    "available_funds": round(float(balances.get("availableFunds", 0) or 0), 2),
+                }
+                results[acct_label] = summary
+                for key in totals:
+                    totals[key] += summary[key]
+            if account == "all":
+                results["totals"] = {key: round(value, 2) for key, value in totals.items()}
+            return [TextContent(type="text", text=json.dumps(results, indent=2))]
+
+        elif name == "get_position_detail":
+            if not any(_account_hash_map().values()):
+                return [TextContent(type="text", text=_no_credentials_message())]
+            symbol = str(arguments.get("symbol", "")).strip().upper()
+            from analysis.pnl import parse_schwab_positions
+            from reports.report_utils import technical_snapshot
+            from schwab_client import get_all_positions, get_quotes
+
+            regime = detect_regime()["regime"]
+            accounts = {}
+            aggregate = {
+                "accounts_holding": [],
+                "total_shares": 0,
+                "combined_net_pnl": 0.0,
+                "premium_received": 0.0,
+                "cost_to_close_options": 0.0,
+            }
+            for acct_label, acct_hash in _target_accounts("all"):
+                if not acct_hash:
+                    continue
+                raw = await get_all_positions(acct_hash)
+                if not raw:
+                    continue
+                quote_symbols = sorted({
+                    (p.get("instrument", {}).get("underlyingSymbol") or p.get("instrument", {}).get("symbol", "").split()[0])
+                    for p in raw
+                    if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                })
+                quotes = await get_quotes(quote_symbols) if quote_symbols else {}
+                positions = parse_schwab_positions(raw, acct_label, quotes)
+                for pos in positions:
+                    if pos.symbol.upper() != symbol:
+                        continue
+                    profit_signal = pos.profit_take_signal(regime)
+                    roll_signal = pos.roll_signal()
+                    loss_signal = pos.loss_flag()
+                    accounts[acct_label] = {
+                        "shares": pos.shares,
+                        "stock_cost_basis": round(pos.stock_cost_basis, 2),
+                        "current_price": round(pos.current_price, 2),
+                        "stock_pnl": round(pos.stock_pnl, 2),
+                        "net_options_pnl": round(pos.net_options_pnl, 2),
+                        "combined_net_pnl": round(pos.combined_net_pnl, 2),
+                        "premium_received": round(pos.total_premium_received, 2),
+                        "cost_to_close_options": round(pos.total_cost_to_close_options, 2),
+                        "profit_capture_pct": round(pos.profit_pct_of_max * 100, 1) if pos.profit_pct_of_max is not None else None,
+                        "open_option_legs": [
+                            {
+                                "description": leg.description,
+                                "strike": leg.strike,
+                                "expiry": leg.expiry,
+                                "option_type": leg.option_type,
+                                "quantity": leg.quantity,
+                                "premium_received": round(leg.premium_received, 2),
+                                "current_mark": round(leg.current_mark, 2),
+                                "dte": leg.dte,
+                            }
+                            for leg in pos.option_legs
+                        ],
+                        "signals": {
+                            "profit_take": profit_signal,
+                            "roll": roll_signal,
+                            "loss": loss_signal,
+                        },
+                        "suggested_next_action": _position_action(pos, regime),
+                    }
+                    aggregate["accounts_holding"].append(acct_label)
+                    aggregate["total_shares"] += pos.shares
+                    aggregate["combined_net_pnl"] += pos.combined_net_pnl
+                    aggregate["premium_received"] += pos.total_premium_received
+                    aggregate["cost_to_close_options"] += pos.total_cost_to_close_options
+
+            result = {
+                "symbol": symbol,
+                "regime": regime,
+                "accounts": accounts,
+                "aggregate": {
+                    "accounts_holding": aggregate["accounts_holding"],
+                    "total_shares": aggregate["total_shares"],
+                    "combined_net_pnl": round(aggregate["combined_net_pnl"], 2),
+                    "premium_received": round(aggregate["premium_received"], 2),
+                    "cost_to_close_options": round(aggregate["cost_to_close_options"], 2),
+                },
+                "technical": technical_snapshot(symbol),
+            }
+            if not accounts:
+                result["note"] = "No open position found across configured accounts."
+            return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
         elif name == "generate_india_weekly_report":
             BREEZE_API_KEY = os.getenv("BREEZE_API_KEY", "")
