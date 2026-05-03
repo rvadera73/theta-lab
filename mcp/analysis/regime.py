@@ -114,7 +114,7 @@ def detect_regime() -> dict:
         "regime": final_regime.value,
         "technical_regime": tech_regime.value,
         "trader_override": None,
-        "new_entries_allowed": final_regime != Regime.BEAR_SIDEWAYS,
+        "new_entries_allowed": True,  # strangles work in all regimes; bear = peak income months
         "signals": signals,
         "bull_signal_count": bull_signals,
         "bear_signal_count": bear_signals,

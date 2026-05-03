@@ -157,6 +157,10 @@ def _resolve_strategy(meta: dict[str, Any], in_portfolio: bool, ivr: float | Non
     if in_portfolio and preferred == "CC":
         return "CC"
     if preferred == "CSP_or_strangle":
+        # Data: strangles drive $100K months in cautious/bear regimes.
+        # In bull, IVR is lower — CSP suffices. In cautious/bear, sell both sides.
+        if regime in {"CAUTIOUS_BULL", "BEAR_SIDEWAYS", "TRANSITIONING"} and (ivr or 0) >= 40:
+            return "strangle"
         if regime == "BULL" and (ivr or 0) >= 60:
             return "strangle"
         return "CSP"
@@ -225,9 +229,14 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
         if meta["sector"] in heavy_sectors:
             regime_fit = min(regime_fit, 20)
             portfolio_note = f"Sector already heavy ({meta['sector']})"
-        if regime == "TRANSITIONING" and meta["tier"] != 1:
+        # TRANSITIONING: Tier 1 only for new CSPs; strangles allowed on Tier 1-2
+        if regime == "TRANSITIONING" and meta["tier"] == 3:
             regime_fit = min(regime_fit, 15)
-            portfolio_note = (portfolio_note + "; Tier 1 only in transitioning regime") if portfolio_note else "Tier 1 only in transitioning regime"
+            portfolio_note = (portfolio_note + "; Tier 3 skipped in transitioning") if portfolio_note else "Tier 3 skipped in transitioning"
+        # BEAR_SIDEWAYS: strangles are the $100K strategy; restrict Tier 3 only
+        if regime == "BEAR_SIDEWAYS" and meta["tier"] == 3:
+            regime_fit = min(regime_fit, 20)
+            portfolio_note = (portfolio_note + "; Tier 3 avoid in bear") if portfolio_note else "Tier 3 avoid in bear"
 
         rsi_component = _rsi_score(rsi)
         tier_component = _tier_score(meta["tier"])

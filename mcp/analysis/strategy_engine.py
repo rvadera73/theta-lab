@@ -116,19 +116,23 @@ class TradeRecommendation:
 
 
 _DTE_RANGES: dict[RegimeType, tuple[int, int]] = {
-    "BEAR_SIDEWAYS": (90, 130),
-    "RISKY_BULL": (90, 130),
-    "TRANSITIONING": (60, 90),
-    "CAUTIOUS_BULL": (45, 90),
-    "BULL": (30, 45),
+    # Source: Account A Jan-Apr 2026. 200-300 DTE bucket = 100% win rate, $666 avg P&L/trade.
+    # >300d has higher avg P&L ($770) but 86% win rate — slightly too exposed.
+    # Avg HOLD is 35-37 days regardless of DTE opened — sell long DTE, close at 50% quickly.
+    "BEAR_SIDEWAYS": (180, 300),   # Strangles in bear = $100K months; rich IV, wide cushion
+    "RISKY_BULL":    (150, 280),
+    "TRANSITIONING": (150, 280),
+    "CAUTIOUS_BULL": (180, 300),   # 98% call win rate with this range; collect then close at 50%
+    "BULL":          (90, 180),    # Lower IV in bull → shorter cycles; still close at 50%
 }
 
 _BASE_OTM: dict[RegimeType, float] = {
+    # Wider OTM in bear to avoid assignment; tighter in bull when premium is thin
     "BEAR_SIDEWAYS": 0.20,
-    "RISKY_BULL": 0.18,
+    "RISKY_BULL":    0.18,
     "TRANSITIONING": 0.18,
     "CAUTIOUS_BULL": 0.17,
-    "BULL": 0.10,
+    "BULL":          0.12,
 }
 
 

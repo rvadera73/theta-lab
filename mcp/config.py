@@ -97,10 +97,14 @@ PROFIT_TARGETS = {
 # ---------------------------------------------------------------------------
 
 DTE_TARGETS = {
-    Regime.BEAR_SIDEWAYS: None,          # No new entries
-    Regime.TRANSITIONING: (45, 90),
-    Regime.CAUTIOUS_BULL: (45, 90),      # Moderate duration; don't commit to 360-day risk in uncertain macro
-    Regime.BULL: (90, 360),
+    # Source: Account A 195 matched trades.
+    # Sweet spot: 200-300 DTE = 100% win rate, $666 avg P&L/trade.
+    # Avg HOLD = 35-37 days regardless — open long DTE for cushion, close at 50% profit quickly.
+    # BEAR is NOT no-entry — Mar/Apr 2026 (bear) generated $100K via strangles at elevated IV.
+    Regime.BEAR_SIDEWAYS: (180, 300),
+    Regime.TRANSITIONING: (150, 280),
+    Regime.CAUTIOUS_BULL: (180, 300),
+    Regime.BULL: (90, 180),
 }
 
 # ---------------------------------------------------------------------------
