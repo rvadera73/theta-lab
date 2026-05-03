@@ -485,3 +485,189 @@ def parse_robinhood_csv(csv_path: str, account_label: str) -> list["Position"]:
         equity_map[underlying].option_legs.extend(legs)
 
     return list(equity_map.values())
+
+
+# ---------------------------------------------------------------------------
+# Vanguard PDF + CSV parser
+# PDF format (Holdings | Vanguard page export):
+#   SYMBOL YYMMDD C/P STRIKE  price  $chg  %chg  qty  unreal$  unreal%  cur_balance
+# Cost basis derived: abs_cost = unreal_dollar / (unreal_pct / 100)
+#   equity   → stock_cost_basis_per_share = abs_cost / shares
+#   short opt → premium_received = abs_cost
+# ---------------------------------------------------------------------------
+
+_VANGUARD_OPT_RE = re.compile(
+    r"^([A-Z]+)\s+(\d{2})(\d{2})(\d{2})\s+([CP])\s+([\d.]+)$"
+)
+
+_VANGUARD_ROW_RE = re.compile(
+    r"^([A-Z][\w \.]+?)\s+"          # symbol (may contain spaces for options)
+    r"\$?([\d,]+\.?\d*)\s+"          # price
+    r"\$?([\d,]+\.?\d*)\s+"          # $ change
+    r"([\d.]+)%\s+"                  # % change (today)
+    r"(-?[\d,]+\.?\d*)\s+"           # quantity
+    r"\$?([\d,]+\.?\d*)\s+"          # unrealized $ (absolute)
+    r"([\d.]+)%\s+"                  # unrealized % (absolute)
+    r"(-?\$?[\d,]+\.?\d*)"           # current balance
+)
+
+
+def _parse_vanguard_row(line: str, today):
+    """Parse one Vanguard holdings row. Returns (symbol, is_option, data_dict) or None."""
+    line = line.replace("Transact", "").strip()
+    m = _VANGUARD_ROW_RE.match(line)
+    if not m:
+        return None
+
+    sym_raw, price_s, _, _, qty_s, unreal_s, unreal_pct_s, bal_s = m.groups()
+    sym_raw = sym_raw.strip()
+
+    def _n(s):
+        return float(s.replace(",", "").replace("$", "").replace("-", "").strip() or "0")
+
+    try:
+        price = _n(price_s)
+        qty = float(qty_s.replace(",", ""))
+        unreal_dollar = _n(unreal_s)
+        unreal_pct = _n(unreal_pct_s) / 100.0
+        cur_bal = float(bal_s.replace(",", "").replace("$", ""))
+    except ValueError:
+        return None
+
+    abs_cost = (unreal_dollar / unreal_pct) if unreal_pct > 0 else 0.0
+
+    opt_m = _VANGUARD_OPT_RE.match(sym_raw)
+    if opt_m:
+        underlying, yy, mm, dd, cp, strike_s = opt_m.groups()
+        expiry = f"20{yy}-{mm}-{dd}"
+        try:
+            dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+        except ValueError:
+            dte = 0
+        contracts = int(abs(qty))
+        is_short = qty < 0
+        return ("option", underlying, OptionLeg(
+            description=f"{'CALL' if cp=='C' else 'PUT'} {strike_s} {expiry}",
+            strike=float(strike_s),
+            expiry=expiry,
+            option_type="CALL" if cp == "C" else "PUT",
+            quantity=-contracts if is_short else contracts,
+            premium_received=abs_cost if is_short else 0.0,
+            current_mark=abs(cur_bal),
+            dte=dte,
+        ))
+    else:
+        shares = int(abs(qty)) if qty else 0
+        cost_per_share = (abs_cost / shares) if shares > 0 else 0.0
+        return ("equity", sym_raw, Position(
+            symbol=sym_raw,
+            account="",   # filled in by caller
+            shares=shares,
+            stock_cost_basis=cost_per_share,
+            current_price=price,
+        ))
+
+
+def parse_vanguard_pdf(pdf_path: str, account_label: str) -> list["Position"]:
+    """
+    Parse a Vanguard 'Holdings | Vanguard' PDF export into Position objects.
+    Derives cost basis from unrealized gain/loss columns.
+    Falls back to CSV if pdfplumber unavailable.
+    """
+    import pdfplumber
+    equity_map: dict[str, "Position"] = {}
+    option_legs: dict[str, list["OptionLeg"]] = {}
+    today = date.today()
+
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            for line in text.split("\n"):
+                line = line.strip()
+                result = _parse_vanguard_row(line, today)
+                if not result:
+                    continue
+                kind = result[0]
+                if kind == "equity":
+                    _, sym, pos = result
+                    pos.account = account_label
+                    equity_map[sym] = pos
+                elif kind == "option":
+                    _, underlying, leg = result
+                    option_legs.setdefault(underlying, []).append(leg)
+
+    for underlying, legs in option_legs.items():
+        if underlying not in equity_map:
+            equity_map[underlying] = Position(
+                symbol=underlying, account=account_label,
+                shares=0, stock_cost_basis=0.0, current_price=0.0,
+            )
+        equity_map[underlying].option_legs.extend(legs)
+
+    return list(equity_map.values())
+
+
+def parse_vanguard_csv(csv_path: str, account_label: str) -> list["Position"]:
+    """
+    Parse a Vanguard positions CSV (no cost basis available).
+    Use parse_vanguard_pdf() instead when the Holdings PDF is available.
+    """
+    equity_map: dict[str, "Position"] = {}
+    option_legs: dict[str, list["OptionLeg"]] = {}
+    today = date.today()
+
+    with open(csv_path, newline="", encoding="utf-8-sig") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            symbol_raw = row.get("Symbol", "").strip()
+            if not symbol_raw:
+                continue
+
+            def _f(key):
+                return row.get(key, "").replace("$", "").replace(",", "").strip()
+
+            try:
+                shares = float(_f("Shares")) if _f("Shares") else 0.0
+                price = float(_f("Share Price")) if _f("Share Price") else 0.0
+            except ValueError:
+                continue
+
+            m = _VANGUARD_OPT_RE.match(symbol_raw)
+            if m:
+                underlying, yy, mm, dd, cp, strike_s = m.groups()
+                expiry = f"20{yy}-{mm}-{dd}"
+                try:
+                    dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+                except ValueError:
+                    dte = 0
+                contracts = int(abs(shares))
+                is_short = shares < 0
+                leg = OptionLeg(
+                    description=f"{'CALL' if cp=='C' else 'PUT'} {strike_s} {expiry}",
+                    strike=float(strike_s),
+                    expiry=expiry,
+                    option_type="CALL" if cp == "C" else "PUT",
+                    quantity=-contracts if is_short else contracts,
+                    premium_received=0.0,
+                    current_mark=price * 100 * contracts,
+                    dte=dte,
+                )
+                option_legs.setdefault(underlying, []).append(leg)
+            else:
+                equity_map[symbol_raw] = Position(
+                    symbol=symbol_raw,
+                    account=account_label,
+                    shares=int(abs(shares)) if shares else 0,
+                    stock_cost_basis=0.0,
+                    current_price=price,
+                )
+
+    for underlying, legs in option_legs.items():
+        if underlying not in equity_map:
+            equity_map[underlying] = Position(
+                symbol=underlying, account=account_label,
+                shares=0, stock_cost_basis=0.0, current_price=0.0,
+            )
+        equity_map[underlying].option_legs.extend(legs)
+
+    return list(equity_map.values())

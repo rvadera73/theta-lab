@@ -136,6 +136,11 @@ def _get_configured_accounts() -> dict[str, dict]:
             csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
             if csv_path and os.path.exists(csv_path):
                 result[label] = {**cfg}
+        elif broker == "vanguard_csv":
+            pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
+            csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+            if (pdf_path and os.path.exists(pdf_path)) or (csv_path and os.path.exists(csv_path)):
+                result[label] = {**cfg}
         # Future brokers: add elif here
     return result
 
@@ -229,8 +234,21 @@ async def _load_positions_all(account_filter: str = "all") -> list:
                 from analysis.pnl import parse_robinhood_csv
                 csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
                 if not csv_path or not os.path.exists(csv_path):
-                    continue  # CSV not yet exported — skip silently
+                    continue
                 positions = parse_robinhood_csv(csv_path, account_label=label)
+                all_positions.extend(positions)
+            elif broker == "vanguard_csv":
+                # Prefer PDF (has cost basis) over CSV (no cost basis)
+                pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
+                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+                if pdf_path and os.path.exists(pdf_path):
+                    from analysis.pnl import parse_vanguard_pdf
+                    positions = parse_vanguard_pdf(pdf_path, account_label=label)
+                elif csv_path and os.path.exists(csv_path):
+                    from analysis.pnl import parse_vanguard_csv
+                    positions = parse_vanguard_csv(csv_path, account_label=label)
+                else:
+                    continue
                 all_positions.extend(positions)
             # Future brokers: add elif here
         except Exception:

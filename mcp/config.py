@@ -92,6 +92,8 @@ ACCOUNTS: dict[str, dict] = {
     # Fidelity CSV 2: two accounts in same file
     "G1": {"label": "Fidelity ROTH IRA",          "broker": "fidelity_csv",  "csv_path_env": "FIDELITY_CSV_2",          "fidelity_account_number": "233461172", "type": "roth_ira", "no_margin": True, "no_naked_calls": True},
     "G2": {"label": "Fidelity Rollover IRA",      "broker": "fidelity_csv",  "csv_path_env": "FIDELITY_CSV_2",          "fidelity_account_number": "263508923", "type": "ira",      "no_margin": True, "no_naked_calls": True},
+    # Vanguard — single account CSV export
+    "H":  {"label": "Vanguard Brokerage (21530855)", "broker": "vanguard_csv", "csv_path_env": "VANGUARD_CSV", "pdf_path_env": "VANGUARD_PDF", "type": "margin", "no_margin": False, "no_naked_calls": False},
     # To add a new account: one entry here, zero other file changes needed.
 }
 
