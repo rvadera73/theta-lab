@@ -27,6 +27,9 @@ US_FLAGS_BY_SYMBOL = {
     "GOOGL": ['AI_CONCENTRATION', 'REGULATORY_RISK'],
     "COIN": ['REGULATORY_RISK', 'HIGH_DEBT'],
     "MSTR": ['HIGH_DEBT', 'SPECULATIVE_STORY'],
+    # Platform & Subscription Growth — contrarian rotation thesis
+    "TSLA": ['THIN_MARGINS', 'LOW_MOAT', 'CHINA_EXPOSURE'],
+    "NU": ['LOW_MOAT'],
 }
 
 INDIA_FLAGS_BY_SYMBOL = {
@@ -145,6 +148,19 @@ US_UNIVERSE = [
     _entry('TGT', 'Consumer & Retail', 2, 'CSP', 8000, 'Retail turnaround candidate.', US_FLAGS_BY_SYMBOL.get('TGT')),
     _entry('NKE', 'Consumer & Retail', 2, 'CSP', 7000, 'Brand reset + volatility.', US_FLAGS_BY_SYMBOL.get('NKE')),
     _entry('SBUX', 'Consumer & Retail', 2, 'CSP', 7000, 'Consumer turnaround with liquid options.', US_FLAGS_BY_SYMBOL.get('SBUX')),
+    # Platform & Subscription Growth — quality growth orphaned by AI mania; contrarian rotation targets.
+    # Thesis: durable subscription/marketplace revenue, network moats, underowned while capital crowded into AI.
+    # Sector weight is calibrated to surface these when RSI oversold + IVR spikes even in bear regime.
+    # ADRs (MELI, SE, NU) provide international diversification with liquid US-listed options.
+    _entry('NFLX', 'Platform & Subscription Growth', 2, 'CSP_or_strangle', 8000, 'Subscription media moat; ad-tier + password crackdown driving FCF; AI-mania rotation target.'),
+    _entry('SPOT', 'Platform & Subscription Growth', 2, 'CSP_or_strangle', 12000, 'Audio platform monopoly; margin expansion story; AI-mania orphan.'),
+    _entry('SHOP', 'Platform & Subscription Growth', 2, 'CSP_or_strangle', 9000, 'E-commerce infrastructure network; merchant lock-in moat; secular commerce tailwind.'),
+    _entry('UBER', 'Platform & Subscription Growth', 2, 'CSP', 6000, 'Marketplace network effect; profitable at scale; rideshare + delivery flywheel.'),
+    _entry('ABNB', 'Platform & Subscription Growth', 2, 'CSP', 10000, 'Asset-light marketplace; global travel network; premium spend resilience.'),
+    _entry('TSLA', 'Platform & Subscription Growth', 3, 'strangle', 8000, 'High-vol EV + energy + autonomy optionality; volatility income play, not conviction long.', US_FLAGS_BY_SYMBOL.get('TSLA')),
+    _entry('MELI', 'Platform & Subscription Growth', 2, 'CSP', 15000, 'LatAm Amazon+PayPal; 40%+ revenue growth; secular middle-class expansion; liquid ADR.'),
+    _entry('SE', 'Platform & Subscription Growth', 3, 'CSP', 6000, 'SEA gaming+ecomm+fintech trifecta; underowned by US investors; high-growth ADR.'),
+    _entry('NU', 'Platform & Subscription Growth', 3, 'CSP', 5000, 'LatAm digital bank; 100M+ users; emerging-market fintech ADR.', US_FLAGS_BY_SYMBOL.get('NU')),
     _entry('NVDA', 'Tech', 1, 'CC', 20000, 'Existing portfolio AI winner; keep for covered calls only.', US_FLAGS_BY_SYMBOL.get('NVDA')),
     _entry('ADBE', 'Tech', 1, 'CC', 15000, 'Existing portfolio name; CC monetization over new CSPs.', US_FLAGS_BY_SYMBOL.get('ADBE')),
     _entry('CRM', 'Tech', 1, 'CC', 13000, 'Existing portfolio name; covered call candidate.', US_FLAGS_BY_SYMBOL.get('CRM')),
@@ -166,6 +182,7 @@ INDIA_UNIVERSE = [
     _entry('TORNTPOWER', 'Energy & Power', 2, 'CSP', 35000, 'Private utility compounder.', INDIA_FLAGS_BY_SYMBOL.get('TORNTPOWER')),
     _entry('CESC', 'Energy & Power', 2, 'CSP', 20000, 'Utility yield + lower notional.', INDIA_FLAGS_BY_SYMBOL.get('CESC')),
     _entry('JSWENERGY', 'Energy & Power', 2, 'CSP', 30000, 'Power growth + volatility.', INDIA_FLAGS_BY_SYMBOL.get('JSWENERGY')),
+    _entry('SOLARINDS', 'Energy & Power', 2, 'CSP', 25000, 'Solar sector growth; India energy transition secular story; not rate-sensitive.', INDIA_FLAGS_BY_SYMBOL.get('SOLARINDS')),
     _entry('HAL', 'Defense & Aerospace', 1, 'CSP', 45000, 'Flagship defense aerospace leader.', INDIA_FLAGS_BY_SYMBOL.get('HAL')),
     _entry('BEL', 'Defense & Aerospace', 1, 'CSP', 30000, 'Defense electronics leader.', INDIA_FLAGS_BY_SYMBOL.get('BEL')),
     _entry('BHEL', 'Defense & Aerospace', 2, 'CSP', 25000, 'Defense/industrial PSU beta.', INDIA_FLAGS_BY_SYMBOL.get('BHEL')),
@@ -196,6 +213,8 @@ INDIA_UNIVERSE = [
     _entry('ABB', 'Infrastructure & Capital Goods', 1, 'CSP', 45000, 'Automation and electrification.', INDIA_FLAGS_BY_SYMBOL.get('ABB')),
     _entry('CUMMINSIND', 'Infrastructure & Capital Goods', 1, 'CSP', 35000, 'Power systems and industrial demand.', INDIA_FLAGS_BY_SYMBOL.get('CUMMINSIND')),
     _entry('BHARATFORG', 'Infrastructure & Capital Goods', 2, 'CSP', 30000, 'Forgings + defense/auto leverage.', INDIA_FLAGS_BY_SYMBOL.get('BHARATFORG')),
+    _entry('KAYNES', 'Infrastructure & Capital Goods', 2, 'CSP', 30000, 'Electronics MFG; PLI scheme beneficiary; India domestic manufacturing compounder.', INDIA_FLAGS_BY_SYMBOL.get('KAYNES')),
+    _entry('POWERINDIA', 'Infrastructure & Capital Goods', 2, 'CSP', 20000, 'Power infrastructure capex; government-backed electrification secular tailwind.', INDIA_FLAGS_BY_SYMBOL.get('POWERINDIA')),
     _entry('MARUTI', 'Auto', 1, 'CSP', 50000, 'Passenger vehicle leader.', INDIA_FLAGS_BY_SYMBOL.get('MARUTI')),
     _entry('TATAMOTORS', 'Auto', 2, 'CSP', 30000, 'JLR + domestic auto beta.', INDIA_FLAGS_BY_SYMBOL.get('TATAMOTORS')),
     _entry('M&M', 'Auto', 1, 'CSP', 35000, 'SUV/tractor cycle leader.', INDIA_FLAGS_BY_SYMBOL.get('M&M')),

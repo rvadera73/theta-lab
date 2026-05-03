@@ -42,6 +42,8 @@ def _sector_weight(sector: str, regime: str) -> int:
         "AI Infrastructure & Data Center": 100,
         "Cybersecurity": 92,
         "Tech": 90,
+        # BULL = current regime; begin building positions in quality growth orphans now.
+        "Platform & Subscription Growth": 78,
         "Consumer & Retail": 78,
         "Financials": 78,
         "Industrials & Infrastructure": 76,
@@ -64,6 +66,8 @@ def _sector_weight(sector: str, regime: str) -> int:
         "Financials": 85,
         "Industrials & Infrastructure": 82,
         "Healthcare & Biotech": 72,
+        # BEAR_SIDEWAYS: durable subscription revenue provides floor but recession headwinds are real.
+        "Platform & Subscription Growth": 52,
         "Consumer & Retail": 58,
         "Cybersecurity": 55,
         "AI Infrastructure & Data Center": 30,
@@ -83,6 +87,9 @@ def _sector_weight(sector: str, regime: str) -> int:
         "Financials": 76,
         "Industrials & Infrastructure": 74,
         "Healthcare & Biotech": 70,
+        # TRANSITIONING = AI mania peak; maximum rotation urgency into quality growth orphans.
+        # Capital flows OUT of AI/Mag-7 and INTO these names — highest priority in this regime.
+        "Platform & Subscription Growth": 92,
         "Consumer & Retail": 60,
         "Cybersecurity": 56,
         "AI Infrastructure & Data Center": 45,
