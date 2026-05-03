@@ -3,6 +3,7 @@ Generates the Monday Top-5 Weekly Action Report.
 Pulls live Schwab data, runs all analysis, returns structured report.
 """
 
+import asyncio
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,12 +11,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from datetime import date, datetime
 from typing import Any
 
-from analysis.pnl import Position, parse_schwab_positions
+from analysis.pnl import Position, parse_robinhood_positions, parse_schwab_positions
 from analysis.regime import detect_regime
 from analysis.iv_rank import batch_iv_rank
 from analysis.heat_scanner import heat_from_positions, format_heat_html
 from config import (
-    ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, PERMANENT_EXITS,
+    ACCOUNT_A, ACCOUNT_B, ACCOUNT_C, ACCOUNT_D, ACCOUNTS, PERMANENT_EXITS,
     LEGACY_EXIT_RULES, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
 )
 
@@ -127,6 +128,37 @@ async def generate_weekly_report(
         except Exception as e:
             text_warnings.append(f"⚠️ Could not load Account {acct_label}: {e}")
 
+    # Account D — Robinhood (if configured)
+    rh_user = os.getenv("ROBINHOOD_USERNAME", "")
+    rh_pass = os.getenv("ROBINHOOD_PASSWORD", "")
+    if rh_user and rh_pass:
+        try:
+            from robinhood_client import get_robinhood_positions
+            rh_equity, rh_opts = await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(None, get_robinhood_positions),
+                timeout=15,
+            )
+            rh_positions = parse_robinhood_positions(rh_equity, rh_opts, account_label="D")
+            all_positions.extend(rh_positions)
+            for pos in rh_positions:
+                pri, label, reason = _priority(pos, regime)
+                combined_pnl = pos.combined_net_pnl
+                all_actions.append({
+                    "priority": pri, "label": label, "reason": reason,
+                    "symbol": pos.symbol, "account": "D",
+                    "shares": pos.shares, "current_price": pos.current_price,
+                    "combined_pnl": combined_pnl,
+                    "premium_received": pos.total_premium_received,
+                    "cost_to_close": pos.total_cost_to_close_options,
+                    "profit_signal": pos.profit_take_signal(regime),
+                    "loss_flag": pos.loss_flag(),
+                    "roll_signal": pos.roll_signal(),
+                    "legs": pos.option_legs,
+                    "permanent_exit": pos.symbol in PERMANENT_EXITS,
+                })
+        except Exception:
+            pass
+
     all_actions.sort(key=lambda x: (x["priority"], -abs(x["combined_pnl"])))
     top5 = all_actions[:5]
     watching = [a for a in all_actions[5:] if a["priority"] <= 3][:5]
@@ -142,9 +174,11 @@ async def generate_weekly_report(
 
     # --- P&L rows ---
     pnl_rows = [
-        ["A (Rahul)", f"${ACCOUNT_A['target_weekly_pnl']:,}", "— (order history needed)"],
-        ["B (Pinky)", f"${ACCOUNT_B['target_weekly_pnl']:,}", "—"],
-        ["Combined", f"${ACCOUNT_A['target_weekly_pnl'] + ACCOUNT_B['target_weekly_pnl']:,}", "—"],
+        ["A (Rahul Schwab)", f"${ACCOUNT_A['target_weekly_pnl']:,}", "— (order history needed)"],
+        ["B (Pinky IRA)", f"${ACCOUNT_B['target_weekly_pnl']:,}", "—"],
+        ["C (Designated)", f"${ACCOUNT_C['target_weekly_pnl']:,}", "—"],
+        ["D (Robinhood IRA)", f"${ACCOUNT_D['target_weekly_pnl']:,}", "—"],
+        ["Combined", f"${sum(ACCOUNTS[k]['target_weekly_pnl'] for k in ACCOUNTS):,}", "—"],
     ]
 
     report_data = {

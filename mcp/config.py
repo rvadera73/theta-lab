@@ -76,6 +76,18 @@ ACCOUNT_D = {
 }
 
 # ---------------------------------------------------------------------------
+# Account registry — single source of truth for all brokers.
+# To add a new account: add one entry here. No other code changes needed.
+# ---------------------------------------------------------------------------
+ACCOUNTS: dict[str, dict] = {
+    "A": {**ACCOUNT_A, "broker": "schwab", "hash_env": "SCHWAB_ACCOUNT_A_HASH"},
+    "B": {**ACCOUNT_B, "broker": "schwab", "hash_env": "SCHWAB_ACCOUNT_B_HASH"},
+    "C": {**ACCOUNT_C, "broker": "schwab", "hash_env": "SCHWAB_ACCOUNT_C_HASH"},
+    "D": {**ACCOUNT_D, "broker": "robinhood", "username_env": "ROBINHOOD_USERNAME", "password_env": "ROBINHOOD_PASSWORD"},
+    # Future: "E": {"label": "Fidelity IRA", "broker": "fidelity_csv", "csv_path_env": "FIDELITY_CSV_PATH", ...}
+}
+
+# ---------------------------------------------------------------------------
 # Portfolio-level targets ($3M across all 14 accounts)
 # ---------------------------------------------------------------------------
 

@@ -47,7 +47,7 @@ from mcp.server.stdio import stdio_server
 from mcp.server.sse import SseServerTransport
 from mcp.types import Tool, TextContent
 
-from config import ACCOUNT_A, ACCOUNT_B, UNIVERSE, Tier, PERMANENT_EXITS, RISK
+from config import ACCOUNT_A, ACCOUNT_B, ACCOUNTS, UNIVERSE, Tier, PERMANENT_EXITS, RISK
 from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
 from analysis.india_regime import detect_india_regime
@@ -68,8 +68,8 @@ from reports.weekly_combined_report import generate_weekly_combined_report
 from reports.bimonthly_technical_report import generate_bimonthly_technical_report
 from reports.monthly_objectives_report import generate_monthly_objectives_report
 
-# Account hashes from environment (set after Schwab API setup)
-ACCOUNT_A_HASH = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")
+# Derived from ACCOUNTS registry — do not hardcode per-account vars here
+ACCOUNT_A_HASH = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")  # kept for backward compat
 ACCOUNT_B_HASH = os.getenv("SCHWAB_ACCOUNT_B_HASH", "")
 ACCOUNT_C_HASH = os.getenv("SCHWAB_ACCOUNT_C_HASH", "")
 RH_USERNAME = os.getenv("ROBINHOOD_USERNAME", "")
@@ -115,19 +115,105 @@ _audit_credentials()
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _get_configured_accounts() -> dict[str, dict]:
+    """
+    Returns all accounts from ACCOUNTS registry that have credentials in env.
+    Broker-agnostic: adding a new account only requires a new entry in config.ACCOUNTS.
+    """
+    result = {}
+    for label, cfg in ACCOUNTS.items():
+        broker = cfg.get("broker", "schwab")
+        if broker == "schwab":
+            hash_val = os.getenv(cfg.get("hash_env", ""), "")
+            if hash_val:
+                result[label] = {**cfg, "hash": hash_val}
+        elif broker == "robinhood":
+            username = os.getenv(cfg.get("username_env", ""), "")
+            password = os.getenv(cfg.get("password_env", ""), "")
+            if username and password:
+                result[label] = {**cfg}
+        # Future brokers: add elif here
+    return result
+
+
 def _account_hash_map() -> dict[str, str]:
-    return {
-        "A": ACCOUNT_A_HASH,
-        "B": ACCOUNT_B_HASH,
-        "C": ACCOUNT_C_HASH,
-    }
+    """Legacy shim — returns Schwab hashes only. Use _get_configured_accounts() for new code."""
+    configured = _get_configured_accounts()
+    return {k: v["hash"] for k, v in configured.items() if v.get("broker") == "schwab" and "hash" in v}
 
 
 def _target_accounts(account: str) -> list[tuple[str, str]]:
+    """Legacy shim for Schwab-only callers (get_live_positions, get_account_summary)."""
     hashes = _account_hash_map()
     if account == "all":
         return list(hashes.items())
     return [(account, hashes.get(account, ""))]
+
+
+async def _load_positions_all(account_filter: str = "all") -> list:
+    """
+    Central position loader — handles ALL registered brokers.
+    account_filter: "all" | specific label e.g. "A", "B", "C", "D"
+    Adding a new broker account only requires registering it in config.ACCOUNTS.
+    """
+    from analysis.pnl import parse_schwab_positions, parse_robinhood_positions
+    from schwab_client import get_all_positions, get_quotes
+
+    configured = _get_configured_accounts()
+
+    # Apply filter
+    if account_filter == "all":
+        targets = configured
+    elif account_filter == "both":
+        targets = {k: v for k, v in configured.items() if k in ("A", "B")}
+    else:
+        targets = {k: v for k, v in configured.items() if k == account_filter}
+
+    all_positions: list = []
+
+    # Schwab: parallel fetch
+    schwab_accounts = {k: v for k, v in targets.items() if v.get("broker") == "schwab" and v.get("hash")}
+
+    async def _fetch_schwab(label: str, acct_hash: str) -> list:
+        try:
+            raw = await get_all_positions(acct_hash)
+            if not raw:
+                return []
+            quote_symbols = sorted({
+                (p.get("instrument", {}).get("underlyingSymbol")
+                 or p.get("instrument", {}).get("symbol", "").split()[0])
+                for p in raw
+                if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+            })
+            quotes = await get_quotes(quote_symbols) if quote_symbols else {}
+            return parse_schwab_positions(raw, label, quotes)
+        except Exception:
+            return []
+
+    schwab_results = await asyncio.gather(*[
+        _fetch_schwab(label, v["hash"]) for label, v in schwab_accounts.items()
+    ])
+    for result in schwab_results:
+        all_positions.extend(result)
+
+    # Non-Schwab: sync in executor
+    for label, cfg in targets.items():
+        broker = cfg.get("broker")
+        if broker == "schwab":
+            continue  # already handled above
+        try:
+            if broker == "robinhood":
+                from robinhood_client import get_robinhood_positions
+                equity, options = await asyncio.wait_for(
+                    asyncio.get_event_loop().run_in_executor(None, get_robinhood_positions),
+                    timeout=15,
+                )
+                all_positions.extend(parse_robinhood_positions(equity, options, label))
+            # Future brokers: add elif here
+        except Exception:
+            pass
+
+    return all_positions
 
 
 def _position_action(position, regime: str) -> str:
@@ -277,52 +363,33 @@ def _format_flag_banner(symbol: str, flag_state: dict[str, Any], include_size_no
 
 
 async def _load_live_portfolio() -> dict[str, Any]:
-    if not any(_account_hash_map().values()):
+    configured = _get_configured_accounts()
+    if not configured:
         raise RuntimeError(_no_credentials_message())
 
-    from analysis.pnl import parse_schwab_positions
-    from schwab_client import get_all_positions, get_quotes
+    all_positions = await _load_positions_all("all")
 
-    async def _load_account(acct_label: str, acct_hash: str) -> list[Any]:
-        if not acct_hash:
-            return []
-        raw = await get_all_positions(acct_hash)
-        quote_symbols = sorted({
-            (p.get("instrument", {}).get("underlyingSymbol") or p.get("instrument", {}).get("symbol", "").split()[0])
-            for p in raw
-            if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+    current_symbols: set[str] = set()
+    symbols: dict[str, Any] = {}
+    for pos in all_positions:
+        current_symbols.add(pos.symbol)
+        item = symbols.setdefault(pos.symbol, {
+            "symbol": pos.symbol,
+            "shares": 0,
+            "accounts": set(),
+            "share_accounts": set(),
+            "short_puts": 0,
+            "short_calls": 0,
         })
-        quotes = await get_quotes(quote_symbols) if quote_symbols else {}
-        return parse_schwab_positions(raw, acct_label, quotes)
-
-    loaded = await asyncio.gather(*[
-        _load_account(acct_label, acct_hash)
-        for acct_label, acct_hash in _target_accounts("all")
-        if acct_hash
-    ])
-
-    all_positions: list[Any] = []
-    for account_positions in loaded:
-        all_positions.extend(account_positions)
-        for pos in account_positions:
-            current_symbols.add(pos.symbol)
-            item = symbols.setdefault(pos.symbol, {
-                "symbol": pos.symbol,
-                "shares": 0,
-                "accounts": set(),
-                "share_accounts": set(),
-                "short_puts": 0,
-                "short_calls": 0,
-            })
-            item["shares"] += int(pos.shares)
-            item["accounts"].add(pos.account)
-            if pos.shares > 0:
-                item["share_accounts"].add(pos.account)
-            for leg in pos.option_legs:
-                if leg.quantity < 0 and leg.option_type == "PUT":
-                    item["short_puts"] += abs(int(leg.quantity))
-                if leg.quantity < 0 and leg.option_type == "CALL":
-                    item["short_calls"] += abs(int(leg.quantity))
+        item["shares"] += int(pos.shares)
+        item["accounts"].add(pos.account)
+        if pos.shares > 0:
+            item["share_accounts"].add(pos.account)
+        for leg in pos.option_legs:
+            if leg.quantity < 0 and leg.option_type == "PUT":
+                item["short_puts"] += abs(int(leg.quantity))
+            if leg.quantity < 0 and leg.option_type == "CALL":
+                item["short_calls"] += abs(int(leg.quantity))
 
     sector_counts: Counter[str] = Counter()
     for symbol in current_symbols:
@@ -612,9 +679,9 @@ async def list_tools():
                 "properties": {
                     "account": {
                         "type": "string",
-                        "enum": ["A", "B", "both"],
-                        "description": "Which account(s) to analyse",
-                        "default": "both",
+                        "enum": ["A", "B", "C", "D", "all"],
+                        "description": "Which account(s) to analyse\n\n{default: \"all\"}",
+                        "default": "all",
                     }
                 },
             },
@@ -631,8 +698,8 @@ async def list_tools():
                 "properties": {
                     "account": {
                         "type": "string",
-                        "enum": ["A", "B", "both"],
-                        "default": "both",
+                        "enum": ["A", "B", "C", "D", "all"],
+                        "default": "all",
                     }
                 },
             },
@@ -649,8 +716,8 @@ async def list_tools():
                 "properties": {
                     "account": {
                         "type": "string",
-                        "enum": ["A", "B", "both"],
-                        "default": "both",
+                        "enum": ["A", "B", "C", "D", "all"],
+                        "default": "all",
                     }
                 },
             },
@@ -670,8 +737,8 @@ async def list_tools():
                 "properties": {
                     "account": {
                         "type": "string",
-                        "enum": ["A", "B", "both"],
-                        "default": "both",
+                        "enum": ["A", "B", "C", "D", "all"],
+                        "default": "all",
                     }
                 },
             },
@@ -687,7 +754,7 @@ async def list_tools():
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "account": {"type": "string", "enum": ["A", "B"]},
+                    "account": {"type": "string", "enum": ["A", "B", "C", "D"]},
                     "symbol": {"type": "string"},
                     "action": {"type": "string", "enum": ["sell_put", "sell_call", "sell_strangle", "buy_to_close", "roll"]},
                     "strike": {"type": "number"},
@@ -708,7 +775,7 @@ async def list_tools():
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "account": {"type": "string", "enum": ["A", "B"]},
+                    "account": {"type": "string", "enum": ["A", "B", "C", "D"]},
                     "tier": {
                         "type": "integer",
                         "enum": [1, 2, 3],
@@ -798,7 +865,7 @@ async def list_tools():
                 "properties": {
                     "account": {
                         "type": "string",
-                        "enum": ["A", "B", "C", "all"],
+                        "enum": ["A", "B", "C", "D", "all"],
                         "description": "Which account to query",
                     }
                 },
@@ -816,7 +883,7 @@ async def list_tools():
                 "properties": {
                     "account": {
                         "type": "string",
-                        "enum": ["A", "B", "C", "all"],
+                        "enum": ["A", "B", "C", "D", "all"],
                     }
                 },
                 "required": ["account"],
@@ -963,82 +1030,53 @@ async def call_tool(name: str, arguments: dict):
             return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "get_portfolio_pnl":
-            if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
+            configured = _get_configured_accounts()
+            if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            from schwab_client import get_all_positions, get_quotes
-            from analysis.pnl import parse_schwab_positions
             from config import Regime, PROFIT_TARGETS
             regime_data = detect_regime()
             regime = regime_data["regime"]
-            account_filter = arguments.get("account", "both")
-            acct_map = []
-            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
-                acct_map.append((ACCOUNT_A_HASH, "A"))
-            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
-                acct_map.append((ACCOUNT_B_HASH, "B"))
+            account_filter = arguments.get("account", "all")
+            all_positions = await _load_positions_all(account_filter)
+            # Group by account
+            by_account: dict[str, list] = {}
+            for pos in all_positions:
+                by_account.setdefault(pos.account, []).append(pos)
             lines = [f"## Portfolio P&L — Account {account_filter.upper()}", f"**Regime:** {regime} | **Profit target:** {int(PROFIT_TARGETS[Regime(regime)][0]*100)}-{int(PROFIT_TARGETS[Regime(regime)][1]*100)}%", ""]
-            for acct_hash, acct_label in acct_map:
-                try:
-                    raw = await get_all_positions(acct_hash)
-                    symbols = list({
-                        (p.get("instrument", {}).get("underlyingSymbol")
-                         or p.get("instrument", {}).get("symbol", "").split()[0])
-                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
-                    })
-                    quotes = await get_quotes(symbols)
-                    positions = parse_schwab_positions(raw, acct_label, quotes)
-                    positions.sort(key=lambda p: p.combined_net_pnl)
-                    lines.append(f"### Account {acct_label}")
-                    lines.append("| Symbol | Price | Net P&L | Premium Rcvd | Cost-to-Close | % Captured | Signal |")
-                    lines.append("|--------|-------|---------|-------------|---------------|-----------|--------|")
-                    for pos in positions:
-                        pnl = pos.combined_net_pnl
-                        pct = pos.profit_pct_of_max
-                        sig = pos.profit_take_signal(regime)
-                        loss = pos.loss_flag()
-                        flag = "🔴 LOSS FLAG" if loss["flag"] else ("✅ TAKE PROFIT" if sig["signal"] else "🟢 HOLD")
-                        lines.append(
-                            f"| {pos.symbol} | ${pos.current_price:,.2f} | {'+'if pnl>=0 else ''}{pnl:,.0f} "
-                            f"| ${pos.total_premium_received:,.0f} | ${pos.total_cost_to_close_options:,.0f} "
-                            f"| {round(pct*100,1) if pct else 'N/A'}% | {flag} |"
-                        )
-                    lines.append("")
-                except Exception as e:
-                    lines.append(f"⚠️ Account {acct_label} error: {e}")
+            for acct_label in sorted(by_account):
+                positions = sorted(by_account[acct_label], key=lambda p: p.combined_net_pnl)
+                lines.append(f"### Account {acct_label}")
+                lines.append("| Symbol | Price | Net P&L | Premium Rcvd | Cost-to-Close | % Captured | Signal |")
+                lines.append("|--------|-------|---------|-------------|---------------|-----------|--------|")
+                for pos in positions:
+                    pnl = pos.combined_net_pnl
+                    pct = pos.profit_pct_of_max
+                    sig = pos.profit_take_signal(regime)
+                    loss = pos.loss_flag()
+                    flag = "🔴 LOSS FLAG" if loss["flag"] else ("✅ TAKE PROFIT" if sig["signal"] else "🟢 HOLD")
+                    lines.append(
+                        f"| {pos.symbol} | ${pos.current_price:,.2f} | {'+'if pnl>=0 else ''}{pnl:,.0f} "
+                        f"| ${pos.total_premium_received:,.0f} | ${pos.total_cost_to_close_options:,.0f} "
+                        f"| {round(pct*100,1) if pct else 'N/A'}% | {flag} |"
+                    )
+                lines.append("")
             return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "scan_profit_take_candidates":
-            if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
+            configured = _get_configured_accounts()
+            if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            from schwab_client import get_all_positions, get_quotes
-            from analysis.pnl import parse_schwab_positions
             from config import Regime, PROFIT_TARGETS
             regime_data = detect_regime()
             regime = regime_data["regime"]
             low, high = PROFIT_TARGETS[Regime(regime)]
-            account_filter = arguments.get("account", "both")
-            acct_map = []
-            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
-                acct_map.append((ACCOUNT_A_HASH, "A"))
-            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
-                acct_map.append((ACCOUNT_B_HASH, "B"))
+            account_filter = arguments.get("account", "all")
+            all_positions = await _load_positions_all(account_filter)
             candidates = []
-            for acct_hash, acct_label in acct_map:
-                try:
-                    raw = await get_all_positions(acct_hash)
-                    symbols = list({
-                        (p.get("instrument", {}).get("underlyingSymbol")
-                         or p.get("instrument", {}).get("symbol", "").split()[0])
-                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
-                    })
-                    quotes = await get_quotes(symbols)
-                    positions = parse_schwab_positions(raw, acct_label, quotes)
-                    for pos in positions:
-                        sig = pos.profit_take_signal(regime)
-                        if sig["signal"]:
-                            candidates.append((pos, acct_label, sig))
-                except Exception as e:
-                    pass
+            for pos in all_positions:
+                sig = pos.profit_take_signal(regime)
+                if sig["signal"]:
+                    candidates.append((pos, pos.account, sig))
             candidates.sort(key=lambda x: x[2]["pct_captured"], reverse=True)
             lines = [
                 f"## Profit-Take Candidates",
@@ -1059,43 +1097,26 @@ async def call_tool(name: str, arguments: dict):
             return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "scan_roll_candidates":
-            if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
+            configured = _get_configured_accounts()
+            if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            from schwab_client import get_all_positions, get_quotes
-            from analysis.pnl import parse_schwab_positions
             from config import RISK
-            account_filter = arguments.get("account", "both")
-            acct_map = []
-            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
-                acct_map.append((ACCOUNT_A_HASH, "A"))
-            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
-                acct_map.append((ACCOUNT_B_HASH, "B"))
+            account_filter = arguments.get("account", "all")
+            all_positions = await _load_positions_all(account_filter)
             roll_items = []
-            for acct_hash, acct_label in acct_map:
-                try:
-                    raw = await get_all_positions(acct_hash)
-                    symbols = list({
-                        (p.get("instrument", {}).get("underlyingSymbol")
-                         or p.get("instrument", {}).get("symbol", "").split()[0])
-                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+            for pos in all_positions:
+                roll = pos.roll_signal()
+                loss = pos.loss_flag()
+                itm_legs = [lg for lg in pos.option_legs if
+                            (lg.option_type == "PUT" and pos.current_price < lg.strike) or
+                            (lg.option_type == "CALL" and pos.current_price > lg.strike)]
+                if roll["signal"] or loss["flag"] or itm_legs:
+                    roll_items.append({
+                        "pos": pos, "acct": pos.account,
+                        "roll": roll, "loss": loss,
+                        "itm_legs": itm_legs,
+                        "priority": 1 if (loss["flag"] or any(lg.dte <= 13 for lg in pos.option_legs)) else 2,
                     })
-                    quotes = await get_quotes(symbols)
-                    positions = parse_schwab_positions(raw, acct_label, quotes)
-                    for pos in positions:
-                        roll = pos.roll_signal()
-                        loss = pos.loss_flag()
-                        itm_legs = [lg for lg in pos.option_legs if
-                                    (lg.option_type == "PUT" and pos.current_price < lg.strike) or
-                                    (lg.option_type == "CALL" and pos.current_price > lg.strike)]
-                        if roll["signal"] or loss["flag"] or itm_legs:
-                            roll_items.append({
-                                "pos": pos, "acct": acct_label,
-                                "roll": roll, "loss": loss,
-                                "itm_legs": itm_legs,
-                                "priority": 1 if (loss["flag"] or any(lg.dte <= 13 for lg in pos.option_legs)) else 2,
-                            })
-                except Exception as e:
-                    pass
             roll_items.sort(key=lambda x: (x["priority"], min((lg.dte for lg in x["pos"].option_legs), default=999)))
             lines = [f"## Roll Candidates — {len(roll_items)} position(s) need attention", ""]
             if not roll_items:
@@ -1116,57 +1137,36 @@ async def call_tool(name: str, arguments: dict):
             return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "scan_position_heat":
-            if not ACCOUNT_A_HASH and not ACCOUNT_B_HASH:
+            configured = _get_configured_accounts()
+            if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            from schwab_client import get_all_positions, get_quotes
-            from analysis.pnl import parse_schwab_positions
             from analysis.regime import detect_regime
             from analysis.heat_scanner import assess_portfolio_heat
-            account_filter = arguments.get("account", "both")
-            acct_map = []
-            if account_filter in ("A", "both") and ACCOUNT_A_HASH:
-                acct_map.append((ACCOUNT_A_HASH, "A"))
-            if account_filter in ("B", "both") and ACCOUNT_B_HASH:
-                acct_map.append((ACCOUNT_B_HASH, "B"))
-
-            regime_data = await detect_regime()
-            regime_str  = regime_data.get("regime", "CAUTIOUS_BULL")
-
+            account_filter = arguments.get("account", "all")
+            regime_data = detect_regime()
+            regime_str = regime_data.get("regime", "CAUTIOUS_BULL")
+            all_positions = await _load_positions_all(account_filter)
             all_legs = []
-            for acct_hash, acct_label in acct_map:
-                try:
-                    raw = await get_all_positions(acct_hash)
-                    syms = list({
-                        (p.get("instrument", {}).get("underlyingSymbol")
-                         or p.get("instrument", {}).get("symbol", "").split()[0])
-                        for p in raw if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+            for pos in all_positions:
+                for lg in pos.option_legs:
+                    premium = abs(lg.premium_received or 0)
+                    ctc = abs(getattr(lg, "current_mark", 0) or 0)
+                    if premium <= 0:
+                        continue
+                    all_legs.append({
+                        "symbol": pos.symbol,
+                        "option_type": lg.option_type,
+                        "strike": lg.strike,
+                        "dte": lg.dte,
+                        "expiry": lg.expiry,
+                        "premium_received": premium,
+                        "cost_to_close": ctc,
+                        "current_price": pos.current_price,
                     })
-                    quotes = await get_quotes(syms)
-                    positions = parse_schwab_positions(raw, acct_label, quotes)
-                    for pos in positions:
-                        for lg in pos.option_legs:
-                            premium = abs(lg.premium_received or 0)
-                            ctc     = abs(lg.current_value or 0)
-                            if premium <= 0:
-                                continue
-                            all_legs.append({
-                                "symbol":           pos.symbol,
-                                "option_type":      lg.option_type,
-                                "strike":           lg.strike,
-                                "dte":              lg.dte,
-                                "expiry":           lg.expiry,
-                                "premium_received": premium,
-                                "cost_to_close":    ctc,
-                                "current_price":    pos.current_price,
-                            })
-                except Exception:
-                    pass
-
             if not all_legs:
                 return [TextContent(type="text", text="⚠️ No open option legs found (or live data unavailable).")]
-
             result = assess_portfolio_heat(all_legs, regime_str)
-            lines  = [
+            lines = [
                 f"## 🌡️ Position Heat Scan — Regime: {regime_str}",
                 f"**{result['counts']['RED']} RED** · **{result['counts']['YELLOW']} YELLOW** · {result['counts']['GREEN']} GREEN",
                 "",
@@ -1176,7 +1176,6 @@ async def call_tool(name: str, arguments: dict):
             if result["scale_back_new_entries"]:
                 lines.append("⛔ **Scale back new strangles until RED/YELLOW calls are resolved.**")
                 lines.append("")
-
             for color, emoji in [("RED", "🔴"), ("YELLOW", "🟡"), ("GREEN", "🟢")]:
                 items = result["by_color"][color]
                 if not items:
@@ -1276,7 +1275,8 @@ async def call_tool(name: str, arguments: dict):
             return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "get_live_positions":
-            if not any(_account_hash_map().values()):
+            configured = _get_configured_accounts()
+            if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
             account = arguments.get("account", "all")
             from schwab_client import get_all_positions, get_quotes
@@ -1338,10 +1338,50 @@ async def call_tool(name: str, arguments: dict):
                     "options": sorted(options, key=lambda x: abs(x["market_value"]), reverse=True),
                     "total_positions": len(positions),
                 }
+            # Account D (Robinhood) — if credentials present
+            rh_cfg = _get_configured_accounts().get("D")
+            if rh_cfg and (account == "all" or account == "D"):
+                try:
+                    from robinhood_client import get_robinhood_positions
+                    from analysis.pnl import parse_robinhood_positions
+                    rh_equity, rh_opts = await asyncio.wait_for(
+                        asyncio.get_event_loop().run_in_executor(None, get_robinhood_positions),
+                        timeout=15,
+                    )
+                    rh_positions = parse_robinhood_positions(rh_equity, rh_opts, "D")
+                    equities_d = []
+                    options_d = []
+                    for pos in rh_positions:
+                        if pos.shares > 0:
+                            equities_d.append({
+                                "symbol": pos.symbol,
+                                "qty": pos.shares,
+                                "current_price": round(pos.current_price, 2),
+                                "average_price": round(pos.stock_cost_basis, 2),
+                                "market_value": round(pos.current_price * pos.shares, 2),
+                                "unrealized_pnl": round(pos.stock_pnl, 2),
+                            })
+                        for lg in pos.option_legs:
+                            options_d.append({
+                                "symbol": lg.description,
+                                "underlying": pos.symbol,
+                                "qty": lg.quantity,
+                                "mark": round(lg.current_mark / (abs(lg.quantity) * 100), 2) if lg.quantity else 0,
+                                "market_value": round(lg.current_mark, 2),
+                                "unrealized_pnl": round(lg.premium_received - lg.current_mark, 2),
+                            })
+                    results["D"] = {
+                        "equities": sorted(equities_d, key=lambda x: abs(x["market_value"]), reverse=True),
+                        "options": sorted(options_d, key=lambda x: abs(x["market_value"]), reverse=True),
+                        "total_positions": len(rh_positions),
+                    }
+                except Exception as e:
+                    results["D"] = {"error": f"Robinhood unavailable: {e}"}
             return [TextContent(type="text", text=json.dumps(results, indent=2))]
 
         elif name == "get_account_summary":
-            if not any(_account_hash_map().values()):
+            configured = _get_configured_accounts()
+            if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
             account = arguments.get("account", "all")
             from schwab_client import get_balances
@@ -1369,15 +1409,40 @@ async def call_tool(name: str, arguments: dict):
                     totals[key] += summary[key]
             if account == "all":
                 results["totals"] = {key: round(value, 2) for key, value in totals.items()}
+            # Account D (Robinhood) — portfolio summary
+            rh_cfg = _get_configured_accounts().get("D")
+            if rh_cfg and (account == "all" or account == "D"):
+                try:
+                    import robin_stocks.robinhood as rh
+                    from robinhood_client import _ensure_login
+                    if _ensure_login():
+                        profile = rh.account.load_portfolio_profile() or {}
+                        equity_val = float(profile.get("equity", 0) or 0)
+                        last_val = float(profile.get("last_core_equity", equity_val) or equity_val)
+                        day_pnl = equity_val - last_val
+                        results["D"] = {
+                            "equity_value": round(equity_val, 2),
+                            "day_pnl": round(day_pnl, 2),
+                            "buying_power": round(float(profile.get("withdrawable_amount", 0) or 0), 2),
+                            "cash_balance": round(float(profile.get("withdrawable_amount", 0) or 0), 2),
+                            "liquidation_value": round(equity_val, 2),
+                            "available_funds": round(float(profile.get("withdrawable_amount", 0) or 0), 2),
+                        }
+                        if account == "all":
+                            for key in ("equity_value", "liquidation_value"):
+                                totals["liquidation_value"] = totals.get("liquidation_value", 0) + results["D"].get(key, 0)
+                            totals["buying_power"] += results["D"]["buying_power"]
+                        if account == "all":
+                            results["totals"] = {key: round(value, 2) for key, value in totals.items()}
+                except Exception as e:
+                    results["D"] = {"error": f"Robinhood unavailable: {e}"}
             return [TextContent(type="text", text=json.dumps(results, indent=2))]
 
         elif name == "get_position_detail":
-            if not any(_account_hash_map().values()):
+            configured = _get_configured_accounts()
+            if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
             symbol = str(arguments.get("symbol", "")).strip().upper()
-            from analysis.pnl import parse_schwab_positions
-            from schwab_client import get_all_positions, get_quotes
-
             regime = detect_regime()["regime"]
             accounts = {}
             aggregate = {
@@ -1387,60 +1452,49 @@ async def call_tool(name: str, arguments: dict):
                 "premium_received": 0.0,
                 "cost_to_close_options": 0.0,
             }
-            for acct_label, acct_hash in _target_accounts("all"):
-                if not acct_hash:
+            all_positions = await _load_positions_all("all")
+            for pos in all_positions:
+                if pos.symbol.upper() != symbol:
                     continue
-                raw = await get_all_positions(acct_hash)
-                if not raw:
-                    continue
-                quote_symbols = sorted({
-                    (p.get("instrument", {}).get("underlyingSymbol") or p.get("instrument", {}).get("symbol", "").split()[0])
-                    for p in raw
-                    if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
-                })
-                quotes = await get_quotes(quote_symbols) if quote_symbols else {}
-                positions = parse_schwab_positions(raw, acct_label, quotes)
-                for pos in positions:
-                    if pos.symbol.upper() != symbol:
-                        continue
-                    profit_signal = pos.profit_take_signal(regime)
-                    roll_signal = pos.roll_signal()
-                    loss_signal = pos.loss_flag()
-                    accounts[acct_label] = {
-                        "shares": pos.shares,
-                        "stock_cost_basis": round(pos.stock_cost_basis, 2),
-                        "current_price": round(pos.current_price, 2),
-                        "stock_pnl": round(pos.stock_pnl, 2),
-                        "net_options_pnl": round(pos.net_options_pnl, 2),
-                        "combined_net_pnl": round(pos.combined_net_pnl, 2),
-                        "premium_received": round(pos.total_premium_received, 2),
-                        "cost_to_close_options": round(pos.total_cost_to_close_options, 2),
-                        "profit_capture_pct": round(pos.profit_pct_of_max * 100, 1) if pos.profit_pct_of_max is not None else None,
-                        "open_option_legs": [
-                            {
-                                "description": leg.description,
-                                "strike": leg.strike,
-                                "expiry": leg.expiry,
-                                "option_type": leg.option_type,
-                                "quantity": leg.quantity,
-                                "premium_received": round(leg.premium_received, 2),
-                                "current_mark": round(leg.current_mark, 2),
-                                "dte": leg.dte,
-                            }
-                            for leg in pos.option_legs
-                        ],
-                        "signals": {
-                            "profit_take": profit_signal,
-                            "roll": roll_signal,
-                            "loss": loss_signal,
-                        },
-                        "suggested_next_action": _position_action(pos, regime),
-                    }
-                    aggregate["accounts_holding"].append(acct_label)
-                    aggregate["total_shares"] += pos.shares
-                    aggregate["combined_net_pnl"] += pos.combined_net_pnl
-                    aggregate["premium_received"] += pos.total_premium_received
-                    aggregate["cost_to_close_options"] += pos.total_cost_to_close_options
+                acct_label = pos.account
+                profit_signal = pos.profit_take_signal(regime)
+                roll_signal = pos.roll_signal()
+                loss_signal = pos.loss_flag()
+                accounts[acct_label] = {
+                    "shares": pos.shares,
+                    "stock_cost_basis": round(pos.stock_cost_basis, 2),
+                    "current_price": round(pos.current_price, 2),
+                    "stock_pnl": round(pos.stock_pnl, 2),
+                    "net_options_pnl": round(pos.net_options_pnl, 2),
+                    "combined_net_pnl": round(pos.combined_net_pnl, 2),
+                    "premium_received": round(pos.total_premium_received, 2),
+                    "cost_to_close_options": round(pos.total_cost_to_close_options, 2),
+                    "profit_capture_pct": round(pos.profit_pct_of_max * 100, 1) if pos.profit_pct_of_max is not None else None,
+                    "open_option_legs": [
+                        {
+                            "description": leg.description,
+                            "strike": leg.strike,
+                            "expiry": leg.expiry,
+                            "option_type": leg.option_type,
+                            "quantity": leg.quantity,
+                            "premium_received": round(leg.premium_received, 2),
+                            "current_mark": round(leg.current_mark, 2),
+                            "dte": leg.dte,
+                        }
+                        for leg in pos.option_legs
+                    ],
+                    "signals": {
+                        "profit_take": profit_signal,
+                        "roll": roll_signal,
+                        "loss": loss_signal,
+                    },
+                    "suggested_next_action": _position_action(pos, regime),
+                }
+                aggregate["accounts_holding"].append(acct_label)
+                aggregate["total_shares"] += pos.shares
+                aggregate["combined_net_pnl"] += pos.combined_net_pnl
+                aggregate["premium_received"] += pos.total_premium_received
+                aggregate["cost_to_close_options"] += pos.total_cost_to_close_options
 
             result = {
                 "symbol": symbol,
