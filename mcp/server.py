@@ -9,7 +9,6 @@ Start: python mcp/server.py
 import argparse
 import asyncio
 import json
-import math
 import os
 import sys
 from collections import Counter
@@ -51,6 +50,8 @@ from mcp.types import Tool, TextContent
 from config import ACCOUNT_A, ACCOUNT_B, UNIVERSE, Tier, PERMANENT_EXITS, RISK
 from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
+from analysis.india_regime import detect_india_regime
+from analysis.strategy_engine import recommend_trade
 from models.vix_regime import entry_timing_score
 from reports.dynamic_screener import screen_india_opportunities, screen_us_opportunities
 from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
@@ -181,26 +182,67 @@ def _signal_display(signal: str) -> tuple[str, str]:
     return emoji, normalized
 
 
-def _strike_step(price: float) -> float:
-    if price >= 250:
-        return 5.0
-    if price >= 100:
-        return 2.5
-    if price >= 25:
-        return 1.0
-    if price >= 10:
-        return 0.5
+def _normalized_iv_decimal(current_iv: Any, iv_rank: float | None = None) -> float:
+    iv_value = _safe_float(current_iv)
+    if iv_value is not None:
+        return iv_value / 100.0 if iv_value > 1.5 else iv_value
+    if iv_rank is not None:
+        return max(0.12, min(1.20, (iv_rank / 100.0) * 0.5))
     return 0.25
 
 
-def _round_strike(price: float, direction: str = "down") -> float:
-    if price <= 0:
-        return 0.0
-    step = _strike_step(price)
-    scaled = price / step
-    rounded = math.floor(scaled) if direction == "down" else math.ceil(scaled)
-    value = rounded * step
-    return int(value) if float(value).is_integer() else round(value, 2)
+def _strategy_regime_label(regime: str) -> str:
+    labels = {
+        "BEAR_SIDEWAYS": "Bear regime",
+        "RISKY_BULL": "Risky bull regime",
+        "TRANSITIONING": "Transitioning regime",
+        "BULL": "Bull regime",
+    }
+    return labels.get(regime, regime.replace("_", " ").title())
+
+
+def _format_price(value: Any, decimals: int = 0, prefix: str = "$", suffix: str = "") -> str:
+    numeric = _safe_float(value)
+    if numeric is None:
+        return "n/a"
+    return f"{prefix}{numeric:.{decimals}f}{suffix}"
+
+
+def _format_contract_premium(value: Any) -> str:
+    numeric = _safe_float(value)
+    return f"~${numeric:.0f}/contract" if numeric is not None else "premium n/a"
+
+
+def _format_monthly_yield(value: Any) -> str:
+    numeric = _safe_float(value)
+    return f"{numeric:.2f}%/mo on capital" if numeric is not None else "yield n/a"
+
+
+def _format_strategy_line(trade: dict[str, Any]) -> str:
+    strategy = trade.get("strategy", "WAIT")
+    dte = trade.get("dte", "n/a")
+    account = trade.get("account", "A")
+    put_strike = _safe_float(trade.get("strike_put"))
+    call_strike = _safe_float(trade.get("strike_call"))
+
+    if strategy == "CC" and call_strike is not None:
+        structure = f"CC ${call_strike:.0f}C / {dte} DTE"
+    elif strategy == "STRANGLE" and put_strike is not None and call_strike is not None:
+        structure = f"STRANGLE ${put_strike:.0f}P / ${call_strike:.0f}C / {dte} DTE"
+    elif strategy == "CSP" and put_strike is not None:
+        structure = f"CSP ${put_strike:.0f}P / {dte} DTE"
+    else:
+        structure = f"WAIT / {dte} DTE"
+
+    return f"{structure}  |  {_format_contract_premium(trade.get('est_premium'))}  |  {_format_monthly_yield(trade.get('est_monthly_yield'))}  |  Acct {account}"
+
+
+def _roll_summary(roll_triggers: dict[str, Any]) -> str:
+    if not roll_triggers:
+        return "Roll: n/a"
+    profit = roll_triggers.get("profit_close", "")
+    upgrade = roll_triggers.get("regime_upgrade", "")
+    return f"Roll: {profit} | {upgrade}".strip()
 
 
 async def _load_live_portfolio() -> dict[str, Any]:
@@ -330,29 +372,32 @@ def _research_signal(ivr_value: float | None, rsi: float | None, earnings_days: 
 
 
 def _recommended_trade(symbol: str, tech: dict[str, Any], iv_data: dict[str, Any],
-                       portfolio_check: dict[str, Any], signal: str) -> dict[str, Any]:
-    price = float(tech.get("current") or 0)
+                       portfolio_check: dict[str, Any], regime: str) -> dict[str, Any]:
+    price = _safe_float(tech.get("current")) or 0.0
     meta = portfolio_check.get("meta", {})
     tier = int(meta.get("tier", 3) or 3)
-    preferred = meta.get("preferred_strategy")
-    dte = 45 if signal == "ENTER NOW" else 30
+    held_shares = int(portfolio_check.get("shares", 0) or 0)
+    accounts = portfolio_check.get("share_accounts") or portfolio_check.get("accounts") or ["A"]
+    display_account = "/".join(accounts)
+    engine_account = str(accounts[0]) if accounts else "A"
+    iv_rank = _safe_float(iv_data.get("iv_rank")) or 0.0
+    iv = _normalized_iv_decimal(iv_data.get("current_iv"), iv_rank)
+    rsi = _safe_float(tech.get("rsi")) or 50.0
 
-    if portfolio_check.get("shares", 0) > 0:
-        strike = _round_strike(price * 1.10, "up")
-        account = "/".join(portfolio_check.get("share_accounts") or portfolio_check.get("accounts") or ["A"])
-        return {"strategy": "CC", "strike": f"~${strike}C", "dte": dte, "account": account}
-
-    if portfolio_check.get("short_puts", 0) > 0:
-        account = "/".join(portfolio_check.get("accounts") or ["A"])
-        return {"strategy": "HOLD", "strike": "existing short put", "dte": dte, "account": account}
-
-    put_strike = _round_strike(price * 0.85, "down")
-    call_strike = _round_strike(price * 1.10, "up")
-    ivr_value = _safe_float(iv_data.get("iv_rank")) or 0.0
-    allow_strangle = tier <= 2 and preferred in {"strangle", "CSP_or_strangle"} and ivr_value >= 60
-    if allow_strangle:
-        return {"strategy": "STRANGLE", "strike": f"~${put_strike}P / ~${call_strike}C", "dte": dte, "account": "A"}
-    return {"strategy": "CSP", "strike": f"~${put_strike}P", "dte": dte, "account": "A"}
+    rec = recommend_trade(
+        symbol=symbol,
+        price=price,
+        iv_rank=iv_rank,
+        iv=iv,
+        rsi=rsi,
+        regime=regime,
+        held_shares=held_shares,
+        tier=tier,
+        account=engine_account,
+    )
+    trade = rec.__dict__.copy()
+    trade["account"] = display_account or rec.account
+    return trade
 
 
 def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) -> str:
@@ -361,15 +406,10 @@ def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) 
     sector_text = meta.get("sector", "Unmapped")
     emoji, signal_text = _signal_display(portfolio_check.get("signal", "SKIP"))
     trade = portfolio_check.get("trade", {})
-    price = _safe_float(tech.get("current")) or _safe_float(portfolio_check.get("price")) or 0.0
+    price = _safe_float(tech.get("current")) or _safe_float(portfolio_check.get("price"))
     rsi = _safe_float(tech.get("rsi"))
     ivr_value = _safe_float(ivr.get("iv_rank")) or _safe_float(portfolio_check.get("ivr"))
     current_iv = _safe_float(ivr.get("current_iv")) or _safe_float(portfolio_check.get("current_iv"))
-    week_high = _safe_float(tech.get("week_52_high"))
-    week_low = _safe_float(tech.get("week_52_low"))
-    pct_off_high = _safe_float(tech.get("pct_off_high"))
-    if pct_off_high is None:
-        pct_off_high = _safe_float(portfolio_check.get("pct_off_high"))
 
     earnings_days = portfolio_check.get("earnings_days")
     if earnings:
@@ -381,63 +421,46 @@ def _format_research_card(symbol, tech, ivr, earnings, portfolio_check, regime) 
                 continue
         if deltas:
             earnings_days = min(deltas)
-    earnings_line = (
-        f"Earnings in ~{earnings_days}d"
-        if earnings_days is not None
-        else f"No earnings in next {portfolio_check.get('earnings_window', 21)}d"
-    )
 
-    notes = []
+    notes = [f"{tier_text} · {sector_text}"]
     shares = portfolio_check.get("shares", 0)
     short_puts = portfolio_check.get("short_puts", 0)
     short_calls = portfolio_check.get("short_calls", 0)
+    if earnings_days is not None:
+        notes.append(f"earnings ~{earnings_days}d")
     if shares > 0:
-        notes.append(f"Already own {shares} shares — CC opportunity")
+        notes.append(f"own {shares} shares")
     elif short_puts > 0:
-        notes.append(f"Already have {short_puts} short put(s) — don't double up")
+        notes.append(f"existing short puts: {short_puts}")
     else:
-        notes.append("Not currently held")
+        notes.append("not currently held")
     if short_calls > 0:
-        notes.append(f"Open short calls: {short_calls}")
-    sector = portfolio_check.get("sector")
-    sector_count = portfolio_check.get("sector_count")
-    if sector:
-        if portfolio_check.get("sector_warning"):
-            notes.append(f"{sector}: {sector_count} positions — sector concentration warning")
-        else:
-            notes.append(f"{sector}: {sector_count} positions")
+        notes.append(f"open short calls: {short_calls}")
+    if portfolio_check.get("sector_warning"):
+        notes.append(f"sector heavy ({portfolio_check.get('sector_count', 0)} positions)")
     if symbol in PERMANENT_EXITS:
-        notes.append("Permanent-exit list: CC/exit only")
+        notes.append("permanent-exit list")
 
     timing = portfolio_check.get("timing") or {}
-    timing_line = ""
     if timing.get("composite_score") is not None:
-        timing_line = f"\n  Timing {timing['composite_score']}/100 | {timing.get('signal', 'WAIT')}"
+        notes.append(f"timing {timing['composite_score']}/100 {timing.get('signal', 'WAIT')}")
 
-    range_line = ""
-    if week_low is not None and week_high is not None:
-        off_high_text = f" | {abs(pct_off_high):.1f}% off high" if pct_off_high is not None else ""
-        range_line = f"\n  52w range ${week_low:.2f}–${week_high:.2f}{off_high_text}"
-    elif pct_off_high is not None:
-        range_line = f"\n  {abs(pct_off_high):.1f}% off 52w high"
+    price_text = _format_price(price)
+    rsi_text = f"{rsi:.0f}" if rsi is not None else "n/a"
+    ivr_text = f"{ivr_value:.0f}" if ivr_value is not None else "n/a"
+    top_line = f"{emoji} {signal_text:<10} {symbol.upper():<6} {price_text}  RSI {rsi_text}  IVR {ivr_text}"
 
-    price_text = f"${price:.2f}" if price else "n/a"
-    rsi_text = f"{rsi:.1f}" if rsi is not None else "n/a"
-    ivr_text = f"{ivr_value:.1f}" if ivr_value is not None else "n/a"
-    iv_text = f"{current_iv:.1f}%" if current_iv is not None else "n/a"
+    strategy_line = f"   {_strategy_regime_label(regime)} → {_format_strategy_line(trade)}"
+    if current_iv is not None:
+        strategy_line += f"  |  IV {current_iv:.1f}%"
 
-    return (
-        f"📊 {symbol.upper()} [{tier_text} · {sector_text}]\n\n"
-        f"{emoji} {signal_text}\n"
-        f"  Strategy: {trade.get('strategy', 'WATCH')} | Strike: {trade.get('strike', 'n/a')} | "
-        f"DTE: {trade.get('dte', 45)} | Account: {trade.get('account', 'A')}\n\n"
-        f"Key data:\n"
-        f"  Price {price_text} | RSI {rsi_text} | IVR {ivr_text} | IV {iv_text}"
-        f"{range_line}\n"
-        f"  {earnings_line}{timing_line}\n"
-        f"Portfolio check: {' | '.join(notes)}\n"
-        f"Regime: {regime}"
-    )
+    return "\n".join([
+        top_line,
+        strategy_line,
+        f"   Rationale: {trade.get('rationale', 'n/a')}",
+        f"   {_roll_summary(trade.get('roll_triggers', {}))}",
+        f"   Notes: {' | '.join(notes)}",
+    ])
 
 
 app = Server("theta-lab")
@@ -1240,7 +1263,7 @@ async def call_tool(name: str, arguments: dict):
             earnings = await _run_sync(upcoming_earnings, iv_symbol, 21)
             portfolio = await _load_live_portfolio()
             portfolio_check = await _get_portfolio_check(symbol, portfolio, meta)
-            regime_data = detect_regime()
+            regime_data = detect_india_regime() if india else detect_regime()
             earnings_days = None
             if earnings:
                 parsed = []
@@ -1262,7 +1285,7 @@ async def call_tool(name: str, arguments: dict):
                     timing = None
             portfolio_check.update({
                 "signal": signal,
-                "trade": _recommended_trade(symbol, tech, iv_data, portfolio_check, signal),
+                "trade": _recommended_trade(symbol, tech, iv_data, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                 "timing": timing,
                 "earnings_days": earnings_days,
                 "earnings_window": 21,
@@ -1294,10 +1317,10 @@ async def call_tool(name: str, arguments: dict):
                     signal = "WATCH"
                 portfolio_check.update({
                     "signal": signal,
-                    "trade": _recommended_trade(symbol, {"current": candidate.get("price")}, {"iv_rank": candidate.get("ivr")}, portfolio_check, signal),
+                    "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                     "price": candidate.get("price"),
                     "ivr": candidate.get("ivr"),
-                    "current_iv": None,
+                    "current_iv": candidate.get("current_iv"),
                     "pct_off_high": candidate.get("pct_off_high"),
                     "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
                     "earnings_window": 21,
@@ -1309,7 +1332,7 @@ async def call_tool(name: str, arguments: dict):
                     "week_52_low": None,
                     "pct_off_high": candidate.get("pct_off_high"),
                 }
-                iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": None}
+                iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}
                 cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, regime_data.get("regime", "UNKNOWN")))
 
             header = (
@@ -1345,10 +1368,10 @@ async def call_tool(name: str, arguments: dict):
                         signal = "WATCH"
                     portfolio_check.update({
                         "signal": signal,
-                        "trade": _recommended_trade(symbol, {"current": candidate.get("price")}, {"iv_rank": candidate.get("ivr")}, portfolio_check, signal),
+                        "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                         "price": candidate.get("price"),
                         "ivr": candidate.get("ivr"),
-                        "current_iv": None,
+                        "current_iv": candidate.get("current_iv"),
                         "pct_off_high": candidate.get("pct_off_high"),
                         "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
                         "earnings_window": 21,
@@ -1360,7 +1383,7 @@ async def call_tool(name: str, arguments: dict):
                         "week_52_low": None,
                         "pct_off_high": candidate.get("pct_off_high"),
                     }
-                    iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": None}
+                    iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}
                     us_cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, regime_data.get("regime", "UNKNOWN")))
                 sections.append(
                     f"## US screener\nRegime: {regime_data.get('regime', 'UNKNOWN')}\n\n"
@@ -1372,6 +1395,7 @@ async def call_tool(name: str, arguments: dict):
                 if india_vix is None:
                     sections.append("## India screener\nIndia VIX unavailable right now.")
                 else:
+                    india_regime_data = detect_india_regime()
                     india_candidates = await _run_sync(screen_india_opportunities, india_vix, [], 6)
                     india_cards = []
                     for candidate in india_candidates:
@@ -1388,10 +1412,10 @@ async def call_tool(name: str, arguments: dict):
                             "sector_count": 0,
                             "sector_warning": False,
                             "signal": (candidate.get("signal") or "SKIP").replace("_", " "),
-                            "trade": _recommended_trade(symbol, {"current": candidate.get("price")}, {"iv_rank": candidate.get("ivr")}, {"meta": meta, "shares": 0, "accounts": [], "share_accounts": [], "short_puts": 0, "short_calls": 0, "sector": meta.get("sector"), "sector_count": 0, "sector_warning": False}, (candidate.get("signal") or "SKIP").replace("_", " ")),
+                            "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, {"meta": meta, "shares": 0, "accounts": [], "share_accounts": [], "short_puts": 0, "short_calls": 0, "sector": meta.get("sector"), "sector_count": 0, "sector_warning": False}, india_regime_data.get("regime", "TRANSITIONING")),
                             "price": candidate.get("price"),
                             "ivr": candidate.get("ivr"),
-                            "current_iv": None,
+                            "current_iv": candidate.get("current_iv"),
                             "pct_off_high": candidate.get("pct_off_high"),
                             "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
                             "earnings_window": 21,
@@ -1403,10 +1427,10 @@ async def call_tool(name: str, arguments: dict):
                             "week_52_low": None,
                             "pct_off_high": candidate.get("pct_off_high"),
                         }
-                        iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": None}
-                        india_cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, f"India VIX {india_vix:.1f}"))
+                        iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}
+                        india_cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, india_regime_data.get("regime", "TRANSITIONING")))
                     sections.append(
-                        f"## India screener\nIndia VIX: {india_vix:.1f}\n\n"
+                        f"## India screener\nIndia VIX: {india_vix:.1f} | Regime: {india_regime_data.get('regime', 'UNKNOWN')}\n\n"
                         + "\n\n".join(india_cards)
                     )
 

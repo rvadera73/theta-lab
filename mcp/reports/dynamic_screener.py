@@ -221,6 +221,7 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
             "rsi": rsi,
             "ivr": ivr,
             "iv_pct": iv_pct,
+            "current_iv": current_iv,
             "est_monthly_pct": est_monthly_pct,
             "signal": signal,
             "reason": _reason(signal, meta, ivr, rsi, regime, regime_fit, earnings_days if earnings_soon else None, portfolio_note),
@@ -269,7 +270,7 @@ def screen_us_opportunities(regime: str, current_symbols: list[str], top_n: int 
     """
     Screens US universe. Returns top_n candidates ranked by opportunity score.
     Each result dict has:
-      symbol, sector, tier, strategy, price, rsi, ivr, iv_pct, est_monthly_pct,
+      symbol, sector, tier, strategy, price, rsi, ivr, iv_pct, current_iv, est_monthly_pct,
       signal ("ENTER_NOW" | "WATCH" | "SKIP"), reason, pct_off_high, earnings_soon
     """
     return _screen(US_UNIVERSE, regime or "TRANSITIONING", current_symbols or [], top_n=top_n, india=False)

@@ -92,6 +92,31 @@ Track against these in ALL reports. Never use different numbers.
 - **Bear/sideways regime**: Defense/energy/financials float up; suppress pure tech/AI new entries
 - **Target capture rate**: 65–70% of max premium
 
+## 🎯 Strategy Engine Rules
+
+- Source of truth: `mcp/analysis/strategy_engine.py`
+- DTE matrix (base before adjustments):
+  - `BEAR_SIDEWAYS`: 90–130 DTE
+  - `RISKY_BULL`: 90–130 DTE
+  - `TRANSITIONING`: 60–90 DTE
+  - `BULL`: 30–45 DTE
+- DTE adjustments:
+  - Tier 3: reduce DTE by 20%
+  - IVR ≥ 70: reduce DTE by 15%
+  - IVR ≤ 30: increase DTE by 20%
+- OTM matrix (base before adjustments):
+  - `BEAR_SIDEWAYS`: 20% OTM
+  - `RISKY_BULL`: 18% OTM
+  - `TRANSITIONING`: 14% OTM
+  - `BULL`: 10% OTM
+- OTM adjustments (clamp final output to 8%–30%):
+  - IVR ≥ 70: +3%
+  - IVR ≤ 30: -4%
+  - RSI < 30: -2%
+  - RSI > 65: +3%
+  - Tier 3: +3%
+  - Tier 1: -2%
+
 ---
 
 ## 📈 Sector Preferences & Watch Themes
