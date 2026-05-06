@@ -4,6 +4,7 @@ import csv
 import json
 import math
 import os
+import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -484,6 +485,104 @@ def fallback_us_positions() -> dict[str, Any]:
     }
 
 
+def reconstruct_positions_from_transactions(account: str = "A") -> list[Position] | None:
+    """
+    Reconstruct current positions from transaction history (fallback when live API unavailable).
+    Parses Individual_XXX###_Transactions_*.csv, calculates net position state.
+    Returns list of Position objects or None if transactions unavailable.
+    """
+    pattern_map = {
+        "A": "Individual_XXX232_Transactions_*.csv",
+        "B": "Contributory_XXX275_Transactions_*.csv",
+        "C": "Designated_Bene_Individual_XXX634_Transactions_*.csv",
+    }
+    pattern = pattern_map.get(account)
+    if not pattern:
+        return None
+
+    # Find latest transaction file
+    txn_files = list(STATEMENTS_DIR.glob(pattern))
+    if not txn_files:
+        return None
+    txn_file = max(txn_files, key=lambda x: x.stat().st_mtime)
+
+    positions_dict = defaultdict(lambda: {"contracts": defaultdict(int)})
+
+    try:
+        with open(txn_file) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                action = row.get("Action", "").strip('"')
+                symbol = row.get("Symbol", "").strip('"')
+                qty_str = row.get("Quantity", "").strip('"')
+
+                if not qty_str or not symbol:
+                    continue
+
+                try:
+                    qty = int(qty_str)
+                except ValueError:
+                    continue
+
+                # Parse option symbol (skip equity)
+                opt_match = re.match(r"^(\w+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([CP])$", symbol)
+                if not opt_match:
+                    continue
+
+                underlying = opt_match.group(1)
+
+                if "Sell to Open" in action or "STO" in action:
+                    positions_dict[underlying]["contracts"][symbol] += qty
+                elif "Buy to Close" in action or "BTC" in action:
+                    positions_dict[underlying]["contracts"][symbol] -= qty
+
+        # Convert to Position objects
+        result = []
+        for underlying in sorted(positions_dict.keys()):
+            contracts = positions_dict[underlying]["contracts"]
+            live_contracts = {sym: qty for sym, qty in contracts.items() if qty != 0}
+
+            if live_contracts:
+                # Create Position with live option legs
+                pos = Position(
+                    symbol=underlying,
+                    shares=0,
+                    cost_basis=0,
+                    current_price=0,
+                    account=account,
+                    premium_received=0,
+                    option_legs=[],
+                )
+
+                for contract_sym, qty in live_contracts.items():
+                    opt_match = re.match(r"^(\w+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([CP])$", contract_sym)
+                    if opt_match:
+                        expiry_str = opt_match.group(2)
+                        strike = float(opt_match.group(3))
+                        opt_type = "CALL" if opt_match.group(4) == "C" else "PUT"
+                        expiry = datetime.strptime(expiry_str, "%m/%d/%Y").date()
+                        dte = (expiry - date.today()).days
+
+                        leg = OptionLeg(
+                            option_type=opt_type,
+                            strike=strike,
+                            expiry=expiry.isoformat(),
+                            dte=dte,
+                            qty=abs(qty),
+                            premium_received=0,
+                            current_mark=0,
+                        )
+                        pos.option_legs.append(leg)
+
+                if pos.option_legs:
+                    result.append(pos)
+
+        return result if result else None
+
+    except Exception as e:
+        return None
+
+
 async def load_us_positions() -> dict[str, Any]:
     """
     Load all US positions from every configured account in the ACCOUNTS registry.
@@ -526,6 +625,10 @@ async def load_us_positions() -> dict[str, Any]:
                     balances[label] = await get_balances(acct_hash)
                     return parse_schwab_positions(raw, label, quotes)
                 except Exception:
+                    # Fallback: Try reconstructing from transaction history
+                    txn_positions = reconstruct_positions_from_transactions(label)
+                    if txn_positions:
+                        return txn_positions
                     return []
 
             results = await asyncio.gather(*[_fetch(l, h) for l, h in schwab_accounts.items()])

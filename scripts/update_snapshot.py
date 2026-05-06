@@ -2,13 +2,15 @@
 Auto-generate portfolio_snapshot.yaml from:
   - Schwab positions CSV  (holdings, open options)
   - Empower unified transactions CSV  (all accounts, all brokerages)
+  - Robinhood activity CSVs  (UUID-named files, supplements Empower for newer trades)
 
 Weekly workflow:
   1. Export positions from Schwab → drop in data/statements/
   2. Export transactions from Empower → drop in data/statements/
-  3. python3 scripts/update_snapshot.py
-  4. Set month_to_date_equity_change manually
-  5. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
+  3. Download Robinhood activity CSV → drop in data/statements/  (optional, extends MTD)
+  4. python3 scripts/update_snapshot.py
+  5. Set month_to_date_equity_change manually
+  6. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
 """
 
 import os
@@ -43,6 +45,93 @@ def find_empower_transactions() -> str | None:
         if re.search(r"\d{4}-\d{2}-\d{2}.*thru.*\d{4}-\d{2}-\d{2}", name, re.IGNORECASE):
             return f
     return None
+
+
+_RH_UUID_PAT = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.csv",
+    re.IGNORECASE,
+)
+
+def find_robinhood_csvs() -> list[str]:
+    """Find Robinhood activity CSVs (UUID-named files). Returns list sorted by size ascending
+    so the smaller Individual file comes before the larger IRA file."""
+    candidates = glob.glob(os.path.join(DATA_DIR, "*.csv"))
+    result = [f for f in candidates if _RH_UUID_PAT.match(os.path.basename(f))]
+    return sorted(result, key=os.path.getsize)
+
+
+def _robinhood_account_label(filepath: str, all_rh_files: list[str]) -> str:
+    """Assign account label by relative file size: smallest = Individual (9079), largest = IRA (3600)."""
+    sorted_files = sorted(all_rh_files, key=os.path.getsize)
+    if len(sorted_files) >= 2:
+        return "Robinhood Individual (9079)" if filepath == sorted_files[0] else "Robinhood IRA (3600)"
+    return "Robinhood IRA (3600)"
+
+
+def parse_robinhood_transactions(filepath: str, account_label: str) -> list[dict]:
+    """
+    Parse a Robinhood activity CSV into normalized option transaction rows.
+    Robinhood CSV columns: Activity Date, Process Date, Settle Date, Instrument,
+                           Description, Trans Code, Quantity, Price, Amount
+    All option trades in the file are returned (no date filter — use full file as source).
+    """
+    rows = []
+    try:
+        with open(filepath, newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                trans_code = (row.get("Trans Code") or "").strip()
+                desc = (row.get("Description") or "").strip().replace("\n", " ")
+                instrument = (row.get("Instrument") or "").strip()
+                txn_date = _parse_date((row.get("Activity Date") or "").strip())
+                raw_amount = (row.get("Amount") or "").strip().replace("(", "-").replace(")", "")
+
+                if not txn_date:
+                    continue
+
+                # Only option trades
+                if trans_code not in ("STO", "BTC", "BTO", "STC"):
+                    continue
+                if not re.search(r"\bput\b|\bcall\b", desc, re.IGNORECASE):
+                    continue
+
+                amount = _parse_amount(raw_amount)
+
+                if trans_code == "STO":
+                    action = "Sell to Open"
+                elif trans_code == "BTC":
+                    action = "Buy to Close"
+                elif trans_code == "STC":
+                    action = "Sell to Close"
+                elif trans_code == "BTO":
+                    action = "Buy to Open"
+                else:
+                    continue
+
+                # Parse option description: "AXON 3/19/2027 Put $320.00"
+                m = re.match(
+                    r"^(\w+)\s+(\d{1,2}/\d{1,2}/\d{4})\s+(Put|Call)\s+\$([\d.]+)",
+                    desc, re.IGNORECASE,
+                )
+                if m:
+                    underlying = m.group(1).upper()
+                    opt_type = "C" if m.group(3).upper() == "CALL" else "P"
+                else:
+                    underlying = instrument.upper() if instrument else None
+                    opt_type = "C" if re.search(r"\bcall\b", desc, re.IGNORECASE) else "P"
+
+                rows.append({
+                    "Date": txn_date.isoformat(),
+                    "Action": action,
+                    "underlying": underlying,
+                    "opt_type": opt_type,
+                    "Amount": amount,
+                    "account": account_label,
+                    "_desc": desc[:60],
+                })
+    except Exception as e:
+        print(f"  Warning: could not parse Robinhood CSV {os.path.basename(filepath)}: {e}")
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -228,6 +317,8 @@ def parse_empower_transactions(filepath: str) -> list[dict]:
     Parse Empower unified export into normalized option transaction rows.
     Returns list of dicts with: Date, Action, underlying, opt_type, Amount, account
     Only option trades (Puts/Calls) are returned — equity and fund rows are skipped.
+    Robinhood account rows are EXCLUDED here — they are sourced directly from the
+    Robinhood activity CSVs to ensure completeness.
     """
     rows = []
     with open(filepath, newline="", encoding="utf-8-sig") as f:
@@ -237,13 +328,17 @@ def parse_empower_transactions(filepath: str) -> list[dict]:
             cat = row.get("Category", "").strip()
             amount = _parse_amount(row.get("Amount", "0"))
             txn_date = _parse_date(row.get("Date", ""))
-            account = _normalize_account(row.get("Account", ""))
+            account_raw = row.get("Account", "")
+            account = _normalize_account(account_raw)
 
             if not txn_date:
                 continue
             if cat not in ("Securities Trades", "Investment Income"):
                 continue
             if not _IS_OPTION.search(desc):
+                continue
+            # Skip Robinhood accounts — sourced from Robinhood CSV files directly
+            if re.search(r"robinhood", account_raw, re.IGNORECASE):
                 continue
 
             # Determine action
@@ -357,12 +452,15 @@ def compute_metrics(txns: list[dict], equity_symbols: list[str]) -> dict:
 # ---------------------------------------------------------------------------
 
 def build_snapshot() -> dict:
+    # Use latest Schwab positions export (Individual-Positions*.csv format)
+    # Note: "Portfolio_Positions*.csv" files are typically from Fidelity, not Schwab
     pos_file = find_latest("Individual-Positions*.csv")
     txn_file = find_empower_transactions()
 
     if not pos_file:
         print("ERROR: No Schwab positions CSV found.")
-        print("Export: Schwab → Accounts → Positions → Export")
+        print("Export from Schwab Account A: Accounts → Positions → Export to CSV")
+        print("Expected filename pattern: Individual-Positions*.csv")
         sys.exit(1)
     if not txn_file:
         print("ERROR: No Empower transactions CSV found.")
@@ -377,7 +475,15 @@ def build_snapshot() -> dict:
     print(f"  Equity: {len(equity_positions)} positions | Options: {len(short_options)} short contracts")
 
     txns = parse_empower_transactions(txn_file)
-    print(f"  Empower option transactions: {len(txns)}")
+    print(f"  Empower option transactions (non-Robinhood): {len(txns)}")
+
+    # Add ALL transactions from each Robinhood CSV as the canonical Robinhood source
+    rh_files = find_robinhood_csvs()
+    for rh_file in rh_files:
+        acct_label = _robinhood_account_label(rh_file, rh_files)
+        rh_txns = parse_robinhood_transactions(rh_file, account_label=acct_label)
+        print(f"  Robinhood CSV ({acct_label}) — {os.path.basename(rh_file)}: {len(rh_txns)} option trades")
+        txns.extend(rh_txns)
 
     metrics = compute_metrics(txns, equity_symbols)
 
@@ -440,7 +546,7 @@ def main():
 
     with open(SNAPSHOT_PATH, "w") as f:
         f.write("# Auto-generated by scripts/update_snapshot.py — do not edit manually\n")
-        f.write("# Sources: Schwab positions CSV + Empower unified transactions CSV\n")
+        f.write("# Sources: Schwab positions CSV + Empower unified transactions CSV + Robinhood activity CSV\n")
         f.write("# Only 'month_to_date_equity_change' requires manual input\n\n")
         yaml.dump(snapshot, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 

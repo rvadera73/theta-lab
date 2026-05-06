@@ -113,12 +113,16 @@ async def generate_weekly_report(
 
     # --- Heat scanner ---
     portfolio_heat_html = ""
+    portfolio_heat_text = ""
     if all_positions:
         try:
             heat_result = heat_from_positions(all_positions, regime)
             portfolio_heat_html = format_heat_html(heat_result)
+            from analysis.heat_scanner import format_heat_block
+            portfolio_heat_text = format_heat_block(heat_result, "Portfolio Position Heat")
         except Exception as e:
             portfolio_heat_html = f"<p><em>Heat scanner unavailable: {e}</em></p>"
+            portfolio_heat_text = f"⚠️ Heat scanner unavailable: {e}"
 
     # --- P&L rows ---
     pnl_rows = [
@@ -151,6 +155,11 @@ async def generate_weekly_report(
         "",
     ]
     lines += text_warnings
+
+    if portfolio_heat_text:
+        lines.append(portfolio_heat_text)
+        lines.append("")
+
     lines.append("## TOP 5 ACTIONS THIS WEEK\n")
     for i, act in enumerate(top5, 1):
         sym = act["symbol"]
