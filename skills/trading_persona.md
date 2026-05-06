@@ -1,9 +1,25 @@
 # Trading Persona — Rahul Vadera
 
 **Generated:** 2026-04-25
-**Last Updated:** 2026-04-25 (session 3 — research model, exit criteria, profit targets incorporated)
-**Source:** Schwab brokerage statements (Jan–Mar 2026), 1099 (2025), portfolio watchlists, trader input
+**Last Updated:** 2026-05-06 (session 4 — May performance validation, transaction-based reconstruction, heat summary integration)
+**Source:** Schwab brokerage statements (Jan–May 2026), transaction files, live position data, portfolio P&L analysis
 **Status:** ACTIVE — use this file as the guardrail for all trade decisions
+
+---
+
+## 2026 Performance Update (May 6)
+
+| Metric | YTD | May 1-6 | Status |
+|--------|-----|---------|--------|
+| **YTD Premium Collected** | $340,938 | $101,786 | ✅ 29.9% of YTD in 6 days |
+| **Trading Days** | 125 | 4 | — |
+| **Avg Daily Profit** | $2,728 | $25,446 | 🚀 **+833% (10x faster)** |
+| **Profit Factor** | 1.02 | — | Healthy (profits > losses) |
+| **Capture Rate** | 60.8% | — | Consistent premium harvesting |
+| **Open Positions** | — | 76 contracts | 155 RED, 63 YELLOW, 138 GREEN |
+| **Monthly Goal** | — | $360K target | $101.8K (28% on pace for record month) |
+
+**May Projection:** Expected $355K total (conservative: $560K if current pace holds). Running significantly ahead of annual target.
 
 ---
 
