@@ -50,7 +50,10 @@ def generate_enhanced_monthly_report(
             symbol = str(symbol).upper()
 
             # Get position data
-            pos = positions_df[positions_df['symbol'] == symbol].iloc[0]
+            pos_data = positions_df[positions_df['symbol'] == symbol]
+            if pos_data.empty:
+                continue
+            pos = pos_data.iloc[0]
 
             # Validate thesis using screener rules
             thesis_result = ScreenerLoader.validate_position_thesis(
