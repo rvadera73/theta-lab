@@ -1,0 +1,114 @@
+# Risk Framework Configuration
+# Used by all 4 frameworks: Greeks, Risk Budget, Attribution, Stress Testing
+
+portfolio:
+  total_equity: 2050000  # Current portfolio value
+  base_capital: 2500000  # Original capital
+  target_return_pct: 0.25  # 25% annual target
+
+risk_budget:
+  max_drawdown_pct: 0.20  # 20% max acceptable loss
+  max_loss_dollars: 500000  # $500K max loss = 20% of $2.5M
+  risk_utilization_alert_pct: 0.75  # Alert if 75%+ of budget used
+  breaking_point_alert_pct: 0.12  # Alert if breaking point < ±12%
+
+  # Allocate risk across accounts
+  account_allocations:
+    "232": 200000   # Account A (Margin): $200K risk allocation
+    "275": 200000   # Account B (IRA): $200K risk allocation
+    "634": 100000   # Account C (IRA): $100K risk allocation
+
+# Greeks Guardrails
+greeks:
+  guardrails:
+    delta:
+      min: -20
+      max: 20
+      action_if_breached: "Portfolio too long/short; reduce calls/puts"
+
+    gamma:
+      max: 0.5
+      action_if_breached: "Close strangles to reduce convexity risk"
+
+    vega:
+      min: -10
+      max: 5
+      action_if_breached: "Short vol exposure; monitor if IV changes"
+
+    theta:
+      min: 300  # dollars per day
+      action_if_breached: "Add new positions to boost daily income"
+
+# Account-Specific Rules
+accounts:
+  account_a:
+    name: "Account A (Margin 232)"
+    type: "Margin"
+    equity: 850000
+    risk_allocation: 200000
+    max_positions: 20
+    strategies: ["strangles", "covered_calls"]
+    margin_utilization_max_pct: 0.65
+    cash_to_trade_min: 300000
+
+  account_b:
+    name: "Account B (IRA 275)"
+    type: "IRA"
+    equity: 425000
+    risk_allocation: 200000
+    max_positions: 10
+    strategies: ["covered_call_puts", "wheels"]  # CSP + CC only
+    margin_utilization_max_pct: 0.0  # No margin in IRA
+    cash_to_trade_min: 100000
+
+  account_c:
+    name: "Account C (IRA 634)"
+    type: "IRA"
+    equity: 375000
+    risk_allocation: 100000
+    max_positions: 8
+    strategies: ["covered_call_puts"]
+    margin_utilization_max_pct: 0.0
+    cash_to_trade_min: 50000
+
+# Stress Testing Scenarios
+stress_testing:
+  market_moves:
+    - -0.20  # -20%
+    - -0.15  # -15%
+    - -0.10  # -10%
+    - -0.05  # -5%
+    - 0.05   # +5%
+    - 0.10   # +10%
+    - 0.15   # +15%
+    - 0.20   # +20%
+
+  iv_moves_on_down_market: 20  # IV up 20 points in market crash
+  iv_moves_on_up_market: -15   # IV down 15 points in rally
+
+# Attribution Tracking
+attribution:
+  # Default assumptions if historical Greeks not available
+  theta_default_pct: 0.70  # Assume 70% from theta
+  vega_default_pct: 0.20   # Assume 20% from vega
+  other_default_pct: 0.10  # Assume 10% from rolls/other
+
+  slippage_estimate: 0.05  # Assume $0.05 spread per contract
+
+# Reporting
+reporting:
+  daily_report_time: "06:00"  # 6 AM ET
+  weekly_review_day: "Monday"
+  weekly_review_time: "08:00"  # 8 AM ET
+  monthly_review_day: 1  # 1st of month
+
+  output_formats:
+    - "txt"
+    - "csv"
+    # - "html"  # Future: email-ready HTML
+
+  email_config:
+    enabled: false  # Set to true once email configured
+    recipients:
+      - "user@example.com"
+    subject_prefix: "[OPTIONS]"
