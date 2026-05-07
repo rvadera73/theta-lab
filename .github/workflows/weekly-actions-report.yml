@@ -47,6 +47,24 @@ print(report)
           name: weekly-report
           path: logs/enhanced_weekly_report_*.txt
 
+      - name: Send email via Resend
+        if: always()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          REPORT_FILE=$(ls -t logs/enhanced_weekly_report_*.txt | head -1)
+          REPORT_CONTENT=$(cat "$REPORT_FILE")
+
+          curl -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer $RESEND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "from": "noreply@theta-lab.io",
+              "to": "ravjdpr@gmail.com",
+              "subject": "Weekly Actions — '$(date +%Y-%m-%d)'",
+              "html": "<pre style=\"font-family: monospace; font-size: 12px; white-space: pre-wrap;\">'"${REPORT_CONTENT}"'</pre>"
+            }'
+
       - name: Commit report to repo (optional)
         if: always()
         run: |

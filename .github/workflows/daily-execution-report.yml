@@ -32,14 +32,23 @@ jobs:
           name: daily-report
           path: logs/daily_trade_execution_*.txt
 
-      - name: Send email notification
+      - name: Send email via Resend
         if: always()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
-          # Email would be sent here via Resend API or similar
-          # curl -X POST https://api.resend.com/emails \
-          #   -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
-          #   -d "{...}"
-          echo "Report generated successfully"
+          REPORT_FILE=$(ls -t logs/daily_trade_execution_*.txt | head -1)
+          REPORT_CONTENT=$(cat "$REPORT_FILE")
+
+          curl -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer $RESEND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "from": "noreply@theta-lab.io",
+              "to": "ravjdpr@gmail.com",
+              "subject": "Daily Trade Execution — '$(date +%Y-%m-%d)'",
+              "html": "<pre style=\"font-family: monospace; font-size: 12px; white-space: pre-wrap;\">'"${REPORT_CONTENT}"'</pre>"
+            }'
 
       - name: Commit report to repo (optional)
         if: always()
