@@ -91,6 +91,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add logs/daily_trade_execution_*.txt logs/thesis_state_*.json
+          git add logs/daily_trade_execution_*.txt 2>/dev/null || true
+          git add logs/thesis_state_*.json 2>/dev/null || true
           git commit -m "Daily report $(date +%Y-%m-%d)" || true
           git push || true
