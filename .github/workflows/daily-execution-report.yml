@@ -1,0 +1,51 @@
+name: Daily Trade Execution Report
+
+on:
+  schedule:
+    - cron: '0 11 * * *'  # 6 AM ET = 11 UTC
+  workflow_dispatch:
+
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas yfinance scipy numpy
+
+      - name: Generate Daily Report
+        run: |
+          python scripts/daily_trade_execution_report.py
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: daily-report
+          path: logs/daily_trade_execution_*.txt
+
+      - name: Send email notification
+        if: always()
+        run: |
+          # Email would be sent here via Resend API or similar
+          # curl -X POST https://api.resend.com/emails \
+          #   -H "Authorization: Bearer ${{ secrets.RESEND_API_KEY }}" \
+          #   -d "{...}"
+          echo "Report generated successfully"
+
+      - name: Commit report to repo (optional)
+        if: always()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add logs/daily_trade_execution_*.txt logs/thesis_state_*.json
+          git commit -m "Daily report $(date +%Y-%m-%d)" || true
+          git push || true

@@ -1,0 +1,68 @@
+╔════════════════════════════════════════════════════════════════════╗
+║ ENHANCED MONTHLY REPORT — May 2026                 ║
+╚════════════════════════════════════════════════════════════════════╝
+
+1. MONTHLY SUMMARY (April 2026)
+----------------------------------------------------------------------
+
+YTD PROGRESS:
+  Target:    $   1,200,000
+  Collected: $     340,938  (28%)
+  Shortfall: $     859,062
+
+APRIL PERFORMANCE:
+  Target:    $     100,000
+  Collected: $     107,115  (107%)
+  Status:    ✅ Beat target
+
+ANNUALIZED PACE:
+  Average/month: $85,234
+  Annual projection: $1,022,814
+  vs target $1200000: 85%
+
+2. ATTRIBUTION ANALYSIS (Where Profit Comes From)
+----------------------------------------------------------------------
+
+3. PERFORMANCE BY ACCOUNT
+----------------------------------------------------------------------
+
+Account B (IRA)      $    92,878  (  124% of target)
+Global Stock Fund - Ending in 7043 $     6,000  (    8% of target)
+Health Sciences Fund - Ending in 8383 $     3,000  (    4% of target)
+Account A (Margin)   $   217,683  (  145% of target)
+Integrated U S Small Cap Growth Equity Fund - Ending in 2873 $       800  (    1% of target)
+New Era Fund - Ending in 6298 $    -4,500  (   -6% of target)
+Pinky Vadera Traditional Ira Brokerage Account Ending in  - Ending in 3105 $    -1,753  (   -2% of target)
+Precise Software Solutions, Inc - Ending in 8014 $    14,392  (   19% of target)
+Robinhood Individual - Ending in 9079 $    12,325  (   16% of target)
+Robinhood Traditional Ira - Ending in 3600 $   208,154  (  278% of target)
+Rollover Ira ( ) - Ending in 8923 $        -0  (   -0% of target)
+Roth Ira - Ending in 1172 $         0  (    0% of target)
+Roth Ira For Minor ( ) - Ending in 0575 $    -1,410  (   -2% of target)
+Traditional Ira - Ending in 8148 $    -1,683  (   -2% of target)
+
+4. RISK & GREEKS TRENDS
+----------------------------------------------------------------------
+
+CURRENT PORTFOLIO STATE:
+  Delta:     +22.25  (directional exposure)
+  Gamma:     +0.640  (convexity risk)
+  Vega:       +2.56  (volatility exposure)
+  Theta:       +176/day (daily time decay income)
+
+TARGETS & COMPLIANCE:
+  Delta target (±20):    +22.25  ❌
+  Gamma target (≤0.5):   +0.640  ❌
+  Theta target (≥$300):    +176/day ❌
+
+5. NEXT MONTH STRATEGY (May 2026)
+----------------------------------------------------------------------
+
+TARGET: $110,000 (beating April's $107K)
+
+LEVERS TO PULL:
+  1. Reduce slippage (switch to Interactive Brokers for cheaper spreads)
+  2. Add new strangles (boost theta from 176 to 300+/day)
+  3. IV timing solid (vega capture 25%+ of profit)
+
+======================================================================

@@ -1,0 +1,57 @@
+name: Monthly Performance Report
+
+on:
+  schedule:
+    - cron: '0 13 1 * *'  # 8 AM ET on 1st of month = 13 UTC
+  workflow_dispatch:
+
+jobs:
+  monthly-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas yfinance scipy numpy
+
+      - name: Generate Monthly Report
+        run: |
+          python -c "
+from scripts.enhanced_monthly_report import generate_enhanced_monthly_report_from_df
+from scripts.data_loader import DynamicDataLoader
+from datetime import date
+
+positions_df, transactions_df = DynamicDataLoader.load_all_data(
+    positions_dir='data/positions',
+    statements_dir='data/statements',
+    use_live_positions=True,
+    calculate_greeks=True
+)
+
+output_file = f'logs/enhanced_monthly_report_{date.today().isoformat()}.txt'
+report = generate_enhanced_monthly_report_from_df(positions_df, transactions_df, output_file)
+print(report)
+          "
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: monthly-report
+          path: logs/enhanced_monthly_report_*.txt
+
+      - name: Commit report to repo (optional)
+        if: always()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add logs/enhanced_monthly_report_*.txt logs/thesis_state_*.json
+          git commit -m "Monthly report $(date +%Y-%m-%d)" || true
+          git push || true

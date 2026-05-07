@@ -1,0 +1,556 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║ DAILY TRADE EXECUTION REPORT — 2026-05-07 14:53 ET                                          ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+PORTFOLIO STRATEGY CONTEXT
+================================================================================
+
+Market Regime: BEAR_SIDEWAYS
+New Entries Allowed: False
+
+Holdings Universe (regime-filtered): 47 eligible names
+  Tier 1 (Core): 14
+  Tier 2 (Emerging): 18
+  Tier 3 (Speculative): 15
+
+ACTION SUMMARY (Execute in this order)
+================================================================================
+
+🔴 PRIORITY 1 — EXECUTE TODAY (Before market open or in first hour)
+--------------------------------------------------------------------------------
+
+1. CLOSE_STRANGLE: AXON
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -1.25  Γ -0.220  Θ -60/day
+
+2. CLOSE_STRANGLE: ADBE
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -3.15  Γ -0.180  Θ -50/day
+
+3. CLOSE_STRANGLE: PYPL
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -3.15  Γ -0.180  Θ -50/day
+
+4. CLOSE_STRANGLE: OKTA
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -2.15  Γ -0.160  Θ -44/day
+
+5. CLOSE_STRANGLE: CRCL
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.80  Γ -0.140  Θ -38/day
+
+6. CLOSE_STRANGLE: CRM
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -2.45  Γ -0.140  Θ -38/day
+
+7. CLOSE_STRANGLE: ANET
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.80  Γ -0.140  Θ -38/day
+
+8. CLOSE_STRANGLE: CRWD
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ -0.120  Θ -33/day
+
+9. CLOSE_STRANGLE: APP
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.45  Γ -0.100  Θ -28/day
+
+10. CLOSE_STRANGLE: ALB
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.85  Γ -0.100  Θ -28/day
+
+11. CLOSE_STRANGLE: XYZ
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.45  Γ -0.100  Θ -28/day
+
+12. CLOSE_STRANGLE: DIS
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.20  Γ -0.100  Θ -28/day
+
+13. CLOSE_STRANGLE: NKE
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.75  Γ -0.080  Θ -22/day
+
+14. CLOSE_STRANGLE: MP
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +1.20  Γ -0.080  Θ -22/day
+
+15. CLOSE_STRANGLE: NFLX
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.55  Γ -0.080  Θ -22/day
+
+16. CLOSE_STRANGLE: JD
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.55  Γ -0.080  Θ -22/day
+
+17. CLOSE_STRANGLE: UNH
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.10  Γ -0.080  Θ -22/day
+
+18. CLOSE_STRANGLE: VST
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.55  Γ -0.080  Θ -22/day
+
+19. CLOSE_STRANGLE: LLY
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.10  Γ -0.080  Θ -22/day
+
+20. CLOSE_STRANGLE: APH
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.10  Γ -0.080  Θ -22/day
+
+21. CLOSE_STRANGLE: AMZN
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.55  Γ -0.080  Θ -22/day
+
+22. CLOSE_STRANGLE: COIN
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -1.40  Γ -0.080  Θ -22/day
+
+23. CLOSE_STRANGLE: LMT
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.90  Γ -0.060  Θ -16/day
+
+24. CLOSE_STRANGLE: NVO
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.25  Γ -0.060  Θ -16/day
+
+25. CLOSE_STRANGLE: META
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.90  Γ -0.060  Θ -16/day
+
+26. CLOSE_STRANGLE: ASML
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.90  Γ -0.060  Θ -16/day
+
+27. CLOSE_STRANGLE: NOC
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.90  Γ -0.060  Θ -16/day
+
+28. CLOSE_STRANGLE: ZBH
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ -0.40  Γ -0.060  Θ -16/day
+
+29. CLOSE_STRANGLE: BA
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.90  Γ -0.060  Θ -16/day
+
+30. CLOSE_STRANGLE: IBIT
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.25  Γ -0.060  Θ -16/day
+
+31. CLOSE_STRANGLE: ETSY
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.25  Γ -0.060  Θ -16/day
+
+32. CLOSE_STRANGLE: ISRG
+   Account: Account A (232)
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+3.800 > 0.5): Close strangle
+   Expected Greeks impact:
+     Δ +0.25  Γ -0.060  Θ -16/day
+
+33. CLOSE_STRANGLE: ACHR JAN 15 2027 $7 PUT
+   Account: Traditional IRA
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+0.790 > 0.2): Close strangle
+   Expected Greeks impact:
+     Δ +0.60  Γ -0.251  Θ +0/day
+
+34. CLOSE_STRANGLE: JOBY MAR 19 2027 $8 PUT
+   Account: Traditional IRA
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+0.790 > 0.2): Close strangle
+   Expected Greeks impact:
+     Δ +0.16  Γ -0.091  Θ +0/day
+
+35. CLOSE_STRANGLE: LYFT DEC 18 2026 $18 PUT
+   Account: Traditional IRA
+   Action: CLOSE ENTIRE STRANGLE (both PUT and CALL)
+   Qty: 1 complete strangle(s)
+   Why: GAMMA breach (+0.790 > 0.2): Close strangle
+   Expected Greeks impact:
+     Δ +0.79  Γ -0.087  Θ +0/day
+🟡 PRIORITY 2 — THIS WEEK (Execute if market allows)
+--------------------------------------------------------------------------------
+
+1. ENTER: AXON
+   Account: Account B (275)
+   Action: SELL AXON STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (+0 < 75): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+2. ENTER: ADBE
+   Account: Account B (275)
+   Action: SELL ADBE STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (+0 < 75): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+3. ENTER: AXON
+   Account: Account C (634)
+   Action: SELL AXON STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (+0 < 25): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+4. ENTER: AXON
+   Account: ROTH IRA
+   Action: SELL AXON STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (-0 < 50): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+5. ENTER: CRWD
+   Account: ROTH IRA
+   Action: SELL CRWD STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (-0 < 50): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+6. ENTER: ADBE
+   Account: ROTH IRA
+   Action: SELL ADBE STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (-0 < 50): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+7. ENTER: CRWD
+   Account: Traditional IRA
+   Action: SELL CRWD STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (-2 < 50): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+8. ENTER: AXON
+   Account: Vanguard Taxable
+   Action: SELL AXON STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (+0 < 100): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+9. ENTER: CRWD
+   Account: Vanguard Taxable
+   Action: SELL CRWD STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (+0 < 100): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+10. ENTER: ADBE
+   Account: Vanguard Taxable
+   Action: SELL ADBE STRANGLE
+   DTE: 45 days (45-60 DTE range)
+   Strikes: PUT ~85% of current, CALL ~115% of current
+   Qty: 1 contract(s)
+   Expected premium: $300
+   Why: THETA gap (+0 < 100): Add CSP/strangle
+   Expected Greeks impact:
+     Δ -0.15  Γ +0.050  Θ +15/day
+
+================================================================================
+ACCOUNT-LEVEL STATUS & TARGETS
+================================================================================
+
+Account A (232):
+  Positions: 757 open | Heat: 🔴0 🟡190 🟢567
+
+  Greeks (Current → Target):
+    Delta:   +22.25  → Target ±   20  ❌
+    Gamma:   +0.640  → Target ≤  0.5  ❌
+    Theta:     +176/day → Target ≥$  200  ❌
+
+  Trades to execute: 32
+    1. CLOSE_STRANGLE AXON (Priority 1)
+    2. CLOSE_STRANGLE ADBE (Priority 1)
+    3. CLOSE_STRANGLE PYPL (Priority 1)
+    4. CLOSE_STRANGLE OKTA (Priority 1)
+    5. CLOSE_STRANGLE CRCL (Priority 1)
+
+Account B (275):
+  Positions: 126 open | Heat: 🔴0 🟡0 🟢126
+
+  Greeks (Current → Target):
+    Delta:    +0.00  → Target ±   10  ✅
+    Gamma:   +0.000  → Target ≤  0.2  ✅
+    Theta:       +0/day → Target ≥$   75  ❌
+
+  Trades to execute: 2
+    1. ENTER AXON (Priority 2)
+    2. ENTER ADBE (Priority 2)
+
+Account C (634):
+  Positions: 130 open | Heat: 🔴0 🟡0 🟢130
+
+  Greeks (Current → Target):
+    Delta:    +0.00  → Target ±    5  ✅
+    Gamma:   +0.000  → Target ≤  0.1  ✅
+    Theta:       +0/day → Target ≥$   25  ❌
+
+  Trades to execute: 1
+    1. ENTER AXON (Priority 2)
+
+ROTH IRA:
+  Positions: 9 open | Heat: 🔴0 🟡0 🟢9
+
+  Greeks (Current → Target):
+    Delta:    +0.00  → Target ±    8  ✅
+    Gamma:   +0.000  → Target ≤  0.2  ✅
+    Theta:       +0/day → Target ≥$   50  ❌
+
+  Trades to execute: 3
+    1. ENTER AXON (Priority 2)
+    2. ENTER CRWD (Priority 2)
+    3. ENTER ADBE (Priority 2)
+
+Traditional IRA:
+  Positions: 55 open | Heat: 🔴0 🟡0 🟢55
+
+  Greeks (Current → Target):
+    Delta:    +0.00  → Target ±    8  ✅
+    Gamma:   +0.000  → Target ≤  0.2  ✅
+    Theta:       +0/day → Target ≥$   50  ❌
+
+  Trades to execute: 4
+    1. CLOSE_STRANGLE ACHR JAN 15 2027 $7 PUT (Priority 1)
+    2. CLOSE_STRANGLE JOBY MAR 19 2027 $8 PUT (Priority 1)
+    3. CLOSE_STRANGLE LYFT DEC 18 2026 $18 PUT (Priority 1)
+    4. ENTER CRWD (Priority 2)
+
+Vanguard Taxable:
+  Positions: 34 open | Heat: 🔴0 🟡0 🟢34
+
+  Greeks (Current → Target):
+    Delta:    +0.00  → Target ±   15  ✅
+    Gamma:   +0.000  → Target ≤  0.3  ✅
+    Theta:       +0/day → Target ≥$  100  ❌
+
+  Trades to execute: 3
+    1. ENTER AXON (Priority 2)
+    2. ENTER CRWD (Priority 2)
+    3. ENTER ADBE (Priority 2)
+
+================================================================================
+EQUITY-LEVEL THESIS VALIDATION
+================================================================================
+
+Current positions vs Holdings universe:
+
+❌ PYPL       Tier 2 | Moat: UNKNOWN
+   PYPL is on permanent exit list
+   → CLOSE immediately. Do not re-enter.
+   Suggested alternatives (screener-eligible):
+     1. ALAB       Tier 2 | STRONG
+     2. RKLB       Tier 2 | STRONG
+     3. VST        Tier 2 | STRONG
+
+✅ ADBE       Tier 1 | Moat: MODERATE
+   ADBE Tier 1, moat MODERATE. Thesis intact.
+   → HOLD. Thesis valid.
+
+✅ AXON       Tier 1 | Moat: STRONG
+   AXON Tier 1, moat STRONG. Thesis intact.
+   → HOLD. Thesis valid.
+
+✅ CRM        Tier 1 | Moat: STRONG
+   CRM Tier 1, moat STRONG. Thesis intact.
+   → HOLD. Thesis valid.
+
+================================================================================
+EXECUTION MECHANICS
+================================================================================
+
+1. CLOSE / BUY TO CLOSE:
+   - Enter as BUY TO CLOSE order
+   - Good-til-Canceled (GTC) limit order
+   - Limit price: mid-market bid/ask
+
+2. ENTER / SELL STRANGLE:
+   - Check IVR first (must be ≥40 for Account A)
+   - Sell PUT at ~delta 0.15 (85% of current price)
+   - Sell CALL at ~delta 0.20 (115% of current price)
+   - DTE: 45-60 days
+   - GTC limit order, target $200-400 net credit
+
+3. ROLL:
+   - Close current position at market
+   - Immediately sell new position at further DTE
+   - Target: Same strikes or adjusted, net credit ≥$100
+
+================================================================================
+POST-EXECUTION CHECKLIST
+================================================================================
+
+After executing trades:
+  [ ] Record each trade in trading log (date, symbol, qty, price, reason)
+  [ ] Verify new Greeks in broker platform
+  [ ] Check Greeks vs targets — are we back in range?
+  [ ] Update positions spreadsheet
+  [ ] Notify Account stakeholders (Account A = you, B = Pinky, C = ?)
+
+================================================================================
+END OF REPORT
+================================================================================

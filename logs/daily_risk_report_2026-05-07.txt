@@ -1,0 +1,474 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                                                                    ║
+║ DAILY RISK & PERFORMANCE REPORT — 2026-05-07               ║
+║                                                                    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+1. GREEKS DASHBOARD
+----------------------------------------------------------------------
+======================================================================
+GREEKS DASHBOARD — 2026-05-07
+======================================================================
+
+PORTFOLIO-LEVEL GREEKS:
+  Delta:   22.25  (net long 2225 shares equivalent)
+  Gamma:   0.640  (convexity)
+  Vega:     2.56  (long volatility)
+  Theta:     176/day (daily time decay capture)
+
+BY ACCOUNT:
+
+  Contributory - Ending in 275:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 80
+
+  Individual - Ending in 232:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 391
+
+  Pinky Vadera Traditional Ira Brokerage Account Ending in  - Ending in 3105:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 40
+
+  Robinhood Traditional Ira - Ending in 3600:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 41
+
+  New Era Fund - Ending in 6298:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 5
+
+  Rollover Ira ( ) - Ending in 8923:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 21
+
+  Roth Ira - Ending in 1172:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 19
+
+  Health Sciences Fund - Ending in 8383:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 7
+
+  Global Stock Fund - Ending in 7043:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 11
+
+  Integrated U S Small Cap Growth Equity Fund - Ending in 2873:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 3
+
+  Precise Software Solutions, Inc - Ending in 8014:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 109
+
+  Roth Ira For Minor ( ) - Ending in 0575:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 8
+
+  Traditional Ira - Ending in 8148:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 16
+
+  Robinhood Individual - Ending in 9079:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 14
+
+  7510078170_FNOOpenPositions:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 15
+
+  7510078170_FNOPortfolioDetails:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 15
+
+  Account B (275):
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 126
+
+  Account C (634):
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 130
+
+  Account A (232):
+    Delta:   22.25
+    Gamma:   0.640
+    Vega:     2.56
+    Theta:     176/day
+    Positions: 757
+
+  Traditional IRA:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 55
+
+  ROTH IRA for Minor:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 2
+
+  nan:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 0
+
+  ROTH IRA:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 9
+
+  Rollover IRA:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 14
+
+  icici_equity_positions_20260506:
+    Delta:    0.00
+    Gamma:   0.000
+    Vega:     0.00
+    Theta:       0/day
+    Positions: 2
+
+GUARDRAIL STATUS:
+  Delta:   22.25 (target: -20 to  20) ⚠️
+  Gamma:   0.640 (target: max 0.5   ) ⚠️
+  Vega:     2.56 (target: -10 to   5) ✅
+  Theta:     176 (target: min 300   ) ⚠️
+
+⚠️  GUARDRAIL BREACHES (3):
+
+  DELTA: 22.25 (threshold: 20)
+    Severity: WARNING
+    Action: Close calls (portfolio too long). Target delta <= 20.
+
+  GAMMA: 0.64 (threshold: 0.5)
+    Severity: WARNING
+    Action: Close strangles (reduce convexity risk). Target gamma <= 0.5.
+
+  THETA: 176.00 (threshold: 300)
+    Severity: WARNING
+    Action: Add new positions to boost daily theta income. Target >= $300/day.
+
+======================================================================
+
+POSITION HEAT SUMMARY:
+  🟢 GREEN (healthy): 1706 positions
+  🟡 YELLOW (monitor): 0 positions
+  🔴 RED (threatened): 190 positions
+
+2. RISK BUDGET STATUS
+----------------------------------------------------------------------
+======================================================================
+RISK BUDGET STATUS — 2026-05-07
+======================================================================
+
+TOTAL RISK BUDGET: $500,000
+
+Contributory - Ending in 275:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Individual - Ending in 232:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Pinky Vadera Traditional Ira Brokerage Account Ending in  - Ending in 3105:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Robinhood Traditional Ira - Ending in 3600:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+New Era Fund - Ending in 6298:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Rollover Ira ( ) - Ending in 8923:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Roth Ira - Ending in 1172:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Health Sciences Fund - Ending in 8383:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Global Stock Fund - Ending in 7043:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Integrated U S Small Cap Growth Equity Fund - Ending in 2873:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Precise Software Solutions, Inc - Ending in 8014:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Roth Ira For Minor ( ) - Ending in 0575:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Traditional Ira - Ending in 8148:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Robinhood Individual - Ending in 9079:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+7510078170_FNOOpenPositions:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+7510078170_FNOPortfolioDetails:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Account B (275):
+  Allocated: $200,000
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Account C (634):
+  Allocated: $100,000
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Account A (232):
+  Allocated: $200,000
+  Currently used: $2,400 (1.2%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Traditional IRA:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+ROTH IRA for Minor:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+nan:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $0
+  Max loss @ -10% market: $0
+  Max loss @ -15% market: $0
+  Status: 🟢
+
+ROTH IRA:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+Rollover IRA:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+icici_equity_positions_20260506:
+  Allocated: $0
+  Currently used: $0 (0.0%)
+  Max loss @ -5% market: $nan
+  Max loss @ -10% market: $nan
+  Max loss @ -15% market: $nan
+  Status: 🟢
+
+PORTFOLIO-LEVEL RISK:
+  Total risk used: $2,400
+  Utilization: 0.5%
+  Breaking point: ±217.9%
+
+✅ NO ALERTS
+
+======================================================================
+
+3. ATTRIBUTION TRACKING (YTD)
+----------------------------------------------------------------------
+======================================================================
+ATTRIBUTION REPORT — 2026-05
+======================================================================
+
+No closed trades this period.
+
+4. STRESS TEST (Weekly Scenarios)
+----------------------------------------------------------------------
+======================================================================
+STRESS TEST REPORT — Weekly Scenarios
+======================================================================
+
+Market -5%, IV +20pts          → Loss $    -5,997 (-0.29%) ✅ ACCEPTABLE
+Market -10%, IV +20pts         → Loss $   -17,098 (-0.83%) ✅ ACCEPTABLE
+Market -15%, IV +20pts         → Loss $   -28,183 (-1.37%) ✅ ACCEPTABLE
+Market -20%, IV +20pts         → Loss $   -39,252 (-1.91%) ✅ ACCEPTABLE
+Market +5%, IV -15pts          → Loss $     7,293 ( 0.36%) ✅ ACCEPTABLE
+Market +10%, IV -15pts         → Loss $    18,442 ( 0.90%) ✅ ACCEPTABLE
+Market +15%, IV -15pts         → Loss $    29,607 ( 1.44%) ✅ ACCEPTABLE
+Market +20%, IV -15pts         → Loss $    40,788 ( 1.99%) ✅ ACCEPTABLE
+
+No breaking point found
+======================================================================
+
+ACTION ITEMS
+----------------------------------------------------------------------
+Priority 1 (GREEKS: DELTA): Close calls (portfolio too long). Target delta <= 20.
+Priority 1 (GREEKS: GAMMA): Close strangles (reduce convexity risk). Target gamma <= 0.5.
+Priority 1 (GREEKS: THETA): Add new positions to boost daily theta income. Target >= $300/day.
+
+╔════════════════════════════════════════════════════════════════════╗
+║ END OF REPORT                                                      ║
+╚════════════════════════════════════════════════════════════════════╝
