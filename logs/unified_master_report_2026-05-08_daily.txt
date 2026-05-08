@@ -1,0 +1,261 @@
+================================================================================
+                    UNIFIED MASTER REPORT — DAILY STAGE
+                         May 8, 2026 — 6:00 AM ET
+================================================================================
+
+SYSTEM BOOT: Daily conviction cycle starting
+Report Type: DAILY
+Data Sources: Live positions + position heat scan + IV rank (multiple symbols)
+Last Update: May 7 EOD
+
+================================================================================
+SECTION 1: MARKET REGIME & OODA OBSERVE
+================================================================================
+
+MARKET REGIME DETECTION
+├─ Regime Signal: CAUTIOUS_BULL (confirmed, continues from May 7)
+├─ IV Rank: 38-95 range across active names
+├─ Top Movers: SHOP (95 IVR), CRM (93 IVR), AXON (77 IVR) — all above 40 gate
+├─ IV Compression Risk: COIN (38 IVR ⚠️ below 40), VST (17 IVR ⚠️ critical)
+└─ Overall Signal: CAUTIOUS_BULL bias intact but IV normalization in weak names
+
+POSITION HEAT STATUS (89 positions scanned)
+Active positions: 89 total
+🔴 RED (Critical):  14 positions — 4 CUT/RESTAGGER (SONO, COIN, INFY, COIN short-dated)
+                    10 ROLL_CALL (NIO, ABNB x2, JD, LYFT, FMC, COIN, CRM — AI bull tighten)
+🟡 YELLOW (Watch):   2 positions — 1 HARVEST/RESTAGGER (INFY CALL $18), 1 WATCH_CLOSE (CRM CALL $220)
+🟢 GREEN (Healthy): 73 positions — holding theta working properly
+
+KEY SIGNALS:
+⚡ AI BULL PROTOCOL ACTIVE: 11 calls showing melt-up risk (CAUTIOUS_BULL tightening rule)
+⚡ PAUSE NEW STRANGLES: Until 13 call(s) are rolled/harvested
+⚡ RECYCLE PUTS FIRST: Free up premium budget for re-entry
+
+================================================================================
+SECTION 2: CRITICAL ACTION ITEMS (Must Execute Today)
+================================================================================
+
+**IMMEDIATE RED STOPS — Execute at market open:**
+
+1. **SONO CALL $10** exp 2026-12-18 (224d)
+   - Current: $14.84 (150% ITM loss)
+   - Cost-to-close: $2,120 = 3.0x premium received
+   - Action: **BTC NOW — hard stop reached**
+   - Re-entry: Wait 5-10 days for stabilization, then fresh strangle at 299d DTE
+
+2. **COIN PUT $280** exp 2026-09-18 (133d)
+   - Current: $191.25 (32% OTM but cost-to-close 2.7x)
+   - Cost-to-close: $9,805 = 2.7x premium $3,625
+   - Action: **BTC NOW — hard stop reached**
+   - Note: IVR collapsed to 38 (below 40 gate) — thesis broken
+   - Re-entry: Only when IVR regenerates to ≥40 and Bitcoin stabilizes
+
+3. **INFY PUT $20** exp 2027-01-15 (252d)
+   - Current: $12.48 (37.6% OTM but deteriorating)
+   - Cost-to-close: $750 = 2.4x premium $314
+   - Action: **BTC NOW — hard stop reached**
+   - Re-entry: 327d DTE, wait 5-10 days for recovery
+
+4. **COIN PUT $220** exp 2026-05-15 (7d) ← CRITICAL EXPIRY
+   - Current: $191.25 (13% ITM)
+   - Cost-to-close: $3,130 = 2.3x premium $1,344
+   - Action: **BTC TODAY before expiry weekend**
+   - Days to expiry: 7 — gamma risk spike near expiry, no theta left
+
+**ROLL (HARVEST + RE-ENTER):**
+
+5. **INFY CALL $18** exp 2027-01-15 (252d)
+   - Profit captured: 55% ✅
+   - Action: **BTC $65 for 55% profit**
+   - Re-entry: Same name, 327d DTE (+75d), same/slightly lower strike within 1 week
+   - Historical pattern: Typical re-stagger window 10 days post-harvest
+
+================================================================================
+SECTION 3: CALL ROLLS — AI BULL MELT-UP PROTOCOL
+================================================================================
+
+**10 CALLS REQUIRING ROLL (Cushion <12% to strike):**
+
+| Position | Strike | Current | Distance | DTE | Action |
+|----------|--------|---------|----------|-----|--------|
+| NIO CALL $6 (Jun) | 6.00 | 5.91 | -7% | 41d | ROLL: BTC $82, sell higher strike 180d DTE |
+| ABNB CALL $140 (Sep) | 140 | 141.66 | -1% | 133d | ROLL: BTC $1,560, sell higher strike 208d DTE |
+| NIO CALL $6 (Jan) | 6.00 | 5.91 | -7% | 252d | ROLL: BTC $1,106, sell higher strike 327d DTE |
+| JD CALL $30 (Dec) | 30 | 29.96 | 0% | 224d | ROLL: BTC $419, sell higher strike 299d DTE |
+| ABNB CALL $140 (Mar) | 140 | 141.66 | -1% | 315d | ROLL: BTC $1,995, sell higher strike 390d DTE |
+| LYFT CALL $15 (Jan) | 15 | 14.42 | 4% | 252d | ROLL: BTC $295, sell higher strike 327d DTE |
+| FMC CALL $15 (Jan) | 15 | 14.82 | 1% | 252d | ROLL: BTC $323, sell higher strike 327d DTE |
+| COIN CALL $210 (Sep) | 210 | 191.25 | 10% | 133d | ROLL: AI-bull tighten — roll before melt-up |
+| CRM CALL $200 (Jan) | 200 | 183.82 | 9% | 252d | ROLL: AI-bull tighten — roll before melt-up |
+
+**Net Credit Strategy:** All rolls target net credit or small debit. Do NOT pay full premium difference.
+
+================================================================================
+SECTION 4: GREEN ZONE — HOLD & LET THETA WORK (73 positions)
+================================================================================
+
+Healthy positions showing normal theta decay:
+- OKTA CALL $85: 12% cushion, 133d DTE ✅
+- NKE CALL $58: 30% cushion, 315d DTE ✅
+- ADBE CALL $290: 16% cushion, 252d DTE ✅
+- FMC CALL $18: 18% cushion, 252d DTE ✅
+- [+69 more in GREEN]
+
+**Action:** Monitor only. No closes or new entries until RED/YELLOW cleared.
+
+================================================================================
+SECTION 5: IV RANK ASSESSMENT — Entry Gate Status
+================================================================================
+
+**IV RANK ≥ 40 (Entry Allowed):**
+✅ AXON: 77 IVR — premium rich, great strangle entry
+✅ CRWD: 69 IVR — solid entry conditions
+✅ GEV: 66 IVR — good entry
+✅ SHOP: 95 IVR — exceptional entry (highest IV of scan)
+✅ CRM: 93 IVR — exceptional entry
+✅ SMCI: 53 IVR — good entry
+✅ HOOD: 72 IVR — strong entry
+
+**IV RANK < 40 (ENTRY BLOCKED):**
+❌ COIN: 38 IVR — BELOW GATE (just collapsed from 40+)
+❌ VST: 17 IVR — SEVERELY COMPRESSED (was 66 May 1, now critical)
+
+**Action:** Do NOT open new strangles on COIN or VST. Thesis broken on both.
+
+================================================================================
+SECTION 6: DAILY OODA CYCLE
+================================================================================
+
+**OBSERVE (Current state as of May 8, 6 AM):**
+✅ 89 positions tracked
+✅ 14 RED requiring immediate action (4 cuts, 10 rolls, 1 harvest)
+✅ 2 YELLOW requiring monitoring (1 harvest ready, 1 watch close)
+✅ 73 GREEN healthy positions (theta working)
+✅ Regime: CAUTIOUS_BULL (biased bullish, but call heat escalating)
+✅ IV Compression: COIN (38 IVR), VST (17 IVR) — thesis deterioration signal
+✅ Multiple earnings alerts: HOOD May 28, CRM June 5, NIO expiries imminent
+
+**ORIENT (Strategic assessment):**
+- CAUTIOUS_BULL regime allows entries BUT NEW STRANGLES PAUSED until 13 calls resolved
+- IV Rank scatter: High IVR (SHOP 95, CRM 93) present entry opportunity IF old positions cleared
+- Momentum drag: AI bull tightening = call rolls mandatory to avoid melt-up assignment
+- Cash constraint: Do NOT deploy new capital until 4 RED cuts + 10 rolls complete
+- Risk status: 14 RED positions = 16% of portfolio — manageable but action-required
+
+**DECIDE (Next 24 hours):**
+1. **Priority 1 — Execute RED cuts at market open:**
+   - BTC SONO CALL $10 ($2,120 cost)
+   - BTC COIN PUT $280 ($9,805 cost)
+   - BTC INFY PUT $20 ($750 cost)
+   - BTC COIN PUT $220 (7 DTE critical)
+   - Estimated cost: ~$12.7K outflow from this action
+
+2. **Priority 2 — Harvest & re-stagger:**
+   - BTC INFY CALL $18 (55% profit capture, $65 debit)
+   - Plan re-entry at 327d DTE within 1 week
+
+3. **Priority 3 — Roll 10 calls:**
+   - Start with closest-to-strike calls (NIO, JD, ABNB, LYFT, FMC)
+   - Target net credit on all rolls; execute via net debit ladder if needed
+   - Estimated credit recovery: ~$4-6K from rolls
+
+4. **Priority 4 — NEW ENTRIES blocked:**
+   - Do NOT open strangles until call rolls complete
+   - Exception: If SHOP (95 IVR) or CRM (93 IVR) collapse <40%, skip them too
+   - Wait for: Post-roll confirmation + COIN/VST thesis reassessment
+
+**ACT (Market open execution):**
+- 09:30 ET: BTC SONO CALL $10 (hard stop)
+- 09:35 ET: BTC COIN PUT $220 (7 DTE)
+- 09:40 ET: BTC COIN PUT $280 (momentum check, IV 38)
+- 09:45 ET: BTC INFY PUT $20
+- 09:50 ET: BTC INFY CALL $18 for harvest
+- 10:00-11:30 ET: Execute 10 call rolls in sequence (monitor net credits)
+
+================================================================================
+SECTION 7: CASH & MARGIN IMPACT
+================================================================================
+
+**Current Impact (May 8):**
+- RED cut costs: ~$12.7K outflow (buying to close)
+- Roll credit recovery: ~$4-6K inflow (selling new calls)
+- Net expected: ~$6-8K cash outflow from execution
+- Margin release (closing puts): ~$5-10K freed from option requirement
+
+**Cash-to-trade forecast after execution:**
+- Current (est. ~$880K available from May 7)
+- After RED cuts: $880K - $12.7K = $867.3K
+- After roll credits: $867.3K + $5K = $872.3K
+- Net impact: Neutral to positive (rolls recover 40% of cut costs)
+
+**Margin status:**
+- Current utilization: 56% (target ≤60% bull regime) ✅
+- Post-execution: ~54-55% (improving as puts close)
+- Conclusion: Plenty of capacity for new entries once RED/YELLOW cleared
+
+================================================================================
+SECTION 8: CONVICTION & THESIS INTEGRITY CHECK
+================================================================================
+
+**Positions where thesis is BROKEN (IVR collapsed below 40 or technical failure):**
+
+1. **COIN:** IVR 38 → below gate. Entry thesis invalid. Close all COIN positions.
+2. **VST:** IVR 17 → critically compressed. Entry thesis invalid. Close all VST puts, monitor calls.
+
+**Positions with conviction drift (monitor):**
+- HOOD: Declining conviction (was 5.7 on May 7), IVR 72 still OK. Earnings May 28.
+- CRM: Slight conviction decline, IVR 93 excellent. Earnings June 5.
+
+**Positions with strong conviction (hold through rolls):**
+- AXON: IVR 77, conviction stable 7.9/10
+- CRWD: IVR 69, conviction rising 7.6 → 7.7
+- SHOP: IVR 95 (highest), conviction rising 6.3 → 6.4
+
+================================================================================
+SECTION 9: DAILY P&L & PACE TRACKING
+================================================================================
+
+**Previous report (May 7): $52.3K MTD (6 days) → $127K monthly pace**
+**Today (May 8): Executing cuts/rolls — expect neutral to +2-3% theta capture**
+
+- Theta daily (estimated): $385/day
+- Expected P&L today: -$8K (execution friction) + $385 (theta) = -$7.6K net
+- Month-to-date after May 8: ~$44.7K (lower due to execution, but recover by week 2)
+
+**Monthly target:** $122.7K (on pace IF rolls execute cleanly)
+
+================================================================================
+SECTION 10: FRAMEWORK STATUS
+================================================================================
+
+Daily Conviction Tracking:     ✅ Updated May 8, 6:00 AM
+Earnings Date Monitoring:      ✅ Active (HOOD 5/28, CRM 6/5, NIO 5d away)
+Momentum Trend Tracking:       ✅ COIN/VST downtrend detected
+Multi-Trigger Exit Logic:      ✅ RED/YELLOW/GREEN scan complete
+Greeks Guardrails:            ⚠️  Calls compressed — rolls needed
+Regime Detection:             ✅ CAUTIOUS_BULL confirmed
+Win Rate Tracking:            ✅ Strangles 77% (YTD)
+Kelly Criterion Sizing:       ✅ Portfolio positioned
+Sharpe Ratio (7-day rolling): ✅ Rolling post-execution
+
+================================================================================
+EXECUTION CHECKLIST — May 8
+================================================================================
+
+□ 09:30 ET — BTC SONO CALL $10 (hard stop)
+□ 09:35 ET — BTC COIN PUT $220 (7 DTE critical)
+□ 09:40 ET — BTC COIN PUT $280 (collapsed IVR)
+□ 09:45 ET — BTC INFY PUT $20 (hard stop)
+□ 09:50 ET — BTC INFY CALL $18 + re-plan entry
+□ 10:00 ET — Start NIO/JD/ABNB/LYFT/FMC call rolls
+□ 11:30 ET — Complete all rolls or mark for May 9
+□ 12:00 ET — Update conviction record, assess capital deployment
+□ 14:00 ET — Pause new entries; evaluate COIN/VST recovery thesis
+
+================================================================================
+END OF DAILY REPORT — May 8, 2026 6:00 AM ET
+================================================================================
+Generated: May 8, 2026 06:00 AM ET
+Next Daily Report: May 9, 2026 06:00 AM ET
+Weekly Report: May 12, 2026 08:00 AM ET (Monday)
+Archive: logs/ (daily, weekly, monthly unified reports)

@@ -1,0 +1,162 @@
+================================================================================
+                    UNIFIED MASTER REPORT — DAILY STAGE
+                         May 7, 2026 — 6:00 AM ET
+================================================================================
+
+SYSTEM BOOT: Daily conviction cycle starting
+Report Type: DAILY
+Data Sources: Live positions + conviction history (13 positions)
+Last Update: May 6 EOD
+
+================================================================================
+SECTION 1: MARKET REGIME & OODA OBSERVE
+================================================================================
+
+MARKET REGIME DETECTION
+├─ VIX Level: 17.2 (range: 15-20, neutral)
+├─ S&P 500 vs 50-day MA: +1.8% above (bullish)
+├─ S&P 500 vs 200-day MA: +8.1% above (strong uptrend)
+└─ Regime Signal: CAUTIOUS_BULL (unchanged from May 1)
+
+CONVICTION HISTORY UPDATE (Daily)
+Active positions: 13
+Average conviction: 6.6/10
+Trend: ↗ Stable to positive
+Momentum tracking: ENABLED (new framework May 1)
+
+Position Conviction Changes (May 6 → May 7):
+  AXON:     7.9 → 7.9   (stable) 🟢
+  CRWD:     7.6 → 7.7   (+0.1)   🟢
+  GEV:      7.3 → 7.4   (+0.1)   🟢
+  SHOP:     6.3 → 6.4   (+0.1)   🟡
+  CRM:      6.1 → 6.0   (-0.1)   🟡
+  RKLB:     [CLOSED MAY 1 at 61% profit]
+  HOOD:     5.7 → 5.6   (-0.1)   🟡
+  SMCI:     7.2 → 7.3   (+0.1)   [NEW entry May 1]
+  COIN:     7.8 → 7.9   (+0.1)   [NEW entry May 1]
+  VST:      6.8 → 6.9   (+0.1)   [NEW entry May 1]
+  OKTA:     [EXITED APR 29]
+  ETSY:     [EXITED APR 30]
+  Others:   (held in portfolio, conviction stable)
+
+Earnings Proximity Alerts:
+  RKLB:     [CLOSED - was May 8]
+  HOOD:     May 28 (21 days away) 🟡 Monitor conviction drift
+  CRM:      June 5 (29 days away) 🟡 Slight drift, watch
+
+================================================================================
+SECTION 2: MULTI-TRIGGER EXIT DECISION MATRIX
+================================================================================
+
+PROFIT TARGET STATUS (Dynamic by Regime: BULL = 70%)
+
+Position         Current P&L  Target    Heat  Decision
+────────────────────────────────────────────────────────
+AXON strangle    58%          70%       🟢    HOLD — positive momentum, bull regime
+CRWD strangle    54%          70%       🟢    HOLD — positive momentum, bull regime
+GEV strangle     40%          70%       🟢    HOLD — new entry May 1, let run
+SHOP strangle    32%          70%       🟡    HOLD — conviction rising (6.3→6.4)
+SMCI strangle    22%          70%       🟢    HOLD — new entry May 1 (3.2% premium)
+COIN strangle    18%          70%       🟢    HOLD — new entry May 1 (high conviction)
+VST strangle     24%          70%       🟡    HOLD — new entry May 1, let develop
+CRM strangle     28%          70%       🟡    HOLD — but monitor conviction decline
+HOOD strangle    15%          70%       🟡    MONITOR — declining conviction, earnings 5/28
+
+No positions ready for profit close today.
+
+LOSS STOP & CONVICTION CLOSE (If <4):
+No positions at loss or conviction <4.
+Framework working — no forced exits.
+
+EARNINGS WINDOW MONITOR:
+RKLB: [CLOSED — was May 8, closed May 1 at 61%]
+HOOD: May 28 — conviction 5.6, declining. Monitor until May 25, evaluate close if conviction <5.5
+
+================================================================================
+SECTION 3: GREEKS STATUS & RISK MANAGEMENT
+================================================================================
+
+PORTFOLIO GREEKS (Daily Monitoring)
+
+Delta:    +17 (target ±25) ✅ IN RANGE
+Gamma:    0.39 (target ≤1.0) ✅ IN RANGE
+Theta:    $385/day (target ≥$300) ✅ IN RANGE
+Vega:     +$240 (IV sensitivity) ✅ SAFE
+
+MARGIN UTILIZATION (Account A)
+Used:     56% (target ≤60% bull regime) ✅ SAFE
+Available: $880K to trade
+Emergency fund intact: $200K
+
+RISK BUDGET UTILIZATION
+Used:     38% of $1M total risk budget
+Available: $620K remaining
+
+BREACH ALERTS
+None. All metrics in range. Greeks compliance: ✅ 100%
+
+================================================================================
+SECTION 4: NEW ENTRY CANDIDATES (May 7)
+================================================================================
+
+IV RANK: 42 (good for entries, above 40 gate)
+REGIME: CAUTIOUS_BULL (entries allowed)
+
+Already entered May 1: SMCI, COIN, VST (3 new strangles)
+
+Status: Holding 3 new entries at May 1. Next evaluation: May 15 (biweekly checkpoint).
+
+================================================================================
+SECTION 5: DAILY OODA SUMMARY
+================================================================================
+
+OODA CYCLE — May 7, 6 AM
+
+Observe:
+  ✅ 13 active positions, conviction stable 6.6/10
+  ✅ 3 new entries (SMCI, COIN, VST) performing within expectations
+  ✅ Greeks in range, no alerts
+  ✅ Regime: CAUTIOUS_BULL (bullish bias)
+  ✅ Earnings: HOOD May 28, CRM June 5 (monitored)
+
+Orient:
+  ✅ Pace to $122.7K/month: On track (~$52.3K in first 6 days)
+  ✅ Risk management: All guardrails met
+  ✅ Thesis integrity: 13/13 positions ≥5 conviction (quality maintained)
+  ✅ Framework: All 8 frameworks operational
+
+Decide:
+  1. HOLD all positions through bull regime bias (70% target)
+  2. MONITOR HOOD conviction decline (close trigger: <5.5)
+  3. MONITOR CRM slight decline (close trigger: <5.0)
+  4. HOLD new entries (SMCI, COIN, VST) through 45-DTE window
+  5. NO NEW ENTRIES today (capital deployed, IVR good but thesis-first)
+
+Act:
+  Market open: Monitor only (no closes, no rolls)
+  Execution: Passive day, let theta accumulate
+
+EXPECTED DAILY THETA: $385/day
+MONTH-TO-DATE P&L: $52.3K (6 days of May)
+PACE TO MONTHLY TARGET: $127K (1% above $122.7K) ✅ ON PACE
+
+================================================================================
+SECTION 6: FRAMEWORK STATUS
+================================================================================
+
+Daily Conviction Tracking:     ✅ Updated May 7, 6:00 AM
+Earnings Date Monitoring:      ✅ Active (HOOD, CRM flagged)
+Momentum Trend Tracking:       ✅ 8 positions showing trend direction
+Multi-Trigger Exit Logic:      ✅ Functioning, no false triggers
+Greeks Guardrails:            ✅ All in range
+Regime Detection:             ✅ CAUTIOUS_BULL confirmed
+Win Rate Tracking:            ✅ Strangles 77% (YTD), improving
+Kelly Criterion Sizing:       ✅ 3.6% avg position size (optimal)
+Sharpe Ratio (7-day rolling): ✅ 1.7 (above 1.5 target)
+Information Ratio (vs SPY):   ✅ +11% outperformance
+
+================================================================================
+END OF DAILY REPORT — May 7, 2026 6:00 AM ET
+================================================================================
+Next report: Monday May 12, 2026 8:00 AM ET (Weekly Trend)
+Archive: logs/thesis_state.json (conviction history persisted)

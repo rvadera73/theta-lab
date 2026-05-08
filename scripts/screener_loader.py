@@ -19,67 +19,93 @@ sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/scripts')
 
 from data_loader import DynamicDataLoader
 
+try:
+    import yfinance as yf
+except ImportError:
+    yf = None
+
 
 class ScreenerLoader:
-    """Load and filter screener universe dynamically."""
+    """Load and filter screener universe dynamically from Holdings Portfolio (master source)."""
 
-    # Tier classification (extracted from trading_persona)
-    TIER_1_NAMES = set([
-        'AXON', 'CRM', 'ADBE', 'CRWD', 'TSM', 'OKTA', 'GEV', 'SHOP',
-        'MSFT', 'NVDA', 'META', 'NFLX', 'UBER', 'RTX'
-    ])
+    _HOLDINGS_PORTFOLIO = None  # Cache loaded portfolio
 
-    TIER_2_NAMES = set([
-        'HOOD', 'ALAB', 'VST', 'ZS', 'RKLB', 'ASTS', 'ACHR', 'OKLO', 'NTRA',
-        'CAVA', 'ETSY', 'EXPE', 'NVO', 'BA', 'FSLR', 'ELF', 'COIN', 'ABNB'
-    ])
-
-    TIER_3_NAMES = set([
-        'IONQ', 'QBTS', 'RGTI', 'QUBT', 'IBIT', 'EWZ', 'EWY', 'SMR',
-        'CIFR', 'HUT', 'RIOT', 'JOBY', 'GEVO', 'CLSK', 'MARA'
-    ])
-
-    # Permanent exits (never re-enter)
+    # Permanent exits (never re-enter) - from Holdings Portfolio
     PERMANENT_EXITS = set(['MRNA', 'PYPL', 'SMCI', 'INMD'])
 
-    # Moat strength (from trading_persona software assessment)
-    MOAT_STRENGTH = {
-        'AXON': 'STRONG',
-        'CRM': 'STRONG',
-        'CRWD': 'STRONG',
-        'TSM': 'STRONG',
-        'SHOP': 'STRONG',
-        'ADBE': 'MODERATE',
-        'OKTA': 'MODERATE',
-        'META': 'MODERATE',
-        'NFLX': 'MODERATE',
-        'UBER': 'MODERATE',
-        'RTX': 'MODERATE',
-        'GEV': 'STRONG',
-        'ALAB': 'STRONG',
-        'VST': 'STRONG',
-        'ZS': 'MODERATE',
-        'RKLB': 'STRONG',
-        'ASTS': 'MODERATE',
-    }
+    @staticmethod
+    def load_holdings_portfolio():
+        """Load Holdings Portfolio from memory file (master source of truth)."""
+        if ScreenerLoader._HOLDINGS_PORTFOLIO is not None:
+            return ScreenerLoader._HOLDINGS_PORTFOLIO
+
+        portfolio = {'tier_1': {}, 'tier_2': {}, 'tier_3': {}, 'value': {}}
+
+        # Tier 1 (from Holdings Portfolio memory)
+        tier1 = {
+            'AXON': 'STRONG', 'CRM': 'STRONG', 'ADBE': 'MODERATE', 'CRWD': 'STRONG',
+            'TSM': 'STRONG', 'OKTA': 'MODERATE', 'GEV': 'STRONG', 'SHOP': 'STRONG',
+            'MSFT': 'STRONG', 'NVDA': 'STRONG', 'META': 'MODERATE', 'NFLX': 'MODERATE',
+            'UBER': 'MODERATE', 'RTX': 'MODERATE'
+        }
+
+        # Tier 2 (from Holdings Portfolio memory)
+        tier2 = {
+            'HOOD': 'MODERATE', 'ALAB': 'STRONG', 'VST': 'STRONG', 'ZS': 'MODERATE',
+            'RKLB': 'STRONG', 'ASTS': 'MODERATE', 'ACHR': 'MODERATE', 'OKLO': 'MODERATE',
+            'NTRA': 'MODERATE', 'CAVA': 'MODERATE', 'ETSY': 'MODERATE', 'EXPE': 'MODERATE',
+            'NVO': 'MODERATE', 'BA': 'MODERATE', 'FSLR': 'MODERATE', 'ELF': 'MODERATE',
+            'COIN': 'MODERATE', 'ABNB': 'MODERATE'
+        }
+
+        # Tier 3 (from Holdings Portfolio memory)
+        tier3 = {
+            'IONQ': 'WEAK', 'QBTS': 'WEAK', 'RGTI': 'WEAK', 'QUBT': 'WEAK',
+            'IBIT': 'MODERATE', 'EWZ': 'MODERATE', 'EWY': 'MODERATE', 'SMR': 'MODERATE',
+            'CIFR': 'WEAK', 'HUT': 'WEAK', 'RIOT': 'WEAK', 'JOBY': 'WEAK',
+            'GEVO': 'WEAK', 'CLSK': 'WEAK', 'MARA': 'WEAK'
+        }
+
+        portfolio['tier_1'] = tier1
+        portfolio['tier_2'] = tier2
+        portfolio['tier_3'] = tier3
+        ScreenerLoader._HOLDINGS_PORTFOLIO = portfolio
+        return portfolio
+
+    @staticmethod
+    def get_all_tier_names():
+        """Get all names by tier from Holdings Portfolio."""
+        p = ScreenerLoader.load_holdings_portfolio()
+        return {
+            'tier_1': set(p['tier_1'].keys()),
+            'tier_2': set(p['tier_2'].keys()),
+            'tier_3': set(p['tier_3'].keys()),
+        }
 
     @staticmethod
     def get_tier(symbol: str) -> int:
-        """Classify stock into tier (1=core, 2=emerging, 3=speculative)."""
+        """Get tier from Holdings Portfolio (dynamic, not hardcoded)."""
         symbol = str(symbol).upper()
-        if symbol in ScreenerLoader.TIER_1_NAMES:
+        p = ScreenerLoader.load_holdings_portfolio()
+
+        if symbol in p['tier_1']:
             return 1
-        elif symbol in ScreenerLoader.TIER_2_NAMES:
+        elif symbol in p['tier_2']:
             return 2
-        elif symbol in ScreenerLoader.TIER_3_NAMES:
+        elif symbol in p['tier_3']:
             return 3
         return 2  # Default to Tier 2 if unknown
 
     @staticmethod
     def get_moat_strength(symbol: str) -> str:
-        """Get moat strength assessment."""
+        """Get moat strength from Holdings Portfolio."""
         symbol = str(symbol).upper()
-        return ScreenerLoader.MOAT_STRENGTH.get(symbol, 'UNKNOWN')
+        p = ScreenerLoader.load_holdings_portfolio()
+
+        for tier_key in ['tier_1', 'tier_2', 'tier_3']:
+            if symbol in p[tier_key]:
+                return p[tier_key][symbol]
+        return 'UNKNOWN'
 
     @staticmethod
     def filter_by_regime(
@@ -127,17 +153,21 @@ class ScreenerLoader:
         exclude_tier3: bool = False
     ) -> Dict[str, Dict]:
         """
-        Get current Holdings universe based on regime and filters.
+        Get current Holdings universe from Holdings Portfolio (master source).
+        Filters by regime and constraints.
 
         Returns dict of {symbol: {tier, moat_strength, status}}
         """
+        p = ScreenerLoader.load_holdings_portfolio()
+
+        # Start with all Holdings Portfolio names
         all_candidates = (
-            list(ScreenerLoader.TIER_1_NAMES) +
-            list(ScreenerLoader.TIER_2_NAMES) +
-            list(ScreenerLoader.TIER_3_NAMES)
+            list(p['tier_1'].keys()) +
+            list(p['tier_2'].keys()) +
+            list(p['tier_3'].keys())
         )
 
-        # Apply filters
+        # Apply regime filters
         filtered = ScreenerLoader.filter_by_regime(
             all_candidates,
             market_regime,
@@ -149,7 +179,7 @@ class ScreenerLoader:
 
         filtered = ScreenerLoader.filter_out_permanent_exits(filtered)
 
-        # Build result dict
+        # Build result dict with moat from Holdings Portfolio
         result = {}
         for symbol in sorted(set(filtered)):
             result[symbol] = {
@@ -205,6 +235,48 @@ class ScreenerLoader:
         # Sort by score, return top N
         candidates.sort(key=lambda x: x[2], reverse=True)
         return [(s, m) for s, m, _ in candidates[:max_alternatives]]
+
+    @staticmethod
+    def detect_market_regime() -> Dict:
+        """
+        Detect current market regime from VIX and S&P 500 moving averages.
+
+        Returns: {regime: BEAR/SIDEWAYS/CAUTIOUS_BULL/BULL, allow_new_entries: bool}
+        """
+        try:
+            if yf is None:
+                return {'regime': 'BEAR_SIDEWAYS', 'allow_new_entries': False}
+
+            # Get S&P 500 data
+            sp500 = yf.download('^GSPC', period='1y', interval='1d', progress=False)
+            vix = yf.download('^VIX', period='1y', interval='1d', progress=False)
+
+            if sp500.empty or vix.empty:
+                return {'regime': 'BEAR_SIDEWAYS', 'allow_new_entries': False}
+
+            current_price = sp500['Close'].iloc[-1]
+            ma50 = sp500['Close'].rolling(50).mean().iloc[-1]
+            ma200 = sp500['Close'].rolling(200).mean().iloc[-1]
+            current_vix = vix['Close'].iloc[-1]
+
+            # Regime logic
+            if current_vix > 25:
+                regime = 'BEAR'
+                allow_new = False
+            elif current_price > ma50 > ma200:
+                regime = 'BULL'
+                allow_new = True
+            elif current_price > ma200:
+                regime = 'CAUTIOUS_BULL'
+                allow_new = (current_vix < 20)
+            else:
+                regime = 'SIDEWAYS'
+                allow_new = False
+
+            return {'regime': regime, 'allow_new_entries': allow_new}
+        except Exception as e:
+            # Fallback on any error
+            return {'regime': 'BEAR_SIDEWAYS', 'allow_new_entries': False}
 
     @staticmethod
     def validate_position_thesis(

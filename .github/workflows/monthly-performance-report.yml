@@ -24,31 +24,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas yfinance scipy numpy resend pyyaml
 
-      - name: Generate Monthly Report
+      - name: Generate Unified Master Report (Monthly Stage)
         run: |
-          python -c "
-from scripts.enhanced_monthly_report import generate_enhanced_monthly_report_from_df
-from scripts.data_loader import DynamicDataLoader
-from datetime import date
-
-positions_df, transactions_df = DynamicDataLoader.load_all_data(
-    positions_dir='data/positions',
-    statements_dir='data/statements',
-    use_live_positions=True,
-    calculate_greeks=True
-)
-
-output_file = f'logs/enhanced_monthly_report_{date.today().isoformat()}.txt'
-report = generate_enhanced_monthly_report_from_df(positions_df, transactions_df, output_file)
-print(report)
-          "
+          python scripts/unified_master_report.py
 
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: monthly-report-${{ github.run_id }}
-          path: logs/enhanced_monthly_report_*.txt
+          path: logs/unified_master_report_*.txt
 
       - name: Send HTML email via Resend
         if: always()
@@ -66,7 +51,7 @@ print(report)
           from mcp.routines.email_report import send_email
 
           # Load report
-          report_file = sorted(Path('logs').glob('enhanced_monthly_report_*.txt'))[-1]
+          report_file = sorted(Path('logs').glob('unified_master_report_*.txt'))[-1]
           report_text = report_file.read_text()
 
           # Format as HTML
@@ -74,8 +59,8 @@ print(report)
           <html><head><meta charset="utf-8"></head>
           <body style="font-family:Arial,sans-serif;max-width:900px;margin:0 auto;color:#222;background:#fff;">
             <div style="background:#2c3e50;color:white;padding:20px 24px;border-radius:6px 6px 0 0;">
-              <h1 style="margin:0;font-size:22px;">Monthly Performance Report</h1>
-              <div style="font-size:13px;color:#bbb;margin-top:4px;">Month of {datetime.now().strftime('%B %Y')}</div>
+              <h1 style="margin:0;font-size:22px;">Unified Master Report — Monthly Stage</h1>
+              <div style="font-size:13px;color:#bbb;margin-top:4px;">Month of {datetime.now().strftime('%B %Y')} | Framework Recalibration</div>
             </div>
             <div style="padding:20px 24px;font-family:monospace;font-size:12px;white-space:pre-wrap;line-height:1.4;background:#f9f9f9;border:1px solid #eee;">
           {report_text}

@@ -1,0 +1,119 @@
+name: Investor Executive Summary Report
+
+on:
+  schedule:
+    # Run every Friday at 5 PM ET (21:00 UTC)
+    - cron: '0 21 * * 5'
+
+jobs:
+  investor-summary:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml pandas numpy requests
+
+      - name: Generate Investor Summary Report
+        run: |
+          python3 scripts/investor_summary_report.py
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: investor-summary-report
+          path: logs/investor_summary_*.txt
+
+      - name: Send email via Resend
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          python3 << 'EOF'
+          import requests
+          import json
+          import os
+          import glob
+          from datetime import datetime
+
+          # Find the most recent investor summary file
+          summary_files = glob.glob('logs/investor_summary_*.txt')
+          if not summary_files:
+              print("No investor summary file found")
+              exit(1)
+
+          summary_file = max(summary_files, key=os.path.getctime)
+
+          with open(summary_file, 'r') as f:
+              summary_content = f.read()
+
+          # Format as HTML email with better styling for investor readability
+          email_body = f"""
+          <html>
+            <head>
+              <style>
+                body {{ font-family: 'Arial', sans-serif; line-height: 1.6; color: #333; }}
+                pre {{
+                  font-family: 'Courier New', monospace;
+                  white-space: pre-wrap;
+                  word-wrap: break-word;
+                  background-color: #f5f5f5;
+                  padding: 15px;
+                  border-radius: 5px;
+                  overflow-x: auto;
+                }}
+                h2 {{ color: #1a5f7a; border-bottom: 2px solid #1a5f7a; padding-bottom: 10px; }}
+                .footer {{ font-size: 0.85em; color: #666; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }}
+              </style>
+            </head>
+            <body>
+              <h2>📊 Theta-Lab Investor Executive Summary</h2>
+              <pre>{summary_content}</pre>
+              <div class="footer">
+                <p><strong>Report Details:</strong></p>
+                <ul>
+                  <li>Generated: {datetime.now().strftime('%A, %B %d, %Y at %I:%M %p ET')}</li>
+                  <li>Report Type: Weekly investor summary (2 pages)</li>
+                  <li>Includes: All daily, weekly, bi-weekly, and monthly metrics</li>
+                  <li>Language: Non-technical, investor-friendly</li>
+                  <li>Next Summary: {(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).strftime('%A, %B %d, %Y'))}</li>
+                </ul>
+                <p style="margin-top: 15px;">
+                  <em>This is an automated report. Full detailed technical reports are sent separately.
+                  Questions? Contact directly or review the detailed daily/weekly/monthly reports for specifics.</em>
+                </p>
+              </div>
+            </body>
+          </html>
+          """
+
+          api_key = os.environ.get('RESEND_API_KEY')
+          if not api_key:
+              print("RESEND_API_KEY not found in secrets")
+              exit(1)
+
+          response = requests.post(
+              "https://api.resend.com/emails",
+              headers={
+                  "Authorization": f"Bearer {api_key}",
+                  "Content-Type": "application/json"
+              },
+              json={
+                  "from": "theta-lab@resend.dev",
+                  "to": "ravjdpr@gmail.com",
+                  "subject": f"📊 Weekly Investor Summary — {datetime.now().strftime('%b %d, %Y')}",
+                  "html": email_body
+              }
+          )
+
+          print(f"✅ Investor summary email sent: {response.status_code}")
+          if response.status_code not in [200, 201]:
+              print(f"Error: {response.text}")
+          EOF

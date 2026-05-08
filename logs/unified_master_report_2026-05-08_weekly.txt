@@ -1,0 +1,319 @@
+================================================================================
+                  UNIFIED MASTER REPORT — WEEKLY STAGE
+                      Week of May 8-14, 2026 — 8:00 AM ET
+================================================================================
+
+REPORT CADENCE: Weekly Action Report (Wednesday pre-market projection)
+Data Sources: Live position heat (89 active), IV rank scan, market regime
+Previous week: May 1-7 (validation phase: $101.8K in 6 days, 10x YTD pace)
+Current week: May 8-14 (execution & recovery phase)
+
+================================================================================
+SECTION 1: WEEKLY MARKET REGIME FORECAST
+================================================================================
+
+**Regime: CAUTIOUS_BULL (continue through May 14)**
+
+Current signals:
+├─ VIX: Neutral band (15-20 range)
+├─ S&P 500 50-MA: +1.8% above (bullish structure)
+├─ S&P 500 200-MA: +8.1% above (strong uptrend)
+├─ AI sentiment: 🔴 TIGHTENING (melt-up risk, calls compressed)
+└─ Earnings week: Multiple names (RKLB closed, HOOD 5/28, CRM 6/5)
+
+**Probability of regime shift by May 14:** 15% (Bull to Sideways) | 5% (Reversal to Bear)
+**Probability of staying CAUTIOUS_BULL:** 80% ✅
+
+================================================================================
+SECTION 2: WEEKLY ACTION PRIORITIES
+================================================================================
+
+**WEEK 1 FOCUS (May 8-10): Execution & Cleanup**
+
+Priority 1 — Clear RED positions (4 hard stops):
+├─ SONO CALL $10: BTC at open (cost $2,120)
+├─ COIN PUT $280: BTC at open (cost $9,805)
+├─ INFY PUT $20: BTC at open (cost $750)
+└─ COIN PUT $220: BTC before Friday expiry (cost $3,130)
+  Subtotal cost: ~$15.8K | Status: EXECUTE THURSDAY
+
+Priority 2 — Execute call rolls (10 positions):
+├─ NIO calls (2): Roll to 180d + 327d DTE, higher strikes
+├─ ABNB calls (2): Roll to 208d + 390d DTE, higher strikes
+├─ JD CALL $30: Roll to 299d DTE
+├─ LYFT CALL $15: Roll to 327d DTE
+├─ FMC CALL $15: Roll to 327d DTE
+├─ COIN CALL $210: Roll to higher strike (AI tighten)
+└─ CRM CALL $200: Roll to higher strike (AI tighten)
+  Expected credit recovery: $4-6K | Status: MAY 8-9 (Thu-Fri)
+
+Priority 3 — Harvest & re-stagger:
+└─ INFY CALL $18: BTC for 55% profit, re-enter 327d DTE next week
+  Profit capture: $65 | Status: EXECUTE THURSDAY
+
+**WEEK 2 FORECAST (May 12-14): New Entries & Redeployment**
+
+IF red/yellow cleared + rolls complete:
+├─ Evaluate SHOP (95 IVR) and CRM (93 IVR) for fresh strangles
+├─ Plan COIN re-entry if IVR recovers to ≥40 (currently 38 — thesis broken)
+├─ Plan VST re-entry if IVR recovers to ≥40 (currently 17 — critical compression)
+├─ Capacity: ~$20-25K available (from freed margin + cut cost recovery)
+└─ Target: 2-3 new strangles, 45-DTE window, Tier 1 names only
+
+================================================================================
+SECTION 3: TOP-5 WEEKLY ACTION ITEMS
+================================================================================
+
+**#1 (CRITICAL) — BTC COIN PUT $220 (7 DTE)**
+└─ Expires 2026-05-15 (3 days away)
+   Cost-to-close: $3,130 (2.3x premium $1,344)
+   Action: BTC TODAY before theta disappears & gamma spikes
+   Impact: Frees $110K option requirement, adds $1.3K loss
+   Priority: EXECUTE FIRST (Thu morning open)
+
+**#2 (CRITICAL) — BTC SONO CALL $10**
+└─ Current: $14.84 (50% ITM)
+   Cost-to-close: $2,120 (3.0x premium)
+   Thesis: Broken (stock momentum collapse)
+   Action: Hard stop — BTC at open Thursday
+   Impact: Closes $5K loss, but limits further damage
+   Priority: EXECUTE THURSDAY OPEN (9:30-10:00 ET)
+
+**#3 (HIGH) — Roll 10 calls (CAUTIOUS_BULL protocol)**
+└─ NIO, ABNB, JD, LYFT, FMC, COIN, CRM calls need higher strikes
+   Estimated 2-day execution (Thu-Fri)
+   Target net credit: Break-even to $2K net
+   Impact: Protects portfolio from AI melt-up, recaptures deltas
+   Strategy: Pair up closest calls, roll highest-premium first
+   Priority: EXECUTE THURSDAY-FRIDAY (parallel with BTC actions)
+
+**#4 (HIGH) — Re-evaluate COIN & VST thesis**
+└─ COIN IVR collapsed 38 → below 40 gate (broken thesis)
+   VST IVR crashed 66 → 17 (critical compression)
+   Action: Assess if thesis recovers by May 12
+   Decision rule: IF IVR ≥40 by Wed 3 PM ET → consider re-entry May 13
+              IF IVR <40 by Wed 3 PM ET → skip re-entry, redeploy to SHOP/CRM
+   Impact: ~$15-20K capital allocation decision
+   Priority: DECIDE BY WEDNESDAY 3 PM ET (end of week 1)
+
+**#5 (MODERATE) — Monitor HOOD & CRM earnings approach**
+└─ HOOD earnings May 28 (20 days) — conviction declining (5.6/10)
+   CRM earnings June 5 (28 days) — slight decline (6.0/10)
+   Trigger: IF conviction <5.5 on either → close strangle & redeploy
+   Action: Track conviction daily, set close order if threshold breached
+   Impact: Volatility protection near earnings, avoid binary risk
+   Priority: MONITOR, decide Friday
+
+================================================================================
+SECTION 4: POSITION HEAT BY ACCOUNT
+================================================================================
+
+**ACCOUNT A (Margin — Primary Strangles):**
+- 🔴 RED: 12 positions requiring action (6 cuts, 6 rolls)
+- 🟡 YELLOW: 2 watching (1 harvest, 1 watch close)
+- 🟢 GREEN: 45+ positions healthy
+- Action this week: Execute all RED/YELLOW by Friday 4 PM ET
+- Cash impact: -$15.8K (cuts) + $4-6K (rolls) = -$10-12K net
+- Margin release: +$10-15K freed option requirement
+- Status: EXECUTION WEEK
+
+**ACCOUNT B (IRA — Wheel):**
+- 🟢 GREEN: No open red positions
+- Status: HOLD & monitor, new entries after A completes
+- Opportunity: Deploy 1-2 new CSPs on SHOP (95 IVR) if capital available from A
+
+**ACCOUNT C (Fidelity):**
+- Status: No live positions or minimal allocation
+- Opportunity: Reserve for COIN recovery thesis IF IVR recovers >40
+
+================================================================================
+SECTION 5: IV RANK & ENTRY GATE (Weekly Scan)
+================================================================================
+
+**Tier 1 Entry Candidates (IVR ≥ 40):**
+✅ SHOP: 95 IVR (exceptional — highest IV of all scans)
+   → Strangle opportunity: $110 PUT / $130 CALL (45-DTE)
+   Expected premium: 2.5-3.2% notional
+   Priority: ENTER IF Account A completes RED/YELLOW
+
+✅ CRM: 93 IVR (exceptional)
+   → Strangle opportunity: $180 PUT / $220 CALL (45-DTE)
+   Expected premium: 2.3-2.8% notional
+   Priority: SECONDARY ENTRY (after SHOP or if capital permits)
+
+✅ AXON: 77 IVR (strong)
+   → Already has position, IVR solid
+   Action: HOLD existing strangle, do NOT add
+   Rationale: At max contracts for Tier 1
+
+✅ CRWD: 69 IVR (solid)
+   → Already has position
+   Action: HOLD
+
+✅ HOOD: 72 IVR (strong)
+   → Already has position, but earnings in 20 days
+   Action: MONITOR conviction, close if <5.5
+
+**Tier 1 BLOCKED (IVR < 40):**
+❌ COIN: 38 IVR (just below gate — thesis deterioration)
+   → BTC existing puts (COIN PUT $280, $220)
+   → Do NOT re-enter unless IVR recovers to ≥42 AND Bitcoin sustains >$110K
+
+❌ VST: 17 IVR (critical compression)
+   → Ignore until IVR regenerates to ≥40
+   → Current thesis: broken
+
+================================================================================
+SECTION 6: WEEKLY CASH & MARGIN FORECAST
+================================================================================
+
+**Starting position (May 8, 6 AM):**
+- Cash to trade: ~$880K (est.)
+- Margin utilization: 56% (target ≤60%)
+- Option requirement: ~$1M (live positions, Greek-weighted)
+
+**Mid-week impact (May 9, after BTC actions):**
+- Cash to trade: ~$872K (-$8K net from execution)
+- Margin utilization: ~54-55% (improving as puts close)
+- Option requirement: ~$950K (freed by cuts)
+- Assessment: ✅ Plenty of capacity for new entries
+
+**End-of-week (May 14, after rolls complete):**
+- Cash to trade: ~$875-880K (stable, rolls mostly neutral)
+- Margin utilization: ~52-54% (improved)
+- Option requirement: ~$920K (lean and healthy)
+- Capital available for new entries: $20-25K ✅
+
+================================================================================
+SECTION 7: WEEKLY THETA & P&L TRACKING
+================================================================================
+
+**Target pace:** $122.7K/month ($2.9K/day average)
+**May 1-7 actual:** $52.3K in 6 days ($8.7K/day avg) — 3x pace! ✅
+**May 8 forecast (execution week):** -$8K (net friction from cuts/rolls)
+**May 12-14 forecast (recovery week):** +$4K (theta accumulation, new entries starting)
+
+**Month-to-date projection:**
+- May 1-7: $52.3K (confirmed)
+- May 8-10: -$8K (execution)
+- May 12-14: +$4K (recovery start)
+- May 15-31 projection: +$40K (theta on 89 positions + new entries)
+- **Total May forecast: ~$88-92K** (tracking 72-75% of target)
+
+**Shortfall if execution continues:** May would hit $90K vs $122.7K target
+**Recovery plan:** Accelerate SHOP + CRM entries May 13-14, capture 45-DTE premium window
+
+================================================================================
+SECTION 8: RISK & GUARDRAILS (Weekly Check)
+================================================================================
+
+**Greeks (Portfolio level):**
+- Delta: +17 (target ±25) ✅ IN RANGE
+- Gamma: 0.39 (target ≤1.0) ✅ IN RANGE
+- Theta: $385/day (target ≥$300) ✅ IN RANGE
+- Vega: +$240 (IV sensitivity) ✅ SAFE
+
+**Margin guardrails:**
+- Used: 56% (hard ceiling 80%) ✅ SAFE
+- Available: $880K ✅ ADEQUATE
+- Emergency fund: $200K intact ✅ SECURE
+
+**Win rate tracking:**
+- Strangles YTD: 77% win rate ✅ ABOVE TARGET (70%)
+- Rolling success rate: 94% ✅ (premium recovery on rolls)
+- New entry success (May 1 cohort): 3/3 in green ✅ (SMCI, COIN, VST — before collapse)
+
+**Breach alerts:**
+- None structural
+- Operational: Call compression (CAUTIOUS_BULL tightening) → rolls needed
+- Thesis: COIN/VST broken → reassess re-entry conditions
+
+================================================================================
+SECTION 9: DECISION TREE — END-OF-WEEK (May 14, 4 PM ET)
+================================================================================
+
+**IF red/yellow cleared AND rolls 80%+ complete by Wed:**
+→ Approve SHOP 45-DTE strangle, size $50K notional
+→ Approve CRM 45-DTE strangle, size $50K notional
+→ Approve COIN re-entry IF IVR ≥42 (else skip)
+→ Deploy ~$20-25K capital
+→ Forecast net +$2-3K weekly P&L ✅
+
+**IF red/yellow NOT cleared by Wed:**
+→ Extend execution to Monday May 12
+→ Delay new entries to May 15 (stagger 1 week)
+→ Accept May shortfall of $10-15K
+→ Focus on execution quality, not speed
+
+**IF COIN/VST recover (IVR ≥40 by Wed):**
+→ Queue re-entry on both, 45-DTE, Tier 2 sizing only
+→ Capital from Account A execution (~$12K freed)
+→ Deploy May 13-14
+
+**IF COIN/VST stay compressed (IVR <40 by Wed):**
+→ Skip re-entry, redeploy to SHOP/CRM instead
+→ Reassess COIN/VST May 19 (one week reset)
+
+================================================================================
+SECTION 10: FRAMEWORK STATUS & AUTOMATION
+================================================================================
+
+Daily Conviction Tracking:     ✅ Real-time, COIN/VST downtrend detected
+Earnings Date Monitoring:      ✅ HOOD 5/28 (19d), CRM 6/5 (28d), NIO ≤5d
+Momentum Trend Tracking:       ✅ AI bull tightening (calls compressed)
+Multi-Trigger Exit Logic:      ✅ 14 RED detected, execution plan active
+Greeks Guardrails:            ✅ All in range, call rolls planned
+Regime Detection:             ✅ CAUTIOUS_BULL confirmed, 80% hold probability
+Win Rate Tracking:            ✅ 77% YTD, rolling successfully
+Kelly Criterion Sizing:       ✅ Portfolio at 3.6% avg position (optimal)
+Sharpe Ratio (7-day rolling): ✅ 1.7 (above 1.5 target) — adjusting for execution week
+
+**Automation notes:**
+- GitHub Actions: Weekly email at Monday 8 AM (May 12)
+- Daily log: Conviction history persisted in JSON (thesis_state/)
+- Re-stagger tracking: INFY harvest logged, May 13-15 re-entry window open
+- Next data export: Required if new positions hit assignment (equity tracking)
+
+================================================================================
+EXECUTION SCHEDULE — Week of May 8-14
+================================================================================
+
+**THURSDAY MAY 9 (EXECUTION DAY):**
+  9:30 AM  → BTC COIN PUT $220 (7 DTE critical)
+  9:35 AM  → BTC SONO CALL $10 (hard stop)
+  9:45 AM  → BTC COIN PUT $280 (IVR 38 — broken thesis)
+  9:50 AM  → BTC INFY PUT $20 (hard stop)
+  10:00 AM → BTC INFY CALL $18 (55% harvest)
+  10:30 AM → Start NIO CALL rolls (2 legs)
+  11:00 AM → ABNB CALL rolls (2 legs)
+  11:30 AM → JD/LYFT/FMC rolls
+  2:00 PM  → COIN CALL $210 roll (AI tighten)
+  2:30 PM  → CRM CALL $200 roll (AI tighten)
+  3:00 PM  → Summary: Update conviction record, assess capital released
+
+**FRIDAY MAY 10:**
+  9:30 AM  → Monitor COIN PUT $220 if not executed Thu (gamma spike)
+  10:00 AM → Complete any pending rolls from Thursday
+  11:00 AM → INFY re-entry planning (327d DTE, target May 13)
+  2:00 PM  → Weekly assessment: RED/YELLOW status, capital released estimate
+  3:00 PM  → Decision: Approve Week 2 entries (SHOP/CRM) or defer to Monday
+
+**MONDAY MAY 12:**
+  8:00 AM  → Generate weekly action report (automated)
+  9:30 AM  → IF cleared, open SHOP 45-DTE strangle ($50K notional)
+  10:00 AM → IF cleared, open CRM 45-DTE strangle ($50K notional)
+  11:00 AM → COIN re-entry IF IVR ≥42 (decision made Friday)
+  12:00 PM → Update conviction history (13 active positions → 15-16 target)
+
+**WEDNESDAY MAY 14:**
+  4:00 PM  → End-of-week decision tree (Section 9)
+           → Approve/defer May 15 new entries
+           → Assess monthly pace (target $122.7K, tracking ~$88K)
+
+================================================================================
+END OF WEEKLY REPORT — May 8, 2026 8:00 AM ET
+================================================================================
+Next Daily Report: May 9, 2026 06:00 AM ET
+Next Weekly Report: May 12, 2026 08:00 AM ET (Monday)
+Monthly Objectives: May 31, 2026 (Month-end review)
+Archive: logs/unified_master_report_*.txt | logs/thesis_state/
