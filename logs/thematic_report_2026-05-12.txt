@@ -1,0 +1,344 @@
+============================================================================================================================================
+THEMATIC ANALYSIS REPORT — Market-Driven Investment Narratives
+Date: Tuesday, May 12, 2026
+============================================================================================================================================
+
+OVERVIEW: Themes Driving Market in May 2026
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+Theme                                     Positions        Notional   Avg Conv            IV Regime                                    Trend
+--------------------------------------------------------------------------------------------------------------------------------------------
+AI Infrastructure Capex Cycle                     5 $     1,487,176        5.2/10   ELEVATED (26-52% g                                WEAKENING
+Hyperscaler Cloud CapEx Deployment                9 $     1,518,465        5.3/10   MODERATE (lower th                                WEAKENING
+Defense & Aerospace Cyclical Recovery             6 $     1,816,482        6.5/10   LOW (stable, predi                                   STABLE
+Quantum Computing Tipping Point                   4 $       220,218        6.6/10   VERY HIGH (early s                                   STABLE
+GLP-1 Market Expansion                            5 $       498,066        6.1/10   ELEVATED (binary c                                   STABLE
+Consumer Discretionary Headwinds                  8 $       329,175        6.6/10   ELEVATED (earnings                                   STABLE
+Energy Sector Structural Headwinds                3 $        74,262        4.5/10   MODERATE (commodit                                WEAKENING
+Memory Chip Cycle Reset                           1 $       734,800        4.5/10   HIGH (cycle revers                                WEAKENING
+
+
+============================================================================================================================================
+DETAILED THEMATIC BREAKDOWN
+============================================================================================================================================
+
+
+███ AI INFRASTRUCTURE CAPEX CYCLE
+├─ Positions held: 5 | Notional: $1,487,176
+├─ Avg conviction: 5.2/10
+├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
+├─ IV Regime: ELEVATED (26-52% growth expectations)
+
+   MACRO NARRATIVE:
+   Semiconductor & memory demand driven by hyperscaler AI CapEx ($700B planned spend in 2026)
+   Driver: AI CapEx cycle peak, risk of creative destruction in 2H 2026
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 0 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 3 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 2 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🔴 MU         $     734,800 | Conv   4.5/10
+   ├─ 🟡 ASML       $     448,107 | Conv   5.5/10
+   ├─ 🟡 TSM        $     235,476 | Conv   3.5/10
+   ├─ 🔴 NVDA       $      65,577 | Conv   5.0/10
+   ├─ 🟡 SMCI       $       3,216 | Conv   7.5/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. TSMC earnings (capacity/demand signals)
+   2. Nvidia earnings & guidance (AI chip demand)
+   3. ASML earnings & backlog visibility
+   4. Memory pricing trends (HBM/DDR)
+   5. Hyperscaler capex announcements (MSFT, GOOG, AMZN earnings)
+
+   HEDGE FUND POSITIONING:
+   Long best-of-breed (NVDA, ASML), short laggards (MU)
+
+
+███ HYPERSCALER CLOUD CAPEX DEPLOYMENT
+├─ Positions held: 9 | Notional: $1,518,465
+├─ Avg conviction: 5.33/10
+├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
+├─ IV Regime: MODERATE (lower than semiconductors, steadier)
+
+   MACRO NARRATIVE:
+   Cloud infrastructure build-out, AI software/security beneficiaries
+   Driver: $700B tech capex cycle supporting cloud growth, AI adoption tailwind
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 3 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 3 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 3 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🟢 META       $     359,892 | Conv   6.5/10
+   ├─ 🟡 AMZN       $     264,030 | Conv   4.0/10
+   ├─ 🔴 CRWD       $     219,354 | Conv   4.5/10
+   ├─ 🟢 CRM        $     172,490 | Conv   6.0/10
+   ├─ 🟡 OKTA       $     156,510 | Conv   8.0/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. MSFT earnings & Azure guidance
+   2. Google Cloud growth rate acceleration
+   3. Meta capex commentary (AI/data center)
+   4. Security software earnings (CRWD, PANW, CRM)
+   5. Network infrastructure demand (ANET)
+
+   HEDGE FUND POSITIONING:
+   Long cloud infrastructure & security, short laggards
+
+
+███ DEFENSE & AEROSPACE CYCLICAL RECOVERY
+├─ Positions held: 6 | Notional: $1,816,482
+├─ Avg conviction: 6.5/10
+├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
+├─ IV Regime: LOW (stable, predictable, defensive)
+
+   MACRO NARRATIVE:
+   1,400 aircraft deliveries in 2026, agentic AI in decision-making, supply normalization
+   Driver: Multi-year defense budget growth, AI modernization, supply normalization
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 3 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 3 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 0 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🟡 AXON       $     556,500 | Conv   8.0/10
+   ├─ 🟢 LMT        $     362,873 | Conv   7.0/10
+   ├─ 🟢 NOC        $     332,382 | Conv   6.5/10
+   ├─ 🟡 GEV        $     317,069 | Conv   4.0/10
+   ├─ 🟡 BA         $     140,472 | Conv   6.5/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. BA/RTX/LMT earnings & production rates
+   2. Defense budget appropriations & authorizations
+   3. Geopolitical events (Ukraine, Taiwan, Middle East)
+   4. AI/agentic software deployment announcements
+   5. Supply chain recovery milestones
+
+   HEDGE FUND POSITIONING:
+   Long as core holding, low churn, yield generation
+
+
+███ QUANTUM COMPUTING TIPPING POINT
+├─ Positions held: 4 | Notional: $220,218
+├─ Avg conviction: 6.62/10
+├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
+├─ IV Regime: VERY HIGH (early stage, speculative, binary outcomes)
+
+   MACRO NARRATIVE:
+   300+ companies adopting, drug discovery game-changer, grid optimization emerging
+   Driver: Early commercial tipping point ($12.6B VC funding 2025), narrative-driven
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 3 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 0 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 1 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🟢 IBM        $      88,098 | Conv   8.0/10
+   ├─ 🔴 GOOG       $      76,306 | Conv   5.0/10
+   ├─ 🟢 IONQ       $      53,640 | Conv   6.5/10
+   ├─ 🟢 QBTS       $       2,175 | Conv   7.0/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Quantum chip error rates & performance announcements
+   2. Commercial partnerships (pharma, energy)
+   3. Drug discovery success stories from quantum simulations
+   4. Grid optimization use case proofs
+   5. Regulatory clarity on quantum research
+
+   HEDGE FUND POSITIONING:
+   Speculative core, theta collection on high IV, narrative trades
+
+
+███ GLP-1 MARKET EXPANSION
+├─ Positions held: 5 | Notional: $498,066
+├─ Avg conviction: 6.1/10
+├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
+├─ IV Regime: ELEVATED (binary catalyst-driven, earnings volatility)
+
+   MACRO NARRATIVE:
+   $190B market by 2035, oral therapies expanding, 30% of population potential
+   Driver: Structural demand expansion, 30% of obese/diabetic pop by 2035
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 1 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 2 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 2 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🔴 UNH        $     236,560 | Conv   5.0/10
+   ├─ 🟡 LLY        $     198,873 | Conv   6.5/10
+   ├─ 🔴 NVO        $      37,340 | Conv   7.0/10
+   ├─ 🟡 MRK        $      22,688 | Conv   7.0/10
+   ├─ 🟢 PFE        $       2,605 | Conv   5.0/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Eli Lilly oral GLP-1 approval (end 2026)
+   2. Novo oral approval & uptake data
+   3. Medicare expansion announcements
+   4. Obesity drug penetration data (prescriptions/week)
+   5. Payer/insurance coverage decisions
+
+   HEDGE FUND POSITIONING:
+   Long winners (LLY), short decliners (traditional pharma), event-driven
+
+
+███ CONSUMER DISCRETIONARY HEADWINDS
+├─ Positions held: 8 | Notional: $329,175
+├─ Avg conviction: 6.62/10
+├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
+├─ IV Regime: ELEVATED (earnings uncertainty, economic sensitivity)
+
+   MACRO NARRATIVE:
+   Softer revenue, tariff/inflation exposure, economic sensitivity, confidence declining
+   Driver: Economic slowdown risk, consumer trade-down, tariff headwinds
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 7 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 1 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 0 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🟢 ULTA       $     101,016 | Conv   6.5/10
+   ├─ 🟢 NKE        $      76,284 | Conv  10.0/10
+   ├─ 🟢 DIS        $      63,330 | Conv   7.5/10
+   ├─ 🟢 ETSY       $      22,902 | Conv   4.5/10
+   ├─ 🟢 ELF        $      22,012 | Conv   7.5/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Retail earnings & guidance (holiday season, traffic trends)
+   2. Consumer confidence indices (PMI, unemployment)
+   3. Tariff implementation & margin impact
+   4. Discount/value migration (luxury weakening)
+   5. Same-store sales trends by category
+
+   HEDGE FUND POSITIONING:
+   Short or selective long, premium collection on weakness, sector rotation play
+
+
+███ ENERGY SECTOR STRUCTURAL HEADWINDS
+├─ Positions held: 3 | Notional: $74,262
+├─ Avg conviction: 4.5/10
+├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
+├─ IV Regime: MODERATE (commodity-driven, not earnings-driven)
+
+   MACRO NARRATIVE:
+   Demand destruction narrative, geopolitical support vs energy transition pressure
+   Driver: Long-term demand destruction vs short-term supply geopolitics
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 1 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 2 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 0 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🟡 CCJ        $      34,737 | Conv   4.0/10
+   ├─ 🟢 XOM        $      30,154 | Conv   5.0/10
+   ├─ 🟡 DVN        $       9,371 | Conv   4.5/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Oil/gas demand trends (IEA reports, refinery utilization)
+   2. Geopolitical events (OPEC decisions, Middle East, Russia)
+   3. Nuclear energy demand (grid reliability, AI data center power)
+   4. Energy transition policy shifts
+   5. Earnings (cash flow to shareholders vs capex)
+
+   HEDGE FUND POSITIONING:
+   Cautious, thesis-dependent, not core secular bet
+
+
+███ MEMORY CHIP CYCLE RESET
+├─ Positions held: 1 | Notional: $734,800
+├─ Avg conviction: 4.5/10
+├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
+├─ IV Regime: HIGH (cycle reversal binary, earnings miss risk)
+
+   MACRO NARRATIVE:
+   Post-capex glut, pricing pressure on DRAM, HBM demand supports recovery
+   Driver: Cyclical trough, HBM recovery possible, but near-term pressure
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 0 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 0 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 1 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🔴 MU         $     734,800 | Conv   4.5/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Micron earnings & gross margin guidance
+   2. DRAM/NAND pricing trends (weekly spot market)
+   3. HBM demand from AI infrastructure
+   4. Capex spending guidance (capex cycle trough)
+   5. Competitor announcements (Samsung, SK Hynix supply cuts)
+
+   HEDGE FUND POSITIONING:
+   Short-term caution, look for capitulation bottom, then rotate long
+
+============================================================================================================================================
+
+============================================================================================================================================
+OPTIONS PLAYBOOK BY THEME — Where to Sell Premium, Where to Avoid
+============================================================================================================================================
+
+
+AI INFRASTRUCTURE CAPEX CYCLE
+├─ Sell Premium: YES — Elevated IV (26-52% growth). Sell calls 0.20 delta above recent highs (NVDA, ASML, TSM). Sell puts 0.15 delta on dips (good entry levels).
+├─ Avoid: Do NOT buy puts (no downside protection, premium expensive). Do NOT buy calls (upside capped by valuation). Risk of creative destruction in H2 2026.
+├─ Roll Strategy: Close calls at 50% profit (IV compression risk as capex matures). Hold puts to 70% (thesis intact, allow time decay).
+└─ Concentration Warning: CRITICAL: 7+ positions concentrated in semiconductors. Max 5 contracts per name. Monitor correlations — all move together in CapEx cycle.
+
+
+HYPERSCALER CLOUD CAPEX DEPLOYMENT
+├─ Sell Premium: YES — Moderate IV, steadier than semis. Sell calls 0.25 delta (lower delta, capture more premium as rallies continue). Sell puts 0.15 delta in weakness.
+├─ Avoid: Cloud growth is secular. Don't short. Avoid puts in downturns (thesis intact through cycles).
+├─ Roll Strategy: Roll calls up on 50% profit (ride the trend). Roll puts out on 40% profit (capture extended DTE premium).
+└─ Concentration Warning: Moderate: 9 positions spread across cloud + security. No single name >10% of notional.
+
+
+DEFENSE & AEROSPACE CYCLICAL RECOVERY
+├─ Sell Premium: YES — Low IV = low premium, but predictable. Sell calls 0.30 delta (take wider OTM strikes, capture more theta). Sell puts 0.20 delta (lower strikes, support theses).
+├─ Avoid: Do NOT avoid. Core holding. Geopolitical shocks can spike IV unexpectedly (use for premium collection). Accept assignment (hold as dividend stock).
+├─ Roll Strategy: Wheel strategy: Accept put assignment, sell covered calls at delta 0.25-0.30. Hold for 2-3 years (dividend + appreciation).
+└─ Concentration Warning: Healthy: 6 positions, no single name >30% of theme. Highly correlated (all benefit from defense budget) — diversification within theme.
+
+
+QUANTUM COMPUTING TIPPING POINT
+├─ Sell Premium: YES — VERY HIGH IV = collect substantial premium. IONQ, QBTS: sell calls/puts 0.15 delta (far OTM, binary outcomes). Stagger across multiple expiries.
+├─ Avoid: Do NOT buy calls (speculative, theta works against you). Do NOT hold puts (assignment risk with limited volume). Avoid defined-risk spreads (IV crush on both sides).
+├─ Roll Strategy: Close calls at 60-70% profit (IV will compress on narrative maturation). Roll puts out aggressively (binary events can move them ITM fast). Exit before earnings.
+└─ Concentration Warning: Speculative: 2 core positions (IONQ, QBTS). Max 1 contract each. HIGH volatility risk — don't add to theme positions without conviction catalyst.
+
+
+GLP-1 MARKET EXPANSION
+├─ Sell Premium: YES — Elevated IV from binary catalysts (FDA approvals, penetration data). LLY: sell calls 0.25 delta (rising trend, stay bullish). Sell puts 0.15 delta on dips.
+├─ Avoid: Avoid puts on traditional pharma (losers in this narrative) — assignment risk, dividend cut concerns. Avoid naked shorting winners (unlimited risk).
+├─ Roll Strategy: LLY calls: close at 60% profit or roll up on earnings beats. Puts: hold to 70% (thesis tailwind). Monitor oral GLP-1 approval catalyst (end 2026).
+└─ Concentration Warning: Moderate: LLY concentrated winner. Risk asymmetry if oral approval delayed or competitive. Hedge with shorts on value pharma.
+
+
+CONSUMER DISCRETIONARY HEADWINDS
+├─ Sell Premium: YES — Elevated IV from economic uncertainty. NKE, ULTA, ELF: sell calls 0.30 delta (expect sideways/down, collect premium). Sell puts 0.15 delta (set catch prices).
+├─ Avoid: Avoid buying calls (no upside conviction). Avoid buying puts (theta decay, economic cycles long). Avoid holding through earnings (binary moves).
+├─ Roll Strategy: Calls: close at 50% profit (premium valuable in weakness). Puts: roll down on bounces (lower entry prices). Manage for earnings (close 2 weeks before).
+└─ Concentration Warning: HIGH: 8 positions, many highly correlated to consumer confidence. Monitor macro (unemployment, PMI). Reduce if recession signals spike.
+
+
+ENERGY SECTOR STRUCTURAL HEADWINDS
+├─ Sell Premium: CAUTIOUS — Low conviction thesis, IV moderate. Only sell calls on strong bounces (geopolitical spikes). Avoid new puts (thesis fuzzy).
+├─ Avoid: Do NOT add to positions without catalyst clarity. Avoid long-dated puts (thesis change risk). Avoid assignment (no conviction to hold stock).
+├─ Roll Strategy: Calls: close on geopolitical spikes. Avoid rolling puts (instead, close and redeploy to higher-conviction themes).
+└─ Concentration Warning: LOW conviction theme: 4 positions, 1% notional. Consider exiting if thesis doesn't clarify by Q3 2026.
+
+
+MEMORY CHIP CYCLE RESET
+├─ Sell Premium: YES — HIGH IV from cycle reversal binary. MU: sell calls 0.20 delta (earnings volatility high). Sell puts 0.10 delta (far OTM, capitulation play).
+├─ Avoid: Avoid holding through earnings (binary outcomes). Avoid long calls (downside risk greater than upside in near term). Avoid puts near support levels.
+├─ Roll Strategy: Calls: close at 40% profit (IV likely to compress in cyclical trough). Puts: hold to capitulation (watch for cycle reversal signals, then buy back early).
+└─ Concentration Warning: Single name (MU) with HIGH volatility. Max 2 contracts. Monitor pricing trends (spot DRAM/NAND weekly). Watch for capex trough signal.
+
+============================================================================================================================================
