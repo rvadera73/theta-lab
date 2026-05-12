@@ -25,7 +25,13 @@ jobs:
           pip install pandas yfinance scipy numpy resend pyyaml
 
       - name: Run Unified Reports Scheduler
-        run: python3 mcp/routines/unified_reports_scheduler.py
+        run: |
+          echo "Working directory: $(pwd)"
+          echo "Python version: $(python3 --version)"
+          echo "Files in mcp/routines/:"
+          ls -la mcp/routines/
+          echo "---"
+          python3 mcp/routines/unified_reports_scheduler.py
 
       - name: Send Reports via Resend (if generated)
         if: always()
