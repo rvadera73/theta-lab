@@ -38,6 +38,10 @@ jobs:
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
+          echo "Checking for generated reports..."
+          ls -lh logs/unified_master_report_*.txt 2>/dev/null || echo "No report files found"
+          echo "RESEND_API_KEY set: $([ -z '${{ secrets.RESEND_API_KEY }}' ] && echo 'NO' || echo 'YES')"
+          echo "---"
           python3 << 'EOF'
           import os
           import sys
@@ -48,6 +52,10 @@ jobs:
           # Find reports generated today
           today = date.today().isoformat()
           report_dir = Path('logs')
+
+          print(f"Looking for reports in: {report_dir.absolute()}")
+          print(f"Today's date: {today}")
+          print(f"Files in logs/: {list(report_dir.glob('unified_master_report_*.txt'))[:5]}")
 
           report_types = ['daily', 'weekly', 'biweekly', 'monthly']
           generated_reports = {}
