@@ -102,12 +102,12 @@ jobs:
                   }}
                   icon = subject_icons.get(report_type, '📊')
 
-                  response = resend.Emails.send({{
-                      "from": "noreply@resend.dev",
-                      "to": "ravjdpr@gmail.com",
-                      "subject": f"{icon} {report_type.upper()} — Unified Master Report ({today})",
-                      "html": html_body,
-                  }})
+                  response = resend.Emails.send(
+                      from_="noreply@resend.dev",
+                      to="ravjdpr@gmail.com",
+                      subject=f"{icon} {report_type.upper()} — Unified Master Report ({today})",
+                      html=html_body
+                  )
                   print(f"✅ {report_type.upper()} report sent: {response.get('id', 'success')}")
               except Exception as e:
                   print(f"⚠️  {report_type.upper()} email failed: {e}")
