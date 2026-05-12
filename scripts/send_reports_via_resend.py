@@ -13,9 +13,11 @@ except ImportError:
 
 def send_reports():
     # Find reports generated today
-    today = date.today().isoformat()
+    today_obj = date.today()
+    today = today_obj.isoformat()
     report_dir = Path('logs')
 
+    print(f"System date: {today_obj.strftime('%Y-%m-%d (%A)')}")
     print(f"Looking for reports generated on: {today}")
 
     report_types = ['daily', 'weekly', 'biweekly', 'monthly']
