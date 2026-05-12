@@ -67,6 +67,7 @@ from reports.india_weekly_report import generate_india_weekly_report
 from reports.weekly_combined_report import generate_weekly_combined_report
 from reports.bimonthly_technical_report import generate_bimonthly_technical_report
 from reports.monthly_objectives_report import generate_monthly_objectives_report
+from reports.unified_master_report import generate_unified_master_report
 
 # Derived from ACCOUNTS registry — do not hardcode per-account vars here
 ACCOUNT_A_HASH = os.getenv("SCHWAB_ACCOUNT_A_HASH", "")  # kept for backward compat
@@ -806,6 +807,30 @@ async def list_tools():
             inputSchema={
                 "type": "object",
                 "properties": {
+                    "save_to_file": {
+                        "type": "boolean",
+                        "description": "Save report to logs/ directory",
+                        "default": True,
+                    }
+                },
+            },
+        ),
+        Tool(
+            name="generate_unified_master_report",
+            description=(
+                "Generates unified master report for all 4 types: DAILY | WEEKLY | BIWEEKLY | MONTHLY. "
+                "Pulls live market data from Yahoo Finance and all 8 account positions. "
+                "Auto-detects report type if not specified. Returns conviction updates, tier rebalancing, "
+                "sector rotation, and framework evolution."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "report_type": {
+                        "type": "string",
+                        "enum": ["DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY"],
+                        "description": "Type of report. Auto-detects if not specified.",
+                    },
                     "save_to_file": {
                         "type": "boolean",
                         "description": "Save report to logs/ directory",
@@ -1832,6 +1857,13 @@ async def call_tool(name: str, arguments: dict):
                 save_to_file=arguments.get("save_to_file", True),
             )
             return [TextContent(type="text", text=result["summary"])]
+
+        elif name == "generate_unified_master_report":
+            result = await generate_unified_master_report(
+                report_type=arguments.get("report_type"),
+                save_to_file=arguments.get("save_to_file", True)
+            )
+            return [TextContent(type="text", text=result["text"])]
 
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]

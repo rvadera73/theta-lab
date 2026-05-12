@@ -20,6 +20,7 @@ sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp')
 
 from open_positions_loader_v2 import OpenPositionsLoaderV2
 from enhanced_metrics import batch_get_metrics, BlackScholesGreeks
+from sector_analysis import batch_get_sector_analysis
 
 try:
     from regime import detect_regime
@@ -50,6 +51,11 @@ class UnifiedReportProduction:
 
         # Get IV rank for top tickers
         self.iv_ranks = batch_iv_rank(self.position_summary.head(25).index.tolist())
+
+        # Get sector analysis
+        self.sector_summary, self.sector_analysis_output, self.sector_rotation_output = batch_get_sector_analysis(
+            self.open_positions, self.metrics, self.prices
+        )
 
     def _parse_put_call_breakdown(self) -> Dict[str, Dict]:
         """Parse positions to get puts vs calls breakdown per ticker"""
@@ -290,6 +296,10 @@ class UnifiedReportProduction:
                 output.append(f"S&P 500: {ma['current']:.0f} (50d MA: {ma['ma50']:.0f}, 200d MA: {ma['ma200']:.0f})")
                 output.append(f"  Above 50d MA: {ma['above_50d']} | Above 200d MA: {ma['above_200d']}")
         output.append("")
+
+        # SECTION 4.5: SECTOR ANALYSIS & ROTATION
+        output.extend(self.sector_analysis_output)
+        output.extend(self.sector_rotation_output)
 
         # SECTION 5: ACCOUNT DISTRIBUTION
         output.extend(self._format_section_header(5, "POSITION DISTRIBUTION BY ACCOUNT"))
