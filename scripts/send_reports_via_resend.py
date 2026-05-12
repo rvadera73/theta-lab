@@ -26,9 +26,12 @@ def send_reports():
     for report_type in report_types:
         pattern = f'unified_master_report_{today}_*{report_type}*.txt'
         matches = list(report_dir.glob(pattern))
+        print(f"  Searching for {report_type}: {pattern}")
         if matches:
             generated_reports[report_type] = matches[0]
-            print(f"  Found {report_type}: {matches[0].name}")
+            print(f"    ✓ Found: {matches[0].name}")
+        else:
+            print(f"    ✗ Not found")
 
     if not generated_reports:
         print("No new reports generated today")
