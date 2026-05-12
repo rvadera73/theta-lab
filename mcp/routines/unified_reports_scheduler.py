@@ -73,6 +73,17 @@ class UnifiedReportsScheduler:
         reports_to_run = UnifiedReportsScheduler.determine_report_type(report_date)
         print(f"Reports scheduled for today: {', '.join(reports_to_run).upper()}\n")
 
+        # Debug: Check what files exist before running
+        from pathlib import Path
+        print("Files matching today's date BEFORE running reports:")
+        existing = list(Path('logs').glob(f'unified_master_report_{report_date.isoformat()}_*.txt'))
+        if existing:
+            for f in existing:
+                print(f"  {f.name}")
+        else:
+            print("  (none)")
+        print()
+
         results = {}
         report_date_str = report_date.isoformat()
 
@@ -116,6 +127,16 @@ class UnifiedReportsScheduler:
         # Summary
         successful = sum(1 for r in results.values() if r.get('success'))
         total = len(results)
+
+        # Debug: Check what files were created
+        print("Files matching today's date AFTER running reports:")
+        existing = list(Path('logs').glob(f'unified_master_report_{report_date.isoformat()}_*.txt'))
+        if existing:
+            for f in existing:
+                print(f"  {f.name}")
+        else:
+            print("  (none)")
+        print()
 
         print(f"{'='*80}")
         print(f"SCHEDULE EXECUTION COMPLETE: {successful}/{total} reports generated")
