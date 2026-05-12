@@ -25,9 +25,7 @@ jobs:
           pip install pandas yfinance scipy numpy resend pyyaml
 
       - name: Run Unified Reports Scheduler
-        run: |
-          cd /home/rahulvadera/projects/theta-lab
-          python3 -m mcp.routines.unified_reports_scheduler
+        run: python3 mcp/routines/unified_reports_scheduler.py
 
       - name: Send Reports via Resend (if generated)
         if: always()
