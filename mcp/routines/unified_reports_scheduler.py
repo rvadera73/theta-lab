@@ -12,10 +12,11 @@ from pathlib import Path
 # Determine base path dynamically (works in both local and GitHub Actions environments)
 base_path = Path(__file__).parent.parent.parent  # Goes up from mcp/routines to project root
 
+# Add paths in correct order
+reports_path = base_path / 'mcp' / 'reports'
+sys.path.insert(0, str(reports_path))
 sys.path.insert(0, str(base_path / 'scripts'))
-sys.path.insert(0, str(base_path / 'mcp' / 'reports'))
 sys.path.insert(0, str(base_path / 'mcp' / 'analysis'))
-sys.path.insert(0, str(base_path / 'mcp'))
 
 from mcp_unified_reports import (
     generate_daily_report_tool,
