@@ -18,8 +18,68 @@ logger = logging.getLogger(__name__)
 class ThematicAnalyzer:
     """Analyze portfolio positions against market-driven investment themes"""
 
-    # Define market themes based on May 2026 market reality
+    # Define market themes based on May 2026 market reality + hedge fund capital flows
     THEMES = {
+        'SPACE_ECONOMY': {
+            'name': 'Space Economy & Orbital Infrastructure',
+            'description': 'Commercial space launches, satellite comms, in-space manufacturing, orbital data centers for AI inference',
+            'tickers': ['RKLB', 'ASTS', 'JOBY'],
+            'catalysts': [
+                'Rocket Lab launch cadence & customers (SpaceX, Blue Origin supply chain)',
+                'Astra Space commercialization milestones',
+                'Joby urban air mobility regulatory approvals',
+                'Orbital data center feasibility proofs (AI inference in space)',
+                'Satellite internet subscriber growth (Starlink competition)',
+            ],
+            'macro_driver': 'Space economy $1T by 2030, orbital AI compute emerging supercycle, AI power constraints driving edge',
+            'iv_regime': 'VERY HIGH (early stage, binary catalysts, VC-backed mentality)',
+            'hedge_fund_bias': 'Long-term structural bet, venture-stage fundamentals, narrative-driven (space AI next supercycle)',
+        },
+        'ENERGY_STORAGE_POWER': {
+            'name': 'Energy Storage & Power Infrastructure',
+            'description': 'Battery materials, grid storage, power infrastructure bottleneck from AI/electrification scaling',
+            'tickers': ['ALB', 'LAC', 'FMC', 'VST'],
+            'catalysts': [
+                'Lithium spot prices & supply contracts (EV demand vs AI power demand)',
+                'Battery capex announcements (Tesla, Panasonic, others)',
+                'Power grid upgrade contracts & regulatory clarity',
+                'AI data center power consumption reports',
+                'EV adoption acceleration metrics',
+            ],
+            'macro_driver': 'Global electricity demand rising fastest in decades (AI scaling + electrification), structural power crunch emerging',
+            'iv_regime': 'ELEVATED (commodity-linked but structural tailwind)',
+            'hedge_fund_bias': 'Structural supply constraint play, long infrastructure bottleneck (Leopold Aschenbrenner Situational Awareness focus)',
+        },
+        'ROBOTICS_AUTOMATION': {
+            'name': 'Robotics & Autonomous Systems',
+            'description': 'AI-powered robotics, autonomous platforms, industrial automation, decision-making agentic systems',
+            'tickers': ['AXON', 'RBLX', 'ISRG'],
+            'catalysts': [
+                'Autonomous vehicle testing milestones (Waymo, Tesla FSD)',
+                'Industrial robot deployment data (manufacturing nearshoring)',
+                'Software platform adoption (Axon agentic AI rollout)',
+                'Surgical robotics outcomes & adoption (Intuitive Surgical)',
+                'Robot-as-a-service pricing & contracts',
+            ],
+            'macro_driver': 'AI-powered robotics entering commercial scaling phase, labor shortage driving adoption, long-term secular theme',
+            'iv_regime': 'MODERATE-HIGH (adoption acceleration but earlier than AI chips)',
+            'hedge_fund_bias': 'Long-term structural bet (WorldQuant Genesis focus), AI/robotics/biotech combo',
+        },
+        'GENOMICS_DEEPTECH': {
+            'name': 'Genomics & Precision Medicine',
+            'description': 'DNA sequencing, genetic testing, personalized medicine, gene editing, biotech innovation',
+            'tickers': ['NTRA', 'ISRG', 'CRWD'],  # NTRA is natera (genetic testing), biotech names
+            'catalysts': [
+                'Genomic testing adoption & insurance coverage (prenatal, cancer screening)',
+                'Gene editing success stories (CRISPR, base editing)',
+                'Clinical trial readouts (biotech pipeline)',
+                'Precision medicine cost reduction milestones',
+                'AI-powered drug discovery proofs of concept',
+            ],
+            'macro_driver': 'Quantum computing + AI accelerating drug discovery, genome sequencing costs collapsing, personalized medicine secular shift',
+            'iv_regime': 'ELEVATED (clinical trial binary, regulatory approvals)',
+            'hedge_fund_bias': 'Long-term innovation bet (WorldQuant genesis deep-tech focus), early stage with venture upside',
+        },
         'AI_INFRASTRUCTURE': {
             'name': 'AI Infrastructure Capex Cycle',
             'description': 'Semiconductor & memory demand driven by hyperscaler AI CapEx ($700B planned spend in 2026)',
@@ -340,6 +400,30 @@ class ThematicAnalyzer:
         output.append("")
 
         playbook = {
+            'SPACE_ECONOMY': {
+                'sell_premium': 'YES — VERY HIGH IV. RKLB, ASTS, JOBY: sell calls 0.15 delta far OTM (binary outcomes). Sell puts 0.10 delta (deep OTM, venture risk).',
+                'avoid': 'Do NOT buy calls (speculative, theta against you). Do NOT hold puts through launch windows (binary risk). Avoid defined-risk spreads (IV collapses on good news).',
+                'roll_strategy': 'Close calls at 60-70% profit (IV crush post-milestone). Roll puts out aggressively (single catalyst can move sharply). Exit before major launches.',
+                'concentration_warning': 'SPECULATIVE: 3 core positions. Max 1 contract each. High correlation (all benefit from space economy narrative). Monitor venture funding (VC sentiment shift = theme reset).',
+            },
+            'ENERGY_STORAGE_POWER': {
+                'sell_premium': 'YES — Elevated IV, commodity-linked volatility. ALB, LAC: sell calls 0.25 delta (expect supply pressure on rallies). Sell puts 0.15 delta (structural demand base).',
+                'avoid': 'Do NOT buy puts (structural supply crunch tailwind). Avoid short-term trading (commodity cycles long). Don\'t hold puts through capex announcements.',
+                'roll_strategy': 'Calls: close at 50% profit (commodity rallies fade). Puts: roll out on rallies (collect premium on dips driven by supply announcements).',
+                'concentration_warning': 'STRUCTURAL THEME: 4 positions, cornerstone of AI power infrastructure. Monitor lithium spot prices weekly (key signal). Don\'t reduce on volatility.',
+            },
+            'ROBOTICS_AUTOMATION': {
+                'sell_premium': 'YES — Moderate-high IV. AXON, ISRG: sell calls 0.25 delta (adoption scaling steadily). Sell puts 0.15 delta (long-term thesis intact).',
+                'avoid': 'Do NOT short robotics (structural tailwind). Avoid puts on execution failures (AI deployment delays can stick around). Don\'t panic on competition.',
+                'roll_strategy': 'Calls: close at 50% profit (ride adoption curve). Puts: hold to 70% (thesis strengthening over time, theta works well).',
+                'concentration_warning': 'LONG-TERM CORE: 3 positions, steady adoption, not binary. Suitable for wheel strategy (accept assignment, hold for years).',
+            },
+            'GENOMICS_DEEPTECH': {
+                'sell_premium': 'YES — Elevated IV from binary catalysts. NTRA: sell calls 0.20 delta (adoption ramp). Sell puts 0.15 delta (clinical trial risk).',
+                'avoid': 'Avoid puts on failed trials (assignment to losing thesis). Avoid naked shorting (upside from approval unlimited). Manage for clinical readouts.',
+                'roll_strategy': 'Calls: close at 50% profit (adoption plays are steady, not explosive). Puts: close before trial readouts (binary events). Roll out post-approval.',
+                'concentration_warning': 'VENTURE UPSIDE: 3 positions, venture-stage fundamentals. High binary risk but long-dated upside. Max 1-2 contracts per name.',
+            },
             'AI_INFRASTRUCTURE': {
                 'sell_premium': 'YES — Elevated IV (26-52% growth). Sell calls 0.20 delta above recent highs (NVDA, ASML, TSM). Sell puts 0.15 delta on dips (good entry levels).',
                 'avoid': 'Do NOT buy puts (no downside protection, premium expensive). Do NOT buy calls (upside capped by valuation). Risk of creative destruction in H2 2026.',

@@ -8,14 +8,18 @@ OVERVIEW: Themes Driving Market in May 2026
 
 Theme                                     Positions        Notional   Avg Conv            IV Regime                                    Trend
 --------------------------------------------------------------------------------------------------------------------------------------------
-AI Infrastructure Capex Cycle                     5 $     1,487,176        5.2/10   ELEVATED (26-52% g                                WEAKENING
-Hyperscaler Cloud CapEx Deployment                9 $     1,518,465        5.3/10   MODERATE (lower th                                WEAKENING
-Defense & Aerospace Cyclical Recovery             6 $     1,816,482        6.5/10   LOW (stable, predi                                   STABLE
-Quantum Computing Tipping Point                   4 $       220,218        6.6/10   VERY HIGH (early s                                   STABLE
-GLP-1 Market Expansion                            5 $       498,066        6.1/10   ELEVATED (binary c                                   STABLE
-Consumer Discretionary Headwinds                  8 $       329,175        6.6/10   ELEVATED (earnings                                   STABLE
-Energy Sector Structural Headwinds                3 $        74,262        4.5/10   MODERATE (commodit                                WEAKENING
-Memory Chip Cycle Reset                           1 $       734,800        4.5/10   HIGH (cycle revers                                WEAKENING
+Space Economy & Orbital Infrastructur             3 $        78,314        6.5/10   VERY HIGH (early s                                   STABLE
+Energy Storage & Power Infrastructure             4 $       250,076        6.2/10   ELEVATED (commodit                                   STABLE
+Robotics & Autonomous Systems                     3 $       751,041        7.5/10   MODERATE-HIGH (ado                                   STABLE
+Genomics & Precision Medicine                     3 $       412,602        5.3/10   ELEVATED (clinical                                WEAKENING
+AI Infrastructure Capex Cycle                     5 $     1,485,419        5.2/10   ELEVATED (26-52% g                                WEAKENING
+Hyperscaler Cloud CapEx Deployment                9 $     1,519,003        5.3/10   MODERATE (lower th                                WEAKENING
+Defense & Aerospace Cyclical Recovery             6 $     1,816,817        6.5/10   LOW (stable, predi                                   STABLE
+Quantum Computing Tipping Point                   4 $       220,062        6.6/10   VERY HIGH (early s                                   STABLE
+GLP-1 Market Expansion                            5 $       497,259        6.1/10   ELEVATED (binary c                                   STABLE
+Consumer Discretionary Headwinds                  8 $       329,399        6.6/10   ELEVATED (earnings                                   STABLE
+Energy Sector Structural Headwinds                3 $        74,312        4.5/10   MODERATE (commodit                                WEAKENING
+Memory Chip Cycle Reset                           1 $       733,110        4.5/10   HIGH (cycle revers                                WEAKENING
 
 
 ============================================================================================================================================
@@ -23,8 +27,133 @@ DETAILED THEMATIC BREAKDOWN
 ============================================================================================================================================
 
 
+███ SPACE ECONOMY & ORBITAL INFRASTRUCTURE
+├─ Positions held: 3 | Notional: $78,314
+├─ Avg conviction: 6.5/10
+├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
+├─ IV Regime: VERY HIGH (early stage, binary catalysts, VC-backed mentality)
+
+   MACRO NARRATIVE:
+   Commercial space launches, satellite comms, in-space manufacturing, orbital data centers for AI inference
+   Driver: Space economy $1T by 2030, orbital AI compute emerging supercycle, AI power constraints driving edge
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 1 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 1 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 1 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🔴 RKLB       $      46,850 | Conv   5.5/10
+   ├─ 🟢 ASTS       $      28,374 | Conv   7.0/10
+   ├─ 🟡 JOBY       $       3,090 | Conv   7.0/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Rocket Lab launch cadence & customers (SpaceX, Blue Origin supply chain)
+   2. Astra Space commercialization milestones
+   3. Joby urban air mobility regulatory approvals
+   4. Orbital data center feasibility proofs (AI inference in space)
+   5. Satellite internet subscriber growth (Starlink competition)
+
+   HEDGE FUND POSITIONING:
+   Long-term structural bet, venture-stage fundamentals, narrative-driven (space AI next supercycle)
+
+
+███ ENERGY STORAGE & POWER INFRASTRUCTURE
+├─ Positions held: 4 | Notional: $250,076
+├─ Avg conviction: 6.25/10
+├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
+├─ IV Regime: ELEVATED (commodity-linked but structural tailwind)
+
+   MACRO NARRATIVE:
+   Battery materials, grid storage, power infrastructure bottleneck from AI/electrification scaling
+   Driver: Global electricity demand rising fastest in decades (AI scaling + electrification), structural power crunch emerging
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 2 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 2 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 0 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🟡 VST        $     132,367 | Conv   6.5/10
+   ├─ 🟡 ALB        $     102,020 | Conv   6.0/10
+   ├─ 🟢 FMC        $      12,960 | Conv   5.5/10
+   ├─ 🟢 LAC        $       2,728 | Conv   7.0/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Lithium spot prices & supply contracts (EV demand vs AI power demand)
+   2. Battery capex announcements (Tesla, Panasonic, others)
+   3. Power grid upgrade contracts & regulatory clarity
+   4. AI data center power consumption reports
+   5. EV adoption acceleration metrics
+
+   HEDGE FUND POSITIONING:
+   Structural supply constraint play, long infrastructure bottleneck (Leopold Aschenbrenner Situational Awareness focus)
+
+
+███ ROBOTICS & AUTONOMOUS SYSTEMS
+├─ Positions held: 3 | Notional: $751,041
+├─ Avg conviction: 7.5/10
+├─ Conviction trend: STABLE (Moderate-high conviction, watch for catalysts)
+├─ IV Regime: MODERATE-HIGH (adoption acceleration but earlier than AI chips)
+
+   MACRO NARRATIVE:
+   AI-powered robotics, autonomous platforms, industrial automation, decision-making agentic systems
+   Driver: AI-powered robotics entering commercial scaling phase, labor shortage driving adoption, long-term secular theme
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 2 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 1 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 0 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🟡 AXON       $     557,011 | Conv   8.0/10
+   ├─ 🟢 ISRG       $     173,180 | Conv   7.0/10
+   ├─ 🟢 RBLX       $      20,850 | Conv   7.5/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Autonomous vehicle testing milestones (Waymo, Tesla FSD)
+   2. Industrial robot deployment data (manufacturing nearshoring)
+   3. Software platform adoption (Axon agentic AI rollout)
+   4. Surgical robotics outcomes & adoption (Intuitive Surgical)
+   5. Robot-as-a-service pricing & contracts
+
+   HEDGE FUND POSITIONING:
+   Long-term structural bet (WorldQuant Genesis focus), AI/robotics/biotech combo
+
+
+███ GENOMICS & PRECISION MEDICINE
+├─ Positions held: 3 | Notional: $412,602
+├─ Avg conviction: 5.33/10
+├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
+├─ IV Regime: ELEVATED (clinical trial binary, regulatory approvals)
+
+   MACRO NARRATIVE:
+   DNA sequencing, genetic testing, personalized medicine, gene editing, biotech innovation
+   Driver: Quantum computing + AI accelerating drug discovery, genome sequencing costs collapsing, personalized medicine secular shift
+
+   PORTFOLIO HEAT:
+   ├─ 🟢 GREEN: 2 positions (attractive/oversold)
+   ├─ 🟡 YELLOW: 0 positions (neutral/approaching extremes)
+   └─ 🔴 RED: 1 positions (extended/overbought)
+
+   TOP POSITIONS IN THEME:
+   ├─ 🔴 CRWD       $     219,192 | Conv   4.5/10
+   ├─ 🟢 ISRG       $     173,180 | Conv   7.0/10
+   ├─ 🟢 NTRA       $      20,230 | Conv   4.5/10
+
+   CATALYST PIPELINE (Next 12 weeks):
+   1. Genomic testing adoption & insurance coverage (prenatal, cancer screening)
+   2. Gene editing success stories (CRISPR, base editing)
+   3. Clinical trial readouts (biotech pipeline)
+   4. Precision medicine cost reduction milestones
+   5. AI-powered drug discovery proofs of concept
+
+   HEDGE FUND POSITIONING:
+   Long-term innovation bet (WorldQuant genesis deep-tech focus), early stage with venture upside
+
+
 ███ AI INFRASTRUCTURE CAPEX CYCLE
-├─ Positions held: 5 | Notional: $1,487,176
+├─ Positions held: 5 | Notional: $1,485,419
 ├─ Avg conviction: 5.2/10
 ├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
 ├─ IV Regime: ELEVATED (26-52% growth expectations)
@@ -39,11 +168,11 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 2 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🔴 MU         $     734,800 | Conv   4.5/10
-   ├─ 🟡 ASML       $     448,107 | Conv   5.5/10
-   ├─ 🟡 TSM        $     235,476 | Conv   3.5/10
-   ├─ 🔴 NVDA       $      65,577 | Conv   5.0/10
-   ├─ 🟡 SMCI       $       3,216 | Conv   7.5/10
+   ├─ 🔴 MU         $     733,110 | Conv   4.5/10
+   ├─ 🟡 ASML       $     448,072 | Conv   5.5/10
+   ├─ 🟡 TSM        $     235,482 | Conv   3.5/10
+   ├─ 🔴 NVDA       $      65,544 | Conv   5.0/10
+   ├─ 🟡 SMCI       $       3,212 | Conv   7.5/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. TSMC earnings (capacity/demand signals)
@@ -57,7 +186,7 @@ DETAILED THEMATIC BREAKDOWN
 
 
 ███ HYPERSCALER CLOUD CAPEX DEPLOYMENT
-├─ Positions held: 9 | Notional: $1,518,465
+├─ Positions held: 9 | Notional: $1,519,003
 ├─ Avg conviction: 5.33/10
 ├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
 ├─ IV Regime: MODERATE (lower than semiconductors, steadier)
@@ -72,11 +201,11 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 3 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🟢 META       $     359,892 | Conv   6.5/10
-   ├─ 🟡 AMZN       $     264,030 | Conv   4.0/10
-   ├─ 🔴 CRWD       $     219,354 | Conv   4.5/10
-   ├─ 🟢 CRM        $     172,490 | Conv   6.0/10
-   ├─ 🟡 OKTA       $     156,510 | Conv   8.0/10
+   ├─ 🟢 META       $     359,952 | Conv   6.5/10
+   ├─ 🟡 AMZN       $     264,360 | Conv   4.0/10
+   ├─ 🔴 CRWD       $     219,192 | Conv   4.5/10
+   ├─ 🟢 CRM        $     172,530 | Conv   6.0/10
+   ├─ 🟡 OKTA       $     156,580 | Conv   8.0/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. MSFT earnings & Azure guidance
@@ -90,7 +219,7 @@ DETAILED THEMATIC BREAKDOWN
 
 
 ███ DEFENSE & AEROSPACE CYCLICAL RECOVERY
-├─ Positions held: 6 | Notional: $1,816,482
+├─ Positions held: 6 | Notional: $1,816,817
 ├─ Avg conviction: 6.5/10
 ├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
 ├─ IV Regime: LOW (stable, predictable, defensive)
@@ -105,11 +234,11 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 0 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🟡 AXON       $     556,500 | Conv   8.0/10
-   ├─ 🟢 LMT        $     362,873 | Conv   7.0/10
-   ├─ 🟢 NOC        $     332,382 | Conv   6.5/10
-   ├─ 🟡 GEV        $     317,069 | Conv   4.0/10
-   ├─ 🟡 BA         $     140,472 | Conv   6.5/10
+   ├─ 🟡 AXON       $     557,011 | Conv   8.0/10
+   ├─ 🟢 LMT        $     362,612 | Conv   7.0/10
+   ├─ 🟢 NOC        $     332,232 | Conv   6.5/10
+   ├─ 🟡 GEV        $     317,339 | Conv   4.0/10
+   ├─ 🟡 BA         $     140,412 | Conv   6.5/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. BA/RTX/LMT earnings & production rates
@@ -123,7 +252,7 @@ DETAILED THEMATIC BREAKDOWN
 
 
 ███ QUANTUM COMPUTING TIPPING POINT
-├─ Positions held: 4 | Notional: $220,218
+├─ Positions held: 4 | Notional: $220,062
 ├─ Avg conviction: 6.62/10
 ├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
 ├─ IV Regime: VERY HIGH (early stage, speculative, binary outcomes)
@@ -138,10 +267,10 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 1 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🟢 IBM        $      88,098 | Conv   8.0/10
-   ├─ 🔴 GOOG       $      76,306 | Conv   5.0/10
-   ├─ 🟢 IONQ       $      53,640 | Conv   6.5/10
-   ├─ 🟢 QBTS       $       2,175 | Conv   7.0/10
+   ├─ 🟢 IBM        $      88,054 | Conv   8.0/10
+   ├─ 🔴 GOOG       $      76,322 | Conv   5.0/10
+   ├─ 🟢 IONQ       $      53,520 | Conv   6.5/10
+   ├─ 🟢 QBTS       $       2,167 | Conv   7.0/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. Quantum chip error rates & performance announcements
@@ -155,7 +284,7 @@ DETAILED THEMATIC BREAKDOWN
 
 
 ███ GLP-1 MARKET EXPANSION
-├─ Positions held: 5 | Notional: $498,066
+├─ Positions held: 5 | Notional: $497,259
 ├─ Avg conviction: 6.1/10
 ├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
 ├─ IV Regime: ELEVATED (binary catalyst-driven, earnings volatility)
@@ -170,11 +299,11 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 2 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🔴 UNH        $     236,560 | Conv   5.0/10
-   ├─ 🟡 LLY        $     198,873 | Conv   6.5/10
-   ├─ 🔴 NVO        $      37,340 | Conv   7.0/10
-   ├─ 🟡 MRK        $      22,688 | Conv   7.0/10
-   ├─ 🟢 PFE        $       2,605 | Conv   5.0/10
+   ├─ 🔴 UNH        $     235,866 | Conv   5.0/10
+   ├─ 🟡 LLY        $     198,771 | Conv   6.5/10
+   ├─ 🔴 NVO        $      37,336 | Conv   7.0/10
+   ├─ 🟡 MRK        $      22,680 | Conv   7.0/10
+   ├─ 🟢 PFE        $       2,606 | Conv   5.0/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. Eli Lilly oral GLP-1 approval (end 2026)
@@ -188,7 +317,7 @@ DETAILED THEMATIC BREAKDOWN
 
 
 ███ CONSUMER DISCRETIONARY HEADWINDS
-├─ Positions held: 8 | Notional: $329,175
+├─ Positions held: 8 | Notional: $329,399
 ├─ Avg conviction: 6.62/10
 ├─ Conviction trend: STABLE (Moderate conviction, neutral positioning)
 ├─ IV Regime: ELEVATED (earnings uncertainty, economic sensitivity)
@@ -203,11 +332,11 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 0 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🟢 ULTA       $     101,016 | Conv   6.5/10
-   ├─ 🟢 NKE        $      76,284 | Conv  10.0/10
-   ├─ 🟢 DIS        $      63,330 | Conv   7.5/10
-   ├─ 🟢 ETSY       $      22,902 | Conv   4.5/10
-   ├─ 🟢 ELF        $      22,012 | Conv   7.5/10
+   ├─ 🟢 ULTA       $     101,082 | Conv   6.5/10
+   ├─ 🟢 NKE        $      76,293 | Conv  10.0/10
+   ├─ 🟢 DIS        $      63,342 | Conv   7.5/10
+   ├─ 🟢 ETSY       $      23,034 | Conv   4.5/10
+   ├─ 🟢 ELF        $      22,006 | Conv   7.5/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. Retail earnings & guidance (holiday season, traffic trends)
@@ -221,7 +350,7 @@ DETAILED THEMATIC BREAKDOWN
 
 
 ███ ENERGY SECTOR STRUCTURAL HEADWINDS
-├─ Positions held: 3 | Notional: $74,262
+├─ Positions held: 3 | Notional: $74,312
 ├─ Avg conviction: 4.5/10
 ├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
 ├─ IV Regime: MODERATE (commodity-driven, not earnings-driven)
@@ -236,9 +365,9 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 0 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🟡 CCJ        $      34,737 | Conv   4.0/10
-   ├─ 🟢 XOM        $      30,154 | Conv   5.0/10
-   ├─ 🟡 DVN        $       9,371 | Conv   4.5/10
+   ├─ 🟡 CCJ        $      34,721 | Conv   4.0/10
+   ├─ 🟢 XOM        $      30,197 | Conv   5.0/10
+   ├─ 🟡 DVN        $       9,395 | Conv   4.5/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. Oil/gas demand trends (IEA reports, refinery utilization)
@@ -252,7 +381,7 @@ DETAILED THEMATIC BREAKDOWN
 
 
 ███ MEMORY CHIP CYCLE RESET
-├─ Positions held: 1 | Notional: $734,800
+├─ Positions held: 1 | Notional: $733,110
 ├─ Avg conviction: 4.5/10
 ├─ Conviction trend: WEAKENING (Low conviction, caution warranted)
 ├─ IV Regime: HIGH (cycle reversal binary, earnings miss risk)
@@ -267,7 +396,7 @@ DETAILED THEMATIC BREAKDOWN
    └─ 🔴 RED: 1 positions (extended/overbought)
 
    TOP POSITIONS IN THEME:
-   ├─ 🔴 MU         $     734,800 | Conv   4.5/10
+   ├─ 🔴 MU         $     733,110 | Conv   4.5/10
 
    CATALYST PIPELINE (Next 12 weeks):
    1. Micron earnings & gross margin guidance
@@ -284,6 +413,34 @@ DETAILED THEMATIC BREAKDOWN
 ============================================================================================================================================
 OPTIONS PLAYBOOK BY THEME — Where to Sell Premium, Where to Avoid
 ============================================================================================================================================
+
+
+SPACE ECONOMY & ORBITAL INFRASTRUCTURE
+├─ Sell Premium: YES — VERY HIGH IV. RKLB, ASTS, JOBY: sell calls 0.15 delta far OTM (binary outcomes). Sell puts 0.10 delta (deep OTM, venture risk).
+├─ Avoid: Do NOT buy calls (speculative, theta against you). Do NOT hold puts through launch windows (binary risk). Avoid defined-risk spreads (IV collapses on good news).
+├─ Roll Strategy: Close calls at 60-70% profit (IV crush post-milestone). Roll puts out aggressively (single catalyst can move sharply). Exit before major launches.
+└─ Concentration Warning: SPECULATIVE: 3 core positions. Max 1 contract each. High correlation (all benefit from space economy narrative). Monitor venture funding (VC sentiment shift = theme reset).
+
+
+ENERGY STORAGE & POWER INFRASTRUCTURE
+├─ Sell Premium: YES — Elevated IV, commodity-linked volatility. ALB, LAC: sell calls 0.25 delta (expect supply pressure on rallies). Sell puts 0.15 delta (structural demand base).
+├─ Avoid: Do NOT buy puts (structural supply crunch tailwind). Avoid short-term trading (commodity cycles long). Don't hold puts through capex announcements.
+├─ Roll Strategy: Calls: close at 50% profit (commodity rallies fade). Puts: roll out on rallies (collect premium on dips driven by supply announcements).
+└─ Concentration Warning: STRUCTURAL THEME: 4 positions, cornerstone of AI power infrastructure. Monitor lithium spot prices weekly (key signal). Don't reduce on volatility.
+
+
+ROBOTICS & AUTONOMOUS SYSTEMS
+├─ Sell Premium: YES — Moderate-high IV. AXON, ISRG: sell calls 0.25 delta (adoption scaling steadily). Sell puts 0.15 delta (long-term thesis intact).
+├─ Avoid: Do NOT short robotics (structural tailwind). Avoid puts on execution failures (AI deployment delays can stick around). Don't panic on competition.
+├─ Roll Strategy: Calls: close at 50% profit (ride adoption curve). Puts: hold to 70% (thesis strengthening over time, theta works well).
+└─ Concentration Warning: LONG-TERM CORE: 3 positions, steady adoption, not binary. Suitable for wheel strategy (accept assignment, hold for years).
+
+
+GENOMICS & PRECISION MEDICINE
+├─ Sell Premium: YES — Elevated IV from binary catalysts. NTRA: sell calls 0.20 delta (adoption ramp). Sell puts 0.15 delta (clinical trial risk).
+├─ Avoid: Avoid puts on failed trials (assignment to losing thesis). Avoid naked shorting (upside from approval unlimited). Manage for clinical readouts.
+├─ Roll Strategy: Calls: close at 50% profit (adoption plays are steady, not explosive). Puts: close before trial readouts (binary events). Roll out post-approval.
+└─ Concentration Warning: VENTURE UPSIDE: 3 positions, venture-stage fundamentals. High binary risk but long-dated upside. Max 1-2 contracts per name.
 
 
 AI INFRASTRUCTURE CAPEX CYCLE
