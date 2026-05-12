@@ -1,0 +1,249 @@
+╔======================================================================================================================╗
+║ UNIFIED MASTER REPORT — DAILY (438 POSITIONS)                │ Type: DAILY    │ Regime: CAUTIOUS_BULL    ║            
+║ May 12, 2026 — 12:00 AM ET                                                                                             ║
+╚======================================================================================================================╝
+
+========================================================================================================================
+SECTION 0: ACCOUNT HEALTH & MARGIN STATUS
+========================================================================================================================
+
+PORTFOLIO EXPOSURE SUMMARY:
+├─ Total notional exposure:     $   9,493,368
+├─ Total option requirement:    $   5,766,800
+├─ Positions with short puts:   89
+├─ Positions with short calls:  35
+└─ Staggers (both puts+calls):  27
+
+ACCOUNT A (232 — Rahul, Margin Account):
+├─ Notional exposure: $9,493,368
+├─ Option requirement: $5,766,800
+├─ Estimated margin utilization: 56% (target ≤70% bear, ≤60% bull)
+├─ Estimated available cash: $145,000 (monitor: <$75K = action required)
+└─ Status: ✅ HEALTHY
+
+ACCOUNT B (275 — Pinky, IRA):
+├─ Margin available: None (IRA account)
+├─ Notional CSP exposure: ~$320,000
+├─ No margin requirement: All positions cash-secured
+└─ Status: ✅ COMPLIANT (no naked calls, no margin)
+
+RISK GUARDRAILS:
+├─ Margin floor (hard): 50% utilization
+├─ Margin alert: >75% utilization → review new entries
+├─ Margin emergency: >80% utilization → reduce positions
+├─ Cash floor: $75,000 to trade (bear regime)
+├─ Cash emergency: <$50,000 → deploy emergency fund
+└─ Current status: ⚠️ MONITOR
+
+========================================================================================================================
+SECTION 1: SYSTEM STATUS & PORTFOLIO SNAPSHOT
+========================================================================================================================
+
+Total open positions:        438
+Unique tickers:              107
+Active accounts:             8
+Data currency:               2026-05-12
+Live prices:                 106 tickers fetched from Yahoo Finance
+
+========================================================================================================================
+SECTION 2: CONVICTION UPDATES (Yahoo Finance Derived)
+========================================================================================================================
+
+HIGH (8-10) CONVICTION — 15 positions:
+------------------------------------------------------------------------------------------------------------------------
+  🟢 NKE    | $  42.18 | Value: $     75924 | Conv: 10.0/10 | Contracts: 18 | RSI:  25.6 | Oversold / Attractive
+      └─ Stagger: 1 puts ($     4,218) + 7 calls ($    29,526)
+  🟡 UBER   | $  75.16 | Value: $     37580 | Conv:  9.0/10 | Contracts:  5 | RSI:  49.0 | Approaching extremes
+      └─ Puts only: 5 contracts ($    37,580)
+  🟡 MDXG   | $   3.54 | Value: $      1061 | Conv:  9.0/10 | Contracts:  3 | RSI:  57.6 | Approaching extremes
+  🟢 ADBE   | $ 242.23 | Value: $    387560 | Conv:  8.5/10 | Contracts: 16 | RSI:  40.4 | Oversold / Attractive
+      └─ Calls only: 10 contracts ($   242,225)
+  🟢 SMR    | $  12.31 | Value: $      9848 | Conv:  8.5/10 | Contracts:  8 | RSI:  43.5 | Oversold / Attractive
+      └─ Puts only: 1 contracts ($     1,231)
+  🟡 ACHR   | $   6.17 | Value: $      4933 | Conv:  8.5/10 | Contracts:  8 | RSI:  52.0 | Approaching extremes
+      └─ Puts only: 1 contracts ($       617)
+  🟡 RGTI   | $  20.09 | Value: $      6027 | Conv:  8.5/10 | Contracts:  3 | RSI:  58.0 | Approaching extremes
+      └─ Puts only: 1 contracts ($     2,009)
+  🟡 ZS     | $ 146.54 | Value: $     14654 | Conv:  8.5/10 | Contracts:  1 | RSI:  53.5 | Approaching extremes
+      └─ Calls only: 1 contracts ($    14,654)
+  🟡 NFLX   | $  86.75 | Value: $    364350 | Conv:  8.0/10 | Contracts: 42 | RSI:  27.9 | Approaching extremes
+      └─ Stagger: 27 puts ($   234,225) + 3 calls ($    26,025)
+  🟡 OKTA   | $  78.83 | Value: $    157670 | Conv:  8.0/10 | Contracts: 20 | RSI:  50.5 | Approaching extremes
+      └─ Stagger: 2 puts ($    15,767) + 14 calls ($   110,369)
+  🟡 AXON   | $ 393.92 | Value: $    551488 | Conv:  8.0/10 | Contracts: 14 | RSI:  46.5 | Approaching extremes
+      └─ Stagger: 6 puts ($   236,352) + 8 calls ($   315,136)
+  🟡 COIN   | $ 209.32 | Value: $    209320 | Conv:  8.0/10 | Contracts: 10 | RSI:  51.5 | Approaching extremes
+      └─ Stagger: 3 puts ($    62,796) + 6 calls ($   125,592)
+  🟡 NU     | $  13.48 | Value: $      9439 | Conv:  8.0/10 | Contracts:  7 | RSI:  29.1 | Approaching extremes
+      └─ Puts only: 3 contracts ($     4,045)
+  🟢 IBM    | $ 220.95 | Value: $     88380 | Conv:  8.0/10 | Contracts:  4 | RSI:  26.6 | Oversold / Attractive
+      └─ Stagger: 2 puts ($    44,190) + 1 calls ($    22,095)
+  🟢 ZBH    | $  81.11 | Value: $     24334 | Conv:  8.0/10 | Contracts:  3 | RSI:  26.6 | Oversold / Attractive
+      └─ Stagger: 1 puts ($     8,111) + 2 calls ($    16,223)
+
+MODERATE (6-8) CONVICTION — 43 positions:
+------------------------------------------------------------------------------------------------------------------------
+  🟢 PYPL   | $  44.47 | Value: $    111175 | Conv:  7.5/10 | Contracts: 25 | RSI:  20.4 | Oversold / Attractive
+      └─ Calls only: 21 contracts ($    93,387)
+  🟢 DIS    | $ 104.38 | Value: $     62625 | Conv:  7.5/10 | Contracts:  6 | RSI:  49.1 | Neutral positioning
+      └─ Stagger: 4 puts ($    41,750) + 2 calls ($    20,875)
+  🟢 RBLX   | $  43.17 | Value: $     21585 | Conv:  7.5/10 | Contracts:  5 | RSI:  23.9 | Oversold / Attractive
+      └─ Stagger: 2 puts ($     8,634) + 1 calls ($     4,317)
+  🟢 ELF    | $  54.30 | Value: $     21720 | Conv:  7.5/10 | Contracts:  4 | RSI:  28.2 | Oversold / Attractive
+      └─ Puts only: 4 contracts ($    21,720)
+  🟢 BABA   | $ 134.75 | Value: $     53900 | Conv:  7.5/10 | Contracts:  4 | RSI:  47.7 | Neutral positioning
+      └─ Puts only: 3 contracts ($    40,425)
+  🟢 STNE   | $  10.26 | Value: $      2051 | Conv:  7.5/10 | Contracts:  2 | RSI:  23.4 | Oversold / Attractive
+      └─ Puts only: 2 contracts ($     2,051)
+  🟡 DKNG   | $  25.17 | Value: $      2517 | Conv:  7.5/10 | Contracts:  1 | RSI:  68.6 | Approaching extremes
+      └─ Puts only: 1 contracts ($     2,517)
+  🟢 NCLH   | $  16.28 | Value: $      1628 | Conv:  7.5/10 | Contracts:  1 | RSI:  29.2 | Oversold / Attractive
+      └─ Puts only: 1 contracts ($     1,628)
+  🟢 SMCI   | $  32.56 | Value: $      3256 | Conv:  7.5/10 | Contracts:  1 | RSI:  57.8 | Neutral positioning
+  🟢 LMT    | $ 518.00 | Value: $    362600 | Conv:  7.0/10 | Contracts:  7 | RSI:  31.0 | Neutral positioning
+      └─ Puts only: 6 contracts ($   310,800)
+  🟢 SHOP   | $ 101.64 | Value: $     71145 | Conv:  7.0/10 | Contracts:  7 | RSI:  24.4 | Oversold / Attractive
+      └─ Puts only: 3 contracts ($    30,491)
+  🟢 RTX    | $ 177.43 | Value: $    106458 | Conv:  7.0/10 | Contracts:  6 | RSI:  43.6 | Neutral positioning
+      └─ Puts only: 5 contracts ($    88,715)
+  🟢 USAR   | $  26.01 | Value: $     15606 | Conv:  7.0/10 | Contracts:  6 | RSI:  51.4 | Neutral positioning
+  🟢 LAC    | $   5.63 | Value: $      2815 | Conv:  7.0/10 | Contracts:  5 | RSI:  59.1 | Neutral positioning
+      └─ Puts only: 1 contracts ($       563)
+  🟡 IBIT   | $  45.59 | Value: $     18236 | Conv:  7.0/10 | Contracts:  4 | RSI:  55.1 | Approaching extremes
+      └─ Puts only: 4 contracts ($    18,236)
+  🟢 ISRG   | $ 426.20 | Value: $    170480 | Conv:  7.0/10 | Contracts:  4 | RSI:  18.1 | Oversold / Attractive
+      └─ Stagger: 3 puts ($   127,860) + 1 calls ($    42,620)
+  🟢 ASTS   | $  72.85 | Value: $     29140 | Conv:  7.0/10 | Contracts:  4 | RSI:  41.4 | Neutral positioning
+      └─ Puts only: 3 contracts ($    21,855)
+  🟡 JOBY   | $  10.31 | Value: $      3094 | Conv:  7.0/10 | Contracts:  3 | RSI:  59.1 | Approaching extremes
+  🟢 MCHI   | $  58.14 | Value: $     11628 | Conv:  7.0/10 | Contracts:  2 | RSI:  49.0 | Neutral positioning
+      └─ Puts only: 1 contracts ($     5,814)
+  🟡 MRK    | $ 112.73 | Value: $     22546 | Conv:  7.0/10 | Contracts:  2 | RSI:  49.4 | Approaching extremes
+      └─ Puts only: 2 contracts ($    22,546)
+
+LOW (<6) CONVICTION — 49 positions:
+------------------------------------------------------------------------------------------------------------------------
+  🟢 LYFT   | $  13.35 | Value: $     16020 | Conv:  5.5/10 | Contracts: 12 | RSI:  34.4 | Oversold / Attractive
+      └─ Stagger: 1 puts ($     1,335) + 11 calls ($    14,685)
+  🟢 FMC    | $  12.87 | Value: $     12870 | Conv:  5.5/10 | Contracts: 10 | RSI:  35.2 | Oversold / Attractive
+      └─ Calls only: 3 contracts ($     3,861)
+  🟢 ANET   | $ 140.02 | Value: $    126018 | Conv:  5.5/10 | Contracts:  9 | RSI:  22.3 | Oversold / Attractive
+      └─ Stagger: 6 puts ($    84,012) + 2 calls ($    28,004)
+  🔴 NVO    | $  46.72 | Value: $     37376 | Conv:  5.5/10 | Contracts:  8 | RSI:  85.5 | Overbought / Extended
+      └─ Stagger: 6 puts ($    28,032) + 1 calls ($     4,672)
+  🟡 INMD   | $  13.72 | Value: $      9604 | Conv:  5.5/10 | Contracts:  7 | RSI:  37.3 | Approaching extremes
+      └─ Calls only: 7 contracts ($     9,604)
+  🟡 HOOD   | $  78.37 | Value: $     39185 | Conv:  5.5/10 | Contracts:  5 | RSI:  36.6 | Approaching extremes
+      └─ Puts only: 4 contracts ($    31,348)
+  🟡 MMYT   | $  45.92 | Value: $     22958 | Conv:  5.5/10 | Contracts:  5 | RSI:  50.1 | Approaching extremes
+      └─ Puts only: 3 contracts ($    13,775)
+  🔴 RKLB   | $ 116.16 | Value: $     46464 | Conv:  5.5/10 | Contracts:  4 | RSI:  65.4 | Overbought / Extended
+      └─ Puts only: 2 contracts ($    23,232)
+  🔴 FSLR   | $ 230.36 | Value: $     92144 | Conv:  5.5/10 | Contracts:  4 | RSI:  76.7 | Overbought / Extended
+      └─ Puts only: 4 contracts ($    92,144)
+  🔴 ASML   | $1511.79 | Value: $    453537 | Conv:  5.5/10 | Contracts:  3 | RSI:  56.0 | Overbought / Extended
+      └─ Puts only: 3 contracts ($   453,537)
+  🔴 CRDO   | $ 204.60 | Value: $     40920 | Conv:  5.5/10 | Contracts:  2 | RSI:  55.5 | Overbought / Extended
+      └─ Puts only: 2 contracts ($    40,920)
+  🟢 BRKB   | $   0.00 | Value: $         0 | Conv:  5.5/10 | Contracts:  2 | RSI:  50.0 | Neutral positioning
+      └─ Puts only: 2 contracts ($         0)
+  🟢 CAVA   | $  77.55 | Value: $      7755 | Conv:  5.5/10 | Contracts:  1 | RSI:  20.6 | Oversold / Attractive
+      └─ Puts only: 1 contracts ($     7,755)
+  🔴 LASR   | $  83.43 | Value: $      8343 | Conv:  5.5/10 | Contracts:  1 | RSI:  60.2 | Overbought / Extended
+  🟢 JD     | $  30.88 | Value: $     33968 | Conv:  5.0/10 | Contracts: 11 | RSI:  53.0 | Neutral positioning
+      └─ Stagger: 6 puts ($    18,528) + 2 calls ($     6,176)
+  🟡 NBIS   | $ 181.18 | Value: $    126826 | Conv:  5.0/10 | Contracts:  7 | RSI:  60.3 | Approaching extremes
+      └─ Puts only: 4 contracts ($    72,472)
+  🔴 UNH    | $ 384.54 | Value: $    230721 | Conv:  5.0/10 | Contracts:  6 | RSI:  81.5 | Overbought / Extended
+      └─ Stagger: 4 puts ($   153,814) + 2 calls ($    76,907)
+  🔴 NVDA   | $ 221.10 | Value: $     66330 | Conv:  5.0/10 | Contracts:  3 | RSI:  64.3 | Overbought / Extended
+      └─ Puts only: 1 contracts ($    22,110)
+  🟡 BROS   | $  49.55 | Value: $     14865 | Conv:  5.0/10 | Contracts:  3 | RSI:  34.8 | Approaching extremes
+      └─ Puts only: 3 contracts ($    14,865)
+  🔴 ROKU   | $ 125.81 | Value: $     25161 | Conv:  5.0/10 | Contracts:  2 | RSI:  61.1 | Overbought / Extended
+      └─ Puts only: 2 contracts ($    25,161)
+
+========================================================================================================================
+SECTION 3: POSITION HEAT DISTRIBUTION
+========================================================================================================================
+
+🟢 GREEN (Attractive/Oversold):   47 positions ( 43.9%)
+🟡 YELLOW (Neutral):              39 positions ( 36.4%)
+🔴 RED (Extended/Overbought):    21 positions ( 19.6%)
+
+========================================================================================================================
+SECTION 4: MARKET REGIME & SIGNALS
+========================================================================================================================
+
+Current Regime: CAUTIOUS_BULL
+Note: CAUTIOUS_BULL: technical signals green but — VIX 18.7 ≥ 16 (elevated, not complacent). New entries allowed, Tier 1-2 only, tighter strikes.
+
+VIX: 18.7 — VIX 18.7 sustained < 20
+S&P 500: 7370 (50d MA: 6884, 200d MA: 6764)
+  Above 50d MA: True | Above 200d MA: True
+
+========================================================================================================================
+SECTION 5: POSITION DISTRIBUTION BY ACCOUNT
+========================================================================================================================
+
+Fidelity    : 111 positions ( 25.3%) ████████████
+Robinhood   :  40 positions (  9.1%) ████
+Schwab      : 258 positions ( 58.9%) █████████████████████████████
+Vanguard    :  29 positions (  6.6%) ███
+
+========================================================================================================================
+SECTION 6: TOP 20 POSITIONS BY OPEN CONTRACTS
+========================================================================================================================
+
+ 1. NFLX     | $   86.75 |  42 contracts |  7 accounts | Conv: 8.0/10
+ 2. PYPL     | $   44.47 |  25 contracts | 12 accounts | Conv: 7.5/10
+ 3. OKTA     | $   78.83 |  20 contracts | 11 accounts | Conv: 8.0/10
+ 4. NKE      | $   42.18 |  18 contracts | 13 accounts | Conv: 10.0/10
+ 5. ADBE     | $  242.23 |  16 contracts | 14 accounts | Conv: 8.5/10
+ 6. AXON     | $  393.92 |  14 contracts | 13 accounts | Conv: 8.0/10
+ 7. LYFT     | $   13.35 |  12 contracts |  5 accounts | Conv: 5.5/10
+ 8. JD       | $   30.88 |  11 contracts |  7 accounts | Conv: 5.0/10
+ 9. COIN     | $  209.32 |  10 contracts | 10 accounts | Conv: 8.0/10
+10. FMC      | $   12.87 |  10 contracts |  8 accounts | Conv: 5.5/10
+11. AMZN     | $  264.24 |  10 contracts |  6 accounts | Conv: 4.0/10
+12. MU       | $  765.53 |  10 contracts |  6 accounts | Conv: 4.5/10
+13. IONQ     | $   56.62 |  10 contracts |  7 accounts | Conv: 6.0/10
+14. CRM      | $  174.52 |  10 contracts | 10 accounts | Conv: 6.0/10
+15. CMG      | $   32.31 |   9 contracts |  9 accounts | Conv: 6.0/10
+16. ANET     | $  140.02 |   9 contracts |  9 accounts | Conv: 5.5/10
+17. VST      | $  147.13 |   9 contracts |  9 accounts | Conv: 6.5/10
+18. RIOT     | $   24.41 |   9 contracts |  5 accounts | Conv: 4.5/10
+19. NIO      | $    5.94 |   8 contracts |  2 accounts | Conv: 4.0/10
+20. SMR      | $   12.31 |   8 contracts |  5 accounts | Conv: 8.5/10
+
+========================================================================================================================
+SECTION 7: OODA FRAMEWORK (Observe-Orient-Decide-Act)
+========================================================================================================================
+
+Observe (Live Data):
+  ✅ 438 positions across 8 accounts
+  ✅ 107 unique tickers with live prices
+  ✅ Technical indicators: RSI, MACD, Bollinger Bands (30+ tickers analyzed)
+  ✅ Conviction scores derived from multi-factor technical + fundamental analysis
+
+Orient (Broker Diversity & Risk Analysis):
+  ✅ Fidelity    : 111 positions ( 25.3%)
+  ✅ Robinhood   : 40 positions (  9.1%)
+  ✅ Schwab      : 258 positions ( 58.9%)
+  ✅ Vanguard    : 29 positions (  6.6%)
+
+Decide (Position Management Strategy):
+  1. Monitor market regime: CAUTIOUS_BULL
+  2. Focus on GREEN positions (attractive): 47 identified
+  3. Monitor RED positions (extended): 21 require caution
+  4. Rebalance if account exceeds risk limits
+
+Act (Next Steps):
+  • Review 15 HIGH conviction positions for entry/increase
+  • Monitor 49 LOW conviction positions for exit/reduce
+  • Assess 21 RED heat positions for risk management
+  • Prepare for weekly rebalancing & Greeks monitoring
+
+========================================================================================================================
+Report generated: 2026-05-12 | Data source: OpenPositionsLoaderV2 + Yahoo Finance + Technical Analysis
+========================================================================================================================

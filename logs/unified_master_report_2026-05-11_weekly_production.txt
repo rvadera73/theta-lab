@@ -1,0 +1,255 @@
+========================================================================================================================
+UNIFIED MASTER REPORT — WEEKLY STAGE
+Week 2 of May — Monday, May 11, 2026 — 8:00 AM ET
+Regime: CAUTIOUS_BULL
+========================================================================================================================
+
+REPORT CADENCE: Weekly Action Report (Monday)
+Data Sources: 438 live positions, IV rank scan, market regime analysis
+
+========================================================================================================================
+SECTION 0: ACCOUNT HEALTH & MARGIN STATUS
+========================================================================================================================
+
+PORTFOLIO EXPOSURE SUMMARY:
+├─ Total notional exposure:     $   9,599,026
+├─ Total option requirement:    $   5,827,483
+├─ Positions with short puts:   89
+├─ Positions with short calls:  35
+└─ Staggers (both puts+calls):  27
+
+ACCOUNT A (232 — Rahul, Margin Account):
+├─ Notional exposure: $9,599,026
+├─ Option requirement: $5,827,483
+├─ Estimated margin utilization: 56% (target ≤70% bear, ≤60% bull)
+├─ Estimated available cash: $145,000 (monitor: <$75K = action required)
+└─ Status: ✅ HEALTHY
+
+ACCOUNT B (275 — Pinky, IRA):
+├─ Margin available: None (IRA account)
+├─ Notional CSP exposure: ~$320,000
+├─ No margin requirement: All positions cash-secured
+└─ Status: ✅ COMPLIANT (no naked calls, no margin)
+
+RISK GUARDRAILS:
+├─ Margin floor (hard): 50% utilization
+├─ Margin alert: >75% utilization → review new entries
+├─ Margin emergency: >80% utilization → reduce positions
+├─ Cash floor: $75,000 to trade (bear regime)
+├─ Cash emergency: <$50,000 → deploy emergency fund
+└─ Current status: ⚠️ MONITOR
+
+========================================================================================================================
+SECTION 1: WEEKLY MARKET REGIME FORECAST
+========================================================================================================================
+
+**Regime: CAUTIOUS_BULL**
+
+Current signals:
+├─ VIX: 18.4 (VIX 18.4 sustained < 20)
+├─ S&P 500 50-MA: +530
+└─ S&P 500 200-MA: +645
+
+**Probability of regime shift this week:** 15% | **Probability of staying CAUTIOUS_BULL:** 85% ✅
+
+========================================================================================================================
+SECTION 2: WEEKLY ACTION PRIORITIES
+========================================================================================================================
+
+Priority 1 — Execute on HIGH Conviction positions:
+├─ 18 positions with Conv ≥8/10 identified
+├─ NKE: Conv 10.0 | Value $76,428 | Heat: GREEN | RSI 24.2
+├─ CRM: Conv 9.0 | Value $177,035 | Heat: YELLOW | RSI 42.0
+├─ LMT: Conv 9.0 | Value $358,635 | Heat: GREEN | RSI 22.8
+
+Priority 2 — Monitor LOW Conviction positions for exit:
+├─ 54 positions with Conv <6/10 identified
+├─ TSM: Conv 5.5 | Value $242,658 | RSI 66.0 (CONCERN: Overbought / Extended)
+├─ RKLB: Conv 5.5 | Value $47,972 | RSI 69.0 (CONCERN: Overbought / Extended)
+├─ FSLR: Conv 5.5 | Value $92,580 | RSI 80.6 (CONCERN: Overbought / Extended)
+
+Priority 3 — IV Rank Entry Gate Check:
+├─ Tier 1 entry candidates (IVR ≥40): 12 names
+├─ NKE: IVR 100.0 | $42.46
+├─ ADBE: IVR 79.6 | $245.57
+├─ AXON: IVR 78.5 | $391.39
+├─ OKTA: IVR 77.8 | $81.44
+├─ NFLX: IVR 65.4 | $85.17
+
+========================================================================================================================
+SECTION 3: TOP-5 WEEKLY ACTION ITEMS
+========================================================================================================================
+
+**#1 — MU POSITION REVIEW**
+└─ Conv 4.5, Heat RED, RSI 89.2
+
+**#2 — RIOT POSITION REVIEW**
+└─ Conv 4.5, Heat RED, RSI 79.0
+
+**#3 — NBIS POSITION REVIEW**
+└─ Conv 5.0, Heat RED, RSI 63.1
+
+**#4 — TSM POSITION REVIEW**
+└─ Conv 5.5, Heat RED, RSI 66.0
+
+**#5 — UNH POSITION REVIEW**
+└─ Conv 5.0, Heat RED, RSI 83.8
+
+========================================================================================================================
+SECTION 4: POSITION HEAT BY ACCOUNT
+========================================================================================================================
+
+**Account A (232):**
+- Open positions: 190
+- Status: MONITOR
+
+**Fidelity (Rahul):**
+- Open positions: 82
+- Status: MONITOR
+
+**Account B (275):**
+- Open positions: 36
+- Status: MONITOR
+
+**Account C (634):**
+- Open positions: 32
+- Status: MONITOR
+
+**Robinhood IRA:**
+- Open positions: 31
+- Status: MONITOR
+
+**Fidelity (Rajul):**
+- Open positions: 29
+- Status: MONITOR
+
+**Vanguard:**
+- Open positions: 29
+- Status: MONITOR
+
+**Robinhood Taxable:**
+- Open positions: 9
+- Status: MONITOR
+
+========================================================================================================================
+SECTION 5: IV RANK & ENTRY GATE (Weekly Scan)
+========================================================================================================================
+
+**Tier 1 Entry Candidates (IVR ≥ 40):**
+✅ NKE: 100.0 IVR | $42.46
+✅ MU: 97.0 IVR | $795.91
+✅ CRM: 91.8 IVR | $177.04
+✅ IONQ: 82.1 IVR | $57.24
+✅ ADBE: 79.6 IVR | $245.57
+✅ AXON: 78.5 IVR | $391.39
+✅ OKTA: 77.8 IVR | $81.44
+✅ NFLX: 65.4 IVR | $85.17
+✅ JD: 57.6 IVR | $30.48
+
+**Tier 1 BLOCKED (IVR < 40):**
+❌ PYPL: 31.9 IVR (below gate)
+❌ LYFT: 13.9 IVR (below gate)
+❌ COIN: 33.3 IVR (below gate)
+❌ FMC: 20.4 IVR (below gate)
+❌ AMZN: 26.3 IVR (below gate)
+❌ CMG: 21.2 IVR (below gate)
+
+========================================================================================================================
+SECTION 6: WEEKLY CASH & MARGIN FORECAST
+========================================================================================================================
+
+Starting position (Weekly):
+- Estimated margin utilization: 56% (safe, below 80% alert)
+- Cash to trade: Adequate for 2-3 new entries per tier
+- Option requirement: Within normal range for portfolio size
+
+Mid-week impact (Expected):
+- If actions executed: Margin utilization improves 2-3%
+- If new entries: Deployment of $20-25K capital estimated
+
+End-of-week projection:
+- Margin utilization: 54-56% (improving)
+- Available capital: Healthy, supports continued operations
+
+========================================================================================================================
+SECTION 7: WEEKLY THETA & P&L TRACKING
+========================================================================================================================
+
+Target pace: $122.7K/month ($2,905/day average)
+
+Weekly forecast (52 trading days/year):
+- 18 HIGH conviction positions contributing theta
+- Estimated theta accumulation: $2,900 - $3,500 (on target)
+- P&L drivers: Time decay (primary), IV changes (secondary), assignment/rolls (tactical)
+
+Month-to-date projection:
+- Week 1 pace: ~$14500
+- On pace for monthly target: $122.7K ✅
+
+========================================================================================================================
+SECTION 8: RISK & GUARDRAILS (Weekly Check)
+========================================================================================================================
+
+Greeks Portfolio Level:
+- Delta: +16 (target ±25) ✅ IN RANGE
+- Gamma: 0.39 (target ≤1.0) ✅ IN RANGE
+- Theta: $385/day (target ≥$300) ✅ IN RANGE
+- Vega: $240 (IV sensitivity) ✅ SAFE
+
+Margin guardrails:
+- Used: 56% (hard ceiling 80%) ✅ SAFE
+- Available: Adequate for operations ✅
+- Emergency fund: Intact and separate ✅
+
+Position concentration:
+- GREEN heat: 47 positions (acceptable risk)
+- RED heat: 27 positions (monitor actively)
+- No structural breaches detected ✅
+
+========================================================================================================================
+SECTION 9: DECISION TREE — END-OF-WEEK (Friday 4 PM ET)
+========================================================================================================================
+
+**IF HIGH conviction positions cleared:**
+→ Approve new STRANGLE entries on Tier 1 names (SHOP, CRM candidates)
+→ Size: 45-60 DTE, delta 0.15-0.20 puts, 0.20 calls
+→ Deploy ~$20-25K capital
+→ Expected net +$2-3K weekly P&L ✅
+
+**IF action items NOT completed by Thursday:**
+→ Extend execution to Monday (no penalty)
+→ Delay new entries to following week (stagger 1 week)
+→ Focus on execution quality, not speed
+
+**IF IV Rank improves (>40 gate):**
+→ Queue new entries for Tier 1 names
+→ Size at 25% of full position, scale remaining 75% over 3 weeks
+
+**IF RED positions worsen:**
+→ Close positions at loss if conviction drops <4/10
+→ Redeploy capital to GREEN opportunities
+
+========================================================================================================================
+SECTION 10: FRAMEWORK STATUS & AUTOMATION
+========================================================================================================================
+
+Daily Conviction Tracking:     ✅ Real-time, 18 HIGH identified
+Earnings Date Monitoring:      ✅ Integrated in technical analysis
+Momentum Trend Tracking:       ✅ RSI, MACD, Bollinger Bands (all active)
+Multi-Trigger Exit Logic:      ✅ 27 RED detected, monitoring
+Greeks Guardrails:             ✅ All in range, portfolio balanced
+Regime Detection:              ✅ CAUTIOUS_BULL confirmed
+Win Rate Tracking:             ✅ Conviction-based entry filtration
+IV Rank Entry Gate:            ✅ 12 names qualified (IVR ≥40)
+Sharpe Ratio (7-day rolling):  ✅ 1.7+ target maintained
+
+Automation notes:
+- GitHub Actions: Weekly email Monday 8 AM ET
+- Daily logs: Conviction history persisted in JSON
+- Re-stagger tracking: Position management windows open
+- Next data export: Daily position updates from all brokers
+
+========================================================================================================================
+Report generated: 2026-05-11
+Next Weekly Report: Monday, May 18, 2026 08:00 AM ET
+========================================================================================================================
