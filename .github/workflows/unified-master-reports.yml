@@ -43,12 +43,19 @@ jobs:
           echo "RESEND_API_KEY set: $([ -z '${{ secrets.RESEND_API_KEY }}' ] && echo 'NO' || echo 'YES')"
           echo "---"
           python3 << 'EOF'
+          print("Starting email script...")
           import os
+          print("✓ Imported os")
           import json
+          print("✓ Imported json")
           from pathlib import Path
+          print("✓ Imported Path")
           from datetime import datetime, date
+          print("✓ Imported datetime")
           import urllib.request
+          print("✓ Imported urllib.request")
           import urllib.error
+          print("✓ Imported urllib.error")
 
           # Find reports generated today
           today = date.today().isoformat()
@@ -108,32 +115,50 @@ jobs:
               icon = subject_icons.get(report_type, '📊')
 
               try:
-                  payload = {{
-                      'from': 'noreply@resend.dev',
-                      'to': 'ravjdpr@gmail.com',
-                      'subject': f'{{icon}} {{report_type.upper()}} — Unified Master Report ({{today}})',
-                      'html': html_body
-                  }}
+                  print(f"Processing {report_type}...")
+                  subject_line = f"{icon} {report_type.upper()} — Unified Master Report ({today})"
+                  print(f"Subject: {subject_line}")
+
+                  payload = dict(
+                      **{
+                          'from': 'noreply@resend.dev',
+                          'to': 'ravjdpr@gmail.com',
+                          'subject': subject_line,
+                          'html': html_body
+                      }
+                  )
+                  print(f"✓ Payload created")
+
+                  payload_json = json.dumps(payload)
+                  print(f"✓ Payload JSON created ({len(payload_json)} bytes)")
+
+                  auth_header = f'Bearer {api_key}'
+                  headers = {
+                      'Content-Type': 'application/json',
+                      'Authorization': auth_header
+                  }
+                  print(f"✓ Headers created")
 
                   req = urllib.request.Request(
                       'https://api.resend.com/emails',
-                      data=json.dumps(payload).encode('utf-8'),
-                      headers={{
-                          'Content-Type': 'application/json',
-                          'Authorization': f'Bearer {{api_key}}'
-                      }},
+                      data=payload_json.encode('utf-8'),
+                      headers=headers,
                       method='POST'
                   )
+                  print(f"✓ Request object created")
 
                   with urllib.request.urlopen(req) as response:
                       result = json.loads(response.read())
-                      print(f"✅ {{report_type.upper()}} report sent: {{result.get('id', 'success')}}")
+                      print(f"✅ {report_type.upper()} report sent: {result.get('id', 'success')}")
 
               except urllib.error.HTTPError as e:
+                  print(f"HTTP Error: {e.code}")
                   error_data = json.loads(e.read())
-                  print(f"⚠️  {{report_type.upper()}} email failed: {{error_data}}")
+                  print(f"⚠️  {report_type.upper()} email failed: {error_data}")
               except Exception as e:
-                  print(f"⚠️  {{report_type.upper()}} email failed: {{e}}")
+                  import traceback
+                  print(f"⚠️  {report_type.upper()} email failed: {e}")
+                  traceback.print_exc()
 
           print(f"\n✅ All generated reports ({{len(generated_reports)}} types) processed")
           EOF
