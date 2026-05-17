@@ -1,0 +1,153 @@
+====================================================================================================
+COMPREHENSIVE PORTFOLIO ANALYSIS REPORT — ALL 8 ACCOUNTS
+Generated: May 17, 2026
+====================================================================================================
+
+EXECUTIVE SUMMARY
+----------------------------------------------------------------------------------------------------
+Total Accounts:              8 (Schwab: 3, Fidelity: 2, Robinhood: 2, Vanguard: 1)
+Total Open Positions:        408
+Unique Tickers:              109
+Data Currency:               2026-05-17
+
+PORTFOLIO DISTRIBUTION BY ACCOUNT
+----------------------------------------------------------------------------------------------------
+Account A (232)                    : 159 pos ( 39.0%) | $   4,305,948 ( 49.8%) ███████████████████
+Fidelity (Rahul)                   :  86 pos ( 21.1%) | $   1,898,260 ( 21.9%) ██████████
+Account B (275)                    :  35 pos (  8.6%) | $     486,496 (  5.6%) ████
+Account C (634)                    :  31 pos (  7.6%) | $     348,615 (  4.0%) ███
+Fidelity (Rajul)                   :  30 pos (  7.4%) | $     319,628 (  3.7%) ███
+Robinhood IRA                      :  29 pos (  7.1%) | $     843,372 (  9.7%) ███
+Vanguard                           :  29 pos (  7.1%) | $     366,162 (  4.2%) ███
+Robinhood Taxable                  :   9 pos (  2.2%) | $      84,848 (  1.0%) █
+TOTAL                              : 408 pos (100.0%) | $   8,653,330 (100.0%)
+
+TOP 25 POSITIONS BY CONTRACTS
+----------------------------------------------------------------------------------------------------
+ 1. NFLX     $   87.02 |  22 contracts | 5 account(s) | Conv:   6.0/10
+ 2. PYPL     $   44.41 |  20 contracts | 10 account(s) | Conv:   7.5/10
+ 3. OKTA     $   82.77 |  18 contracts | 10 account(s) | Conv:   6.0/10
+ 4. NKE      $   41.88 |  17 contracts | 12 account(s) | Conv:  10.0/10
+ 5. ADBE     $  247.60 |  16 contracts | 14 account(s) | Conv:   6.0/10
+ 6. AXON     $  391.88 |  13 contracts | 12 account(s) | Conv:   8.0/10
+ 7. FMC      $   14.17 |  12 contracts | 9 account(s) | Conv:   5.5/10
+ 8. IONQ     $   51.95 |  10 contracts | 5 account(s) | Conv:   6.0/10
+ 9. MU       $  724.66 |  10 contracts | 6 account(s) | Conv:   4.5/10
+10. AMZN     $  264.14 |  10 contracts | 6 account(s) | Conv:   4.5/10
+11. COIN     $  195.43 |  10 contracts | 10 account(s) | Conv:   8.0/10
+12. CMG      $   32.65 |   9 contracts | 9 account(s) | Conv:   6.5/10
+13. ANET     $  141.97 |   9 contracts | 9 account(s) | Conv:   5.5/10
+14. JD       $   32.01 |   9 contracts | 6 account(s) | Conv:   7.0/10
+15. RIOT     $   23.49 |   9 contracts | 5 account(s) | Conv:   5.5/10
+16. ACHR     $    6.05 |   8 contracts | 4 account(s) | Conv:   8.5/10
+17. NVO      $   44.74 |   8 contracts | 7 account(s) | Conv:   8.0/10
+18. NIO      $    6.10 |   8 contracts | 2 account(s) | Conv:   4.5/10
+19. LYFT     $   12.97 |   8 contracts | 4 account(s) | Conv:   7.5/10
+20. SMR      $   11.23 |   8 contracts | 5 account(s) | Conv:   6.0/10
+21. NU       $   12.19 |   7 contracts | 5 account(s) | Conv:   8.0/10
+22. LMT      $  516.01 |   7 contracts | 6 account(s) | Conv:   7.5/10
+23. MP       $   61.27 |   7 contracts | 7 account(s) | Conv:   4.5/10
+24. NBIS     $  219.94 |   7 contracts | 4 account(s) | Conv:   4.0/10
+25. CRWD     $  594.08 |   7 contracts | 7 account(s) | Conv:   4.5/10
+
+CONVICTION DISTRIBUTION
+----------------------------------------------------------------------------------------------------
+HIGH CONVICTION (8-10):     11 positions — ACHR, AXON, COIN, MDXG, NKE, NOC, NU, NVO, QUBT, VST
+                                 and 1 more
+
+MODERATE CONVICTION (6-8):  47 positions
+
+LOW CONVICTION (<6):        51 positions
+
+DETAILED ACCOUNT SUMMARIES
+====================================================================================================
+
+ACCOUNT A (232)
+----------------------------------------------------------------------------------------------------
+├─ Positions: 159
+├─ Total notional: $4,305,948
+├─ Top tickers in account:
+│   PYPL     | 16.0 contracts | $      71,056 | Conv: 7.5/10
+│   OKTA     | 14.0 contracts | $     115,878 | Conv: 6.0/10
+│   AXON     | 11.0 contracts | $     431,068 | Conv: 8.0/10
+│   ADBE     | 10.0 contracts | $     247,600 | Conv: 6.0/10
+│   NFLX     | 10.0 contracts | $      87,020 | Conv: 6.0/10
+
+FIDELITY (RAHUL)
+----------------------------------------------------------------------------------------------------
+├─ Positions: 86
+├─ Total notional: $1,898,260
+├─ Top tickers in account:
+│   NKE      | 10.0 contracts | $      41,880 | Conv: 10.0/10
+│   NFLX     | 10.0 contracts | $      87,020 | Conv: 6.0/10
+│   MU       | 7.0 contracts | $     507,262 | Conv: 4.5/10
+│   ADBE     | 6.0 contracts | $     148,560 | Conv: 6.0/10
+│   IONQ     | 6.0 contracts | $      31,170 | Conv: 6.0/10
+
+ACCOUNT B (275)
+----------------------------------------------------------------------------------------------------
+├─ Positions: 35
+├─ Total notional: $486,496
+├─ Top tickers in account:
+│   ELF      | 3.0 contracts | $      16,929 | Conv: 5.5/10
+│   CCL      | 2.0 contracts | $       4,928 | Conv: 5.5/10
+│   BA       | 2.0 contracts | $      44,098 | Conv: 4.0/10
+│   HOOD     | 2.0 contracts | $      15,428 | Conv: 6.0/10
+│   FMC      | 2.0 contracts | $       2,834 | Conv: 5.5/10
+
+ACCOUNT C (634)
+----------------------------------------------------------------------------------------------------
+├─ Positions: 31
+├─ Total notional: $348,615
+├─ Top tickers in account:
+│   CMG      | 5.0 contracts | $      16,325 | Conv: 6.5/10
+│   TWLO     | 5.0 contracts | $      99,145 | Conv: 4.0/10
+│   ABNB     | 2.0 contracts | $      26,570 | Conv: 6.0/10
+│   ANET     | 1.0 contracts | $      14,197 | Conv: 5.5/10
+│   ASTS     | 1.0 contracts | $       8,367 | Conv: 7.0/10
+
+FIDELITY (RAJUL)
+----------------------------------------------------------------------------------------------------
+├─ Positions: 30
+├─ Total notional: $319,628
+├─ Top tickers in account:
+│   ACHR     | 5.0 contracts | $       3,025 | Conv: 8.5/10
+│   FMC      | 4.0 contracts | $       5,668 | Conv: 5.5/10
+│   MDXG     | 3.0 contracts | $       1,068 | Conv: 9.0/10
+│   SMR      | 3.0 contracts | $       3,369 | Conv: 6.0/10
+│   IONQ     | 2.0 contracts | $      10,390 | Conv: 6.0/10
+
+ROBINHOOD IRA
+----------------------------------------------------------------------------------------------------
+├─ Positions: 29
+├─ Total notional: $843,372
+├─ Top tickers in account:
+│   ALAB     | 2.0 contracts | $      46,536 | Conv: 6.0/10
+│   BROS     | 2.0 contracts | $      10,202 | Conv: 5.0/10
+│   EWY      | 2.0 contracts | $      35,772 | Conv: 6.0/10
+│   ELF      | 2.0 contracts | $      11,286 | Conv: 5.5/10
+│   CRDO     | 2.0 contracts | $      34,434 | Conv: 4.0/10
+
+VANGUARD
+----------------------------------------------------------------------------------------------------
+├─ Positions: 29
+├─ Total notional: $366,162
+├─ Top tickers in account:
+│   NIO      | 8.0 contracts | $       4,880 | Conv: 4.5/10
+│   ABNB     | 2.0 contracts | $      26,570 | Conv: 6.0/10
+│   MMYT     | 2.0 contracts | $       8,660 | Conv: 5.0/10
+│   RTX      | 2.0 contracts | $      34,236 | Conv: 7.0/10
+│   CRM      | 2.0 contracts | $      34,702 | Conv: 6.5/10
+
+ROBINHOOD TAXABLE
+----------------------------------------------------------------------------------------------------
+├─ Positions: 9
+├─ Total notional: $84,848
+├─ Top tickers in account:
+│   DVN      | 2.0 contracts | $       9,898 | Conv: 3.5/10
+│   STNE     | 2.0 contracts | $       1,922 | Conv: 7.5/10
+│   IONQ     | 2.0 contracts | $      10,390 | Conv: 6.0/10
+│   NBIS     | 2.0 contracts | $      43,988 | Conv: 4.0/10
+│   NU       | 2.0 contracts | $       2,438 | Conv: 8.0/10
+
+====================================================================================================
