@@ -62,32 +62,42 @@ class OpenPositionsLoaderV2:
                 dfs.append(df)
                 print(f"✓ Loaded {account_name}: {len(df)} rows")
 
-        # Fidelity accounts
-        fidelity_files = [
-            ('Accounts_History-fidelity-Rahul.csv', 'Fidelity (Rahul)'),
-            ('Accounts_History-fidelity-Rajul.csv', 'Fidelity (Rajul)'),
+        # Fidelity accounts - use glob pattern to find files
+        fidelity_patterns = [
+            ('*Rahul*Fidelity*.csv', 'Fidelity (Rahul)'),
+            ('*Rajul*Fidelity*.csv', 'Fidelity (Rajul)'),
         ]
 
-        for filename, account_name in fidelity_files:
-            filepath = self.data_dir / filename
-            if filepath.exists():
-                df = pd.read_csv(filepath)
-                df['account_name'] = account_name
-                df['account_type'] = 'Fidelity'
-                dfs.append(df)
-                print(f"✓ Loaded {account_name}: {len(df)} rows")
+        for pattern, account_name in fidelity_patterns:
+            matches = sorted(glob.glob(str(self.data_dir / pattern)))
+            if matches:
+                filepath = matches[-1]  # Use latest file
+                try:
+                    df = pd.read_csv(filepath)
+                    df['account_name'] = account_name
+                    df['account_type'] = 'Fidelity'
+                    dfs.append(df)
+                    print(f"✓ Loaded {account_name}: {len(df)} rows from {Path(filepath).name}")
+                except Exception as e:
+                    print(f"! {account_name} load failed: {e}")
 
-        # Vanguard
-        vanguard_path = self.data_dir / 'Vanguard-ytd.csv'
-        if vanguard_path.exists():
-            try:
-                df_vg = pd.read_csv(vanguard_path, nrows=40, on_bad_lines='skip', engine='python')
-                df_vg['account_name'] = 'Vanguard'
-                df_vg['account_type'] = 'Vanguard'
-                dfs.append(df_vg)
-                print(f"✓ Loaded Vanguard: {len(df_vg)} rows")
-            except Exception as e:
-                print(f"! Vanguard load: {e}")
+        # Vanguard - use glob pattern to find files
+        vanguard_patterns = [
+            ('*Vanguard*.csv', 'Vanguard'),
+        ]
+
+        for pattern, account_name in vanguard_patterns:
+            matches = sorted(glob.glob(str(self.data_dir / pattern)))
+            if matches:
+                filepath = matches[-1]  # Use latest file
+                try:
+                    df = pd.read_csv(filepath, on_bad_lines='skip', engine='python')
+                    df['account_name'] = account_name
+                    df['account_type'] = 'Vanguard'
+                    dfs.append(df)
+                    print(f"✓ Loaded {account_name}: {len(df)} rows from {Path(filepath).name}")
+                except Exception as e:
+                    print(f"! {account_name} load failed: {e}")
 
         # Robinhood accounts
         robinhood_files = [
