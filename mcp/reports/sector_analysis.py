@@ -28,8 +28,39 @@ class SectorAnalyzer:
         'Consumer Defensive',
         'Utilities',
         'Real Estate',
-        'Communication Services'
+        'Communication Services',
+        'Defense',
+        'Brand-Quality (Non-AI)',
     ]
+
+    # Custom sector mapping for specific tickers
+    CUSTOM_SECTOR_MAP = {
+        # Defense sector
+        'NOC': 'Defense',
+        'LMT': 'Defense',
+        'RTX': 'Defense',
+        'BA': 'Defense',
+        'GD': 'Defense',
+        'HII': 'Defense',
+        'TXT': 'Defense',
+        'CCI': 'Defense',
+
+        # Brand-Quality (Non-AI) - luxury, consumer staples, healthcare
+        'LVMH': 'Brand-Quality (Non-AI)',
+        'EL': 'Brand-Quality (Non-AI)',
+        'ULTA': 'Brand-Quality (Non-AI)',
+        'ELF': 'Brand-Quality (Non-AI)',
+        'MRK': 'Brand-Quality (Non-AI)',
+        'JNJ': 'Brand-Quality (Non-AI)',
+        'PG': 'Brand-Quality (Non-AI)',
+        'KO': 'Brand-Quality (Non-AI)',
+        'PEP': 'Brand-Quality (Non-AI)',
+        'SBUX': 'Brand-Quality (Non-AI)',
+        'MCD': 'Brand-Quality (Non-AI)',
+        'CMG': 'Brand-Quality (Non-AI)',
+        'NKE': 'Brand-Quality (Non-AI)',
+        'ANET': 'Brand-Quality (Non-AI)',
+    }
 
     def __init__(self, open_positions: pd.DataFrame, metrics: Dict, prices: Dict):
         """
@@ -48,17 +79,22 @@ class SectorAnalyzer:
         self._fetch_sector_data()
 
     def _fetch_sector_data(self):
-        """Fetch sector classifications from Yahoo Finance"""
+        """Fetch sector classifications from Yahoo Finance + custom overrides"""
         unique_tickers = self.open_positions['ticker'].unique()
 
         for ticker in unique_tickers:
-            try:
-                info = yf.Ticker(ticker).info
-                sector = info.get('sector', 'Unknown')
-                self.sector_map[ticker] = sector
-            except Exception as e:
-                logger.warning(f"Could not fetch sector for {ticker}: {e}")
-                self.sector_map[ticker] = 'Unknown'
+            # Check custom sector map first
+            if ticker in self.CUSTOM_SECTOR_MAP:
+                self.sector_map[ticker] = self.CUSTOM_SECTOR_MAP[ticker]
+            else:
+                # Fall back to Yahoo Finance
+                try:
+                    info = yf.Ticker(ticker).info
+                    sector = info.get('sector', 'Unknown')
+                    self.sector_map[ticker] = sector
+                except Exception as e:
+                    logger.warning(f"Could not fetch sector for {ticker}: {e}")
+                    self.sector_map[ticker] = 'Unknown'
 
     def get_sector_breakdown(self) -> Dict[str, Dict]:
         """
