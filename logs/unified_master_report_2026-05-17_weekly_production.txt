@@ -1,0 +1,248 @@
+========================================================================================================================
+UNIFIED MASTER REPORT — WEEKLY STAGE
+Week 3 of May — Sunday, May 17, 2026 — 8:00 AM ET
+Regime: BULL
+========================================================================================================================
+
+REPORT CADENCE: Weekly Action Report (Monday)
+Data Sources: 408 live positions, IV rank scan, market regime analysis
+
+========================================================================================================================
+SECTION 0: ACCOUNT HEALTH & MARGIN STATUS
+========================================================================================================================
+
+PORTFOLIO EXPOSURE SUMMARY:
+├─ Total notional exposure:     $   8,653,330
+├─ Total option requirement:    $   1,081,666
+├─ Positions with short puts:   73
+├─ Positions with short calls:  34
+└─ Staggers (both puts+calls):  24
+
+ACCOUNT A (232 — Rahul, Margin Account):
+├─ Notional exposure: $4,305,948
+├─ Option requirement (calculated @ 12.5%): $538,244
+├─ Option requirement (Schwab statement): $670,000 ✓ VALIDATED
+├─ Margin utilization: 60% (target ≤70% bear, ≤60% bull)
+├─ Estimated available cash: $145,000 (monitor: <$75K = action required)
+└─ Status: ✅ HEALTHY
+
+ACCOUNT B (275 — Pinky, IRA):
+├─ Margin available: None (IRA account)
+├─ Notional CSP exposure: ~$320,000
+├─ No margin requirement: All positions cash-secured
+└─ Status: ✅ COMPLIANT (no naked calls, no margin)
+
+RISK GUARDRAILS:
+├─ Margin floor (hard): 50% utilization
+├─ Margin alert: >75% utilization → review new entries
+├─ Margin emergency: >80% utilization → reduce positions
+├─ Cash floor: $75,000 to trade (bear regime)
+├─ Cash emergency: <$50,000 → deploy emergency fund
+└─ Current status: ⚠️ MONITOR
+
+========================================================================================================================
+SECTION 1: WEEKLY MARKET REGIME FORECAST
+========================================================================================================================
+
+**Regime: BULL**
+
+Current signals:
+
+**Probability of regime shift this week:** 15% | **Probability of staying BULL:** 85% ✅
+
+========================================================================================================================
+SECTION 2: WEEKLY ACTION PRIORITIES
+========================================================================================================================
+
+Priority 1 — Execute on HIGH Conviction positions:
+├─ 11 positions with Conv ≥8/10 identified
+├─ NKE: Conv 10.0 | Value $71,196 | Heat: GREEN | RSI 23.0
+├─ NOC: Conv 10.0 | Value $216,276 | Heat: YELLOW | RSI 27.2
+├─ MDXG: Conv 9.0 | Value $1,068 | Heat: YELLOW | RSI 58.3
+
+Priority 2 — Monitor LOW Conviction positions for exit:
+├─ 51 positions with Conv <6/10 identified
+├─ RBRK: Conv 5.5 | Value $6,377 | RSI 75.5 (CONCERN: Overbought / Extended)
+├─ UNH: Conv 5.0 | Value $157,540 | RSI 77.4 (CONCERN: Overbought / Extended)
+├─ VRT: Conv 5.0 | Value $37,094 | RSI 68.1 (CONCERN: Overbought / Extended)
+
+Priority 3 — IV Rank Entry Gate Check:
+├─ Tier 1 entry candidates (IVR ≥40): 25 names
+├─ NFLX: IVR 50.0 | $87.02
+├─ PYPL: IVR 50.0 | $44.41
+├─ OKTA: IVR 50.0 | $82.77
+├─ NKE: IVR 50.0 | $41.88
+├─ ADBE: IVR 50.0 | $247.60
+
+========================================================================================================================
+SECTION 3: TOP-5 WEEKLY ACTION ITEMS
+========================================================================================================================
+
+**#1 — NBIS POSITION REVIEW**
+└─ Conv 4.0, Heat RED, RSI 74.5
+
+**#2 — CRWD POSITION REVIEW**
+└─ Conv 4.5, Heat RED, RSI 89.9
+
+**#3 — TSM POSITION REVIEW**
+└─ Conv 3.5, Heat RED, RSI 49.7
+
+**#4 — TWLO POSITION REVIEW**
+└─ Conv 4.0, Heat RED, RSI 82.5
+
+**#5 — RKLB POSITION REVIEW**
+└─ Conv 4.5, Heat RED, RSI 73.3
+
+========================================================================================================================
+SECTION 4: POSITION HEAT BY ACCOUNT
+========================================================================================================================
+
+**Account A (232):**
+- Open positions: 159
+- Status: MONITOR
+
+**Fidelity (Rahul):**
+- Open positions: 86
+- Status: MONITOR
+
+**Account B (275):**
+- Open positions: 35
+- Status: MONITOR
+
+**Account C (634):**
+- Open positions: 31
+- Status: MONITOR
+
+**Fidelity (Rajul):**
+- Open positions: 30
+- Status: MONITOR
+
+**Robinhood IRA:**
+- Open positions: 29
+- Status: MONITOR
+
+**Vanguard:**
+- Open positions: 29
+- Status: MONITOR
+
+**Robinhood Taxable:**
+- Open positions: 9
+- Status: MONITOR
+
+========================================================================================================================
+SECTION 5: IV RANK & ENTRY GATE (Weekly Scan)
+========================================================================================================================
+
+**Tier 1 Entry Candidates (IVR ≥ 40):**
+✅ NFLX: 50.0 IVR | $87.02
+✅ PYPL: 50.0 IVR | $44.41
+✅ OKTA: 50.0 IVR | $82.77
+✅ NKE: 50.0 IVR | $41.88
+✅ ADBE: 50.0 IVR | $247.60
+✅ AXON: 50.0 IVR | $391.88
+✅ FMC: 50.0 IVR | $14.17
+✅ IONQ: 50.0 IVR | $51.95
+✅ MU: 50.0 IVR | $724.66
+✅ AMZN: 50.0 IVR | $264.14
+
+**Tier 1 BLOCKED (IVR < 40):**
+
+========================================================================================================================
+SECTION 6: WEEKLY CASH & MARGIN FORECAST
+========================================================================================================================
+
+Starting position (Weekly):
+- Estimated margin utilization: 56% (safe, below 80% alert)
+- Cash to trade: Adequate for 2-3 new entries per tier
+- Option requirement: Within normal range for portfolio size
+
+Mid-week impact (Expected):
+- If actions executed: Margin utilization improves 2-3%
+- If new entries: Deployment of $20-25K capital estimated
+
+End-of-week projection:
+- Margin utilization: 54-56% (improving)
+- Available capital: Healthy, supports continued operations
+
+========================================================================================================================
+SECTION 7: WEEKLY THETA & P&L TRACKING
+========================================================================================================================
+
+Target pace: $122.7K/month ($2,905/day average)
+
+Weekly forecast (52 trading days/year):
+- 11 HIGH conviction positions contributing theta
+- Estimated theta accumulation: $2,900 - $3,500 (on target)
+- P&L drivers: Time decay (primary), IV changes (secondary), assignment/rolls (tactical)
+
+Month-to-date projection:
+- Week 1 pace: ~$14500
+- On pace for monthly target: $122.7K ✅
+
+========================================================================================================================
+SECTION 8: RISK & GUARDRAILS (Weekly Check)
+========================================================================================================================
+
+Greeks Portfolio Level:
+- Delta: +16 (target ±25) ✅ IN RANGE
+- Gamma: 0.39 (target ≤1.0) ✅ IN RANGE
+- Theta: $385/day (target ≥$300) ✅ IN RANGE
+- Vega: $240 (IV sensitivity) ✅ SAFE
+
+Margin guardrails:
+- Used: 56% (hard ceiling 80%) ✅ SAFE
+- Available: Adequate for operations ✅
+- Emergency fund: Intact and separate ✅
+
+Position concentration:
+- GREEN heat: 40 positions (acceptable risk)
+- RED heat: 12 positions (monitor actively)
+- No structural breaches detected ✅
+
+========================================================================================================================
+SECTION 9: DECISION TREE — END-OF-WEEK (Friday 4 PM ET)
+========================================================================================================================
+
+**IF HIGH conviction positions cleared:**
+→ Approve new STRANGLE entries on Tier 1 names (SHOP, CRM candidates)
+→ Size: 45-60 DTE, delta 0.15-0.20 puts, 0.20 calls
+→ Deploy ~$20-25K capital
+→ Expected net +$2-3K weekly P&L ✅
+
+**IF action items NOT completed by Thursday:**
+→ Extend execution to Monday (no penalty)
+→ Delay new entries to following week (stagger 1 week)
+→ Focus on execution quality, not speed
+
+**IF IV Rank improves (>40 gate):**
+→ Queue new entries for Tier 1 names
+→ Size at 25% of full position, scale remaining 75% over 3 weeks
+
+**IF RED positions worsen:**
+→ Close positions at loss if conviction drops <4/10
+→ Redeploy capital to GREEN opportunities
+
+========================================================================================================================
+SECTION 10: FRAMEWORK STATUS & AUTOMATION
+========================================================================================================================
+
+Daily Conviction Tracking:     ✅ Real-time, 11 HIGH identified
+Earnings Date Monitoring:      ✅ Integrated in technical analysis
+Momentum Trend Tracking:       ✅ RSI, MACD, Bollinger Bands (all active)
+Multi-Trigger Exit Logic:      ✅ 12 RED detected, monitoring
+Greeks Guardrails:             ✅ All in range, portfolio balanced
+Regime Detection:              ✅ BULL confirmed
+Win Rate Tracking:             ✅ Conviction-based entry filtration
+IV Rank Entry Gate:            ✅ 25 names qualified (IVR ≥40)
+Sharpe Ratio (7-day rolling):  ✅ 1.7+ target maintained
+
+Automation notes:
+- GitHub Actions: Weekly email Monday 8 AM ET
+- Daily logs: Conviction history persisted in JSON
+- Re-stagger tracking: Position management windows open
+- Next data export: Daily position updates from all brokers
+
+========================================================================================================================
+Report generated: 2026-05-17
+Next Weekly Report: Sunday, May 24, 2026 08:00 AM ET
+========================================================================================================================

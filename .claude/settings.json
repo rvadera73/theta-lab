@@ -1,0 +1,14 @@
+{
+  "env": {
+    "THETA_LAB_DIR": "/home/rahulvadera/projects/theta-lab",
+    "THETA_LAB_DATA": "/home/rahulvadera/projects/theta-lab/data",
+    "THETA_LAB_LOGS": "/home/rahulvadera/projects/theta-lab/logs"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cd /home/rahulvadera/projects/theta-lab *)",
+      "Read(/home/rahulvadera/projects/theta-lab)",
+      "Write(/home/rahulvadera/projects/theta-lab)"
+    ]
+  }
+}

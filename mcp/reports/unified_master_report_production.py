@@ -306,11 +306,11 @@ class UnifiedReportProduction:
 
         # SECTION 5: ACCOUNT DISTRIBUTION
         output.extend(self._format_section_header(5, "POSITION DISTRIBUTION BY ACCOUNT"))
-        total_positions = self.type_summary['open_positions'].sum()
-        for acct_type, row in self.type_summary.iterrows():
+        total_positions = self.account_summary['open_positions'].sum()
+        for acct_name, row in self.account_summary.iterrows():
             pct = 100 * row['open_positions'] / total_positions
             bar = "█" * int(pct / 2)
-            output.append(f"{acct_type:12}: {row['open_positions']:3} positions ({pct:5.1f}%) {bar}")
+            output.append(f"{acct_name:35}: {row['open_positions']:3} positions ({pct:5.1f}%) {bar}")
         output.append("")
 
         # SECTION 6: TOP 20 POSITIONS
@@ -336,10 +336,10 @@ class UnifiedReportProduction:
         output.append(f"  ✅ Conviction scores derived from multi-factor technical + fundamental analysis")
         output.append("")
 
-        output.append("Orient (Broker Diversity & Risk Analysis):")
-        for acct_type, row in self.type_summary.iterrows():
+        output.append("Orient (Account Diversity & Risk Analysis):")
+        for acct_name, row in self.account_summary.iterrows():
             pct = 100 * row['open_positions'] / total_positions
-            output.append(f"  ✅ {acct_type:12}: {row['open_positions']} positions ({pct:5.1f}%)")
+            output.append(f"  ✅ {acct_name:35}: {row['open_positions']} positions ({pct:5.1f}%)")
         output.append("")
 
         output.append("Decide (Position Management Strategy):")
