@@ -38,12 +38,20 @@ class OpenPositionsLoaderV2:
         """Load all 8 account files"""
         dfs = []
 
-        # Schwab accounts
-        schwab_files = [
-            ('Individual_XXX232_Transactions_20260511-113621.csv', 'Account A (232)'),
-            ('Contributory_XXX275_Transactions_20260511-113648.csv', 'Account B (275)'),
-            ('Designated_Bene_Individual_XXX634_Transactions_20260511-113723.csv', 'Account C (634)'),
+        # Find latest Schwab transaction files
+        import glob
+        schwab_patterns = [
+            ('Individual_XXX232_Transactions_*.csv', 'Account A (232)'),
+            ('Contributory_XXX275_Transactions_*.csv', 'Account B (275)'),
+            ('Designated_Bene_Individual_XXX634_Transactions_*.csv', 'Account C (634)'),
         ]
+
+        schwab_files = []
+        for pattern, account_name in schwab_patterns:
+            matches = sorted(glob.glob(str(self.data_dir / pattern)))
+            if matches:
+                # Use latest file
+                schwab_files.append((matches[-1].split('/')[-1], account_name))
 
         for filename, account_name in schwab_files:
             filepath = self.data_dir / filename
@@ -234,10 +242,14 @@ class OpenPositionsLoaderV2:
 
         # Calculate net quantity per position
         # Group by: account, ticker, and contract identifier
-        # Use 'symbol' for most brokers, but for Robinhood (which has NaN symbol) use description_1 or description
+        # Use 'symbol' for most brokers, but for Robinhood use 'instrument' or description
         all_options['contract_id'] = all_options.apply(
-            lambda row: row['symbol'] if pd.notna(row['symbol']) else (
-                row.get('description_1', row.get('description', 'unknown'))
+            lambda row: (
+                row['symbol'] if pd.notna(row.get('symbol')) else (
+                    row.get('instrument') if pd.notna(row.get('instrument')) else (
+                        row.get('description_1', row.get('description', 'unknown'))
+                    )
+                )
             ),
             axis=1
         )
