@@ -175,11 +175,29 @@ class OpenPositionsLoaderV2:
 
         return None
 
+    def _parse_expiry_date(self, symbol_str: str) -> Optional['date']:
+        """Extract expiry date from symbol string (format: TICKER MM/DD/YYYY STRIKE P/C)"""
+        try:
+            parts = str(symbol_str).split()
+            if len(parts) >= 2:
+                date_str = parts[1]
+                if '/' in date_str:
+                    month, day, year = date_str.split('/')
+                    from datetime import date
+                    return date(int(year), int(month), int(day))
+        except:
+            pass
+        return None
+
     def _calculate_open_positions(self):
-        """Calculate net open positions by excluding closed-out positions"""
+        """Calculate net open positions by excluding closed-out positions and expired contracts"""
+        from datetime import date
 
         # Extract ticker for all rows
         self.consolidated_df['ticker'] = self.consolidated_df.apply(self._extract_ticker, axis=1)
+
+        # Extract expiry date for all rows (for filtering expired positions)
+        self.consolidated_df['expiry_date'] = self.consolidated_df['symbol'].apply(self._parse_expiry_date)
 
         # Identify option transactions
         option_masks = []
@@ -231,8 +249,15 @@ class OpenPositionsLoaderV2:
         else:
             combined_mask = pd.Series([False] * len(self.consolidated_df))
 
+        # Filter out expired positions
+        from datetime import date
+        today = date.today()
+        not_expired_mask = self.consolidated_df['expiry_date'].apply(
+            lambda x: x is None or x >= today
+        )
+
         all_options = self.consolidated_df[
-            (self.consolidated_df['ticker'].notna()) & combined_mask
+            (self.consolidated_df['ticker'].notna()) & combined_mask & not_expired_mask
         ].copy()
 
         print(f"\n✓ Found {len(all_options)} total option transactions")
