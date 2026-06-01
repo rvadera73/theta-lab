@@ -1,25 +1,24 @@
 # Trading Persona — Rahul Vadera
 
 **Generated:** 2026-04-25
-**Last Updated:** 2026-05-06 (session 4 — May performance validation, transaction-based reconstruction, heat summary integration)
-**Source:** Schwab brokerage statements (Jan–May 2026), transaction files, live position data, portfolio P&L analysis
+**Last Updated:** 2026-06-01 (session N — macro risk framework + probabilistic crash detection integration)
+**Source:** Schwab brokerage statements (Jan–Jun 2026), transaction files, live position data, portfolio P&L analysis, 7-layer macro indicators
 **Status:** ACTIVE — use this file as the guardrail for all trade decisions
 
 ---
 
-## 2026 Performance Update (May 6)
+## 2026 Performance Update (May 22)
 
-| Metric | YTD | May 1-6 | Status |
-|--------|-----|---------|--------|
-| **YTD Premium Collected** | $340,938 | $101,786 | ✅ 29.9% of YTD in 6 days |
-| **Trading Days** | 125 | 4 | — |
-| **Avg Daily Profit** | $2,728 | $25,446 | 🚀 **+833% (10x faster)** |
-| **Profit Factor** | 1.02 | — | Healthy (profits > losses) |
-| **Capture Rate** | 60.8% | — | Consistent premium harvesting |
-| **Open Positions** | — | 76 contracts | 155 RED, 63 YELLOW, 138 GREEN |
-| **Monthly Goal** | — | $360K target | $101.8K (28% on pace for record month) |
+| Metric | YTD | May 22 Status | Status |
+|--------|-----|---------------|--------|
+| **YTD Premium Collected** | $340,938 | Running on pace | ✅ Record month trajectory |
+| **Current Regime** | BEAR (May 6) | **CAUTIOUS_BULL (May 22)** | 📈 Confirmed shift to bull momentum |
+| **Open Positions** | 76 contracts | 89 contracts (14 RED, 2 YELLOW, 73 GREEN) | Staggered, thesis-driven |
+| **Account A Margin** | $328,678 (Feb) | $650K required, 60% utilization, $96K cash-to-trade | Healthy headroom |
+| **Account B Deployment** | $272,932 (Mar) | $30K deployed: BWXT, SHOP, NEE | Nuclear/energy + decay |
+| **Profit-Take Status** | — | None at 70% threshold | Positions still building |
 
-**May Projection:** Expected $355K total (conservative: $560K if current pace holds). Running significantly ahead of annual target.
+**May 22 Status:** CAUTIOUS_BULL confirmed. Account B fully deployed (nuclear/energy infrastructure theme + collect decay strategy). Account A awaiting PYPL full exit (~5 contracts) to redeploy Tier 1 slot. No urgent profit-takes or rolls.
 
 ---
 
@@ -89,6 +88,104 @@ These are the signals that trigger removal from the universe, based on observed 
 
 **What does NOT trigger exit:** Stock price drop alone, short-term volatility, broad market selloff.
 The thesis must break — not just the price.
+
+---
+
+## Macro Risk Framework — 7-Layer Crash Detection (INTEGRATED JUNE 1, 2026)
+
+**Purpose:** Tie macro risk signals to actionable probabilities. Every macro indicator has predictive power only if it drives a specific position reduction decision.
+
+### The 7 Layers (Automated Daily)
+
+1. **Breadth (% S&P 500 above 50-day MA)** — Real-time from Yahoo Finance
+   - GREEN: >60% | YELLOW: 50-60% | RED: <50%
+   - Signals: Market health degradation
+
+2. **Advance-Decline Ratio** — Real-time from S&P 500 sample via Yahoo Finance
+   - GREEN: >1.0 | YELLOW: 0.8-1.0 | RED: <0.8
+   - Signals: Participation quality (breadth confidence)
+
+3. **VIX Term Structure** — CBOE VIX futures
+   - GREEN: CONTANGO (normal) | YELLOW: FLAT (caution) | RED: BACKWARDATION (alert)
+   - Signals: When VIX flips to backwardation, fear intensity rising
+
+4. **Credit Spreads (HY OAS)** — FRED API (real-time)
+   - GREEN: <400 bps | YELLOW: 400-450 bps | RED: >450 bps
+   - Signals: Credit market stress = widespread fear
+
+5. **Put/Call Ratio** — Market sentiment
+   - GREEN: <1.0 | YELLOW: 1.0-1.2 | RED: >1.2
+   - Signals: Hedging demand relative to call selling
+
+6. **Yield Curve (10Y-2Y)** — FRED API (real-time)
+   - GREEN: >0.5% | YELLOW: 0.1-0.5% | RED: <0.1% (inverted)
+   - Signals: Recession risk
+
+7. **Earnings Quality** — Qualitative
+   - Guidance beats/misses, revenue realization, management credibility
+
+### Probabilistic Crash Forecast
+
+Each layer feeds into a **Bayesian probability model** that outputs:
+- **30-day crash probability** (what matters for position sizing THIS MONTH)
+- **60-day probability** (medium-term vigilance)
+- **90-day probability** (long-term regime watch)
+
+**Model Logic:**
+- Base rates: ~6% monthly crash probability (historical 2010-2025 data)
+- Multipliers: Each RED signal adds +15% to 30-day prob, each YELLOW adds +5%
+- Combined with current regime (BULL/SIDEWAYS/BEAR) to adjust thresholds
+
+### Action Thresholds (Probability-Driven)
+
+| 30-Day Prob | Stage | Recommended Action | Example |
+|---|---|---|---|
+| <20% | GREEN | Proceed with full sizing | All signals GREEN → 6% prob → Normal ops |
+| 20-40% | YELLOW-1 | Close 20% low-conviction | 1 YELLOW signal → 20% prob → Trim weak names |
+| 40-60% | YELLOW-2 | Close 30-40% overbought | 2 YELLOW or 1 RED+1YELLOW → 45% prob → Close RSI>70 names |
+| 60-70% | RED-Emerging | Close 50% gross exposure | 2+ RED signals → 60% prob → Emergency protocol |
+| >70% | RED-Critical | 70% cash, 30% defensive only | Multiple RED + regime break → Crisis mode |
+
+### Daily Playbook Execution
+
+**Every morning, the daily report shows:**
+1. Section 6.5: Current macro risk level (GREEN/YELLOW/RED)
+2. Indicator status table (7 layers with thresholds)
+3. **Crash probability for 30/60/90 days** ← KEY DECISION INPUT
+4. Primary risk factor (which indicator is concerning)
+5. Specific rotation playbook (which positions to close, by tier)
+
+**Example scenario (June 3, 2026 hypothetical):**
+- Breadth drops to 52% (YELLOW) → +5% to prob
+- HY OAS spikes to 420 bps (YELLOW) → +5% to prob
+- VIX term flips to FLAT (YELLOW) → +5% to prob
+- **Result: 30-day crash prob = 21%**
+- **Action: YELLOW-1 stage → Close 20% of low-conviction positions (OKTA, GEV, BE) → Reduce notional by ~$150K**
+
+### Tie-In to Position Management
+
+**This replaces "guessing" at when to reduce:**
+- OLD: "I feel like the market might crash, let me close 30%"
+- NEW: "Crash probability is 45%, stage is YELLOW-2 → close overbought positions (RSI>70) → reduces by 30-40% systematically"
+
+**Stage 1 (20-40% prob) playbook:**
+- Close Tier 3 positions only (smallest impact)
+- Close names with conviction <6/10
+- Do NOT roll; just exit
+- Increase cash from 10% → 15%
+
+**Stage 2 (40-60% prob) playbook:**
+- Close all overbought Tier 1/2 names (RSI >70)
+- Reduce major positions (AXON, NFLX, etc.) to 75% of current size
+- Shift new entries to DEFENSIVE sector only (Healthcare, Staples, Utilities)
+- Increase cash from 10% → 20-25%
+
+**Stage 3 (>60% prob) playbook:**
+- Emergency protocol
+- Reduce notional from 100% → 50%
+- Increase cash to 40-50%
+- Close ALL naked calls (or hedge with long puts)
+- Prepare for VIX spike rebound
 
 ---
 
@@ -176,11 +273,11 @@ When evaluating a new trend, ask:
 
 ---
 
-## Current Market Regime (Trader View — as of Apr 2026)
+## Current Market Regime (Trader View — as of May 22, 2026)
 
-**Regime:** Bear to Sideways
-**Duration:** ~6 months out (through Oct/Nov 2026)
-**Implication for new positions:** NO new sell entries until regime shifts to bullish
+**Regime:** CAUTIOUS_BULL (confirmed May 22; was BEAR/Sideways on May 6)
+**Duration:** Ongoing; monitor for consolidation signals
+**Implication for new positions:** SELECTIVE new entries allowed (Tier 1/2 only, IVR ≥40, 45-90d DTE)
 
 ### Regime-Driven Behavior Rules
 

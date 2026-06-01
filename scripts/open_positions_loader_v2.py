@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple, Optional
 from datetime import date
 import sys
 import logging
+from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
 logger = logging.getLogger(__name__)
@@ -26,64 +27,235 @@ class OpenPositionsLoaderV2:
         self.consolidated_df = None
         self.open_positions = None
         self.prices = {}
+        self.equity_positions = {}
+        self.option_requirements = {}
+
+    def _calculate_option_requirements(self, equity_positions: Dict[str, Dict[str, int]]) -> Dict[str, float]:
+        """Calculate total option requirement per account.
+
+        Two different formulas based on account type:
+        - Margin accounts: 18% of total notional exposure
+        - Cash accounts: Actual cash collateral needed per position
+          * Short puts: strike × contracts × 100
+          * Short calls (naked): current_price × contracts × 100
+          * Short calls (covered by shares): $0
+
+        Returns Dict[account_name, total_requirement]
+        """
+        requirements = defaultdict(float)
+        notional_by_account = defaultdict(float)
+
+        if self.open_positions is None or len(self.open_positions) == 0:
+            return dict(requirements)
+
+        # Define margin vs cash accounts
+        margin_accounts = {'Account A (232)'}  # Only Account A is margin
+        # All other accounts are cash/secured accounts
+
+        for _, row in self.open_positions.iterrows():
+            account = row['account_name']
+            ticker = row['ticker']
+            opt_type = row.get('option_type')
+            strike = row.get('strike')
+            contracts = row['net_quantity']
+            current_price = self.prices.get(ticker, 0)
+
+            if account in margin_accounts:
+                # For margin accounts: accumulate notional for 18% calculation
+                notional = current_price * contracts * 100
+                notional_by_account[account] += notional
+
+            else:  # All other accounts are cash/secured accounts
+                # For cash accounts: calculate actual collateral needed
+                if opt_type == 'P':
+                    # Short put: strike × contracts × 100
+                    if strike is not None:
+                        requirements[account] += strike * contracts * 100
+                elif opt_type == 'C':
+                    # Short call: check if covered by owned shares
+                    shares_owned = equity_positions.get(account, {}).get(ticker, 0)
+                    covered_contracts = min(contracts, shares_owned // 100)
+                    naked_contracts = contracts - covered_contracts
+                    # Naked calls: current_price × contracts × 100
+                    requirements[account] += naked_contracts * current_price * 100
+
+        # For margin accounts: apply 18% of notional
+        for account, notional in notional_by_account.items():
+            requirements[account] = notional * 0.18
+
+        return dict(requirements)
 
     def load_all_data(self) -> Tuple[pd.DataFrame, Dict[str, float]]:
         """Load all account data and fetch live prices"""
         self._load_accounts()
         self._calculate_open_positions()
+        # Try to load equity positions from YAML file; fall back to transaction history
+        self.equity_positions = self._load_equity_positions_from_yaml()
+        if not self.equity_positions:
+            self.equity_positions = self._track_equity_positions()
         self._fetch_prices()
+        self.option_requirements = self._calculate_option_requirements(self.equity_positions)
         return self.open_positions, self.prices
+
+    def _load_equity_positions_from_yaml(self) -> Dict[str, Dict[str, int]]:
+        """Load equity positions from portfolio_equity_positions.yaml file"""
+        try:
+            import yaml
+            yaml_path = self.data_dir / 'portfolio_equity_positions.yaml'
+            if yaml_path.exists():
+                with open(yaml_path, 'r') as f:
+                    data = yaml.safe_load(f)
+                    if data and 'accounts' in data:
+                        # Convert to Dict[account_name, Dict[ticker, shares]]
+                        result = {}
+                        for account_name, tickers in data['accounts'].items():
+                            result[account_name] = {}
+                            for ticker, position_data in tickers.items():
+                                result[account_name][ticker] = position_data.get('shares', 0)
+                        print(f"✓ Loaded equity positions from portfolio_equity_positions.yaml")
+                        return result
+        except Exception as e:
+            print(f"! Could not load YAML: {e}")
+        return {}
 
     def _load_accounts(self):
         """Load all 8 account files"""
         dfs = []
 
-        # Find latest Schwab transaction files
+        # Try to load Schwab position files first (more accurate), fall back to transaction files
         import glob
-        schwab_patterns = [
-            ('Individual_XXX232_Transactions_*.csv', 'Account A (232)'),
-            ('Contributory_XXX275_Transactions_*.csv', 'Account B (275)'),
-            ('Designated_Bene_Individual_XXX634_Transactions_*.csv', 'Account C (634)'),
+        schwab_account_patterns = [
+            (['Individual-Positions-*.csv', 'Individual_XXX232_Transactions_*.csv'], 'Account A (232)'),
+            (['Contributory-Positions-*.csv', 'Contributory_XXX275_Transactions_*.csv'], 'Account B (275)'),
+            (['*Designated*Bene*Individual-Positions-*.csv', 'Designated_Bene_Individual_XXX634_Transactions_*.csv'], 'Account C (634)'),
         ]
 
-        schwab_files = []
-        for pattern, account_name in schwab_patterns:
-            matches = sorted(glob.glob(str(self.data_dir / pattern)))
-            if matches:
-                # Use latest file
-                schwab_files.append((matches[-1].split('/')[-1], account_name))
+        for patterns, account_name in schwab_account_patterns:
+            # Try each pattern in order
+            if isinstance(patterns, str):
+                patterns = [patterns]
 
-        for filename, account_name in schwab_files:
-            filepath = self.data_dir / filename
-            if filepath.exists():
-                df = pd.read_csv(filepath)
-                df['account_name'] = account_name
-                df['account_type'] = 'Schwab'
-                dfs.append(df)
-                print(f"✓ Loaded {account_name}: {len(df)} rows")
+            file_path = None
+            for pattern in patterns:
+                matches = sorted(glob.glob(str(self.data_dir / pattern)))
+                if matches:
+                    file_path = matches[-1]
+                    break
 
-        # Fidelity accounts - use glob pattern to find files
-        fidelity_patterns = [
-            ('*Rahul*Fidelity*.csv', 'Fidelity (Rahul)'),
-            ('*Rajul*Fidelity*.csv', 'Fidelity (Rajul)'),
-        ]
-
-        for pattern, account_name in fidelity_patterns:
-            matches = sorted(glob.glob(str(self.data_dir / pattern)))
-            if matches:
-                filepath = matches[-1]  # Use latest file
+            if file_path:
                 try:
-                    df = pd.read_csv(filepath)
-                    df['account_name'] = account_name
-                    df['account_type'] = 'Fidelity'
+                    # Check if it's a position file or transaction file
+                    is_position_file = 'Positions' in Path(file_path).name
+
+                    if is_position_file:
+                        # Load position file (skip first 2 rows of metadata)
+                        df = pd.read_csv(file_path, skiprows=2)
+                        # Rename Symbol to symbol for consistency
+                        if 'Symbol' in df.columns:
+                            df['symbol'] = df['Symbol']
+                        # Rename Qty column for consistency
+                        if 'Qty (Quantity)' in df.columns:
+                            df['quantity'] = df['Qty (Quantity)']
+                        df['account_name'] = account_name
+                        df['account_type'] = 'Schwab'
+                        df['source'] = 'position_file'
+                    else:
+                        # Load transaction file
+                        df = pd.read_csv(file_path)
+                        df['account_name'] = account_name
+                        df['account_type'] = 'Schwab'
+                        df['source'] = 'transaction_file'
+
                     dfs.append(df)
-                    print(f"✓ Loaded {account_name}: {len(df)} rows from {Path(filepath).name}")
+                    source_type = 'position file' if is_position_file else 'transaction file'
+                    print(f"✓ Loaded {account_name}: {len(df)} rows from {source_type}")
                 except Exception as e:
-                    print(f"! {account_name} load failed: {e}")
+                    print(f"! Error loading {account_name}: {e}")
+
+        # Fidelity accounts - try position files first, fall back to transaction files
+        fidelity_account_patterns = [
+            (['Portfolio_Positions*Rahul*.csv', '*Fidelity*Rahul*.csv'], 'Fidelity (Rahul)', None),
+            (['Portfolio_Positions*Rajul*.csv', '*Rajul*.csv'], None, {  # Map by Account column value
+                'ROTH IRA': 'Fidelity (Rajul — Roth IRA)',
+                'Traditional IRA': 'Fidelity (Rajul — Rollover IRA)',
+                'ROTH IRA for Minor': 'Fidelity (Rajul — Roth IRA)',
+            }),
+        ]
+
+        for patterns, default_account_name, account_map in fidelity_account_patterns:
+            # Try each pattern in order
+            if isinstance(patterns, str):
+                patterns = [patterns]
+
+            file_path = None
+            for pattern in patterns:
+                matches = sorted(glob.glob(str(self.data_dir / pattern)))
+                if matches:
+                    file_path = matches[-1]
+                    break
+
+            if file_path:
+                try:
+                    is_position_file = 'Portfolio_Positions' in Path(file_path).name
+
+                    # Fidelity position files: row 0=header, row 1=disclaimer, data starts row 2
+                    # Skip 1 row (the disclaimer) to keep header as first row
+                    # Use index_col=False to prevent Account Number from being treated as index
+                    # Fidelity position files have header in row 0, data starts row 1
+                    # No disclaimer rows or metadata - just read normally
+                    df = pd.read_csv(file_path, encoding='utf-8-sig', on_bad_lines='skip')
+
+                    # Map column names for consistency
+                    # Fidelity position files have misaligned columns - data is shifted left
+                    # Symbol column has descriptions like "HOOD MAR 19 2027 $65 PUT"
+                    # Description column actually contains quantities like "-1.0"
+                    if is_position_file:
+                        # Symbol already has what we need (descriptions)
+                        df['symbol'] = df['Symbol']
+                        # Description column has quantities for position files
+                        if 'Description' in df.columns:
+                            df['quantity'] = df['Description']
+                    else:
+                        # Transaction files
+                        if 'Symbol' in df.columns:
+                            df['symbol'] = df['Symbol']
+                        if 'Quantity' in df.columns:
+                            df['quantity'] = df['Quantity']
+
+                    if 'Type' in df.columns:
+                        df['type'] = df['Type']
+
+                    # If we have a mapping, use Account column to assign account names
+                    if account_map:
+                        # Map each row based on the 'Account Name' column value (if it exists)
+                        if 'Account Name' in df.columns:
+                            df['account_name'] = df['Account Name'].map(account_map)
+                            # For unmapped accounts, use a default or the account name itself
+                            df['account_name'] = df['account_name'].fillna('Fidelity (Rajul — Rollover IRA)')
+                        else:
+                            # Transaction file - use default account name
+                            df['account_name'] = default_account_name
+                    else:
+                        # Use the provided default account name for all rows
+                        df['account_name'] = default_account_name
+
+                    df['account_type'] = 'Fidelity'
+                    df['source'] = 'position_file' if is_position_file else 'transaction_file'
+                    dfs.append(df)
+
+                    # Count by account name for logging
+                    source_type = 'position file' if is_position_file else 'transaction file'
+                    if account_map:
+                        for acct_name, count in df['account_name'].value_counts().items():
+                            print(f"✓ Loaded {acct_name}: {count} rows from {source_type}")
+                    else:
+                        print(f"✓ Loaded {default_account_name}: {len(df)} rows from {source_type}")
+                except Exception as e:
+                    print(f"! Fidelity load failed: {e}")
 
         # Vanguard - use glob pattern to find files
         vanguard_patterns = [
-            ('*Vanguard*.csv', 'Vanguard'),
+            ('*Vanguard*.csv', 'Vanguard (Rahul)'),
         ]
 
         for pattern, account_name in vanguard_patterns:
@@ -99,22 +271,43 @@ class OpenPositionsLoaderV2:
                 except Exception as e:
                     print(f"! {account_name} load failed: {e}")
 
-        # Robinhood accounts
-        robinhood_files = [
-            ('Robinhood_Account1_20260511.csv', 'Robinhood IRA'),
-            ('Robinhood_Account2_20260511.csv', 'Robinhood Taxable'),
+        # Robinhood accounts - use glob pattern to pick latest file
+        # Supports both old naming (Robinhood_Account*.csv) and new naming (hood-*.csv)
+        robinhood_patterns = [
+            (['Robinhood_Account1_*.csv', 'hood-ytd-traditional-ira-*.csv'], 'Robinhood (Traditional IRA)'),
+            (['Robinhood_Account2_*.csv', 'hood-individual-*.csv'], 'Robinhood (Individual)'),
         ]
 
-        for filename, account_name in robinhood_files:
-            filepath = self.data_dir / filename
-            if filepath.exists():
+        for patterns, account_name in robinhood_patterns:
+            # Try each pattern until one matches
+            if isinstance(patterns, str):
+                patterns = [patterns]
+
+            matches = []
+            for pattern in patterns:
+                matches.extend(sorted(glob.glob(str(self.data_dir / pattern))))
+
+            if matches:
+                filepath = matches[-1]  # Use latest file
                 try:
                     df = pd.read_csv(filepath, on_bad_lines='skip', engine='python')
                     df.columns = df.columns.str.replace('"', '').str.lower().str.strip()
+
+                    # Filter out Robinhood cancellation/adjustment rows (OCA with invalid quantities)
+                    initial_count = len(df)
+                    df = df[~df['trans code'].isin(['OCA'])]  # Remove cancellations
+                    # Also remove rows where Quantity contains non-numeric values
+                    df = df[df['quantity'].astype(str).str.strip().str.replace('.', '').str.isdigit()]
+                    filtered_count = initial_count - len(df)
+
                     df['account_name'] = account_name
                     df['account_type'] = 'Robinhood'
                     dfs.append(df)
-                    print(f"✓ Loaded {account_name}: {len(df)} rows")
+                    msg = f"✓ Loaded {account_name}: {len(df)} rows"
+                    if filtered_count > 0:
+                        msg += f" (filtered {filtered_count} invalid rows)"
+                    msg += f" from {Path(filepath).name}"
+                    print(msg)
                 except Exception as e:
                     print(f"! {account_name} load: {e}")
 
@@ -135,13 +328,13 @@ class OpenPositionsLoaderV2:
         """
         account_type = row.get('account_type', '')
 
-        # Fidelity: Use description column which has "PUT (TICKER)" or "CALL (TICKER)"
+        # Fidelity: Try to extract from symbol column first (format: "TICKER MONTH DAY YEAR $STRIKE PUT/CALL")
         if account_type == 'Fidelity':
-            description = str(row.get('description', '')).strip()
-            # Look for pattern like "PUT (IONQ)" or "CALL (ABNB)"
-            match = re.search(r'(PUT|CALL)\s*\(([A-Z]{1,5})\)', description)
+            symbol = str(row.get('symbol', '')).strip()
+            # Pattern: "HOOD MAR 19 2027 $65 PUT" -> extract HOOD
+            match = re.match(r'^([A-Z]{1,5})\s+', symbol)
             if match:
-                return match.group(2)
+                return match.group(1)
             return None
 
         # Vanguard: Symbol column has "ABNB 270319 C 140.00" format
@@ -199,9 +392,168 @@ class OpenPositionsLoaderV2:
             pass
         return None
 
+    def _parse_option_symbol(self, row) -> Tuple[Optional[str], Optional[float], Optional[str]]:
+        """Extract (strike, option_type) from symbol, handling all broker formats.
+        Returns (strike_price, option_type) where option_type is 'P' or 'C', or (None, None) for equity rows."""
+        account_type = row.get('account_type', '')
+        # For Fidelity position files, use fidelity_posfile_symbol if available
+        if account_type == 'Fidelity' and row.get('fidelity_posfile_symbol'):
+            symbol = str(row.get('fidelity_posfile_symbol', '')).strip()
+        else:
+            symbol = str(row.get('symbol', '')).strip()
+        description = str(row.get('description', '')).strip()
+
+        # Schwab: "NFLX 05/16/2027 175.00 P"
+        if account_type == 'Schwab':
+            match = re.match(r'^[A-Z]+\s+\d{2}/\d{2}/\d{4}\s+([\d.]+)\s+([PC])$', symbol)
+            if match:
+                return (float(match.group(1)), match.group(2))
+
+        # Fidelity: Format "TICKER MONTH DAY YEAR $STRIKE PUT/CALL" from position files
+        # Example: "HOOD MAR 19 2027 $65 PUT"
+        if account_type == 'Fidelity':
+            # Extract strike and option type from the format
+            match = re.search(r'\$([0-9.]+)\s+(PUT|CALL)$', symbol)
+            if match:
+                strike = float(match.group(1))
+                opt_type = 'P' if match.group(2) == 'PUT' else 'C'
+                return (strike, opt_type)
+
+        # Vanguard: "COIN 260918 P 230.00" or just "CRM" (equity)
+        if account_type == 'Vanguard':
+            match = re.match(r'^[A-Z]+\s+\d{6}\s+([CP])\s+([\d.]+)$', symbol)
+            if match:
+                return (float(match.group(2)), match.group(1))
+
+        # Robinhood: description "CMG 6/17/2027 Put $30.00" (equity has just ticker in instrument)
+        if account_type == 'Robinhood':
+            match = re.search(r'\s+(Put|Call)\s+\$([\d.]+)', description)
+            if match:
+                opt_type = 'P' if match.group(1) == 'Put' else 'C'
+                return (float(match.group(2)), opt_type)
+
+        return (None, None)
+
+    def _track_equity_positions(self) -> Dict[str, Dict[str, int]]:
+        """Track net equity shares owned per account per ticker from all transactions.
+        Returns Dict[account_name, Dict[ticker, net_shares]]"""
+        equity_positions = defaultdict(lambda: defaultdict(int))
+
+        if self.consolidated_df is None or len(self.consolidated_df) == 0:
+            return dict(equity_positions)
+
+        for _, row in self.consolidated_df.iterrows():
+            account = row.get('account_name', '')
+            account_type = row.get('account_type', '')
+            ticker = row.get('ticker')
+
+            if not ticker or not account:
+                continue
+
+            # Get quantity from the right column
+            qty = None
+            if account_type == 'Robinhood':
+                for col in ['quantity_1', 'quantity', 'shares']:
+                    if col in row.index and pd.notna(row.get(col)):
+                        qty = float(row.get(col))
+                        break
+            elif account_type == 'Vanguard':
+                # Vanguard is positions snapshot - read Shares column directly for equity
+                for col in ['shares', 'quantity_1', 'quantity']:
+                    if col in row.index and pd.notna(row.get(col)):
+                        shares_val = row.get(col)
+                        # Skip if it's an option (negative shares)
+                        if float(shares_val) > 0:
+                            qty = float(shares_val)
+                            break
+            else:  # Schwab, Fidelity
+                for col in ['quantity', 'shares', 'quantity_1']:
+                    if col in row.index and pd.notna(row.get(col)):
+                        qty = float(row.get(col))
+                        break
+
+            if qty is None:
+                continue
+
+            # Determine action to classify as equity (not option)
+            action = str(row.get('action', '')).upper()
+            trans_code = str(row.get('trans code', '')).upper() if 'trans code' in row.index else ''
+
+            is_equity = False
+
+            # Schwab: Handle direct Buy/Sell AND Assigned transactions
+            if account_type == 'Schwab':
+                if 'BUY TO OPEN' in action or 'BUY TO CLOSE' in action:
+                    # Buy to open/close typically for equity
+                    is_equity = True
+                elif 'SELL TO OPEN' in action or 'SELL TO CLOSE' in action:
+                    # Sell to close for equity (negative qty)
+                    is_equity = True
+                    qty = -abs(qty)
+                elif action == 'ASSIGNED':
+                    # Assignment: parse symbol to determine Put vs Call
+                    symbol = str(row.get('symbol', '')).upper()
+                    # Extract strike and option type
+                    strike, opt_type = None, None
+                    import re
+                    # Schwab format: "TICKER MM/DD/YYYY STRIKE.00 P/C"
+                    match = re.search(r'([A-Z]+)\s+\d{2}/\d{2}/\d{4}\s+[\d.]+\s+([PC])', symbol)
+                    if match:
+                        opt_type = match.group(2)
+                        if opt_type == 'P':
+                            # Put assignment: we RECEIVE shares (positive)
+                            is_equity = True
+                            qty = abs(qty)
+                        elif opt_type == 'C':
+                            # Call assignment: we GIVE UP shares (negative)
+                            is_equity = True
+                            qty = -abs(qty)
+
+            # Fidelity equity keywords (assigned puts/calls create equity positions)
+            if account_type == 'Fidelity' and ('ASSIGNED' in action and ('PUT' in action or 'CALL' in action)):
+                if 'BOUGHT ASSIGNED PUTS' in action:
+                    is_equity = True
+                    qty = abs(qty)  # Ensure positive for long shares
+                elif 'SOLD ASSIGNED CALLS' in action:
+                    is_equity = True
+                    qty = -abs(qty)  # Negative for shares sold/disposed
+
+            # Vanguard: positive Shares = equity (already filtered above)
+            if account_type == 'Vanguard' and qty > 0:
+                is_equity = True
+
+            # Robinhood equity keywords
+            if account_type == 'Robinhood' and trans_code in ['BUY', 'SELL']:
+                is_equity = True
+                if trans_code == 'SELL':
+                    qty = -qty  # Negative for sells
+
+            if is_equity:
+                equity_positions[account][ticker] += int(qty)
+
+        return dict(equity_positions)
+
     def _calculate_open_positions(self):
         """Calculate net open positions by excluding closed-out positions and expired contracts"""
         from datetime import date
+
+        # For Schwab position files, keep only option rows (they show open positions directly)
+        if 'asset type' in self.consolidated_df.columns:
+            # Filter out equity rows from position files (tracked separately)
+            # and keep position files' option rows as-is
+            position_file_equity_mask = (
+                (self.consolidated_df['source'] == 'position_file') if 'source' in self.consolidated_df.columns
+                else False
+            ) & (self.consolidated_df['asset type'] == 'Equity')
+
+            self.consolidated_df = self.consolidated_df[~position_file_equity_mask].copy()
+
+            # Mark position file options as already having opening transactions (no netting)
+            pf_option_mask = (
+                (self.consolidated_df['source'] == 'position_file') if 'source' in self.consolidated_df.columns
+                else False
+            ) & (self.consolidated_df['asset type'] == 'Option')
+            self.consolidated_df.loc[pf_option_mask, 'has_opening'] = True
 
         # Extract ticker for all rows
         self.consolidated_df['ticker'] = self.consolidated_df.apply(self._extract_ticker, axis=1)
@@ -211,6 +563,22 @@ class OpenPositionsLoaderV2:
 
         # Identify option transactions
         option_masks = []
+
+        # Schwab position files: asset type == 'Option'
+        if 'asset type' in self.consolidated_df.columns:
+            schwab_posfile_mask = (self.consolidated_df['account_type'] == 'Schwab') & (
+                self.consolidated_df['asset type'] == 'Option'
+            )
+            option_masks.append(schwab_posfile_mask)
+
+        # Fidelity position files: Detect by "PUT" or "CALL" in symbol column
+        # Format: "TICKER MONTH DAY YEAR $STRIKE PUT/CALL" (e.g., "HOOD MAR 19 2027 $65 PUT")
+        fidelity_posfile_mask = (self.consolidated_df['account_type'] == 'Fidelity') & (
+            self.consolidated_df['source'].fillna('').astype(str) == 'position_file'
+        ) & (
+            self.consolidated_df['symbol'].fillna('').astype(str).str.contains('PUT|CALL', case=False, na=False)
+        )
+        option_masks.append(fidelity_posfile_mask)
 
         # Schwab: action in ['Sell to Open', 'Buy to Close', ...]
         if 'action' in self.consolidated_df.columns:
@@ -296,6 +664,7 @@ class OpenPositionsLoaderV2:
             # Calculate net quantity
             net_qty = 0
             account_type = group['account_type'].iloc[0]
+            has_opening = False  # Track if this group has any opening transactions
 
             for _, row in group.iterrows():
                 # Get quantity from the right column based on account type
@@ -333,6 +702,14 @@ class OpenPositionsLoaderV2:
                 if action_col and pd.notna(row.get(action_col)):
                     action = str(row.get(action_col, '')).upper()
 
+                # Check if this is an opening transaction
+                # Position files show open positions directly, so mark them as having opening
+                source = row.get('source') if 'source' in row.index else ''
+                if source == 'position_file':
+                    has_opening = True
+                elif 'SELL' in action or 'OPEN' in action or 'STO' in action or 'BTO' in action or 'SOLD' in action or 'BOUGHT OPENING' in action or 'SOLD OPENING' in action:
+                    has_opening = True
+
                 # Logic: Sells/Opens = positive, Buys/Closes = negative
                 if 'SELL' in action or 'STC' in action or 'STO' in action or 'SOLD' in action:
                     net_qty += qty
@@ -343,15 +720,23 @@ class OpenPositionsLoaderV2:
                 else:
                     net_qty += qty
 
-            # Only include if net quantity is non-zero (position is open)
-            if net_qty != 0:
+            # Only include if:
+            # 1. Net quantity is non-zero (position is open)
+            # 2. Has at least one opening transaction (not just orphaned closes)
+            if net_qty != 0 and has_opening:
+                # Parse strike and option type from any row in the group
+                first_row = group.iloc[0]
+                strike, opt_type = self._parse_option_symbol(first_row)
+
                 position = {
                     'account_name': account,
                     'ticker': ticker,
                     'symbol': symbol,  # symbol here is actually contract_id from groupby
                     'net_quantity': abs(net_qty),
                     'account_type': group['account_type'].iloc[0],
-                    'transaction_count': len(group)
+                    'transaction_count': len(group),
+                    'strike': strike,
+                    'option_type': opt_type
                 }
                 open_positions_list.append(position)
 
@@ -410,6 +795,14 @@ class OpenPositionsLoaderV2:
             return pd.DataFrame()
 
         return self.open_positions.groupby('account_type').size().to_frame('open_positions')
+
+    def get_equity_summary(self) -> Dict[str, Dict[str, int]]:
+        """Returns net shares owned per account per ticker"""
+        return self.equity_positions
+
+    def get_option_requirements(self) -> Dict[str, float]:
+        """Returns total option requirement per account"""
+        return self.option_requirements
 
 
 if __name__ == '__main__':

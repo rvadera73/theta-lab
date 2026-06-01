@@ -1,0 +1,134 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                              INDIA MARKET WEEKLY ACTION REPORT — WEEK OF JUNE 1-5, 2026                              ║
+║              Generated: 2026-06-01 08:18  |  Market Status: BEAR_SIDEWAYS  |  NRI Account: ICICI Direct              ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+========================================================================================================================
+SECTION 0: PORTFOLIO SNAPSHOT
+========================================================================================================================
+
+EQUITY HOLDINGS (2 positions)
+------------------------------------------------------------------------------------------------------------------------
+  • KAYTEC (Kaynes Technology): 10 shares @ ₹4,183.40 = ₹41,834
+    └─ Entry: May 5, 2026 | Thesis: AI hardware supply chain, defense electronics
+  • SOLIN (Solar Industries): 5 shares @ ₹15,735.00 = ₹78,675
+    └─ Entry: May 5, 2026 | Thesis: Defense indigenization, ammunition demand
+
+  Total Equity Deployed: ₹120,509
+
+F&O POSITIONS (13 active legs)
+------------------------------------------------------------------------------------------------------------------------
+  NIFTY Puts:       7 legs (SHORT puts, 8-22 DTE) | Unrealized P&L: −₹10,817
+  BANKNIFTY Puts:   4 legs (SHORT puts, 29 DTE)   | Unrealized P&L: −₹68,836 🔴 CRITICAL
+  NIFTY-SELECT:     2 legs (SHORT puts, 29 DTE)   | Unrealized P&L: −₹34,236
+
+  TOTAL UNREALIZED P&L: −₹117,516 🔴 UNDERWATER
+
+========================================================================================================================
+SECTION 1: MARKET REGIME & TECHNICAL SIGNALS
+========================================================================================================================
+
+Current Conditions (as of June 1, 2026):
+------------------------------------------------------------------------------------------------------------------------
+  NIFTY 50:      23,383 | 50-MA: 23,687 (BELOW -1.3%) | 200-MA: 24,977 (BELOW -6.4%) 🔴 BEARISH
+  India VIX:     16.5   | Zone: 15.0-25.0 (NEUTRAL)    | Status: Stable, not elevated
+  FII Flow:      NET SELLER (18+ months) | Status: Structural outflows continue
+
+Regime Assessment: BEAR_SIDEWAYS
+------------------------------------------------------------------------------------------------------------------------
+  Current: Below both 50-day and 200-day moving averages
+  Trigger for BULL: Need NIFTY > 24,977 (200 DMA) + FII net buyer for 10+ sessions
+  Conclusion: NO new entries this week | Focus: DEFENSE + DAMAGE CONTROL
+
+========================================================================================================================
+🚨 SECTION 2: TOP 5 PRIORITY ACTIONS THIS WEEK
+========================================================================================================================
+
+
+1️⃣ ROLL NIFTY 09-JUN EXPIRIES (8 DTE) TO 16-JUN
+   ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   💡 Why: Expiring in 8 days with -₹5,923 loss; avoid gamma risk into expiry
+   📍 Position: 4 legs: 22400P, 22500P, 22750P, 22800P (total -260 quantity)
+   🎯 Execution: Roll OUT only (same strikes) → collect fresh premium → lock in current loss
+   ✅ Impact: Extend DTE, reduce gamma risk, recover ₹2-3K premium on roll-out
+   ⚠️ Risk: If NIFTY gaps down, roll may be forced at net debit
+   🔔 Status: ⚠️ URGENT — DO THIS MONDAY
+
+2️⃣ HOLD BANKNIFTY 30-JUN SHORTS BUT CLOSE 54500P POSITION
+   ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   💡 Why: 54500P is -₹31,197 underwater (worst position); 52000/52500/52800 have time value
+   📍 Position: BANKNIFTY 54500-P: -30 contracts @ 791.50 avg, now 1039.90 LTP | 29 DTE
+   🎯 Execution: BUY TO CLOSE 54500-P immediately → exit the worst loss | HOLD 52000/52500/52800 (still 29 DTE)
+   ✅ Impact: Locks -₹31K loss but stops bleeding; reduces portfolio risk concentration
+   ⚠️ Risk: Realizing a loss reduces capital; but necessary for portfolio health
+   🔔 Status: 🔴 CRITICAL — This Week
+
+3️⃣ MONITOR NIFTY-SELECT 30-JUN PUTS (14000P, 14275P)
+   ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   💡 Why: -₹34,236 loss; index hit hard; 29 DTE but deep underwater
+   📍 Position: 2 legs: 14000P (-120), 14275P (-120) | Average loss rate: -₹14.4K per leg
+   🎯 Execution: HOLD for now (29 DTE) | Set stop-loss at -₹40K | If NIFTY recovers to 23,500+, plan exit
+   ✅ Impact: Theta decay will work in your favor IF NIFTY stays stable; avoid selling at lows
+   ⚠️ Risk: Further NIFTY declines will increase losses; monitor daily
+   🔔 Status: 🟡 MONITOR DAILY
+
+4️⃣ PLAN EQUITY ACCUMULATION ON DIPS (KAYNES + SOLIN TARGETS)
+   ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   💡 Why: Recent buys at excellent entry points; thesis intact; portfolio needs equity growth
+   📍 Position: KAYNES: 10 @ 4183.40 (config entry zone 3800-4000, now 4044+) | SOLIN: 5 @ 15735 (thesis: defense boom)
+   🎯 Execution: Plan next tranches: KAYNES +10 @ 3800 (dip buy) | SOLIN +5 @ 14000-14500 (wait for pullback)
+   ✅ Impact: Builds conviction positions; lowers cost basis on dips; long-term 18% CAGR thesis intact
+   ⚠️ Risk: Market may drop further; buy slowly, don't deploy all at once
+   🔔 Status: 📊 PLANNING — DO NEXT WEEK on dips
+
+5️⃣ NO NEW F&O ENTRIES THIS WEEK
+   ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   💡 Why: Market in BEAR_SIDEWAYS regime; FII sellers active; current positions underwater
+   📍 Position: All 13 F&O legs are management-only; no new CSPs/puts allowed
+   🎯 Execution: ONLY manage existing positions (rolls, closes). Block new entries until BULL signal fires.
+   ✅ Impact: Protects capital; avoids catching falling knife; focuses on defensive management
+   ⚠️ Risk: If market rebounds sharply, will be underexposed; acceptable for now
+   🔔 Status: 🚫 HOLD for NOW — Wait for regime shift
+
+========================================================================================================================
+SECTION 3: DECISION MATRIX
+========================================================================================================================
+
+IF NIFTY reaches 22,000                    → 54500P will be deeply ITM; close immediately
+IF NIFTY recovers to 23,500+               → NIFTY-SELECT puts gain ₹10-15K; hold through 29 DTE
+IF NIFTY reaches 24,977 (200 DMA)          → BULL signal; can consider new CSP entries on dips
+IF India VIX spikes > 20                   → All puts gain value; evaluate closing profitable legs at 40-50%
+IF KAYNES drops to ₹3,800 or below         → Execute tranche 2 (buy 10 more shares @ avg 3800)
+
+========================================================================================================================
+SECTION 4: WEEKLY PROFIT TARGET & P&L TRACKER
+========================================================================================================================
+
+Weekly Target: ₹25,000 premium (from options + equity gains)
+
+Week                 Target          Realized        Status
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Jun 1-5, 2026        ₹25,000         TBD             Pending (focus on damage control, not growth)
+
+========================================================================================================================
+KEY METRICS FOR THIS WEEK
+========================================================================================================================
+
+  🔴 Portfolio underwater: -₹117,516 (F&O losses exceed equity value ₹120,509)
+  ⏰ Expirations: Jun 9 (8 DTE NIFTY), Jun 30 (29 DTE BANKNIFTY/SELECT)
+  💰 Capital at risk: ₹68,836 in BANKNIFTY 30-Jun (4 underwater legs)
+  📊 Regime: BEAR_SIDEWAYS (no new entries)
+  🎯 Weekly objective: Roll NIFTY, close 54500P, hold others, plan equity dips
+
+========================================================================================================================
+QUICK TRADE CHECKLIST FOR THIS WEEK
+========================================================================================================================
+
+  ☐ Monday Morning: Roll NIFTY 09-Jun (4 legs) to 16-Jun → Collect ₹2-3K premium
+  ☐ Tuesday: Close BANKNIFTY 54500-P → Lock -₹31K loss → Stop bleeding
+  ☐ Wed-Thu: Monitor NIFTY-SELECT if NIFTY > 23,300, evaluate partial closes
+  ☐ Friday: Review week, set alerts for KAYNES 3800, SOLIN 14500 entry prices
+  ☐ Next Week: If NIFTY breaks 24,977, reassess F&O entry for BULL regime
+
+Report generated: 2026-06-01 08:18:54
+========================================================================================================================

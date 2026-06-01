@@ -36,9 +36,9 @@ class DataLoaderFinal:
 
         # Schwab accounts
         schwab_files = [
-            ('Individual_XXX232_Transactions_20260511-113621.csv', 'Account A (232)'),
-            ('Contributory_XXX275_Transactions_20260511-113648.csv', 'Account B (275)'),
-            ('Designated_Bene_Individual_XXX634_Transactions_20260511-113723.csv', 'Account C (634)'),
+            ('Individual_XXX232_Transactions_20260530-161057.csv', 'Account A (232)'),
+            ('Contributory_XXX275_Transactions_20260530-161127.csv', 'Account B (275)'),
+            ('Designated_Bene_Individual_XXX634_Transactions_20260530-161206.csv', 'Account C (634)'),
         ]
 
         for filename, account_name in schwab_files:
@@ -52,8 +52,8 @@ class DataLoaderFinal:
 
         # Fidelity accounts
         fidelity_files = [
-            ('Accounts_History-fidelity-Rahul.csv', 'Fidelity (Rahul)'),
-            ('Accounts_History-fidelity-Rajul.csv', 'Fidelity (Rajul)'),
+            ('Accounts_History -Fidelity-Rahul.csv', 'Fidelity (Rahul)'),
+            ('Accounts_History-Rajul.csv', 'Fidelity (Rajul)'),
         ]
 
         for filename, account_name in fidelity_files:
@@ -66,7 +66,7 @@ class DataLoaderFinal:
                 print(f"✓ Loaded {account_name}: {len(df)} rows")
 
         # Vanguard
-        vanguard_path = self.data_dir / 'Vanguard-ytd.csv'
+        vanguard_path = self.data_dir / 'AccountHistorty-Vanguard-Rahul.csv'
         if vanguard_path.exists():
             try:
                 # Read Vanguard with error handling

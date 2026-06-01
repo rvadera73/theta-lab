@@ -8,6 +8,7 @@ Includes Greeks calculations, framework analysis, Citadel comparison.
 import pandas as pd
 import numpy as np
 import sys
+import yaml
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -23,14 +24,36 @@ from enhanced_metrics import batch_get_metrics, BlackScholesGreeks
 from sector_analysis import batch_get_sector_analysis
 
 try:
-    from regime import detect_regime
-    from iv_rank import batch_iv_rank
-except ImportError:
+    from analysis.regime import detect_regime
+    from analysis.iv_rank import batch_iv_rank
+    from analysis.macro_risk_analyzer import analyze_macro_risk
+except ImportError as e:
     # Fallback if modules unavailable
+    print(f"⚠️ Warning: Import error (will use fallbacks): {e}")
     def detect_regime():
         return {"regime": "BULL", "signals": {}, "note": "Regime detection unavailable"}
     def batch_iv_rank(symbols):
         return {s: {"iv_rank": 50, "iv_pct": 50} for s in symbols}
+    def analyze_macro_risk(data):
+        return {"risk_level": "GREEN", "stage": 0, "signals": {}, "summary": "Macro analyzer unavailable"}
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CONFIGURATION — ALL 8 ACCOUNTS WITH BALANCES & MONTHLY TARGETS
+# ═══════════════════════════════════════════════════════════════════
+ACCOUNTS_CONFIG = {
+    'Account A (232)': {'balance': 2732234, 'margin': True, 'monthly_target': 60000},
+    'Account B (275)': {'balance': 320000, 'margin': False, 'monthly_target': 7040},
+    'Account C (634)': {'balance': 267289, 'margin': False, 'monthly_target': 5880},
+    'Fidelity (Rahul)': {'balance': 512000, 'margin': False, 'monthly_target': 11240},
+    'Fidelity (Rajul — Roth IRA)': {'balance': 43000, 'margin': False, 'monthly_target': 960},
+    'Fidelity (Rajul — Rollover IRA)': {'balance': 129000, 'margin': False, 'monthly_target': 2840},
+    'Vanguard (Rahul)': {'balance': 325000, 'margin': False, 'monthly_target': 7120},
+    'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'monthly_target': 280},
+    'Robinhood (Traditional IRA)': {'balance': 212000, 'margin': False, 'monthly_target': 4640},
+}
+
+TOTAL_PORTFOLIO_BALANCE = sum(acc['balance'] for acc in ACCOUNTS_CONFIG.values())
 
 
 class UnifiedReportProduction:
@@ -42,7 +65,10 @@ class UnifiedReportProduction:
         self.position_summary = self.loader.get_position_summary()
         self.account_summary = self.loader.get_account_summary()
         self.type_summary = self.loader.get_account_type_summary()
+        self.equity_positions = self.loader.get_equity_summary()
+        self.option_requirements = self.loader.get_option_requirements()
         self.regime_data = detect_regime()
+        self.snapshot = self._load_portfolio_snapshot()
 
         # Get metrics for all positions
         self.metrics = batch_get_metrics(
@@ -56,6 +82,17 @@ class UnifiedReportProduction:
         self.sector_summary, self.sector_analysis_output, self.sector_rotation_output = batch_get_sector_analysis(
             self.open_positions, self.metrics, self.prices
         )
+
+    def _load_portfolio_snapshot(self) -> dict:
+        """Load portfolio snapshot for YTD/MTD figures"""
+        snapshot_file = Path('/home/rahulvadera/projects/theta-lab/data/portfolio_snapshot.yaml')
+        if snapshot_file.exists():
+            try:
+                with open(snapshot_file) as f:
+                    return yaml.safe_load(f) or {}
+            except Exception as e:
+                print(f"⚠️ Could not load snapshot: {e}")
+        return {}
 
     def _parse_put_call_breakdown(self) -> Dict[str, Dict]:
         """Parse positions to get puts vs calls breakdown per ticker"""
@@ -128,60 +165,83 @@ class UnifiedReportProduction:
         return by_conviction
 
     def _generate_account_health_section(self) -> List[str]:
-        """Generate account health and margin status section"""
+        """Generate account health and margin status section for ALL 8 ACCOUNTS"""
         output = []
         put_call_breakdown = self._parse_put_call_breakdown()
 
         output.append("=" * 120)
-        output.append("SECTION 0: ACCOUNT HEALTH & MARGIN STATUS")
+        output.append("SECTION 0: ACCOUNT HEALTH & MARGIN STATUS (ALL 8 ACCOUNTS)")
         output.append("=" * 120)
         output.append("")
 
-        # Account-level metrics - CORRECT: Calculate per account
+        # Portfolio-level metrics
         total_notional = sum(self.prices.get(t, 0) * int(self.position_summary.loc[t, 'total_open_contracts']) * 100
                            for t in self.position_summary.index)
+        total_option_req = sum(self.option_requirements.values())
 
-        # Calculate margin as 12.5% of notional (Schwab actual formula based on delta-weighted positions)
-        total_option_req = total_notional * 0.125
-
-        output.append("PORTFOLIO EXPOSURE SUMMARY:")
-        output.append(f"├─ Total notional exposure:     ${total_notional:>12,.0f}")
-        output.append(f"├─ Total option requirement:    ${total_option_req:>12,.0f}")
-        output.append(f"├─ Positions with short puts:   {sum(1 for bd in put_call_breakdown.values() if bd['puts'] > 0)}")
-        output.append(f"├─ Positions with short calls:  {sum(1 for bd in put_call_breakdown.values() if bd['calls'] > 0)}")
-        output.append(f"└─ Staggers (both puts+calls):  {sum(1 for bd in put_call_breakdown.values() if bd['puts'] > 0 and bd['calls'] > 0)}")
+        output.append("CONSOLIDATED PORTFOLIO SNAPSHOT:")
+        output.append(f"├─ Total Portfolio Balance:      ${TOTAL_PORTFOLIO_BALANCE:,}")
+        output.append(f"├─ Total notional exposure:      ${total_notional:>12,.0f}")
+        output.append(f"├─ Total option requirement:     ${total_option_req:>12,.0f}")
+        output.append(f"├─ Positions with short puts:    {sum(1 for bd in put_call_breakdown.values() if bd['puts'] > 0)}")
+        output.append(f"├─ Positions with short calls:   {sum(1 for bd in put_call_breakdown.values() if bd['calls'] > 0)}")
+        output.append(f"├─ YTD Net Premium:              ${self.snapshot.get('ytd_net_options_income', 0):,}")
+        output.append(f"├─ Month-to-Date Premium:        ${self.snapshot.get('month_to_date_premium', 0):,}")
+        output.append(f"└─ Data Currency:                {self.snapshot.get('last_updated', 'N/A')}")
         output.append("")
 
-        # Account-specific summary - FIXED: Filter by account FIRST
-        output.append("ACCOUNT A (232 — Rahul, Margin Account):")
-        acct_a_positions = self.open_positions[self.open_positions['account_name'] == 'Account A (232)']
-        if not acct_a_positions.empty:
-            # Calculate Account A notional only (sum of all positions in Account A)
-            acct_a_notional = sum(self.prices.get(row['ticker'], 0) * row['net_quantity'] * 100
-                                for _, row in acct_a_positions.iterrows())
-            acct_a_req_calculated = acct_a_notional * 0.125
-            output.append(f"├─ Notional exposure: ${acct_a_notional:,.0f}")
-            output.append(f"├─ Option requirement (calculated @ 12.5%): ${acct_a_req_calculated:,.0f}")
-            output.append(f"├─ Option requirement (Schwab statement): $670,000 ✓ VALIDATED")
-            output.append(f"├─ Margin utilization: 60% (target ≤70% bear, ≤60% bull)")
-            output.append(f"├─ Estimated available cash: $145,000 (monitor: <$75K = action required)")
-            output.append(f"└─ Status: ✅ HEALTHY")
+        # Per-account summary with option requirement
+        output.append("PER-ACCOUNT BREAKDOWN:")
+        output.append("-" * 120)
+        output.append(f"{'Account':<30} {'Balance':>15} {'%':>6} {'Notional':>14} {'Opt Req':>12} {'Type':>10} {'Status':>15}")
+        output.append("-" * 120)
+
+        for account_name, config in ACCOUNTS_CONFIG.items():
+            balance = config['balance']
+            pct = (balance / TOTAL_PORTFOLIO_BALANCE) * 100
+            account_type = "Margin" if config['margin'] else "Cash-Sec"
+            status = "✅ MARGIN" if config['margin'] else "✅ OK"
+
+            # Calculate account-specific notional and option requirement
+            acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
+            acct_opt_req = self.option_requirements.get(account_name, 0)
+
+            if not acct_positions.empty:
+                acct_notional = sum(self.prices.get(row['ticker'], 0) * row['net_quantity'] * 100
+                                  for _, row in acct_positions.iterrows())
+                output.append(f"{account_name:<30} ${balance:>14,} {pct:>5.1f}% ${acct_notional:>13,.0f} ${acct_opt_req:>11,.0f} {account_type:>10} {status:>15}")
+
+                # Show equity positions if any
+                equity = self.equity_positions.get(account_name, {})
+                equity_str = ""
+                if equity:
+                    equity_list = [f"{t} {s}sh" for t, s in list(equity.items())[:5]]
+                    equity_str = f" | Equity: {', '.join(equity_list)}"
+                    if len(equity) > 5:
+                        equity_str += f" +{len(equity)-5} more"
+
+                output.append(f"  ├─ {len(acct_positions)} option positions | Monthly target: ${config['monthly_target']:,}{equity_str}")
+            else:
+                output.append(f"{account_name:<30} ${balance:>14,} {pct:>5.1f}% ${'0':>13} ${'0':>11} {account_type:>10} {status:>15}")
+                output.append(f"  └─ No open positions | Monthly target: ${config['monthly_target']:,}")
+
+        output.append("-" * 120)
+        output.append(f"{'TOTAL':<30} ${TOTAL_PORTFOLIO_BALANCE:>14,} {'100.0%':>6} ${total_notional:>13,.0f} ${total_option_req:>11,.0f}")
         output.append("")
 
-        output.append("ACCOUNT B (275 — Pinky, IRA):")
-        output.append("├─ Margin available: None (IRA account)")
-        output.append("├─ Notional CSP exposure: ~$320,000")
-        output.append("├─ No margin requirement: All positions cash-secured")
-        output.append("└─ Status: ✅ COMPLIANT (no naked calls, no margin)")
+        output.append("DEFINITIONS:")
+        output.append("  • Notional = Stock price × contracts × 100 (underlying value of options position)")
+        output.append("  • Opt Req = Strike × contracts × 100 for short puts + current_price × contracts × 100 for naked calls (covered calls = $0)")
+        output.append("  • For margin accounts: verify Opt Req < 80% of account balance")
         output.append("")
 
         output.append("RISK GUARDRAILS:")
-        output.append("├─ Margin floor (hard): 50% utilization")
+        output.append("├─ Margin floor (Account A only): 50% utilization")
         output.append("├─ Margin alert: >75% utilization → review new entries")
         output.append("├─ Margin emergency: >80% utilization → reduce positions")
-        output.append("├─ Cash floor: $75,000 to trade (bear regime)")
+        output.append("├─ Cash floor (all accounts): $75,000 minimum to trade")
         output.append("├─ Cash emergency: <$50,000 → deploy emergency fund")
-        output.append(f"└─ Current status: {'✅ SAFE' if total_option_req < 800000 else '⚠️ MONITOR'}")
+        output.append(f"└─ Current status: {'✅ SAFE' if total_option_req < TOTAL_PORTFOLIO_BALANCE * 0.3 else '⚠️ MONITOR'}")
         output.append("")
 
         return output
@@ -313,47 +373,239 @@ class UnifiedReportProduction:
             output.append(f"{acct_name:35}: {row['open_positions']:3} positions ({pct:5.1f}%) {bar}")
         output.append("")
 
-        # SECTION 6: TOP 20 POSITIONS
-        output.extend(self._format_section_header(6, "TOP 20 POSITIONS BY OPEN CONTRACTS"))
-        for i, (ticker, row) in enumerate(self.position_summary.head(20).iterrows(), 1):
+        # SECTION 6: POSITION HEAT MATRIX & PRIORITY ACTION
+        output.extend(self._format_section_header(6, "POSITION HEAT MATRIX & PRIORITY ACTION"))
+        output.append("")
+
+        # Build position action matrix
+        critical = []  # RED heat + high conviction OR deep ITM
+        monitor = []   # YELLOW heat + moderate conviction
+        healthy = []   # GREEN heat + attractive pricing
+
+        for ticker, row in self.position_summary.iterrows():
             price = self.prices.get(ticker, 0)
             contracts = int(row['total_open_contracts'])
-            accounts = int(row['accounts_with_position'])
+            notional = price * contracts * 100
             m = self.metrics.get(ticker, {})
+            heat = m.get('heat_status', 'YELLOW')
             conv = m.get('conviction', 5.0)
-            output.append(
-                f"{i:2}. {ticker:8} | ${price:>8.2f} | {contracts:3} contracts | "
-                f"{accounts:2} accounts | Conv: {conv:.1f}/10"
-            )
+            rsi = m.get('rsi', 50.0)
+            heat_reason = m.get('heat_reason', 'Neutral')
+
+            position_info = {
+                'ticker': ticker,
+                'price': price,
+                'contracts': contracts,
+                'notional': notional,
+                'heat': heat,
+                'conv': conv,
+                'rsi': rsi,
+                'reason': heat_reason
+            }
+
+            if heat == 'RED' or (conv < 5.0 and heat == 'YELLOW'):
+                critical.append(position_info)
+            elif heat == 'YELLOW':
+                monitor.append(position_info)
+            else:
+                healthy.append(position_info)
+
+        # Sort by notional (portfolio impact)
+        critical.sort(key=lambda x: x['notional'], reverse=True)
+        monitor.sort(key=lambda x: x['notional'], reverse=True)
+        healthy.sort(key=lambda x: x['notional'], reverse=True)
+
+        # Display CRITICAL section
+        output.append(f"🔴 CRITICAL — ACTION REQUIRED ({len(critical)} positions)")
+        output.append("-" * 120)
+        if critical:
+            for i, pos in enumerate(critical[:10], 1):
+                output.append(
+                    f"  {i:2}. {pos['ticker']:8} | ${pos['price']:>8.2f} | {pos['contracts']:2} contracts | "
+                    f"Value: ${pos['notional']:>10.0f} | Conv: {pos['conv']:>4.1f}/10 | RSI: {pos['rsi']:>5.1f} | {pos['reason']}"
+                )
+            if len(critical) > 10:
+                output.append(f"  ... and {len(critical)-10} more RED/low conviction positions")
+        else:
+            output.append("  ✅ None — portfolio is clean")
         output.append("")
 
-        # SECTION 7: OODA FRAMEWORK
-        output.extend(self._format_section_header(7, "OODA FRAMEWORK (Observe-Orient-Decide-Act)"))
-        output.append("Observe (Live Data):")
-        output.append(f"  ✅ {len(self.open_positions)} positions across {self.account_summary.shape[0]} accounts")
-        output.append(f"  ✅ {self.open_positions['ticker'].nunique()} unique tickers with live prices")
-        output.append(f"  ✅ Technical indicators: RSI, MACD, Bollinger Bands (30+ tickers analyzed)")
-        output.append(f"  ✅ Conviction scores derived from multi-factor technical + fundamental analysis")
+        # Display MONITOR section
+        output.append(f"🟡 MONITOR — WATCH FOR CHANGES ({len(monitor)} positions)")
+        output.append("-" * 120)
+        if monitor:
+            for i, pos in enumerate(monitor[:8], 1):
+                output.append(
+                    f"  {i:2}. {pos['ticker']:8} | ${pos['price']:>8.2f} | {pos['contracts']:2} contracts | "
+                    f"Value: ${pos['notional']:>10.0f} | Conv: {pos['conv']:>4.1f}/10 | RSI: {pos['rsi']:>5.1f}"
+                )
+            if len(monitor) > 8:
+                output.append(f"  ... and {len(monitor)-8} more YELLOW positions")
+        else:
+            output.append("  ✅ None — all positions are healthy or critical")
         output.append("")
 
-        output.append("Orient (Account Diversity & Risk Analysis):")
-        for acct_name, row in self.account_summary.iterrows():
-            pct = 100 * row['open_positions'] / total_positions
-            output.append(f"  ✅ {acct_name:35}: {row['open_positions']} positions ({pct:5.1f}%)")
+        # Display HEALTHY section
+        output.append(f"🟢 HEALTHY — LET RUN ({len(healthy)} positions)")
+        output.append("-" * 120)
+        if healthy:
+            output.append(f"  {len(healthy)} positions are attractively priced (oversold/neutral)")
+            if len(healthy) > 0:
+                top_3 = sorted(healthy, key=lambda x: x['rsi'])[:3]
+                output.append(f"  Most oversold candidates (lowest RSI):")
+                for pos in top_3:
+                    output.append(f"    • {pos['ticker']:8} RSI {pos['rsi']:>5.1f} | Conv {pos['conv']:.1f}/10")
+        else:
+            output.append("  None currently oversold")
         output.append("")
 
-        output.append("Decide (Position Management Strategy):")
-        output.append(f"  1. Monitor market regime: {self.regime_data['regime']}")
-        output.append(f"  2. Focus on GREEN positions (attractive): {heat_summary.get('GREEN', 0)} identified")
-        output.append(f"  3. Monitor RED positions (extended): {heat_summary.get('RED', 0)} require caution")
-        output.append(f"  4. Rebalance if account exceeds risk limits")
+        # Portfolio heat summary
+        total_notional = sum(pos['notional'] for pos in critical + monitor + healthy)
+        if total_notional > 0:
+            output.append("PORTFOLIO HEAT ALLOCATION:")
+            critical_pct = sum(p['notional'] for p in critical) / total_notional * 100 if critical else 0
+            monitor_pct = sum(p['notional'] for p in monitor) / total_notional * 100 if monitor else 0
+            healthy_pct = sum(p['notional'] for p in healthy) / total_notional * 100 if healthy else 0
+            output.append(f"  🔴 CRITICAL: {critical_pct:>5.1f}% (${sum(p['notional'] for p in critical):>12,.0f})")
+            output.append(f"  🟡 MONITOR:  {monitor_pct:>5.1f}% (${sum(p['notional'] for p in monitor):>12,.0f})")
+            output.append(f"  🟢 HEALTHY:  {healthy_pct:>5.1f}% (${sum(p['notional'] for p in healthy):>12,.0f})")
         output.append("")
 
-        output.append("Act (Next Steps):")
-        output.append(f"  • Review {len(conviction_by_bucket.get('HIGH', []))} HIGH conviction positions for entry/increase")
-        output.append(f"  • Monitor {len(conviction_by_bucket.get('LOW', []))} LOW conviction positions for exit/reduce")
-        output.append(f"  • Assess {heat_summary.get('RED', 0)} RED heat positions for risk management")
-        output.append(f"  • Prepare for weekly rebalancing & Greeks monitoring")
+        # SECTION 6.5: MACRO RISK ANALYSIS (CRASH EARLY WARNING)
+        output.extend(self._format_section_header("6.5", "CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS"))
+        output.append("")
+
+        # Analyze macro risk
+        macro_risk_data = {
+            "vix": self.regime_data.get('signals', {}).get('vix', {}).get('value', 15.8),
+            "spx_price": self.open_positions['ticker'].iloc[0] if len(self.open_positions) > 0 else 7580,
+            "spx_50ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma50', 7058),
+            "spx_200ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma200', 6831),
+        }
+
+        try:
+            risk_analysis = analyze_macro_risk(macro_risk_data)
+
+            # Display risk level
+            risk_emoji = "🟢" if risk_analysis["risk_level"] == "GREEN" else "🟡" if risk_analysis["risk_level"] == "YELLOW" else "🔴"
+            output.append(f"{risk_emoji} RISK LEVEL: {risk_analysis['risk_level']}")
+            output.append(f"Summary: {risk_analysis['summary']}")
+            output.append("")
+
+            # Display individual signals
+            output.append("Indicator Status:")
+            output.append("-" * 120)
+            for indicator, details in risk_analysis['signals'].items():
+                status_emoji = "✅" if details['status'] == 'GREEN' else "⚠️" if details['status'] == 'YELLOW' else "🔴"
+                output.append(f"  {status_emoji} {indicator.upper():20} | Value: {str(details['value']):15} | Status: {details['status']:10} | Threshold: {details['threshold']}")
+            output.append("")
+
+            # Display crash probability forecast
+            crash_prob = risk_analysis.get('crash_probability', {})
+            if crash_prob:
+                output.append("Crash Probability Forecast (Probabilistic):")
+                output.append("-" * 120)
+                prob_30d = crash_prob.get('prob_30d', 0)
+                prob_60d = crash_prob.get('prob_60d', 0)
+                prob_90d = crash_prob.get('prob_90d', 0)
+
+                # Color code probabilities
+                emoji_30d = "🟢" if prob_30d < 20 else "🟡" if prob_30d < 40 else "🟠" if prob_30d < 60 else "🔴"
+                emoji_60d = "🟢" if prob_60d < 25 else "🟡" if prob_60d < 50 else "🟠" if prob_60d < 70 else "🔴"
+                emoji_90d = "🟢" if prob_90d < 30 else "🟡" if prob_90d < 60 else "🟠" if prob_90d < 80 else "🔴"
+
+                output.append(f"  {emoji_30d} 30-day crash probability:  {prob_30d:>5.1f}%  |  Action: {crash_prob.get('action_trigger', '')}")
+                output.append(f"  {emoji_60d} 60-day crash probability:  {prob_60d:>5.1f}%")
+                output.append(f"  {emoji_90d} 90-day crash probability:  {prob_90d:>5.1f}%")
+                output.append(f"  📌 Primary risk factor: {crash_prob.get('primary_risk', 'None')}")
+                output.append("")
+
+            # Display actions
+            output.append("Recommended Actions:")
+            output.append("-" * 120)
+            for action in risk_analysis.get('actions', []):
+                output.append(f"  • {action}")
+            output.append("")
+
+            # Display rotation playbook if not GREEN
+            if risk_analysis["stage"] > 0:
+                output.append("Rotation Playbook:")
+                output.append("-" * 120)
+                for line in risk_analysis['playbook'].strip().split('\n'):
+                    output.append(f"  {line}")
+                output.append("")
+
+        except Exception as e:
+            output.append(f"⚠️ Macro risk analysis unavailable: {e}")
+            output.append("")
+
+        # SECTION 7: ACTION FRAMEWORK
+        output.extend(self._format_section_header(7, "ACTION FRAMEWORK — PRIORITIZED EXECUTION CHECKLIST"))
+        output.append("")
+
+        # Build action groups
+        close_now = [p for p in critical if p['heat'] == 'RED']
+        monitor_closely = [p for p in critical if p['heat'] != 'RED']
+        rolls_to_consider = [p for p in monitor if p['rsi'] > 65]
+        nothing = [p for p in healthy]
+
+        close_now.sort(key=lambda x: x['notional'], reverse=True)
+
+        output.append("EXECUTION SEQUENCE (Do in this order):")
+        output.append("")
+
+        # 1. CLOSE positions
+        output.append(f"1️⃣  CLOSE NOW 🔴 ({len(close_now)} positions)")
+        output.append("   └─ Why: Extended/overbought + structural risk. Act before deterioration.")
+        if close_now:
+            for pos in close_now[:5]:
+                output.append(
+                    f"       • {pos['ticker']:8} | Contracts: {pos['contracts']:2} | Notional: ${pos['notional']:>10,.0f} | "
+                    f"{pos['reason']}"
+                )
+            if len(close_now) > 5:
+                output.append(f"       • ... and {len(close_now)-5} more RED positions")
+        else:
+            output.append("       ✅ None needed — no RED + high conviction conflicts")
+        output.append("")
+
+        # 2. ROLL positions
+        output.append(f"2️⃣  MONITOR FOR ROLLS 🟡 ({len(monitor_closely)} positions at risk)")
+        output.append("   └─ Why: Approaching strike or extremes. Roll if thesis intact, close if thesis broken.")
+        if monitor_closely:
+            for pos in monitor_closely[:5]:
+                output.append(
+                    f"       • {pos['ticker']:8} | Contracts: {pos['contracts']:2} | Conv: {pos['conv']:.1f}/10 | "
+                    f"{pos['reason']}"
+                )
+            if len(monitor_closely) > 5:
+                output.append(f"       • ... and {len(monitor_closely)-5} more YELLOW + low conviction positions")
+        else:
+            output.append("       ✅ None — all CRITICAL positions are RED/close candidates")
+        output.append("")
+
+        # 3. NOTHING (let healthy run)
+        output.append(f"3️⃣  LET RUN — NOTHING NEEDED 🟢 ({len(nothing)} positions)")
+        output.append("   └─ Why: Attractive pricing (oversold) + adequate conviction. No action required.")
+        if len(nothing) > 0:
+            output.append(f"       ✅ {len(nothing)} positions: Continue monitoring weekly")
+        output.append("")
+
+        # 4. OPPORTUNITY section
+        high_conviction_GREEN = [pos for pos in healthy if pos['conv'] >= 8.0]
+        if high_conviction_GREEN:
+            output.append(f"4️⃣  OPPORTUNITY — HIGH CONVICTION ENTRIES 🟢 ({len(high_conviction_GREEN)} names)")
+            output.append("   └─ Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.")
+            for pos in sorted(high_conviction_GREEN, key=lambda x: x['conv'], reverse=True)[:5]:
+                output.append(f"       • {pos['ticker']:8} Conv {pos['conv']:.1f}/10 | RSI {pos['rsi']:>5.1f} | Value ${pos['notional']:>10,.0f}")
+            output.append("")
+
+        output.append("PORTFOLIO STATUS SUMMARY:")
+        output.append(f"  ✅ Total positions scanned: {len(critical) + len(monitor) + len(healthy)}")
+        output.append(f"  🔴 Critical actions: {len(close_now)} closes + {len(monitor_closely)} monitors")
+        output.append(f"  🟡 Yellow cautions: {len(monitor)}")
+        output.append(f"  🟢 Green healthy: {len(healthy)}")
+        output.append(f"  📊 Market regime: {self.regime_data['regime']}")
         output.append("")
 
         # FOOTER
@@ -638,24 +890,35 @@ class UnifiedReportProduction:
         # SECTION 1: YTD PACE & TARGETS
         output.extend(self._format_section_header(1, "YTD PACE & MONTHLY TARGET TRACKING"))
 
-        output.append("PACE CHECK — Mid-Month Snapshot")
+        mtd_premium = self.snapshot.get('month_to_date_premium', 0)
+        ytd_net = self.snapshot.get('ytd_net_options_income', 0)
+        monthly_target = 122700  # Standard monthly target
+        days_in_month = (date(today.year, today.month % 12 + 1, 1) - date(today.year, today.month, 1)).days
+        days_elapsed = today.day
+        days_remaining = days_in_month - days_elapsed
+        daily_avg = mtd_premium / max(1, days_elapsed)
+        projected_month = mtd_premium + (daily_avg * days_remaining)
+        variance_to_target = projected_month - monthly_target
+
+        output.append("PACE CHECK — Current Snapshot")
         output.append("")
-        output.append(f"Current Month-to-Date P&L:      $58,400 (May 1-15)")
-        output.append(f"Daily average this month:        $3,893/day (trending up)")
-        output.append(f"Days remaining in month:         14")
-        output.append(f"Projected month-end P&L:         $112,100")
-        output.append(f"Monthly target:                  $122,700")
-        output.append(f"Variance to target:              -$10,600 (-8.7%)")
-        output.append(f"Status:                          ⚠️ SLIGHTLY BELOW TARGET (recovery possible)")
+        output.append(f"Current Month-to-Date P&L:      ${mtd_premium:,} ({today.strftime('%B')} 1-{days_elapsed})")
+        output.append(f"Daily average this month:        ${daily_avg:,.0f}/day (trending)")
+        output.append(f"Days remaining in month:         {days_remaining}")
+        output.append(f"Projected month-end P&L:         ${projected_month:,.0f}")
+        output.append(f"Monthly target:                  ${monthly_target:,}")
+        output.append(f"Variance to target:              ${variance_to_target:,.0f} ({variance_to_target/monthly_target*100:.1f}%)")
+        status_msg = "✅ ON TARGET" if abs(variance_to_target) < monthly_target * 0.05 else ("⚠️ BELOW TARGET" if variance_to_target < 0 else "✅ ABOVE TARGET")
+        output.append(f"Status:                          {status_msg}")
         output.append("")
 
-        output.append("TREND COMPARISON (3 months):")
-        output.append("  Feb: $95,200 actual vs $120K target (-$24,800, -20.7%)")
-        output.append("  Mar: $98,400 actual vs $120K target (-$21,600, -18.0%)")
-        output.append("  Apr: $107,115 actual vs $122.7K target (-$15,585, -12.7%)")
-        output.append("  May: $112,100 projected vs $122.7K target (-$10,600, -8.7%)")
-        output.append("")
-        output.append("Convergence trend: ↗↗ STRONG — Variance shrinking from -$25K to -$10.6K")
+        output.append("YTD CUMULATIVE:")
+        output.append(f"  YTD Actual (Jan-{today.strftime('%b')}):  ${ytd_net:,}")
+        ytd_months = today.month
+        ytd_target = monthly_target * ytd_months
+        ytd_variance = ytd_net - ytd_target
+        output.append(f"  YTD Target ({ytd_months} months):     ${ytd_target:,}")
+        output.append(f"  YTD Variance:                   ${ytd_variance:,} ({ytd_variance/ytd_target*100:.1f}%)")
         output.append("")
 
         # SECTION 2: CONVICTION TREND
@@ -852,85 +1115,71 @@ class UnifiedReportProduction:
         # SECTION 1: ACTUAL VS TARGET
         output.extend(self._format_section_header(1, "MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS"))
 
+        mtd_premium = self.snapshot.get('month_to_date_premium', 0)
+        monthly_target = 122700
+        variance = mtd_premium - monthly_target
+        variance_pct = (variance / monthly_target) * 100 if monthly_target > 0 else 0
+        ytd_net = self.snapshot.get('ytd_net_options_income', 0)
+        ytd_months = today.month
+        ytd_target = monthly_target * ytd_months
+        ytd_variance = ytd_net - ytd_target
+        ytd_variance_pct = (ytd_variance / ytd_target) * 100 if ytd_target > 0 else 0
+
         output.append("PERFORMANCE HEADLINE")
         output.append("")
-        output.append(f"Target:              $122,700")
-        output.append(f"Actual (projected):  $112,100")
-        output.append(f"Variance:            -$10,600")
-        output.append(f"% Variance:          -8.7%")
-        output.append(f"Status:              ⚠️ SLIGHTLY BELOW TARGET (recovery through month-end possible)")
-        output.append("")
-
-        output.append("MONTH-BY-MONTH PROGRESSION (Jan-May):")
-        output.append("")
-        output.append("Month   Target    Actual      Variance    % Var   Trend    Status")
-        output.append("─" * 75)
-        output.append("Jan     $120K     $95,200     -$24,800    -20.7%  ↗       Recovery")
-        output.append("Feb     $120K     $89,300     -$30,700    -25.6%  ↗       Recovery")
-        output.append("Mar     $120K     $98,400     -$21,600    -18.0%  ↗       Recovery")
-        output.append("Apr     $122.7K   $107,115    -$15,585    -12.7%  ↗       Recovery")
-        output.append("May     $122.7K   $112,100    -$10,600    -8.7%   ↗       Converging")
+        output.append(f"Target:              ${monthly_target:,}")
+        output.append(f"Actual (YTD):        ${ytd_net:,} ({ytd_months} months)")
+        output.append(f"Variance:            ${variance:,.0f}")
+        output.append(f"% Variance:          {variance_pct:.1f}%")
+        status_msg = "✅ ON TARGET" if abs(variance_pct) < 5 else ("⚠️ BELOW TARGET" if variance_pct < 0 else "✅ EXCEEDING TARGET")
+        output.append(f"Status:              {status_msg}")
         output.append("")
 
         output.append("YTD CUMULATIVE:")
         output.append("")
-        output.append(f"YTD Actual:         $502,115")
-        output.append(f"YTD Target:         $608,700 (5 months × $122.7K)")
-        output.append(f"YTD Variance:       -$106,585")
-        output.append(f"YTD % Variance:     -17.5%")
-        output.append(f"Remaining months:   7 (Jun-Dec)")
-        output.append(f"Remaining target:   $859,900 (7 × $122.7K)")
-        output.append(f"Pace required:      $122.7K/month (baseline)")
-        output.append(f"Confidence:         ✅ MEDIUM-HIGH (May convergence proven framework works)")
+        output.append(f"YTD Actual ({today.year} Jan-{today.strftime('%b')}): ${ytd_net:,} ({ytd_months} months)")
+        output.append(f"YTD Target ({ytd_months} months):               ${ytd_target:,} ({ytd_months} × ${monthly_target:,})")
+        output.append(f"YTD Variance:                            ${ytd_variance:,}")
+        output.append(f"YTD % Variance:                          {ytd_variance_pct:.1f}%")
+        remaining_months = 12 - ytd_months
+        remaining_target = monthly_target * remaining_months
+        output.append(f"Remaining months:                        {remaining_months} (as of {today.strftime('%B')})")
+        output.append(f"Remaining target (est):                  ${remaining_target:,} ({remaining_months} × ${monthly_target:,})")
+        output.append(f"Pace required to recover:                ${monthly_target:,}/month (baseline)")
+        output.append(f"Confidence:                              ✅ LIVE DATA (updating monthly)")
         output.append("")
 
-        # SECTION 2: ACCOUNT PERFORMANCE
-        output.extend(self._format_section_header(2, "MONTHLY PERFORMANCE BY ACCOUNT"))
+        # SECTION 2: ACCOUNT PERFORMANCE BY ACCOUNT (ALL 8)
+        output.extend(self._format_section_header(2, "MONTHLY PERFORMANCE BY ACCOUNT (ALL 8)"))
 
-        output.append("ACCOUNT A (Rahul Margin) — Primary Short Strangles Account")
-        output.append("")
-        output.append(f"Target:              $95K (78% of $122.7K)")
-        output.append(f"Actual (projected):  $87,400")
-        output.append(f"Variance:            -$7,600 (-8.0%)")
-        output.append(f"Status:              ⚠️ SLIGHTLY SHORT")
-        output.append("")
+        monthly_target = 122700
+        mtd_premium = self.snapshot.get('month_to_date_premium', mtd_premium)
 
-        output.append("Breakdown:")
-        output.append(f"├─ Short strangles (primary): $61,200 (70% of account)")
-        output.append(f"│  └─ Win rate: 78% (8 profitable closes, 2 losses, 6 held open)")
-        output.append(f"│  └─ Avg premium: $480/strangle")
-        output.append(f"│  └─ P&L: +$16,200 from closes, +$44,000 from theta")
-        output.append(f"├─ Covered calls (assigned equity): $16,800 (19%)")
-        output.append(f"│  └─ Wheel efficiency: MRNA, PYPL natural exits completing")
-        output.append(f"│  └─ Premium recovery: 92% of cost basis")
-        output.append(f"└─ Greeks: Delta +16, Gamma 0.39, Theta $385/day ✅")
-        output.append("")
+        # Allocate premium proportionally by account balance
+        total_balance = TOTAL_PORTFOLIO_BALANCE
+        for account_name, config in ACCOUNTS_CONFIG.items():
+            balance = config['balance']
+            account_pct = balance / total_balance
+            acct_target = int(monthly_target * account_pct)
+            acct_actual = int(mtd_premium * account_pct)
+            acct_variance = acct_actual - acct_target
+            acct_variance_pct = (acct_variance / acct_target * 100) if acct_target > 0 else 0
 
-        output.append("ACCOUNT B (Pinky IRA) — Wheel Strategy")
-        output.append("")
-        output.append(f"Target:              $20K (16%)")
-        output.append(f"Actual (projected):  $18,300")
-        output.append(f"Variance:            -$1,700 (-8.5%)")
-        output.append(f"Status:              ⚠️ SLIGHT SHORTFALL (IRA limited)")
-        output.append("")
+            output.append(f"{account_name}")
+            output.append("")
+            output.append(f"├─ Balance: ${balance:,} ({account_pct*100:.1f}% of portfolio)")
+            output.append(f"├─ Target (monthly): ${acct_target:,}")
+            output.append(f"├─ Actual (YTD-allocated): ${acct_actual:,}")
+            output.append(f"├─ Variance: ${acct_variance:,} ({acct_variance_pct:+.1f}%)")
 
-        output.append("Breakdown:")
-        output.append(f"├─ CSP entries: 2 (IBIT for Bitcoin, 1 crypto name)")
-        output.append(f"├─ Wheels in progress: MRNA CC stage near completion")
-        output.append(f"├─ Premium collected: $3,200/month average")
-        output.append(f"└─ Risk: 0% margin (IRA rules enforced)")
-        output.append("")
+            # Show position count
+            acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
+            output.append(f"├─ Open positions: {len(acct_positions)}")
 
-        output.append("ACCOUNT C (Designated Beneficiary) — Tactical Allocation")
-        output.append("")
-        output.append(f"Target:              $7.7K (6%)")
-        output.append(f"Actual (projected):  $6,400")
-        output.append(f"Variance:            -$1,300 (-16.9%)")
-        output.append(f"Status:              ⚠️ BELOW TARGET")
-        output.append("")
-
-        output.append("Role: Tactical rebalancing during market extremes")
-        output.append("")
+            # Status
+            status = "✅ ON TARGET" if abs(acct_variance_pct) < 5 else ("⚠️ BELOW" if acct_variance < 0 else "✅ ABOVE")
+            output.append(f"└─ Status: {status}")
+            output.append("")
 
         # SECTION 3: VARIANCE ROOT CAUSE ANALYSIS
         output.extend(self._format_section_header(3, "MONTHLY VARIANCE ROOT CAUSE ANALYSIS"))

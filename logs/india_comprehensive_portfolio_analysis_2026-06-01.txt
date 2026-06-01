@@ -1,0 +1,178 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                      INDIA PORTFOLIO COMPREHENSIVE ANALYSIS — JUNE 1, 2026 (COMPLETE DATA)                          ║
+║                      Accounts: 7500069840 (Equity) + 7510078170 (F&O) | Generated: 2026-06-01 08:24                 ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+========================================================================================================================
+SECTION 0: COMPLETE PORTFOLIO SNAPSHOT
+========================================================================================================================
+
+📊 EQUITY PORTFOLIO (Account 7500069840)
+------------------------------------------------------------------------------------------------------------------------
+  Total Positions: 23 holdings
+  Total Cost Basis: ₹2,443,719
+  Total Market Value: ₹2,436,416
+  Total Unrealized P&L: -₹7,303 (-0.3%) — nearly BREAKEVEN
+  Gains: 8 positions (+₹92,614)
+  Losses: 15 positions (-₹99,916)
+
+🔝 TOP 5 EQUITY POSITIONS BY MARKET VALUE:
+  RELIANCE    |    225 @ ₹1,382.38 → ₹1,321.20 | ₹297,270 | -₹13,766 | Conglomerate
+  ADAPOR      |    125 @ ₹1,444.40 → ₹1,804.60 | ₹225,575 | +₹45,025 | Ports (GAIN: +₹45K) ✅
+  APOHOS      |     25 @ ₹7,819.20 → ₹8,176.50 | ₹204,412 | +₹8,932  | Hospitals
+  BAJFI       |    225 @ ₹955.70  → ₹908.25   | ₹204,356 | -₹10,676 | Finance
+  SOLIN       |     10 @ ₹16,230.26 → ₹18,247 | ₹182,470 | +₹20,167 | Solar (GAIN: +₹20K) ✅
+
+🔻 BOTTOM 5 EQUITY POSITIONS (BIGGEST LOSSES):
+  TCS         |     75 @ ₹2,684.12 → ₹2,258.90 | -₹31,892 (-15.8%) | IT — earnings headwind
+  DLF         |    200 @ ₹666.66  → ₹590.60   | -₹15,212 (-11.4%) | Real estate
+  HDFBAN      |    200 @ ₹809.19  → ₹744.55   | -₹12,928 (-8.0%)  | Banking anchor (HOLD)
+  BAJFI       |    225 @ ₹955.70  → ₹908.25   | -₹10,676 (-5.0%)  | Finance
+  STABAN      |     75 @ ₹1,040.90 → ₹964.40  | -₹5,738  (-7.3%)  | Banking (HOLD)
+
+========================================================================================================================
+📈 F&O PORTFOLIO (Account 7510078170)
+========================================================================================================================
+  Total Active Legs: 13
+  Total Unrealized P&L: -₹117,516 🔴 DEEPLY UNDERWATER
+
+  NIFTY Puts (7 legs):       -₹10,817 loss | Expiry: 9-22 Jun (8-22 DTE)
+  BANKNIFTY Puts (4 legs):   -₹68,836 loss | Expiry: 30-Jun (29 DTE) ← CRITICAL
+    └─ 54500P: -₹31,197 (deeply ITM, worst position)
+  NIFTY-SELECT (2 legs):     -₹34,236 loss | Expiry: 30-Jun (29 DTE)
+
+========================================================================================================================
+💰 TOTAL INDIA PORTFOLIO SUMMARY
+========================================================================================================================
+
+  Equity Account (7500069840):     ₹2,436,416  | P&L: -₹7,303
+  F&O Account (7510078170):        (losses)    | P&L: -₹117,516
+  ─────────────────────────────────────────────────────────────
+  TOTAL PORTFOLIO VALUE:           ₹2,436,416  | P&L: -₹124,819 🔴
+
+  Capital Utilization:
+    • Equity deployed: ₹2,443,719 (nearly 50% of ₹50L total capital)
+    • F&O capital at risk: ~₹1,500K (estimated, based on notional exposure)
+
+========================================================================================================================
+🚨 CRITICAL ISSUES & PRIORITY ACTIONS
+========================================================================================================================
+
+1. F&O Portfolio Underwater by ₹117,516
+   Root Cause: Sold NIFTY/BANKNIFTY/SELECT puts; market moved down after entry
+   Risk Level: 🔴 CRITICAL
+   Action: Immediate: Roll NIFTY 09-Jun; Close BANKNIFTY 54500P; Hold others
+
+2. TCS Position Down ₹31,892 (-15.8%)
+   Root Cause: IT sector headwinds, US slowdown, earnings miss
+   Risk Level: 🟡 MONITOR
+   Action: Config says: Trim 15 of 30 shares @ 2,700+ (Phase 2 exit). Current: 2,258 (BELOW trigger)
+           Evaluate full exit vs hold given significant loss
+
+3. DLF Down ₹15,212 (-11.4%)
+   Root Cause: Real estate sector weakness
+   Risk Level: 🟡 MONITOR
+   Action: Config doesn't mention DLF exit. Hold for recovery or set stop @ -15%
+
+4. HDFBAN Down ₹12,928 (-8.0%)
+   Root Cause: Banking sector pressure
+   Risk Level: 🟢 HOLD
+   Action: Core portfolio anchor. HOLD despite losses. Target: accumulate on further dips
+
+5. ADAPOR Up ₹45,025 (+24.9%) — BEST PERFORMER
+   Root Cause: Ports infrastructure boom, India export recovery
+   Risk Level: 🟢 SUCCESS
+   Action: Config Phase 2: No exit trigger. HOLD for long-term. Thesis intact.
+
+========================================================================================================================
+📋 TOP 5 ACTIONS FOR THIS WEEK (Prioritized)
+========================================================================================================================
+
+1️⃣ ROLL NIFTY 09-Jun to 16-Jun (MONDAY MORNING — URGENT)
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Position: 4 legs (22400P, 22500P, 22750P, 22800P) | Qty: -260 | Loss: -₹5,923
+   Expiry: June 9 (8 DTE remaining)
+   Action: Roll OUT same strikes → Collect fresh premium (₹2-3K) → Extend to 15 DTE
+   Impact: Reduce gamma risk, defer potential assignment, recover premium
+   Risk: If NIFTY gaps down, roll may be forced at net debit
+   Status: ⚠️ DO MONDAY MORNING
+
+2️⃣ CLOSE BANKNIFTY 54500-P (THIS WEEK — CRITICAL)
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Position: -30 contracts @ 791.50 avg | Current LTP: 1039.90 | Loss: -₹31,197
+   Expiry: June 30 (29 DTE) | Status: DEEPLY ITM
+   Action: BUY TO CLOSE immediately → Lock loss → Stop portfolio bleeding
+   Impact: Reduces concentration risk, frees up capital for better opportunities
+   Keep: Remaining BANKNIFTY puts (52000P, 52500P, 52800P) — still have time value
+   Status: 🔴 DO THIS WEEK
+
+3️⃣ REVIEW TCS POSITION (20-30% loss accumulated)
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   Position: 75 shares @ 2,684 avg | Current: 2,258.90 | Loss: -₹31,892 (-15.8%)
+   Entry Config: Trim 15 of 30 shares @ 2,700+ (Phase 2)
+   Issue: Current price (2,258.90) is BELOW exit trigger (2,700)
+   Action: Evaluate FULL EXIT (not just trim) if IT sector thesis broken
+           OR hold if 3-5 year thesis intact (recovery from US slowdown)
+   Status: 🟡 DECIDE THIS WEEK
+
+4️⃣ HOLD ADAPOR & SOLIN — BEST PERFORMERS
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   ADAPOR: 125 @ 1,444.40 → 1,804.60 | +₹45,025 (+24.9%) ✅
+           No exit trigger. HOLD. Infrastructure thesis strong.
+
+   SOLIN: 10 @ 16,230 → 18,247 | +₹20,167 (+12.4%) ✅
+          Defense theme intact. Plan tranche 2 @ 14,500 on dips.
+
+   Status: ✅ LET RUN — NO ACTION NEEDED
+
+5️⃣ NO NEW F&O ENTRIES THIS WEEK + Plan Equity Dips
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   F&O Freeze: Market BEAR_SIDEWAYS | Current positions underwater
+              Block all new CSP/PUT entries until regime shifts
+
+   Equity Accumulation Plan:
+     • KAYNES: Plan buy 10 more @ ₹3,800 (dip entry)
+     • SOLIN: Plan buy 5 more @ ₹14,500 (50% pullback)
+     • Set alerts, don't deploy until confirmed dip to entry zone
+
+   Status: 📊 NEXT WEEK on dips
+
+========================================================================================================================
+DECISION TREE — IF X HAPPENS, THEN Y
+========================================================================================================================
+
+IF NIFTY reaches 22,000             → 54500P will be deeply ITM; close without hesitation
+IF NIFTY recovers to 23,500+        → NIFTY-SELECT puts gain ₹10-15K; evaluate partial closes
+IF NIFTY breaks 24,977 (200 DMA)    → BULL signal fires; reassess F&O CSP entries for next week
+IF India VIX spikes > 20            → All puts gain value; close profitable legs at 40-50%
+IF TCS drops to 2,000 or below      → Consider full exit (thesis may be permanently broken)
+IF ADAPOR reaches 2,000             → Consider partial take-profit (move 50% to safety)
+IF KAYNES drops to 3,800 or below   → Execute tranche 2 (buy 10 more shares)
+IF SOLIN drops to 14,500 or below   → Execute tranche 2 (buy 5 more shares)
+
+========================================================================================================================
+WEEKLY CHECKLIST
+========================================================================================================================
+
+☐ Monday Morning:    Roll NIFTY 09-Jun (4 legs) to 16-Jun → Collect ₹2-3K
+☐ Tuesday:          Close BANKNIFTY 54500-P → Lock -₹31K loss
+☐ Wed-Thu:          Monitor TCS thesis; decide trim vs full exit
+☐ Wed-Thu:          Monitor NIFTY-SELECT; if NIFTY > 23,300, evaluate partial closes
+☐ Friday:           Review week
+                    Set buy alerts: KAYNES 3,800 | SOLIN 14,500 | TCS recovery thesis
+                    Plan next week's equity accumulation if dips trigger
+☐ Next Week:        If NIFTY breaks 24,977, reassess F&O entry regime
+
+========================================================================================================================
+KEY METRICS FOR THIS WEEK
+========================================================================================================================
+
+  🔴 Portfolio underwater: -₹124,819 total (Equity -₹7.3K + F&O -₹117.5K)
+  ⏰ Expirations: Jun 9 (8 DTE NIFTY), Jun 30 (29 DTE BANKNIFTY/SELECT)
+  💰 Capital at immediate risk: ₹68,836 in BANKNIFTY (4 underwater legs)
+  📊 Regime: BEAR_SIDEWAYS (below 50-MA and 200-MA)
+  🎯 Weekly objective: Defensive management (rolls, closes, holds) — NO new entries
+  🚀 Recovery strategy: Theta decay will help IF NIFTY stabilizes; avoid panic selling
+
+Report generated: 2026-06-01
+========================================================================================================================

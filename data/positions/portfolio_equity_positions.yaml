@@ -1,0 +1,135 @@
+last_updated: '2026-05-31'
+accounts:
+  Account A (232):
+    ADBE:
+      shares: 300
+      cost_basis: 259.21
+      date_acquired: '2026-05-31'
+    AXON:
+      shares: 200
+      cost_basis: 448.72
+      date_acquired: '2026-05-31'
+    XYZ:
+      shares: 200
+      cost_basis: 75.72
+      date_acquired: '2026-05-31'
+    COIN:
+      shares: 100
+      cost_basis: 189.03
+      date_acquired: '2026-05-31'
+    ETSY:
+      shares: 100
+      cost_basis: 67.92
+      date_acquired: '2026-05-31'
+    JD:
+      shares: 200
+      cost_basis: 28.83
+      date_acquired: '2026-05-31'
+    LYFT:
+      shares: 400
+      cost_basis: 14.11
+      date_acquired: '2026-05-31'
+    MRNA:
+      shares: 400
+      cost_basis: 47.19
+      date_acquired: '2026-05-31'
+    NKE:
+      shares: 100
+      cost_basis: 46.23
+      date_acquired: '2026-05-31'
+    OKTA:
+      shares: 600
+      cost_basis: 123.27
+      date_acquired: '2026-05-31'
+    PYPL:
+      shares: 1300
+      cost_basis: 44.75
+      date_acquired: '2026-05-31'
+    RBLX:
+      shares: 100
+      cost_basis: 47.15
+      date_acquired: '2026-05-31'
+    CRM:
+      shares: 200
+      cost_basis: 191.1
+      date_acquired: '2026-05-31'
+    UNH:
+      shares: 100
+      cost_basis: 380.31
+      date_acquired: '2026-05-31'
+    ZBH:
+      shares: 100
+      cost_basis: 82.33
+      date_acquired: '2026-05-31'
+  Account B (275):
+    FMC:
+      shares: 100
+      cost_basis: 13.66
+      date_acquired: '2026-05-31'
+    CRM:
+      shares: 100
+      cost_basis: 191.1
+      date_acquired: '2026-05-31'
+  Account C (634):
+    ABNB:
+      shares: 100
+      cost_basis: 133.31
+      date_acquired: '2026-05-31'
+    INMD:
+      shares: 100
+      cost_basis: 13.93
+      date_acquired: '2026-05-31'
+    NKE:
+      shares: 100
+      cost_basis: 46.23
+      date_acquired: '2026-05-31'
+    NIO:
+      shares: 200
+      cost_basis: 5.6
+      date_acquired: '2026-05-31'
+    TWLO:
+      shares: 524
+      cost_basis: 190.64
+      date_acquired: '2026-05-31'
+  Fidelity (Rahul):
+    FMC:
+      shares: 100
+      cost_basis: 15.38
+      date_acquired: '2026-05-31'
+    LYFT:
+      shares: 100
+      cost_basis: 14.15
+      date_acquired: '2026-05-31'
+    NKE:
+      shares: 100
+      cost_basis: 44.36
+      date_acquired: '2026-05-31'
+    NIO:
+      shares: 800
+      cost_basis: 6.39
+      date_acquired: '2026-05-31'
+    CRM:
+      shares: 200
+      cost_basis: 176.53
+      date_acquired: '2026-05-31'
+  "Fidelity (Rajul \u2014 Roth IRA)":
+    FMC:
+      shares: 200
+      cost_basis: 15.38
+      date_acquired: '2026-05-31'
+    NKE:
+      shares: 200
+      cost_basis: 44.36
+      date_acquired: '2026-05-31'
+    OKTA:
+      shares: 100
+      cost_basis: 73.65
+      date_acquired: '2026-05-31'
+    SONO:
+      shares: 400
+      cost_basis: 14.83
+      date_acquired: '2026-05-31'
+  "Fidelity (Rajul — Rollover IRA)": {}
+  "Vanguard (Rahul)": {}
+  "Robinhood (Individual)": {}
+  "Robinhood (Traditional IRA)": {}

@@ -79,6 +79,7 @@ This skill activates when the user asks about:
 - When strangle threatened on one side: roll that side only (not whole position)
 - MRNA: let natural CC assignment complete. Do not re-enter.
 - PYPL: sell CCs on any bounce. No re-entry after exit.
+- **SOFTWARE THESIS BROKEN (May 22):** Do NOT enter new positions on CRM, OKTA, CRWD, ADBE, SHOP (except long-DTE decay plays already initiated). AI margin compression + moat erosion. Let existing staggers run to profit-take at 70%, exit, deprioritize re-entry.
 
 ### Account A — Margin and Cash Management
 
@@ -87,7 +88,7 @@ This skill activates when the user asks about:
 |--------|----------------|-----------|
 | Bull | 55–60% | 45% |
 | Sideways | 60–65% | 50% |
-| Bear (current) | 65% | 50% |
+| CAUTIOUS_BULL (current, May 22) | 60–65% | 50% |
 
 **Option requirement ratio:** Target below 80% of net liq in bear regime. Above 100% is alert territory; above 130% is structural risk requiring active reduction over time.
 
@@ -101,6 +102,8 @@ This skill activates when the user asks about:
 | $75K–$99K | Close profitable puts ≥ 40%; consider $50K emergency fund deposit |
 | $50K–$74K | Close profitable puts ≥ 30%; deposit $75–100K from emergency fund |
 | < $50K | Emergency — close what you can; deploy emergency fund immediately |
+
+**Current Status (May 22):** Account A margin requirement = $650K, utilization = 60%, cash-to-trade = $96K. Status: HEALTHY. Awaiting PYPL closure (~5 contracts) to rebalance Tier 1.
 
 **Why cash fluctuates without structural change:** Cash to trade = Total equity − Option requirement used. Both sides move daily. A VIX spike inflates option marks and requirement simultaneously, pulling $30–60K from available cash in a single week. When VIX normalizes, cash returns. Do NOT force closes to solve a temporary VIX-driven cash drop — closing at the bottom of a VIX spike gives away earned premium.
 
@@ -143,6 +146,12 @@ This skill activates when the user asks about:
 - IBIT CSPs: cleanest BTC exposure for IRA; max 1 contract
 - HUT/CIFR/RIOT: Tier 3 only; max 1 contract; high-beta to Bitcoin
 - Scale trigger: Bitcoin sustained above $100K → add CSPs on COIN and HOOD
+
+### Account B Current Deployment (May 22, 2026)
+- **BWXT** 160P Jan 27, 2027 (239d) @ $11.13 = $1,113 credit — nuclear/energy infrastructure play (diversified with GEV, BE, OKLO, SMR)
+- **SHOP** 90P Jun 27, 2027 (392d) @ $15.85 = $1,585 credit — collect-decay strategy at long DTE (let theta work)
+- **NEE** 82.50P Dec 18, 2026 (211d) @ $4.40 = $440 credit — opportunistic value on DVN merger dislocation
+- **Total premium:** $3,138 collected; $27K buffer remaining for staggering or assignment equity
 
 ---
 

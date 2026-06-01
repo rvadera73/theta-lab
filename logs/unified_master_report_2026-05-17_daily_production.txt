@@ -524,10 +524,14 @@ PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)
 SECTION 5: POSITION DISTRIBUTION BY ACCOUNT
 ========================================================================================================================
 
-Fidelity    : 116 positions ( 28.4%) ██████████████
-Robinhood   :  38 positions (  9.3%) ████
-Schwab      : 225 positions ( 55.1%) ███████████████████████████
-Vanguard    :  29 positions (  7.1%) ███
+Account A (232)                    : 159 positions ( 39.0%) ███████████████████
+Fidelity (Rahul)                   :  86 positions ( 21.1%) ██████████
+Account B (275)                    :  35 positions (  8.6%) ████
+Account C (634)                    :  31 positions (  7.6%) ███
+Fidelity (Rajul)                   :  30 positions (  7.4%) ███
+Robinhood IRA                      :  29 positions (  7.1%) ███
+Vanguard                           :  29 positions (  7.1%) ███
+Robinhood Taxable                  :   9 positions (  2.2%) █
 
 ========================================================================================================================
 SECTION 6: TOP 20 POSITIONS BY OPEN CONTRACTS
@@ -564,11 +568,15 @@ Observe (Live Data):
   ✅ Technical indicators: RSI, MACD, Bollinger Bands (30+ tickers analyzed)
   ✅ Conviction scores derived from multi-factor technical + fundamental analysis
 
-Orient (Broker Diversity & Risk Analysis):
-  ✅ Fidelity    : 116 positions ( 28.4%)
-  ✅ Robinhood   : 38 positions (  9.3%)
-  ✅ Schwab      : 225 positions ( 55.1%)
-  ✅ Vanguard    : 29 positions (  7.1%)
+Orient (Account Diversity & Risk Analysis):
+  ✅ Account A (232)                    : 159 positions ( 39.0%)
+  ✅ Fidelity (Rahul)                   : 86 positions ( 21.1%)
+  ✅ Account B (275)                    : 35 positions (  8.6%)
+  ✅ Account C (634)                    : 31 positions (  7.6%)
+  ✅ Fidelity (Rajul)                   : 30 positions (  7.4%)
+  ✅ Robinhood IRA                      : 29 positions (  7.1%)
+  ✅ Vanguard                           : 29 positions (  7.1%)
+  ✅ Robinhood Taxable                  : 9 positions (  2.2%)
 
 Decide (Position Management Strategy):
   1. Monitor market regime: BULL
