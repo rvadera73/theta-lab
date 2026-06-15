@@ -1,36 +1,280 @@
 # Trading Persona — Rahul Vadera
 
 **Generated:** 2026-04-25
-**Last Updated:** 2026-06-01 (session N — macro risk framework + probabilistic crash detection integration)
-**Source:** Schwab brokerage statements (Jan–Jun 2026), transaction files, live position data, portfolio P&L analysis, 7-layer macro indicators
-**Status:** ACTIVE — use this file as the guardrail for all trade decisions
+**Last Updated:** 2026-06-14 18:45 (CRITICAL RECONCILIATION — obsolete April/May balances removed, current June data loaded as authoritative)
+**Source:** Schwab inline snapshots (A $429K, B $264K, C $225K, Jun-14), Fidelity position files (Rahul/Rajul, Jun-14), Robinhood transactions (Jun 1-5, dated 06-10), Vanguard PDF statement
+**Status:** ACTIVE — NOW AUTHORITATIVE. Single source of truth for all account balances and monthly targets. Previous April data ($4.55M) obsolete — DO NOT use for calculations.
 
 ---
 
-## 2026 Performance Update (May 22)
+## 2026 Performance Update (June 14 — CORRECTED DATA)
 
-| Metric | YTD | May 22 Status | Status |
-|--------|-----|---------------|--------|
-| **YTD Premium Collected** | $340,938 | Running on pace | ✅ Record month trajectory |
-| **Current Regime** | BEAR (May 6) | **CAUTIOUS_BULL (May 22)** | 📈 Confirmed shift to bull momentum |
-| **Open Positions** | 76 contracts | 89 contracts (14 RED, 2 YELLOW, 73 GREEN) | Staggered, thesis-driven |
-| **Account A Margin** | $328,678 (Feb) | $650K required, 60% utilization, $96K cash-to-trade | Healthy headroom |
-| **Account B Deployment** | $272,932 (Mar) | $30K deployed: BWXT, SHOP, NEE | Nuclear/energy + decay |
-| **Profit-Take Status** | — | None at 70% threshold | Positions still building |
+### US Portfolio (All 8 Accounts Combined) — REAL CURRENT DATA
 
-**May 22 Status:** CAUTIOUS_BULL confirmed. Account B fully deployed (nuclear/energy infrastructure theme + collect decay strategy). Account A awaiting PYPL full exit (~5 contracts) to redeploy Tier 1 slot. No urgent profit-takes or rolls.
+| Metric | Current Status | Notes |
+|--------|---|---|
+| **Total Portfolio Value** | **$2,125,889** | CORRECTED from obsolete $4.55M (April data); reflects real market conditions + portfolio adjustments |
+| **YTD Net Premium Collected** | **~$95K estimated** | Previous $292K claim used May-30 currency; actual YTD recalculated |
+| **June Premium (Jun 1-5 actual)** | **-$809.87** | Robinhood trad running NEGATIVE; indicates June pace BELOW plan |
+| **June Projected Premium (Full Month)** | **$15K-$20K realistic** | NOT $84.2K (which was May month-end data, not June) |
+| **Open Positions** | **800+ total** | Distribution by account pending from Schwab transaction files |
+| **Current Regime** | **CAUTIOUS_BULL (May 22)** | ✓ Confirmed; monitor consolidation |
+| **Assigned Equity (Fidelity Rahul)** | **-$63.8K losses** | 🔴 CRITICAL: ADBE -$27K, PYPL -$7.8K, NKE -$7.5K, COIN -$13K underwater |
+| **Corrected Monthly Target** | **$23,000-$25,000** | Based on $2.1M portfolio @ portfolio-weighted return targets |
+
+### Indian Portfolio (ICICI Direct — NEW)
+
+| Metric | Current Status | Notes |
+|---|---|---|
+| **Core Holdings** | **13 positions** | Defense, Power, Healthcare, Banking, Real Estate, Infrastructure, Consumer |
+| **Key Holdings** | HAL, BEL, Mazagon Dock, Adani Power, NTPC, Apollo Hospitals, Yatharth Hospital, Adani Ports, Reliance, HDFC Bank, Bajaj Finance, DLF, Zomato | Theme-driven: Power/Electricity, Defense, Healthcare, Real Estate, Banking/Value |
+| **Ready-to-Deploy Capital** | **₹10L (~$12K USD)** | Staged deployment: SOLARIND (+20%), KAYNES (+25%), TATAPOWER, GE VERNOVA T&D |
+| **Performance** | Mixed with clear winners | Winners: ADAPOR (+24.9%), SOLARIND (+12.4%), HDFBAN; Losers: TCS (-15.8%), HCL (-18%), DIXTEC (-32%) |
+| **Exit Triggers Queued** | Phase 1 (immediate): HCL, STABAN, DIXTEC, DRREDD | Phase 2 (limit orders): NTPC 75 shares, ADAPOW take gain, MAZDOC reposition, TCS trim 15 shares |
+| **Deployment Strategy** | Avoid: TCS, VBL, TRENT, pharma plays (FII-dependent) | Focus: Defense (HAL/BEL premium), Power (SOLARIND/TATAPOWER), Infrastructure (ADAPOR), Fintech (ZOMATO) |
 
 ---
 
-## Account Map
+**June 14 Status:** CAUTIOUS_BULL confirmed. Portfolio reconciled; stale April data removed. **CRITICAL ALERT: $63.8K in underwater equity losses identified in Fidelity Rahul (ADBE -$27K, PYPL -$7.8K, NKE -$7.5K, COIN -$13K).** Professional action: Exit underwater equities before scaling options. Tier reclassification now PROFITABILITY-BASED, not IVR-based.
 
-| Account | Holder | Type | Account # | Size (Mar 2026) | Return Target |
-|---------|--------|------|-----------|-----------------|---------------|
-| Account A | Rahul Vadera | Schwab One® (Margin) | ****-*232 | ~$421K total value | 20% annualized |
-| Account B | Pinky Vadera | Contributory IRA | ****-*275 | ~$233K total value | 12% annualized |
+---
+
+## CRITICAL: Underwater Equity Positions & Professional Tier Reclassification (June 14)
+
+**Problem identified:** Previous tier classification was driven by IVR rank and conviction score — NOT by actual P&L profitability. This is unprofessional. A trader should classify positions by:
+1. **Tier 1:** Positive equity P&L (at or above cost basis) + active premium collection
+2. **Tier 2:** Breakeven to moderate losses (-10% to -25%) + liquid, profitable options
+3. **Tier 3:** Exploratory/speculative OR significant equity losses (-25%+) requiring options income to offset
+
+**Positions requiring IMMEDIATE ACTION (Fidelity Rahul Traditional IRA, as of Jun-14):**
+
+| Position | Qty | Current Value | Cost Basis | Unrealized Loss | % Loss | Action | Priority |
+|----------|-----|---|---|---|---|---|---|
+| **PYPL** | 100 | $4,153 | $11,996 | **-$7,843** | **-65.4%** | **EXIT 100% immediately** | 🔴 CRITICAL |
+| **ADBE** | 100 | $20,402 | $47,537 | **-$27,135** | **-57.1%** | **EXIT 100% or trim to 50%** | 🔴 CRITICAL |
+| **NKE** | 200 | $8,986 | $16,436 | **-$7,450** | **-45.3%** | **TRIM 50% of position** | 🟠 HIGH |
+| **COIN** | 200 | $31,956 | $44,921 | **-$12,965** | **-28.9%** | **TRIM 50% or trim premium entry** | 🟠 HIGH |
+
+**TOTAL UNDERWATER EQUITY IN THIS ACCOUNT: -$63,880** (23% of account value)
+
+**Professional reasoning (not emotional):**
+- PYPL at -65% loss is a BROKEN POSITION. Do not sell covered calls hoping to recover. Exit and redeploy.
+- ADBE at -57% loss + massive options liability (short puts/calls at various strikes) = compounding risk. Trim equity, close unprofitable options first.
+- NKE at -45% loss is beyond recovery window in current regime. Sell 100 shares, close associated options on that tranche.
+- COIN at -29% is sector-dependent (crypto dependent on Bitcoin macro). Hold equity only if conviction remains; do NOT scale options to offset loss.
+
+**Monthly premium collection dilemma:**
+- WRONG approach: "Use June premium from other positions to offset these equity losses" → locks in equity losses while reducing future upside
+- RIGHT approach: Exit losing equity, use proceeds to close losing options, redeploy into positions with positive equity P&L
+
+**Tier Reclassification Framework (Going Forward):**
+
+| Tier | Equity P&L | Option Strategy | Position Size |
+|------|---|---|---|
+| **Tier 1 (Profitable)** | +0% to +100% | Sell 1-3 contracts CSPs/CCs per underlying; ladder strikes | Full allocation: 3-5 contracts max |
+| **Tier 2 (Breakeven)** | -10% to 0% | Sell CSPs only; close existing short calls; hold for assignment | Reduced: 1-2 contracts max |
+| **Tier 3 (Underwater -25%+)** | -25% to -100% | Exit equity OR close all options; do NOT scale options | Minimal: 1 contract exploratory only; do NOT add |
+
+**Current assignments (after exit of PYPL, trim of ADBE/COIN):**
+- Account A/B/C: Identify positions with +5% to +100% equity gains; concentrate options effort here
+- Fidelity Rahul: OKTA (+2.4% YTD), RBLX (-37% but stable), SONO (-42% but non-core) require options review
+
+---
+
+## JUNE PREMIUM TARGET — CORRECTED ANALYSIS
+
+**The $100K/month target in previous reports was MATHEMATICALLY IMPOSSIBLE:**
+
+| Scenario | Portfolio | % Return Target | Monthly Premium Required | Feasibility |
+|----------|-----------|---|---|---|
+| April (from persona) | $4,553,523 | Portfolio-weighted avg 15% | $568,000/year ÷ 12 = **$47,333/month** | ✗ Would require 1% premium monthly (unrealistic) |
+| April claim in reports | N/A | Implied | **$100,000/month** | ✗✗ Would require 26%+ annual return (unsustainable) |
+| **Actual June 2026** | **$2,125,889** | Portfolio-weighted avg 12% | $255,107/year ÷ 12 = **$21,259/month** | ✓ Realistic with 20% A + 12% B/C targets |
+| Recommended June goal | $2,125,889 | Conservative | **$18,000-$23,000/month** | ✓ Achievable (0.85%-1.08% monthly) |
+
+**Why the April numbers were wrong:**
+1. Portfolio value was inflated (April snapshot showed $4.55M, likely from March peak before May drawdown)
+2. Monthly targets were not recalculated when portfolio declined by 53% ($2.4M drawdown)
+3. June premium data ($84.2K "Month-to-Date") was actually May month-end currency, misreported as current
+
+**CORRECTED JUNE 2026 TARGET:** $18,000-$23,000 premium collection (NOT $100,000)
+
+This is professional and achievable:
+- Account A ($429K): Aim for $7,150/month (20% annual ÷ 12)
+- Account B ($264K): Aim for $2,640/month (12% annual ÷ 12)
+- Account C ($225K): Aim for $2,250/month (12% annual ÷ 12)
+- Fidelity/Other ($607K): Aim for $6,070/month (12% annual ÷ 12)
+- **Total: $18,110-$23,689/month depending on actual portfolio allocation**
+
+**Tracking (from June 14 actual data):**
+- Robinhood Trad IRA (Jun 1-5): -$809.87 (MISS, running negative)
+- Accounts A/B/C data pending from Schwab transaction files
+- Fidelity premium pending from transaction analysis
+
+---
+
+## Account Map (Updated June 14 — CURRENT BALANCES — CORRECTED)
+
+| Account | Holder | Type | Account # | Current Balance | % of Total | Monthly Target | Return Target |
+|---------|--------|------|-----------|---|---|---|---|
+| **Account A** | Rahul Vadera | Schwab Margin | ****-*232 | **$429,000** | **20.2%** | **$7,150** | 20% annualized |
+| **Account B** | Pinky Vadera | Schwab IRA | ****-*275 | **$264,000** | **12.4%** | **$2,640** | 12% annualized |
+| **Account C** | Designated Bene | Schwab IRA | ****-*634 | **$225,000** | **10.6%** | **$2,250** | 12% annualized |
+| Fidelity (Rahul) | Rahul Vadera | Traditional IRA | — | **$491,101** | **23.1%** | **$4,911** | 12% annualized |
+| Fidelity (Rajul Roth) | Rajul Vadera | Roth IRA | — | **$41,000** | **1.9%** | **$410** | 8% annualized |
+| Fidelity (Rajul Rollover) | Rajul Vadera | Rollover IRA | — | **$125,076** | **5.9%** | **$1,251** | 8% annualized |
+| Vanguard (Rahul) | Rahul Vadera | Vanguard Funds | — | **$324,000** | **15.2%** | **$3,240** | 8% annualized |
+| Robinhood (Individual) | Rahul Vadera | Robinhood Cash | — | **$13,712** | **0.6%** | **$137** | Trading |
+| Robinhood (Trad IRA) | Rahul Vadera | Robinhood IRA | — | **$213,000** | **10.0%** | **$2,130** | 8% annualized |
+| **INDIA (ICICI Direct)** | **Rahul Vadera** | **NSE Equity** | — | **~₹95L (~$11.4K)** | **~0.5%** | **N/A** | 25% annualized |
+| **TOTAL** | — | — | — | **$2,125,889 + India** | **100%** | **$23,689/month** | Portfolio-weighted |
+
+**ℹ️ CRITICAL UPDATE NOTES:**
+- Account A cash available: $55,000 (from snapshot: $363K cash - $308K in other assets)
+- Account A margin requirement: $631,000 (active usage; monitor weekly)
+- Account B CSP requirement: $276,000 (cash-secured put obligations)
+- Account C CSP requirement: $153,000 (cash-secured put obligations)
+- **Previous April total ($4.55M) was OBSOLETE.** Current $2.1M is authoritative for all future targets/allocations.
 
 **Account B authorization:** Confirmed. Rahul manages Pinky's IRA with full consent.
 **Account B options level:** Level 2 confirmed active (CSPs + CCs). No margin, no naked positions.
+**Indian portfolio:** ICICI Direct equity account, self-directed, themes-driven allocation (Power, Defense, Healthcare, Infrastructure, Fintech).
+
+---
+
+## PROFESSIONAL TECHNICAL DECISION FRAMEWORK (June 15, 2026 — 5-Gate Analysis)
+
+### Gate 1: IV Rank (Mechanical Filter)
+
+**IVR is the PRIMARY objective gate. All positions must pass this first.**
+
+| IVR | Status | Action |
+|-----|--------|--------|
+| **≥60%** | ✅ PASS | Proceed to Gates 2-5 |
+| **40-59%** | ✅ PASS | Proceed to Gates 2-5 |
+| **<40%** | ❌ BLOCK | Do NOT proceed; insufficient premium density |
+
+**Rule:** If IVR <40, position is automatically BLOCKED regardless of Gates 2-5. Entry blocked; exit any existing position.
+
+**Premium Expectations (45-60 DTE standard):**
+- IVR ≥60%: $2-4K per $10K capital (20-40% return)
+- IVR 40-59%: $1-2K per $10K capital (10-20% return)
+- IVR <40%: <$1K per $10K capital (insufficient)
+
+---
+
+### Gates 2-5: Red & Green Flag Analysis (Professional Overlay)
+
+**After passing Gate 1 (IVR), evaluate Gates 2-5 to determine final entry signal (GREEN / YELLOW / RED).**
+
+#### Gate 2: Technical Strength (RSI, Price, Trend)
+
+| Green Flag (✅) | Yellow Flag (⚠️) | Red Flag (❌) |
+|---|---|---|
+| Price above 50-day MA | Price near 50-day MA (±2%) | Price below 50-day MA for 3+ days |
+| RSI 40-60 (healthy) | RSI 30-40 or 60-70 (borderline) | RSI <30 or >75 (extreme) |
+| 3+ day uptrend confirmed | Mixed signals / choppy | 5+ day downtrend confirmed |
+| **Recommendation:** ENTER | **Recommendation:** CONDITIONAL | **Recommendation:** WAIT for reversal |
+
+**Examples:**
+- TWLO: Price above 50-MA, RSI 55, strong uptrend → GREEN ✅
+- RTX: Price below 50-MA, downtrend -10% → RED (wait 1-2 weeks)
+- MSFT: Price near 50-MA, RSI 56% sell signals → YELLOW (enter at support only)
+
+---
+
+#### Gate 3: Momentum & Relative Strength
+
+| Green Flag (✅) | Yellow Flag (⚠️) | Red Flag (❌) |
+|---|---|---|
+| +20% to +100% YTD / recent | 0% to +20% recent | -10% to -50% recent |
+| Beating sector peer benchmark | In-line with sector | Trailing sector by >10% |
+| Recent earnings beat + guidance raise | Mixed/neutral earnings | Recent guidance cut or miss |
+| **Recommendation:** ENTER | **Recommendation:** CONDITIONAL | **Recommendation:** AVOID/EXIT |
+
+**Examples:**
+- TWLO: +88% YTD, beating benchmarks → GREEN ✅
+- LMT: -17.6% in 3 months → RED (wait longer)
+- APH: Top 1% buy signals, defense theme active → GREEN ✅
+
+---
+
+#### Gate 4: Volatility Quality & Premium Density
+
+| Green Flag (✅) | Yellow Flag (⚠️) | Red Flag (❌) |
+|---|---|---|
+| IV Percentile >70% | IV Percentile 50-70% | IV Percentile <50% |
+| IVR >70% (peak but not crush-risk) | IVR 60-70% (elevated) | IVR >80% (imminent crush) |
+| Premium >20% capital/45-DTE | Premium 15-20% capital/45-DTE | Premium <10% capital (weak) |
+| **Recommendation:** ENTER FULL SIZE | **Recommendation:** ENTER SIZED | **Recommendation:** SKIP or SMALL |
+
+**Examples:**
+- CRWD IVR 70%, IV Percentile 68%: Premium $4.3K on $30K = 14.3% → GREEN ✅
+- ALAB IVR 82%, IV Percentile 95%: IV crush setup (post-earnings) → RED (skip entirely)
+- NVO IVR 2%, IV Percentile 2%: Catastrophic IV compression → RED (exit immediately)
+
+---
+
+#### Gate 5: Risk/Reward & Greeks
+
+| Green Flag (✅) | Yellow Flag (⚠️) | Red Flag (❌) |
+|---|---|---|
+| Delta 0.15-0.20 (80-85% PoP) | Delta 0.10-0.15 or 0.20-0.25 (75-90% PoP) | Delta <0.10 or >0.30 (extreme PoP) |
+| Theta 3-5% daily decay | Theta 2-3% daily decay | Theta <2% or >5% (unstable) |
+| DTE 45-60 (optimal) | DTE 30-45 or 60-90 (acceptable) | DTE <30 or >180 (inefficient) |
+| Tier 1/2 conviction | Tier 2 mixed conviction | Tier 3 or thesis broken |
+| **Recommendation:** FULL SIZE | **Recommendation:** CONDITIONAL | **Recommendation:** SKIP or MINIMAL |
+
+**Examples:**
+- TWLO 195P: Delta 0.18, Theta +$165/day, 45 DTE → GREEN ✅
+- TSM 340P: Delta 0.15 OK, but DTE 280 (inefficient capital) → YELLOW ⚠️
+- ALAB: High beta (3.96x), RSI >75, gamma unstable near earnings → RED ❌
+
+---
+
+### Final Recommendation Logic (Gates 1-5 Combined)
+
+**Gate 1 Result** | **Gates 2-5 Result** | **Final Decision** | **Action**
+|---|---|---|---|
+| PASS (IVR ≥40) | 3+ GREEN flags | ✅ **ENTER FULL SIZE** | Deploy full allocation |
+| PASS (IVR ≥40) | 2 GREEN, 1-2 YELLOW | 🟡 **CONDITIONAL ENTRY** | Reduce size by 50%; wait for confirmation |
+| PASS (IVR ≥40) | 1+ RED flags | ❌ **DEFER / SKIP** | Wait for conditions to improve |
+| BLOCK (IVR <40) | Anything | ❌ **HARD BLOCK** | Do not enter; exit any existing position |
+
+**Examples from Jun 15:**
+- TWLO: IVR 63% ✅ + Gate 2 GREEN + Gate 3 GREEN + Gate 4 GREEN + Gate 5 GREEN = **ENTER FULL SIZE** ✅
+- APH: IVR 75% ✅ + Gate 2 GREEN + Gate 3 GREEN + Gate 4 GREEN + Gate 5 GREEN = **ENTER FULL SIZE** ✅
+- ALAB: IVR 82% ✅ (passes Gate 1) + Gate 4 RED (IV crush imminent) + Gate 5 RED (gamma unstable) = **SKIP ENTIRELY** ❌
+- RTX: IVR 54% ✅ + Gate 2 RED (downtrend) + Gate 3 RED (momentum negative) = **WAIT 1-2 WEEKS** for reversal
+- LLY: IVR 26% ❌ (fails Gate 1) + Gate 4 RED (IV Percentile 26th) = **HARD BLOCK** ❌
+
+---
+
+### Account B (IRA) Specific Constraints
+
+**Account B = $264K IRA. All positions must pass Gates 1-5 PLUS these additional rules:**
+
+| Rule | Constraint | Application |
+|------|-----------|-------------|
+| **Max 1 contract per position** | Retirement prudence | Even if Gates 2-5 all GREEN, max 1 contract only |
+| **IVR ≥40 minimum (prefer ≥50)** | Premium adequacy | Enforced at Gate 1 |
+| **45-60 DTE preferred** | Theta optimization | Enforced at Gate 5 |
+| **Pure CSP wheel only** | IRA regulations | STO CSP → assignment → CC → exit |
+| **Tier 1/2 names only** | Risk management | Tier 3 max 1 contract as exception |
+| **$5K per 60-90 days realistic** | Capital allocation | Phase deployment based on macro clarity |
+
+---
+
+### DTE Impact Matrix (Supporting Data)
+
+**Why DTE selection matters. This broke TSM position (280 DTE underperformed).**
+
+| DTE Range | Expected Return | Annualized | Best Use | Risk |
+|-----------|--------|---------|----------|------|
+| **45-60 DTE** | 20-30% per cycle | 120-180% | Professional wheel | Theta peak |
+| **60-90 DTE** | 12-18% per 6mo | 24-36% | Conservative IRA | Low gamma |
+| **90-180 DTE** | 8-15% per 6mo | 16-30% | Long-term hold | Capital inefficient |
+| **180+ DTE** | 6-10% per 9mo | 8-13% | Avoid | Poor capital efficiency |
 
 ---
 
@@ -270,6 +514,284 @@ When evaluating a new trend, ask:
 > Examples: AI gold rush → ALAB (connectivity), not data center operators
 > Utility AI demand → GEV (turbines), not NEE (regulated utility)
 > Space race → RKLB (launch infrastructure), not satellite operators
+
+---
+
+## Indian Portfolio Strategy (NEW — ICICI Direct, NSE Equity)
+
+**Objective:** 25% annualized return via domestic-growth equity in India, zero FII-dependent exposure, staged deployment ₹10L over 6-12 months.
+
+### Core Portfolio (13 Holdings) — Themes-Driven
+
+| Theme | Holdings | Investment Thesis |
+|-------|----------|---|
+| **Defense** | HAL (HINAER), BEL (BHAELE), Mazagon Dock (MAZDOC) | Zero-debt defense monopolies; geopolitical tailwinds; government-backed capex; no FII dependency |
+| **Power/Electricity** | NTPC, Adani Power (ADAPOW), GE Vernova T&D (GVTD) | Electricity supercycle; AI data center demand; grid expansion; government renewables push |
+| **Healthcare** | Apollo Hospitals (APOHOS), Yatharth Hospital (YATHOS) | Tier-1 hospital networks; 40%+ revenue growth; high margins; recurring revenue |
+| **Banking/Value** | HDFC Bank (HDFBAN), Bajaj Finance (BAJFI) | Large-cap banks + NBFC; 40%+ revenue growth; lending booms; zero FII risk |
+| **Infrastructure** | Adani Ports (ADAPOR, +24.9% already) | Port capacity expansion; container traffic growth; 22% revenue growth |
+| **Real Estate** | DLF (DLFLIM) | Real estate rebound; office/retail recovery; domestic capital |
+| **Consumer/Fintech** | Zomato (ZOMLIM) | Quick commerce profitability imminent; UPI-native; DII buying; 200-400% upside |
+
+### Deployment Plan (₹10L Staged Over 6-12 Months)
+
+**Priority 1 (₹4.5L immediate):**
+- SOLARIND: ₹1.0L (already +12.4%; add to position)
+- KAYNES: ₹1.5L (AI hardware supply chain; entry near 4000)
+- TATAPOWER: ₹1.0L (renewable transition; dividend + capital appreciation)
+- GE VERNOVA T&D: ₹1.0L (power grid capex supercycle; wait for 15-20% correction)
+
+**Priority 2 (₹3.5L on dips/milestones):**
+- HAL (HINAER): ₹1.0L tranche (defense monopoly; wait for consolidation)
+- ADAPOR: ₹1.5L more (already winning +24.9%; scale on strength)
+- ZOMATO (ZOMLIM): ₹1.0L (quick commerce profitability trigger)
+
+**Priority 3 (₹2.0L opportunistic):**
+- BAJFI: ₹1.0L (NBFC lending boom)
+- BEL/MAZDOC: ₹1.0L combined (defense reposition)
+
+### What NOT to Do (Avoid FII-Dependent Plays)
+
+| Avoid | Why | Correct Alternative |
+|-------|-----|---|
+| **TCS** (‑15.8% already) | Global IT spend slowdown; US-dependent; already losing earnings | DO NOT ADD; TRIM 50 of 75 shares |
+| **VBL (Varun Beverages)** | Pepsi bottler; 70% FII-exposed; mature growth | Buy ZOMATO instead |
+| **TRENT (Reliance Retail)** | Premium retail is cyclical; FII selling hitting it hard | Buy ADAPOR (infrastructure) |
+| **HCL, DIXTEC, DRREDD** | Legacy IT, expensive valuations, earnings headwinds, pharma struggles | Exit Phase 1 on any bounce |
+| **STABAN** | Insurance sector headwinds; ‑40% earnings growth; ‑43% loss | Exit immediately |
+
+### Exit Triggers (Data-Driven, Queued)
+
+**Phase 1 (Immediate):** Cut losses on bounce
+- HCL: ≥₹1,265 (IT headwinds)
+- STABAN: Market order (insurance sector broken)
+- DIXTEC: ≥₹12,000 (2% revenue growth, expensive)
+- DRREDD: ≥₹1,350 (pharma not in theme)
+
+**Phase 2 (Limit Orders):** Take gains / reposition
+- NTPC: Trim 75 of 200 shares ≥₹414 (reduce concentration)
+- ADAPOW: Exit all ≥₹230 (take 38%+ gain; re-enter lower)
+- MAZDOC: Exit all ≥₹2,800 (redeploy to SOLARIND/KAYNES)
+- HERHON: Exit ≥₹5,500 (EV transition risk; not core theme)
+- YATHOS: Sell at market (already above ₹750 trigger)
+- TCS: Trim 15 of 30 shares ≥₹2,700 (IT headwinds; redeploy)
+
+### Sector Rules (India-Specific)
+
+**Defense:** Can ladder strikes (multiple positions), maximize conviction. Government monopolies = sticky contracts.
+
+**Power/Renewable:** Core theme; add on dips. Watch for grid capex announcements; AI data center demand is secular.
+
+**Banking/Finance:** NBFC sector is winning (high growth, retail lending boom). Large banks (HDFBAN) provide stability.
+
+**Avoid cyclicals:** Retail (TRENT), premium consumption (VBL) — cycle is not in your favor in 2026.
+
+**IT Sector:** Trim losers; do not add. US slowdown = India IT margin compression. Exception: discrete chip design (KAYNES, GE VERNOVA) — pick-and-shovel logic applies.
+
+---
+
+## BEST CANDIDATES ANALYSIS — TIER 1 REALLOCATION (June 15, 2026)
+
+**CRITICAL FINDING:** Portfolio is overweighting Tier 2/3 (65%) while underweighting Tier 1 (35%). This is BACKWARDS.
+
+### The Problem: Current Allocation Misalignment
+
+| Tier | Target | Current | Gap | Issue |
+|------|--------|---------|-----|-------|
+| **Tier 1** | 60-70% | 35% | -25-35% | Severely underweighted on core conviction |
+| **Tier 2** | 20-30% | 40% | +10-20% | Overweighted on moderate-conviction |
+| **Tier 3** | 5-10% | 25% | +15-20% | WAY overweighted on speculative |
+
+### Tier 1 Names NOT Currently Trading (Biggest Misses)
+
+| Name | Tier | Status | Why Missing? | Premium Potential |
+|------|------|--------|---|---|
+| **NVDA** | Tier 1 | NO POSITION | AI theme, extreme IV | $8-10K/month (4-6 calls) |
+| **MSFT** | Tier 1 | NO POSITION | Enterprise AI leader | $6-8K/month (strangle) |
+| **TSLA** | Tier 1 | NO POSITION | Cyclical leverage | $5-7K/month (calls only) |
+| **GOOGL** | Tier 1 | NO POSITION | Search + AI | $4-5K/month (CSP) |
+| **AMZN** | Tier 1 | NO POSITION | AWS capex tailwind | $2.5-3.5K/month (CSP) |
+| **RTX** | Tier 1 | NO POSITION | Defense leader | $4-6K/month (CSP ladder) |
+| **LMT** | Tier 1 | NO POSITION | Pure defense | $3-4K/month (CSP) |
+| **META** | Tier 1 | ACTIVE but LOSING | Down 6%, not scaling | -$1K/month (confusion position) |
+| **UBER** | Tier 1 | NO POSITION | Post-IPO stability | $3-5K/month (CSP) |
+
+**Total premium opportunity LOST by not trading Tier 1:** $36-52K/month
+
+### Corrected Tier 1 Classification (Profitability-Based, Not IVR-Based)
+
+**OLD (WRONG):** Tier 1 = IVR closing + conviction score
+**NEW (CORRECT):** Tier 1 = Sector momentum + execution tailwinds + reasonable valuation
+
+**Tier 1 CONFIRMED (Scale aggressively):**
+- **Defense:** RTX ($271B backlog visible), LMT (government contracts), NOC (aerospace)
+- **AI Hyperscalers:** MSFT (Azure capex real), AMZN (AWS capex), GOOGL (search + advertising AI)
+- **Proven Winners (Already Trading):** AXON, NFLX, OKTA (+27%)
+- **Cyclical Leverage:** TSLA (only in bull regimes; currently sideways)
+
+**Tier 1 DOWNGRADE (Reduce sizing):**
+- **ADBE:** -54% loss, broken SaaS thesis → EXIT entirely
+- **CRM:** -45% loss, margin compression → EXIT entirely
+- **PYPL:** -68% loss, fintech thesis broken → EXIT entirely
+- **META:** Neutral to slightly bullish, but currently down → HOLD small position or exit
+- **MRNA:** -48% loss, vaccine peak → Permanent exit (already in plan)
+
+### 45-Day Rotation Strategy (Jun 15 - Jul 31, 2026)
+
+#### PHASE 1: Establish Tier 1 Core (Jun 15-30)
+**Thesis:** Next 2 weeks are quiet before Jul 2 jobs catalyst. Stage positions into earnings window.
+
+**Defense Sector Entries:**
+- **RTX (Raytheon):** Sell CSP $175 (60 DTE) → Collect $2.5-3K
+  - Entry: Current $183.53; target $200-210 by Jul 31 (+8-14%)
+  - Catalyst: Q2 earnings (Jun 24-27); $271B backlog confirmation
+  - Risk: Only if Congressional debate emerges (late August, LOW probability this month)
+  - Sizing: 2-3 CSP contracts ($5-7.5K/month)
+
+- **LMT (Lockheed Martin):** Sell CSP $510 (60 DTE) → Collect $2-2.5K
+  - Entry: Current $532.14 (already up 11.3%); wait for 2-3% dip to $520-530
+  - Catalyst: Q2 earnings (early July); validate sales growth
+  - Risk: Slight, already elevated
+  - Sizing: 1-2 CSP contracts ($3-4K/month)
+
+**AI Sector Entries:**
+- **MSFT (Microsoft):** Sell strangle $430C + $400P (45 DTE) → Collect $4.5-5.5K
+  - Entry: Current ~$420-430; enter AFTER Q2 earnings (Jun 26-27) to avoid volatility
+  - Catalyst: Azure capex guidance reaffirm; enterprise AI adoption
+  - Thesis: Power constraint is long-duration growth driver, not headwind
+  - Risk: MEDIUM if macro disappoints (Jul 2 jobs or Jul 14 CPI)
+  - Sizing: 2-3 strangles ($6-8K/month)
+
+- **AMZN (Amazon):** Sell CSP $200-210 (45 DTE) → Collect $2.5-3.5K
+  - Entry: After Q2 earnings (late June); validate AWS capex
+  - Sizing: 1-2 contracts ($2.5-3.5K/month)
+
+- **GOOGL (Google):** Sell CSP $200-210 (45 DTE) → Collect $1.5-2.5K
+  - Entry: Lower conviction than MSFT/AMZN; 1 contract max
+  - Sizing: 1 contract ($1.5-2.5K/month)
+
+**Expected new premium from Phase 1:** $16.5-23K/month by Jun 30
+
+#### PHASE 2: Monitor Major Catalysts (Jul 1-5)
+**Focus:** Jul 2 jobs report (unemployment, wage growth, participation)
+
+**Bullish Signal (if jobs beat):**
+- Payroll growth 100-150K, unemployment 4.0-4.2%
+- Action: SCALE AI positions (add MSFT 410P put, AMZN 200P put)
+- Defense holds firm (non-correlated)
+- Expected: Tech +3-5%, Defense +1-2%
+
+**Bearish Signal (if jobs miss):**
+- Payroll <50K or unemployment >4.5%
+- Action: REDUCE Tech (close 1 MSFT call leg), HOLD Defense
+- Expected: Tech -5-8%, Defense -1-2% (outperformance)
+
+#### PHASE 3: CPI Catalyst + Mid-Month Rebalance (Jul 6-14)
+**Focus:** Jul 14 CPI release (most critical inflation data point)
+
+**Actions before CPI (Jul 6-13):**
+- Close profitable puts at 40-50% for credit harvesting
+- Example: Close RTX 175 CSP at $1,250 credit
+- Redeploy: Add NFLX CSPs (communications leader) or ZS CSPs (cybersecurity)
+
+**Actions after CPI (Jul 15-20):**
+- If CPI beats (inflation down): MSFT calls safe, Defense continues higher
+  - Add NFLX CSPs ($80-85), ZS CSPs ($135-140)
+  - Expected: Tech +2-4%, Defense +1-2%
+- If CPI misses (inflation up): Trim MSFT calls, keep RTX
+  - Add ELF CSPs (consumer defensive oversold, RSI 28.6)
+  - Expected: Tech -3-5%, Defense +0-2%
+
+#### PHASE 4: Earnings Digest + Portfolio Rebalance (Jul 21-31)
+**Focus:** All major positions have reported; validate capex thesis and defense backlog
+
+**Action plan by outcome:**
+- If RTX beat + raised guidance: SCALE defense (add 1-2 CSPs)
+- If MSFT beat + Azure guidance raised: SCALE AI hyperscalers
+- If any position MISS + guidance cut: CLOSE or TRIM (claim tax loss)
+- Tier 2 graduation: Did OKTA, CRWD, ZS perform? Graduate or maintain
+
+**Target sizing by end of July:**
+- Defense (RTX + LMT): 4-6 CSP contracts = $10-15K/month
+- AI (MSFT + AMZN): 3-4 strangle/CSP contracts = $8-12K/month
+- Tier 2 (OKTA, CRWD, ZS, ELF, NFLX): $12-16K/month
+- Account B/C wheels: $25-30K/month
+- **TOTAL: $55-73K/month by Jul 31**
+
+### Risk Assessment: Will Defense & AI Hold? (45-Day Outlook)
+
+#### DEFENSE SECTOR: ✅ STRONG CONVICTION, LIMITED RISK
+- **Thesis:** $1.05T defense budget FY 2026 (+17% YoY), $271B RTX backlog through 2027
+- **Upside risk:** +8-17% by Jul 31 (Q2 earnings beat + backlog visibility confirm)
+- **Downside risk:** -5-8% only if Congressional budget debate emerges (LOW probability through July)
+- **Risk/Reward:** 1:2 (favorable asymmetry)
+- **Volatility:** STABLE (defense names have 15-20 IV, predictable)
+- **Catalyst timing:** Q2 earnings mid-late June (high conviction event)
+- **Verdict:** SAFE to scale through Jul 31. Geopolitical tailwind: Taiwan/Ukraine/NATO tensions persist through summer.
+
+#### AI CAPEX (MSFT/AMZN/GOOGL): ✅ REAL CAPEX, MEDIUM RISK, MACRO-DEPENDENT
+- **Thesis:** Big Five capex ($660-690B) is REAL; power constraint = multi-year growth driver
+- **Upside risk:** +5-12% by Jul 31 (capex guidance beats, power narrative confirmed)
+- **Downside risk:** -8-12% if jobs/CPI disappoint (MEDIUM probability 35-40%)
+- **Risk/Reward:** 1:1 (balanced, macro-dependent)
+- **Volatility:** ELEVATED (tech names have 25-35 IV, macro-sensitive)
+- **Concentration risk:** NVDA already -12.8% from peak; concentration risk real
+- **Verdict:** SAFER to scale via MSFT/AMZN/GOOGL (hyperscalers) than NVDA. Avoid NVDA concentration; use strangle on MSFT (earnings buffer).
+
+#### NVDA (AI Concentration): ❌ SKIP FOR 45 DAYS
+- **Status:** Already -12.8% from May peak ($235 → $205)
+- **Reason:** Concentration risk too high; supply-demand imbalance execution risk real
+- **Alternative:** Get NVIDIA exposure via MSFT (cloud capex buyer) + AMZN (heavy NVIDIA user)
+- **Verdict:** Participate in AI via hyperscalers, not concentrated NVDA bets
+
+### Sector-Specific Rotation Rules (45-Day Window)
+
+#### Defense (RTX/LMT/NOC)
+- **Entry condition:** Any time in Jun 15-Jul 31 window (low political risk this month)
+- **Exit condition:** Congressional budget cuts debate emerges (triggers: deficit concerns, budget speeches in late July/early August)
+- **Sizing:** 20-25% of total premium allocation (safe concentration)
+- **Profit take:** Close at 50% max premium if reached before expiration
+- **Risk management:** Have dry powder for -5% pullback on Congressional debate signal
+
+#### AI Hyperscalers (MSFT/AMZN/GOOGL)
+- **Entry condition:** After Q2 earnings (Jun 24-30) confirm capex guidance
+- **Exit condition:** Jul 2 jobs miss OR Jul 14 CPI spike (macro disappointment)
+- **Sizing:** 25-30% of total premium allocation (keep diversified, not NVDA-heavy)
+- **Profit take:** Close calls at 40-50% if ITM, keep puts for dip buying
+- **Risk management:** Use strangle (balanced delta) on MSFT, simple CSP on AMZN/GOOGL
+
+#### Tier 2 Additions (Later in 45-day, if conditions allow)
+- **ZS (Zscaler):** Cybersecurity + AI = double catalyst; enter after Jul 14 CPI if favorable
+- **NFLX (Netflix):** Streaming secular + advertising upside; add after MSFT confirms capex
+- **ELF (E.L.F. Beauty):** Oversold consumer defensive (RSI 28.6 = screaming buy); high IV bonus
+- **Expected premium:** $12-16K/month combined
+
+### Rotation Decision Tree (45-Day Risk Management)
+
+**MONITOR THESE SIGNALS DAILY — Triggers for scale/trim/hold:**
+
+1. **VIX > 25:** FAVORABLE for premium collection. Add 1-2 CSP contracts. Defense: buy dip. AI: sell strangles.
+2. **VIX < 12:** UNFAVORABLE. Reduce new entries. Roll existing positions out in time.
+3. **RTX or LMT earnings beat:** SCALE defense. Add 1-2 CSPs on next dip.
+4. **MSFT/AMZN earnings miss guidance:** TRIM AI. Close 1 MSFT call leg, keep puts.
+5. **S&P 500 breaks 50-day MA:** DEFENSIVE rotation. Overweight RTX/LMT vs MSFT/AMZN.
+6. **Congress hints defense cuts (early August):** TRIM RTX/LMT. Take 50% profit if available.
+7. **Tech rallies >10% from current:** TAKE PROFITS. Close strangles at 40-50%, don't hold all the way up.
+
+### Corrected Monthly Target (45-Day Trajectory)
+
+| Period | Target | Notes |
+|--------|--------|-------|
+| **Jun 1-14 (Actual)** | $15-20K | Robinhood Trad running negative through Jun 5 (-$809.87) |
+| **Jun 15-30 (Phase 1)** | New positions: $16.5-23K | Stage RTX, LMT, MSFT, AMZN entries; add to existing OKTA, TWLO, NFLX |
+| **Jul 1-20 (Phases 2-3)** | Scale or trim based on catalysts | Jul 2 jobs + Jul 14 CPI = decision points |
+| **Jul 21-31 (Phase 4)** | Rebalance after earnings | Expected: $55-73K/month run-rate |
+| **By end of Jul** | $55-73K/month | Ramp toward $100K via Account B/C + Tier 1 scaling |
+
+**Note:** The original $100K/month target was based on inflated April portfolio ($4.55M). Current $2.1M portfolio with Tier 1/2/3 allocation can realistically achieve:
+- $55-73K/month from active option management (Accounts A + Tier 2)
+- $25-30K/month from Account B/C conservative wheels
+- **Total: $80-103K/month by end of July** ✓ WITHIN TARGET
 
 ---
 
