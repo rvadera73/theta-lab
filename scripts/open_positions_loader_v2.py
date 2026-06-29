@@ -124,10 +124,11 @@ class OpenPositionsLoaderV2:
 
         # Try to load Schwab position files first (more accurate), fall back to transaction files
         import glob
+        # Canonical filenames per data/account_files.yaml contract
         schwab_account_patterns = [
-            (['Individual-Positions-*.csv', 'Individual_XXX232_Transactions_*.csv'], 'Account A (232)'),
-            (['Contributory-Positions-*.csv', 'Contributory_XXX275_Transactions_*.csv'], 'Account B (275)'),
-            (['*Designated*Bene*Individual-Positions-*.csv', 'Designated_Bene_Individual_XXX634_Transactions_*.csv'], 'Account C (634)'),
+            (['schwab_rahul_individual.csv'], 'Account A (232)'),
+            (['schwab_pinky_ira.csv'], 'Account B (275)'),
+            (['schwab_designated-bene.csv'], 'Account C (634)'),
         ]
 
         for patterns, account_name in schwab_account_patterns:
@@ -144,8 +145,8 @@ class OpenPositionsLoaderV2:
 
             if file_path:
                 try:
-                    # Check if it's a position file or transaction file
-                    is_position_file = 'Positions' in Path(file_path).name
+                    # Canonical Schwab files are always position snapshots
+                    is_position_file = True
 
                     if is_position_file:
                         # Load position file (skip first 2 rows of metadata)
@@ -173,11 +174,13 @@ class OpenPositionsLoaderV2:
                     print(f"! Error loading {account_name}: {e}")
 
         # Fidelity accounts - try position files first, fall back to transaction files
+        # Canonical filenames per contract. Rajul file holds BOTH IRAs; the account
+        # TYPE lives in the 'Account Number' column (Fidelity column shift).
         fidelity_account_patterns = [
-            (['Portfolio_Positions*Rahul*.csv', '*Fidelity*Rahul*.csv'], 'Fidelity (Rahul)', None),
-            (['Portfolio_Positions*Rajul*.csv', '*Rajul*.csv'], None, {  # Map by Account column value
+            (['fidelity_rahul.csv'], 'Fidelity (Rahul)', None),
+            (['fidelity_rajul.csv'], None, {  # Map by 'Account Number' column value
                 'ROTH IRA': 'Fidelity (Rajul — Roth IRA)',
-                'Traditional IRA': 'Fidelity (Rajul — Rollover IRA)',
+                'Rollover IRA': 'Fidelity (Rajul — Rollover IRA)',
                 'ROTH IRA for Minor': 'Fidelity (Rajul — Roth IRA)',
             }),
         ]
@@ -196,7 +199,7 @@ class OpenPositionsLoaderV2:
 
             if file_path:
                 try:
-                    is_position_file = 'Portfolio_Positions' in Path(file_path).name
+                    is_position_file = True  # canonical Fidelity files are position snapshots
 
                     # Fidelity position files: row 0=header, row 1=disclaimer, data starts row 2
                     # Skip 1 row (the disclaimer) to keep header as first row
@@ -227,10 +230,12 @@ class OpenPositionsLoaderV2:
 
                     # If we have a mapping, use Account column to assign account names
                     if account_map:
-                        # Map each row based on the 'Account Name' column value (if it exists)
-                        if 'Account Name' in df.columns:
-                            df['account_name'] = df['Account Name'].map(account_map)
-                            # For unmapped accounts, use a default or the account name itself
+                        # Fidelity column shift: the account TYPE is in 'Account Number'
+                        # ('ROTH IRA' / 'Rollover IRA'), not 'Account Name'.
+                        if 'Account Number' in df.columns:
+                            df['account_name'] = df['Account Number'].map(account_map)
+                            # Rows below the holdings block (totals/disclaimer) have no type
+                            df['account_name'] = df['account_name'].ffill()
                             df['account_name'] = df['account_name'].fillna('Fidelity (Rajul — Rollover IRA)')
                         else:
                             # Transaction file - use default account name
@@ -255,7 +260,7 @@ class OpenPositionsLoaderV2:
 
         # Vanguard - use glob pattern to find files
         vanguard_patterns = [
-            ('*Vanguard*.csv', 'Vanguard (Rahul)'),
+            ('vanguard_rahul.csv', 'Vanguard (Rahul)'),
         ]
 
         for pattern, account_name in vanguard_patterns:
@@ -274,8 +279,8 @@ class OpenPositionsLoaderV2:
         # Robinhood accounts - use glob pattern to pick latest file
         # Supports both old naming (Robinhood_Account*.csv) and new naming (hood-*.csv)
         robinhood_patterns = [
-            (['Robinhood_Account1_*.csv', 'hood-ytd-traditional-ira-*.csv'], 'Robinhood (Traditional IRA)'),
-            (['Robinhood_Account2_*.csv', 'hood-individual-*.csv'], 'Robinhood (Individual)'),
+            (['robinhood_rahul_traditional.csv'], 'Robinhood (Traditional IRA)'),
+            (['robinhood_rahul_individual.csv'], 'Robinhood (Individual)'),
         ]
 
         for patterns, account_name in robinhood_patterns:
@@ -803,6 +808,72 @@ class OpenPositionsLoaderV2:
     def get_option_requirements(self) -> Dict[str, float]:
         """Returns total option requirement per account"""
         return self.option_requirements
+
+    def get_position_pnl_summary(self) -> Dict[str, Dict[str, float]]:
+        """Calculate P&L for each open position aggregated from transactions
+
+        Returns: Dict[ticker, {'pnl': $, 'pnl_pct': %, 'cost_basis': $, 'current_value': $}]
+        """
+        pnl_by_ticker = {}
+
+        if self.consolidated_df is None or len(self.consolidated_df) == 0:
+            return pnl_by_ticker
+
+        def parse_currency(val):
+            """Parse currency string to float"""
+            if val is None or pd.isna(val):
+                return 0.0
+            try:
+                if isinstance(val, str):
+                    # Remove $, commas, and whitespace
+                    val = val.replace('$', '').replace(',', '').strip()
+                    return float(val)
+                else:
+                    return float(val)
+            except (ValueError, TypeError):
+                return 0.0
+
+        # Group by ticker and aggregate P&L
+        for ticker, group in self.consolidated_df.groupby('ticker', dropna=True):
+            # Get gain/loss columns (try different naming conventions)
+            gain_col = None
+            for col in ['gain $ (gain/loss $)', 'total gain/loss dollar', "today's gain/loss dollar"]:
+                if col in group.columns and group[col].notna().any():
+                    gain_col = col
+                    break
+
+            gain_pct_col = None
+            for col in ['gain % (gain/loss %)', 'total gain/loss percent', "today's gain/loss percent"]:
+                if col in group.columns and group[col].notna().any():
+                    gain_pct_col = col
+                    break
+
+            # Aggregate P&L values
+            total_pnl = 0.0
+            total_cost_basis = 0.0
+            total_current_value = 0.0
+
+            for idx, row in group.iterrows():
+                if gain_col and pd.notna(row.get(gain_col)):
+                    total_pnl += parse_currency(row[gain_col])
+
+                if 'cost basis' in row and pd.notna(row.get('cost basis')):
+                    total_cost_basis += parse_currency(row['cost basis'])
+
+                if 'mkt val (market value)' in row and pd.notna(row.get('mkt val (market value)')):
+                    total_current_value += parse_currency(row['mkt val (market value)'])
+
+            # Calculate percentage
+            pnl_pct = (total_pnl / total_cost_basis) if total_cost_basis > 0 else 0.0
+
+            pnl_by_ticker[ticker] = {
+                'pnl': total_pnl,
+                'pnl_pct': pnl_pct,  # Keep as decimal
+                'cost_basis': total_cost_basis,
+                'current_value': total_current_value
+            }
+
+        return pnl_by_ticker
 
 
 if __name__ == '__main__':
