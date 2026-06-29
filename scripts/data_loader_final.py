@@ -1,6 +1,6 @@
 """
-Final Data Loader — All 8 Accounts (May 11, 2026)
-Loads: Schwab A/B/C, Fidelity x2, Vanguard, Robinhood x2
+Final Data Loader — All 9 Accounts (June 26, 2026)
+Loads: Schwab A/B/C, Fidelity Rahul, Fidelity Rajul (Roth + Rollover), Vanguard, Robinhood (Individual + Trad IRA)
 """
 
 import pandas as pd
@@ -9,13 +9,14 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from datetime import date
 import sys
+from glob import glob
 
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/scripts')
 from yahoo_price_fetcher import YahooFinanceFetcher
 
 
 class DataLoaderFinal:
-    """Load all 8 accounts"""
+    """Load all 9 accounts"""
 
     def __init__(self, data_dir: str = '/home/rahulvadera/projects/theta-lab/data/positions'):
         self.data_dir = Path(data_dir)
@@ -31,84 +32,134 @@ class DataLoaderFinal:
         return self.option_rows, self.prices
 
     def _load_accounts(self):
-        """Load all 8 account files"""
+        """Load all 9 account files — June 26 POSITION files"""
         dfs = []
 
-        # Schwab accounts
-        schwab_files = [
-            ('Individual_XXX232_Transactions_20260530-161057.csv', 'Account A (232)'),
-            ('Contributory_XXX275_Transactions_20260530-161127.csv', 'Account B (275)'),
-            ('Designated_Bene_Individual_XXX634_Transactions_20260530-161206.csv', 'Account C (634)'),
+        # ========== SCHWAB ACCOUNTS — June 26 Position Files ==========
+        print("Loading Schwab accounts (Jun-26 Positions)...")
+        schwab_positions = [
+            ('Individual-Positions-2026-06-26-*.csv', 'Account A (232 — Rahul Margin)'),
+            ('Contributory-Positions-2026-06-26-*.csv', 'Account B (275 — Pinky IRA)'),
+            ('Designated Bene Individual-Positions-2026-06-26-*.csv', 'Account C (634 — Designated Bene)'),
         ]
 
-        for filename, account_name in schwab_files:
-            filepath = self.data_dir / filename
-            if filepath.exists():
-                df = pd.read_csv(filepath)
-                df['account_name'] = account_name
-                df['account_type'] = 'Schwab'
-                dfs.append(df)
-                print(f"✓ Loaded {account_name}: {len(df)} rows")
+        for pattern, account_name in schwab_positions:
+            files = glob(str(self.data_dir / pattern))
+            if files:
+                # Use the latest file (sort by timestamp)
+                latest_file = sorted(files)[-1]
+                try:
+                    df = pd.read_csv(latest_file)
+                    df['account_name'] = account_name
+                    df['account_type'] = 'Schwab'
+                    dfs.append(df)
+                    print(f"  ✓ {account_name}: {len(df)} positions")
+                except Exception as e:
+                    print(f"  ✗ {account_name}: {e}")
 
-        # Fidelity accounts
-        fidelity_files = [
-            ('Accounts_History -Fidelity-Rahul.csv', 'Fidelity (Rahul)'),
-            ('Accounts_History-Rajul.csv', 'Fidelity (Rajul)'),
-        ]
+        # ========== FIDELITY ACCOUNTS — June 26 Position Files ==========
+        print("Loading Fidelity accounts (Jun-26 Positions)...")
 
-        for filename, account_name in fidelity_files:
-            filepath = self.data_dir / filename
-            if filepath.exists():
-                df = pd.read_csv(filepath)
-                df['account_name'] = account_name
-                df['account_type'] = 'Fidelity'
-                dfs.append(df)
-                print(f"✓ Loaded {account_name}: {len(df)} rows")
-
-        # Vanguard
-        vanguard_path = self.data_dir / 'AccountHistorty-Vanguard-Rahul.csv'
-        if vanguard_path.exists():
+        # Fidelity Rahul (Traditional IRA)
+        fidelity_rahul_pattern = 'Portfolio_Positions_Jun-26-2026*fidelity_rahul.csv'
+        rahul_files = glob(str(self.data_dir / fidelity_rahul_pattern))
+        if rahul_files:
+            latest_rahul = sorted(rahul_files)[-1]
             try:
-                # Read Vanguard with error handling
-                df_vg = pd.read_csv(vanguard_path, nrows=40, on_bad_lines='skip', engine='python')
-                df_vg['account_name'] = 'Vanguard'
+                df_rahul = pd.read_csv(latest_rahul)
+                df_rahul['account_name'] = 'Fidelity Rahul (Trad IRA)'
+                df_rahul['account_type'] = 'Fidelity'
+                dfs.append(df_rahul)
+                print(f"  ✓ Fidelity Rahul (Trad IRA): {len(df_rahul)} positions")
+            except Exception as e:
+                print(f"  ✗ Fidelity Rahul: {e}")
+
+        # Fidelity Rajul (contains BOTH Roth and Rollover in one file)
+        fidelity_rajul_pattern = 'Portfolio_Positions_Jun-26-2026*fidelity_rajul.csv'
+        rajul_files = glob(str(self.data_dir / fidelity_rajul_pattern))
+        if rajul_files:
+            latest_rajul = sorted(rajul_files)[-1]
+            try:
+                df_full = pd.read_csv(latest_rajul)
+                # Remove footer rows (Fidelity disclaimer text)
+                df_full = df_full[df_full['Account Number'].notna()].copy()
+                df_full = df_full[~df_full['Account Number'].astype(str).str.contains('Date downloaded', case=False, na=False)]
+
+                # Split by Account Name column text: "ROTH IRA" vs "Rollover IRA"
+                if 'Account Number' in df_full.columns:
+                    # The "Account Number" column contains the account type labels in Fidelity Rajul file
+                    df_roth = df_full[df_full['Account Number'].astype(str).str.contains('ROTH', case=False, na=False)].copy()
+                    df_rollover = df_full[df_full['Account Number'].astype(str).str.contains('Rollover', case=False, na=False)].copy()
+
+                    if len(df_roth) > 0:
+                        df_roth['account_name'] = 'Fidelity Rajul (Roth IRA)'
+                        df_roth['account_type'] = 'Fidelity'
+                        dfs.append(df_roth)
+                        print(f"  ✓ Fidelity Rajul (Roth IRA): {len(df_roth)} positions")
+
+                    if len(df_rollover) > 0:
+                        df_rollover['account_name'] = 'Fidelity Rajul (Rollover IRA)'
+                        df_rollover['account_type'] = 'Fidelity'
+                        dfs.append(df_rollover)
+                        print(f"  ✓ Fidelity Rajul (Rollover IRA): {len(df_rollover)} positions")
+                else:
+                    # Fallback: treat entire file as one account
+                    df_full['account_name'] = 'Fidelity Rajul (Mixed)'
+                    df_full['account_type'] = 'Fidelity'
+                    dfs.append(df_full)
+                    print(f"  ✓ Fidelity Rajul (Mixed): {len(df_full)} positions")
+            except Exception as e:
+                print(f"  ✗ Fidelity Rajul: {e}")
+
+        # ========== VANGUARD ==========
+        print("Loading Vanguard...")
+        vanguard_files = glob(str(self.data_dir / 'Vanguard*Rahul.csv'))
+        if vanguard_files:
+            latest_vg = sorted(vanguard_files)[-1]
+            try:
+                df_vg = pd.read_csv(latest_vg, nrows=40, on_bad_lines='skip', engine='python')
+                df_vg['account_name'] = 'Vanguard (Rahul)'
                 df_vg['account_type'] = 'Vanguard'
                 dfs.append(df_vg)
-                print(f"✓ Loaded Vanguard: {len(df_vg)} rows")
+                print(f"  ✓ Vanguard (Rahul): {len(df_vg)} positions")
             except Exception as e:
-                print(f"! Vanguard load: {e}")
+                print(f"  ✗ Vanguard: {e}")
 
-        # Robinhood accounts
-        robinhood_files = [
-            ('Robinhood_Account1_20260511.csv', 'Robinhood IRA'),
-            ('Robinhood_Account2_20260511.csv', 'Robinhood Taxable'),
+        # ========== ROBINHOOD ACCOUNTS ==========
+        print("Loading Robinhood accounts...")
+        rh_files = [
+            ('robinhood-individual.csv', 'Robinhood (Individual)'),
+            ('robinhood-traditional.csv', 'Robinhood (Traditional IRA)'),
         ]
 
-        for filename, account_name in robinhood_files:
+        for filename, account_name in rh_files:
             filepath = self.data_dir / filename
             if filepath.exists():
                 try:
-                    # Read with error handling for malformed rows
                     df = pd.read_csv(filepath, on_bad_lines='skip', engine='python')
-                    # Robinhood format: lowercase column names with quotes
                     df.columns = df.columns.str.replace('"', '').str.lower().str.strip()
                     df['account_name'] = account_name
                     df['account_type'] = 'Robinhood'
                     dfs.append(df)
-                    print(f"✓ Loaded {account_name}: {len(df)} rows")
+                    print(f"  ✓ {account_name}: {len(df)} positions")
                 except Exception as e:
-                    print(f"! {account_name} load: {e}")
+                    print(f"  ✗ {account_name}: {e}")
 
-        self.consolidated_df = pd.concat(dfs, ignore_index=True)
-        self.consolidated_df.columns = self.consolidated_df.columns.str.strip().str.lower()
+        # ========== CONSOLIDATE ALL ==========
+        if dfs:
+            self.consolidated_df = pd.concat(dfs, ignore_index=True)
+            self.consolidated_df.columns = self.consolidated_df.columns.str.strip().str.lower()
 
-        # Handle duplicate column names by renaming them
-        cols = pd.Series(self.consolidated_df.columns)
-        for dup in cols[cols.duplicated()].unique():
-            cols[cols[cols == dup].index] = ([dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))])
-        self.consolidated_df.columns = cols
+            # Handle duplicate column names by renaming them
+            cols = pd.Series(self.consolidated_df.columns)
+            for dup in cols[cols.duplicated()].unique():
+                cols[cols[cols == dup].index] = ([dup + '_' + str(i) if i != 0 else dup for i in range(sum(cols == dup))])
+            self.consolidated_df.columns = cols
 
-        print(f"\n✓ Total: {len(self.consolidated_df)} rows across 8 accounts")
+            print(f"\n✅ TOTAL: {len(self.consolidated_df)} rows across 9 accounts")
+        else:
+            print("✗ No accounts loaded!")
+            self.consolidated_df = pd.DataFrame()
 
     def _extract_options(self):
         """Extract option positions from all account types"""

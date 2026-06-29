@@ -651,16 +651,22 @@ class OpenPositionsLoaderV2:
         # Calculate net quantity per position
         # Group by: account, ticker, and contract identifier
         # Use 'symbol' for most brokers, but for Robinhood use 'instrument' or description
-        all_options['contract_id'] = all_options.apply(
-            lambda row: (
-                row['symbol'] if pd.notna(row.get('symbol')) else (
-                    row.get('instrument') if pd.notna(row.get('instrument')) else (
-                        row.get('description_1', row.get('description', 'unknown'))
-                    )
-                )
-            ),
-            axis=1
-        )
+        def _contract_id(row):
+            # Robinhood (transactions): the full description IS the contract
+            # ("RKT 3/19/2027 Put $15.00") — use it so different strikes/expiries
+            # don't collapse onto the bare ticker.
+            if row.get('account_type') == 'Robinhood':
+                for c in ('description_1', 'description'):
+                    v = row.get(c)
+                    if pd.notna(v) and str(v).strip():
+                        return str(v).strip()
+            if pd.notna(row.get('symbol')):
+                return row['symbol']
+            if pd.notna(row.get('instrument')):
+                return row.get('instrument')
+            return row.get('description_1', row.get('description', 'unknown'))
+
+        all_options['contract_id'] = all_options.apply(_contract_id, axis=1)
 
         position_groups = all_options.groupby(['account_name', 'ticker', 'contract_id'])
 
@@ -700,7 +706,9 @@ class OpenPositionsLoaderV2:
                 action = ''
                 action_col = None
                 for col in group.columns:
-                    if 'action' in col.lower():
+                    cl = str(col).lower().strip()
+                    # Robinhood uses 'Trans Code' (STO/BTC/BTO/STC), not an 'action' column
+                    if 'action' in cl or cl in ('trans code', 'trans_code', 'transcode', 'code'):
                         action_col = col
                         break
 
@@ -788,11 +796,20 @@ class OpenPositionsLoaderV2:
         return summary.sort_values('total_open_contracts', ascending=False)
 
     def get_account_summary(self) -> pd.DataFrame:
-        """Get open position count by account"""
+        """Get open position count by account.
+
+        Includes EVERY loaded account (all 9), even equity-only accounts like
+        Vanguard that have 0 open options — so the report covers the full book.
+        """
         if self.open_positions is None:
             return pd.DataFrame()
 
-        return self.open_positions.groupby('account_name').size().to_frame('open_positions').sort_values('open_positions', ascending=False)
+        counts = self.open_positions.groupby('account_name').size()
+        # Reindex over all accounts seen in the raw data so option-less accounts appear
+        if self.consolidated_df is not None and 'account_name' in self.consolidated_df.columns:
+            all_accounts = self.consolidated_df['account_name'].dropna().unique()
+            counts = counts.reindex(all_accounts, fill_value=0)
+        return counts.to_frame('open_positions').sort_values('open_positions', ascending=False)
 
     def get_account_type_summary(self) -> pd.DataFrame:
         """Get open position count by account type"""
