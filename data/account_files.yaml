@@ -1,0 +1,108 @@
+# =============================================================================
+# ACCOUNT FILE CONTRACT — theta-lab
+# =============================================================================
+# Identity of an account = brokerage + name.
+# Add account_type ONLY when brokerage+name repeat (Fidelity/Rajul, Robinhood/Rahul).
+#
+# Matching is fuzzy & forgiving (so renamed/re-exported files still work):
+#   - case-insensitive substring match on the filename
+#   - match_any: a list of keyword GROUPS; a file matches if ALL words in ANY group are present
+#   - exclude: if any of these words appear, the file is NOT this account
+#   - formats: which extensions are accepted (default csv)
+#   - newest file wins when several match (by date-in-name, else mtime)
+#
+# data_kind tells the loader how to read the file:
+#   positions    = current holdings snapshot (Schwab, Fidelity)
+#   holdings     = equity holdings snapshot, no options (Vanguard)
+#   transactions = activity log; OPEN positions are RECONSTRUCTED by netting (Robinhood)
+# =============================================================================
+
+canonical_dir: data/positions
+archive_dir: data/positions/arch
+
+accounts:
+  - id: schwab_rahul_individual
+    display: "Account A (232)"
+    brokerage: schwab
+    name: rahul
+    account_type: individual            # account 232 (margin)
+    data_kind: positions
+    match_any: [["individual", "position"]]
+    exclude: ["designated", "contributory", "fidelity", "portfolio_positions", "robinhood", "hood"]
+    canonical: schwab_rahul_individual.csv
+
+  - id: schwab_pinky_ira
+    display: "Account B (275)"
+    brokerage: schwab
+    name: pinky
+    account_type: contributory-ira      # account 275
+    data_kind: positions
+    match_any: [["contributory", "position"], ["275"]]
+    canonical: schwab_pinky_ira.csv
+
+  - id: schwab_designated_bene
+    display: "Account C (634)"
+    brokerage: schwab
+    name: designated-bene
+    account_type: designated-beneficiary  # account 634
+    data_kind: positions
+    match_any: [["designated", "position"], ["634"]]
+    canonical: schwab_designated-bene.csv
+
+  - id: fidelity_rahul
+    display: "Fidelity (Rahul)"
+    brokerage: fidelity
+    name: rahul
+    data_kind: positions
+    in_file_account_col: "Account Number"   # holds the TYPE (Fidelity column shift): "Traditional IRA"
+    match_any: [["fidelity", "rahul"], ["portfolio_positions", "rahul"]]
+    exclude: ["rajul"]
+    canonical: fidelity_rahul.csv
+
+  - id: fidelity_rajul
+    display: "Fidelity (Rajul)"            # ONE file, TWO accounts — split by in_file_account_col
+    brokerage: fidelity
+    name: rajul
+    data_kind: positions
+    in_file_account_col: "Account Number"
+    splits:
+      "ROTH IRA": "Fidelity (Rajul — Roth IRA)"
+      "Rollover IRA": "Fidelity (Rajul — Rollover IRA)"
+    match_any: [["fidelity", "rajul"], ["portfolio_positions", "rajul"]]
+    canonical: fidelity_rajul.csv
+
+  - id: vanguard_rahul
+    display: "Vanguard (Rahul)"
+    brokerage: vanguard
+    name: rahul
+    data_kind: holdings                   # equity only, no options
+    match_any: [["vanguard"]]
+    canonical: vanguard_rahul.csv
+
+  - id: robinhood_rahul_individual
+    display: "Robinhood (Individual)"
+    brokerage: robinhood
+    name: rahul
+    account_type: individual
+    data_kind: transactions               # reconstruct open positions by netting
+    match_any: [["robinhood", "individual"], ["hood", "individual"]]
+    exclude: ["traditional", "ira"]
+    formats: [csv, xlsx]
+    canonical: robinhood_rahul_individual.csv
+
+  - id: robinhood_rahul_traditional
+    display: "Robinhood (Traditional IRA)"
+    brokerage: robinhood
+    name: rahul
+    account_type: traditional-ira
+    data_kind: transactions
+    match_any: [["robinhood", "traditional"], ["hood", "traditional"], ["hood", "ira"]]
+    exclude: ["individual"]
+    prefer_full_over_ytd: true            # prefer full-history file over a YTD-only export
+    formats: [csv, xlsx]
+    canonical: robinhood_rahul_traditional.csv
+
+# Files in canonical_dir that are NOT matched to an account and are NOT in this
+# keep-list are moved to archive_dir.
+never_archive:
+  - portfolio_equity_positions.yaml
