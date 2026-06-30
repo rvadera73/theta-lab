@@ -1211,7 +1211,7 @@ class UnifiedReportProduction:
         output.append("")
 
         output.append("3-MONTH ROLLING PACE (Biweekly horizon):")
-        output.append(f"  Last 3 months average:          ${ytd_net/max(1, today.month):,.0f}/month (if Jan-May only)")
+        output.append(f"  YTD average:                    ${ytd_net/max(1, today.month):,.0f}/month")
         output.append(f"  Required to sustain annually:   ${monthly_target:,}/month ($1.2M+/year)")
         output.append(f"  Current trajectory:             {'↗ ACCELERATING' if daily_avg > monthly_target/30 else '→ STABLE' if daily_avg > monthly_target/35 else '↘ BELOW PACE'}")
         output.append("")
@@ -1226,20 +1226,23 @@ class UnifiedReportProduction:
         conviction_by_bucket = self._get_conviction_summary()
         avg_conviction = np.mean([m['conviction'] for m in self.metrics.values()])
 
-        output.append("CONVICTION TRAJECTORY (Simulated 3-month rolling):")
+        output.append("CONVICTION DISTRIBUTION (current, live):")
         output.append("")
-        output.append("Snapshot   HIGH    MODERATE    LOW     Portfolio Avg    Trend")
-        output.append("─" * 70)
-        output.append(f"Feb 15:    32%       45%       23%      6.1/10          ↗")
-        output.append(f"Mar 15:    35%       42%       23%      6.2/10          ↗")
-        output.append(f"Apr 15:    38%       40%       22%      6.4/10          ↗")
-        output.append(f"May 15:    {sum(1 for m in self.metrics.values() if m['conviction']>=8)*100//len(self.metrics)}%       {sum(1 for m in self.metrics.values() if 6<=m['conviction']<8)*100//len(self.metrics)}%       {sum(1 for m in self.metrics.values() if m['conviction']<6)*100//len(self.metrics)}%      {avg_conviction:.1f}/10          ↗↗")
+        _n = max(1, len(self.metrics))
+        _hi = sum(1 for m in self.metrics.values() if m['conviction'] >= 8)
+        _mo = sum(1 for m in self.metrics.values() if 6 <= m['conviction'] < 8)
+        _lo = sum(1 for m in self.metrics.values() if m['conviction'] < 6)
+        output.append(f"  HIGH (≥8):      {_hi*100//_n:>3}%  ({_hi} positions)")
+        output.append(f"  MODERATE (6-8): {_mo*100//_n:>3}%  ({_mo} positions)")
+        output.append(f"  LOW (<6):       {_lo*100//_n:>3}%  ({_lo} positions)")
+        output.append(f"  Portfolio avg:  {avg_conviction:.1f}/10")
+        output.append("  (Month-over-month conviction history needs a tracking store — not fabricated.)")
         output.append("")
 
-        output.append("Position Tracking (HIGH Conviction movements):")
+        output.append("Top HIGH-conviction positions (current):")
         top_high = conviction_by_bucket.get('HIGH', [])[:5]
         for ticker, m in top_high:
-            output.append(f"  {ticker:8} Conviction: {m['conviction']:.1f}/10 (↗ UP from 6.8 Apr 15)")
+            output.append(f"  {ticker:8} Conviction: {m['conviction']:.1f}/10")
         output.append("")
 
         output.append("Framework Health:")
@@ -1253,31 +1256,16 @@ class UnifiedReportProduction:
 
         gap_data = self._calculate_gap_to_target()
 
-        output.append("TIER CONCENTRATION TREND:")
+        output.append("TIER CONTRIBUTION TO TARGET (current, live):")
         output.append("")
-        output.append("Tier 1 (Conviction ≥7/10) — $3,800/month contribution each:")
-        output.append(f"  Feb 15:  {32}% (30 positions) → ${30*3800:,}/month")
-        output.append(f"  Mar 15:  {35}% (32 positions) → ${32*3800:,}/month")
-        output.append(f"  Apr 15:  {38}% (35 positions) → ${35*3800:,}/month")
-        output.append(f"  May 15:  {len(conviction_by_bucket.get('HIGH', []))*100//len(self.metrics)}% ({len(conviction_by_bucket.get('HIGH', []))} positions) → ${gap_data['tier1_contribution']:,}/month ↗ ON TARGET")
-        output.append("")
-
-        output.append("Tier 2 (Conviction 5-7/10) — $1,000/month contribution each:")
-        output.append(f"  Feb 15:  {45}% → ${int(len(self.metrics)*0.45*1000):,}/month")
-        output.append(f"  Mar 15:  {42}% → ${int(len(self.metrics)*0.42*1000):,}/month")
-        output.append(f"  Apr 15:  {40}% → ${int(len(self.metrics)*0.40*1000):,}/month")
-        output.append(f"  May 15:  {len(conviction_by_bucket.get('MODERATE', []))*100//len(self.metrics)}% → ${gap_data['tier2_contribution']:,}/month → STABLE")
-        output.append("")
-
-        output.append("Tier 3 (Conviction <5/10) — -$500/month drag each:")
-        output.append(f"  Feb 15:  {23}% → ${int(len(self.metrics)*0.23*500):,} drag")
-        output.append(f"  Mar 15:  {23}% → ${int(len(self.metrics)*0.23*500):,} drag")
-        output.append(f"  Apr 15:  {22}% → ${int(len(self.metrics)*0.22*500):,} drag")
-        output.append(f"  May 15:  {len(conviction_by_bucket.get('LOW', []))*100//len(self.metrics)}% → ${gap_data['tier3_contribution']:,} drag ↘ IMPROVING (quality rising)")
+        output.append(f"  Tier 1 (Conv ≥8): {len(conviction_by_bucket.get('HIGH', []))} positions → ${gap_data['tier1_contribution']:,}/month")
+        output.append(f"  Tier 2 (Conv 6-8): {len(conviction_by_bucket.get('MODERATE', []))} positions → ${gap_data['tier2_contribution']:,}/month")
+        output.append(f"  Tier 3 (Conv <6): {len(conviction_by_bucket.get('LOW', []))} positions → ${gap_data['tier3_contribution']:,} drag")
+        output.append("  (Prior-month tier history needs a tracking store — not fabricated.)")
         output.append("")
 
         output.append("PORTFOLIO TOTAL CONTRIBUTION TO $90K TARGET:")
-        output.append(f"  May 15: ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
+        output.append(f"  Current: ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
         output.append(f"  Gap: ${gap_data['monthly_gap']:,} → {gap_data['positions_needed']} more Tier 1 needed OR scale/trim Tier 3")
         output.append("")
 
@@ -1285,105 +1273,59 @@ class UnifiedReportProduction:
         output.append("Weekly tier monitoring catching opportunities earlier. Framework gap-closure path clear.")
         output.append("")
 
-        # SECTION 4: WIN RATE TREND
-        output.extend(self._format_section_header(4, "THREE-MONTH WIN RATE TREND (By Strategy)"))
+        # SECTION 4: REALIZED MONTHLY PREMIUM (real data from transactions)
+        output.extend(self._format_section_header(4, "REALIZED MONTHLY PREMIUM TREND (from transaction history)"))
+        try:
+            from monthly_premium import render_trend_block
+            output.extend(render_trend_block())
+        except Exception as _e:
+            output.append(f"(premium trend unavailable: {_e})")
+            output.append("")
 
-        output.append("Short Strangles (Primary Strategy):")
-        output.append("  Feb: 68% win rate (closed 8/11 at profit)")
-        output.append("  Mar: 72% win rate (closed 7/10 at profit)")
-        output.append("  Apr: 75% win rate (closed 8/9 at profit)")
-        output.append("  May (d1-15): 78% running rate (1 close profitable, 0 losses, 11 held open)")
-        output.append("  Trend: ↗↗ STRONG UPTREND")
-        output.append("  Status: ✅ EXCEEDING 70% TARGET, ACCELERATING")
+        # SECTION 5: METRICS REQUIRING HISTORICAL TRACKING (not fabricated)
+        output.extend(self._format_section_header(5, "WIN-RATE & GREEKS DRIFT"))
+        output.append("Per-strategy win-rate history and per-month Greeks drift require a historical")
+        output.append("tracking store that is not implemented yet. Rather than show estimated/illustrative")
+        output.append("numbers, these are omitted. (Realized premium above IS computed from real trades.)")
+        output.append("To enable: persist monthly Greeks + closed-trade outcomes to a state file each run.")
         output.append("")
 
-        output.append("Covered Calls (Assigned equity management):")
-        output.append("  Feb: 82% win rate")
-        output.append("  Mar: 85% win rate")
-        output.append("  Apr: 88% win rate")
-        output.append("  May: 88% on pace")
-        output.append("  Status: ✅ FAR EXCEEDING TARGET (>70%)")
+        # SECTION 6: CURRENT SECTOR CONCENTRATION (real) — see Sector Analysis for full detail
+        output.extend(self._format_section_header(6, "SECTOR CONCENTRATION (current, live)"))
+        try:
+            sec = self.sector_summary or {}
+            total_not = sum(d.get("total_notional", 0) for d in sec.values()) or 1
+            rows = sorted(sec.items(), key=lambda kv: kv[1].get("total_notional", 0), reverse=True)
+            output.append(f"{'Sector':<28}{'% of notional':>14}{'Avg Conv':>10}{'Signal':>14}")
+            output.append("-" * 66)
+            for name, d in rows[:12]:
+                pct = d.get("total_notional", 0) / total_not * 100
+                sig = d.get("signal_type", "NEUTRAL")
+                output.append(f"{name:<28}{pct:>13.1f}%{d.get('avg_conviction', 0):>10}{sig:>14}")
+            output.append("")
+            output.append("Month-by-month rotation history is not tracked yet — omitted rather than fabricated.")
+        except Exception as _e:
+            output.append(f"(sector concentration unavailable: {_e})")
         output.append("")
 
-        output.append("Portfolio-Level Win Rate (Weighted Average):")
-        output.append("  Feb: 71%")
-        output.append("  Mar: 75%")
-        output.append("  Apr: 78%")
-        output.append("  May (d1-15): 80% projection ↗↗")
-        output.append("  Status: ✅ SYSTEM LEARNING (win rate rising 9 pts in 3 months)")
-        output.append("")
-
-        # SECTION 5: GREEKS DRIFT
-        output.extend(self._format_section_header(5, "THREE-MONTH GREEKS DRIFT & RISK MANAGEMENT"))
-
-        output.append("Portfolio Delta (Target ±25):")
-        output.append("  Feb avg: +12 | Mar avg: -8 | Apr avg: +18 | May (d1-15): +16")
-        output.append("  Status: ✅ STABLE, WITHIN RANGE")
-        output.append("")
-
-        output.append("Portfolio Gamma (Target ≤1.0):")
-        output.append("  Feb avg: 0.52 | Mar avg: 0.41 | Apr avg: 0.38 | May: 0.39")
-        output.append("  Status: ✅ IN RANGE, CONVERGED")
-        output.append("")
-
-        output.append("Portfolio Theta (Target ≥$300/day):")
-        output.append("  Feb avg: $340/day | Mar avg: $380/day | Apr avg: $380/day | May: $385/day")
-        output.append("  Status: ✅ STRONG")
-        output.append("")
-
-        output.append("Margin Utilization (Target ≤70% bear, ≤60% bull):")
-        output.append("  Feb avg: 68% | Mar avg: 64% | Apr avg: 58% | May: 56%")
-        output.append("  Status: ✅ SAFE (above target met)")
-        output.append("  Trend: ↘ IMPROVING (more headroom)")
-        output.append("")
-
-        # SECTION 6: SECTOR ROTATION
-        output.extend(self._format_section_header(6, "THREE-MONTH SECTOR ROTATION TREND"))
-
-        output.append("AI Infrastructure (Target <20%):")
-        output.append("  Feb: 19% | Mar: 22% | Apr: 24% | May: 26%")
-        output.append("  Status: ⚠️ CONCENTRATION ALERT (over by 6%)")
-        output.append("  Action: Next profit-take should favor non-AI positions")
-        output.append("")
-
-        output.append("Cybersecurity (Target <15%):")
-        output.append("  Feb: 14% | Mar: 15% | Apr: 15% | May: 15%")
-        output.append("  Status: ✅ AT TARGET")
-        output.append("")
-
-        output.append("Consumer & Retail (Target <12%):")
-        output.append("  Feb: 8% | Mar: 10% | Apr: 12% | May: 13%")
-        output.append("  Status: ⚠️ WATCHING (slight overage)")
-        output.append("")
-
-        output.append("Financials (Target <10%):")
-        output.append("  Feb: 6% | Mar: 7% | Apr: 8% | May: 7%")
-        output.append("  Status: ✅ IN RANGE")
-        output.append("")
-
-        # SECTION 7: VARIANCE ROOT CAUSE
-        output.extend(self._format_section_header(7, "MONTHLY VARIANCE ROOT CAUSE PATTERN"))
-
-        output.append("ROOT CAUSE BREAKDOWN (Cumulative 3-month impact):")
-        output.append("")
-        output.append("Market Regime Impact:")
-        output.append("  Feb: -$8K (VIX spiked) | Mar: +$8.2K (VIX normalized) | Apr: +$2.1K | May: +$1.2K")
-        output.append("  3-month pattern: ↘ Declining (system adapts)")
-        output.append("")
-
-        output.append("Framework Maturity Impact:")
-        output.append("  Feb: -$6.5K (early) | Mar: +$3.9K | Apr: +$2.1K | May: +$1.8K")
-        output.append("  3-month pattern: → Stabilizing (framework mature)")
-        output.append("")
-
-        output.append("Thesis Strength Impact:")
-        output.append("  Feb: -$12K (failures) | Mar: $0 | Apr: $0 | May: $0")
-        output.append("  3-month pattern: ↘ Thesis breaks eliminated (framework works!)")
-        output.append("")
-
-        output.append("New Entry Timing Impact:")
-        output.append("  Feb: -$9.8K (IVR low) | Mar: +$9.1K | Apr: +$4.2K | May: +$2.8K")
-        output.append("  3-month pattern: → Stabilizing (IVR gate working)")
+        # SECTION 7: VARIANCE vs TARGET (real)
+        output.extend(self._format_section_header(7, "PREMIUM vs MONTHLY TARGET"))
+        try:
+            from monthly_premium import compute_monthly_premium, to_table
+            _t = to_table(compute_monthly_premium())
+            _months = [c for c in _t.columns if c != "YTD"]
+            tgt = MONTHLY_TARGET_NET_BASE
+            output.append(f"Monthly net target (base): ${tgt:,}")
+            output.append(f"{'Month':<10}{'Actual':>14}{'vs Target':>14}")
+            output.append("-" * 38)
+            for m in _months:
+                act = float(_t.loc["TOTAL", m]) if "TOTAL" in _t.index else 0.0
+                output.append(f"{m:<10}{act:>14,.0f}{act - tgt:>14,.0f}")
+            output.append("")
+            output.append("Per-driver attribution (regime/thesis/timing) requires trade-level tagging not")
+            output.append("yet captured — omitted rather than estimated.")
+        except Exception as _e:
+            output.append(f"(variance unavailable: {_e})")
         output.append("")
 
         # FOOTER
@@ -1490,55 +1432,26 @@ class UnifiedReportProduction:
             output.append(f"└─ Status: {status}")
             output.append("")
 
-        # SECTION 3: VARIANCE ROOT CAUSE ANALYSIS
-        output.extend(self._format_section_header(3, "MONTHLY VARIANCE ROOT CAUSE ANALYSIS"))
-
-        output.append("ROOT CAUSE BREAKDOWN (What drove the -8.7% variance in May?):")
-        output.append("")
-        output.append("Market Regime Impact:         +$1,200 (Favorable)")
-        output.append("├─ VIX: 16-18 (neutral, below Feb spike)")
-        output.append("├─ Implied Vol: 42-44 IVR (good for entries)")
-        output.append("├─ S&P 500: +2% for May (slightly bullish)")
-        output.append("└─ Verdict: Regime helpful but not outsized")
-        output.append("")
-
-        output.append("Framework Maturity Impact:    +$1,800 (Strong)")
-        output.append("├─ Conviction accuracy: {:.1f}/10 avg (converged)".format(
-            np.mean([m['conviction'] for m in self.metrics.values()])
-        ))
-        output.append(f"├─ Tier precision: {len(conviction_by_bucket.get('HIGH', []))*100//len(self.metrics)}% Tier 1 ({len(conviction_by_bucket.get('HIGH', []))} positions)")
-        output.append("├─ Weekly rebalancing: Catching opportunities early")
-        output.append("└─ Verdict: Framework improvements productive")
-        output.append("")
-
-        output.append("Thesis Strength Impact:       +$2,800 (Excellent)")
-        output.append(f"├─ New entries quality: {len(conviction_by_bucket.get('HIGH', []))} HIGH conviction identified")
-        output.append("├─ Forced exits: 0 (framework preventing bad entries)")
-        output.append("├─ Win rate: 78% (above 70% target)")
-        output.append("└─ Verdict: Framework working well")
-        output.append("")
-
-        output.append("New Entry Timing Impact:      +$2,900 (Strong)")
-        output.append(f"├─ Entry quality: {len(conviction_by_bucket.get('HIGH', []))} above conviction gate")
-        output.append("├─ Timing: BULL regime favorable")
-        output.append("└─ Verdict: Entry framework working")
-        output.append("")
-
-        output.append("Execution Slippage:           -$800 (Normal)")
-        output.append("├─ Bid-ask spreads: Normal market conditions")
-        output.append("├─ Assignment friction: Minimal")
-        output.append("└─ Verdict: Execution quality excellent")
-        output.append("")
-
-        output.append("CUMULATIVE MAY VARIANCE:")
-        output.append("Positive drivers:        +$1.2K +$1.8K +$2.8K +$2.9K = +$8.7K")
-        output.append("Negative drivers:        -$0.8K = -$0.8K")
-        output.append("Net variance drivers:    +$8.7K - $0.8K = +$7.9K favorable")
-        output.append("Actual variance:         -$10.6K (other factors)")
-        output.append("")
-
-        output.append("MAY VERDICT: Framework improvements from April generating expected positive")
-        output.append("impact. Slight shortfall likely due to entry pace (IVR gate selection).")
+        # SECTION 3: PREMIUM vs TARGET (real, computed from transaction history)
+        output.extend(self._format_section_header(3, "MONTHLY PREMIUM vs TARGET (real)"))
+        try:
+            from monthly_premium import compute_monthly_premium, to_table
+            _t = to_table(compute_monthly_premium())
+            _months = [c for c in _t.columns if c != "YTD"]
+            tgt = MONTHLY_TARGET_NET_BASE
+            _ytd = float(_t.loc['TOTAL', 'YTD']) if 'TOTAL' in _t.index else 0.0
+            output.append(f"Monthly net target (base): ${tgt:,}    |    YTD actual: ${_ytd:,.0f}")
+            output.append("")
+            output.append(f"{'Month':<10}{'Actual':>14}{'Target':>12}{'Variance':>14}")
+            output.append("-" * 50)
+            for m in _months:
+                act = float(_t.loc['TOTAL', m]) if 'TOTAL' in _t.index else 0.0
+                output.append(f"{m:<10}{act:>14,.0f}{tgt:>12,.0f}{act - tgt:>14,.0f}")
+            output.append("")
+            output.append("Per-driver attribution (regime / thesis / timing / slippage) requires trade-level")
+            output.append("tagging that is not captured yet — omitted rather than estimated.")
+        except Exception as _e:
+            output.append(f"(premium vs target unavailable: {_e})")
         output.append("")
 
         # SECTION 4: MOAT RECALIBRATION
@@ -1580,54 +1493,22 @@ class UnifiedReportProduction:
         output.append("MOAT VERDICT: Quality improving with framework. Tier 1 concentration rising.")
         output.append("")
 
-        # SECTION 5: CITADEL COMPARISON
-        output.extend(self._format_section_header(5, "CITADEL COMPARISON & FRAMEWORK EVOLUTION"))
-
-        output.append("MAY 2026 CITADEL COMPARISON (With detailed delta calculation):")
-        output.append("")
-
-        output.append("THETA-LAB ACTUAL (May 1-15, 15 days):")
-        output.append(f"  P&L: $58,400 in 15 trading days")
-        output.append(f"  Annualized (252 trading days): $976,800")
-        output.append(f"  Monthly equivalent: $81,400")
-        output.append(f"  Return on $2M AUM: 4.1% (monthly)")
-        output.append("")
-
-        output.append("CITADEL ESTIMATE (Public research data):")
-        output.append(f"  Monthly return: 8-12% (2.5x leverage typical)")
-        output.append(f"  On $2M equivalent: $160-240K monthly")
-        output.append(f"  Sharpe ratio: 1.8-2.2 (industry-leading)")
-        output.append("")
-
-        output.append("DELTA CALCULATION:")
-        output.append(f"  Theta-Lab May pace: 4.1% monthly")
-        output.append(f"  Citadel estimated: 10% monthly (mid-range)")
-        output.append(f"  Delta: -5.9% per month")
-        output.append(f"  Reason: Citadel uses 2.5x leverage + proprietary strategies")
-        output.append(f"  Theta-Lab strategy: Lower leverage (disciplined), higher Sharpe")
-        output.append("")
-
-        output.append("FRAMEWORK EVOLUTION ANALYSIS:")
-        output.append("")
-        output.append("April improvements implemented (driving May gains):")
-        output.append("  1. Earnings monitoring (NEW) → prevented forced exits → +$800")
-        output.append("  2. Weekly tier rebalancing (NEW) → early identification → +$1,200")
-        output.append("  3. Dynamic targets (NEW) → extended winners → +$1,500")
-        output.append("  4. IVR flexibility (NEW, staged) → ready for lower threshold")
-        output.append("  5. Win rate tracking (NEW) → optimized entries → +$1,400")
-        output.append("")
-        output.append("Total impact: +$6,100 directly from April improvements")
-        output.append("")
-
-        output.append("CITADEL IMPLICATION:")
-        output.append("  Citadel's quarterly updates: New improvements every 90 days")
-        output.append("  Theta-Lab's cycle: Weekly improvements, monthly recalibration")
-        output.append("  Advantage: Compounding acceleration (4 weeks vs 12 weeks per cycle)")
-        output.append("  Month 6 projection: +$20-25K incremental vs May baseline")
-        output.append("")
-
-        output.append("VERDICT: Framework learning creates consistent edge. At current trajectory,")
-        output.append("Theta-Lab will close Citadel delta by end of Q3 2026 through sustained improvements.")
+        # SECTION 5: PERFORMANCE PACE (real) — fabricated Citadel comparison removed
+        output.extend(self._format_section_header(5, "PERFORMANCE PACE (real)"))
+        try:
+            from monthly_premium import compute_monthly_premium, to_table
+            _t = to_table(compute_monthly_premium())
+            _ytd = float(_t.loc['TOTAL', 'YTD']) if 'TOTAL' in _t.index else 0.0
+            _mo = max(1, today.month)
+            output.append(f"YTD net premium (real):       ${_ytd:,.0f}  (Jan–{today.strftime('%b')})")
+            output.append(f"Average monthly pace:         ${_ytd/_mo:,.0f}/month")
+            output.append(f"Annualized run-rate:          ${_ytd/_mo*12:,.0f}")
+            output.append(f"Monthly net target (base):    ${MONTHLY_TARGET_NET_BASE:,}")
+            output.append("")
+            output.append("NOTE: The prior Citadel/peer comparison used fabricated P&L figures and has been")
+            output.append("removed. Benchmark against external estimates manually if you want that view.")
+        except Exception as _e:
+            output.append(f"(performance pace unavailable: {_e})")
         output.append("")
 
         # FOOTER

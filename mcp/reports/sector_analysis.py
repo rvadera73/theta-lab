@@ -173,24 +173,20 @@ class SectorAnalyzer:
             avg_rsi = np.mean(rsi_values)
             avg_position_range = np.mean(position_ranges)
 
-            if avg_conv >= 8 and avg_position_range < 30:
-                signal = "🟢 STRONG BUY — High conviction, oversold"
-                signal_type = "ATTRACTION"
-            elif avg_conv >= 7 and avg_rsi < 35:
-                signal = "🟢 BUY — Moderate-high conviction, oversold RSI"
-                signal_type = "ATTRACTION"
-            elif avg_conv >= 8 and avg_position_range > 75:
-                signal = "🟠 HOLD — High conviction but extended"
-                signal_type = "MIXED"
-            elif avg_position_range > 85 and avg_rsi > 70:
-                signal = "🔴 REDUCE — Extended, overbought RSI"
-                signal_type = "EXTENSION"
-            elif avg_conv < 6 and avg_position_range > 80:
-                signal = "🔴 REDUCE — Low conviction and extended"
-                signal_type = "EXTENSION"
-            elif avg_conv < 5:
+            # Discriminating bands. Sector AVERAGES rarely hit conjunctive extremes,
+            # so overbought/oversold (OR conditions) drive the color; conviction guards it.
+            if avg_conv < 5:
                 signal = "🟡 MONITOR — Low conviction across sector"
                 signal_type = "CAUTION"
+            elif avg_rsi >= 65 or avg_position_range >= 80:
+                signal = "🔴 REDUCE — Overbought / extended"
+                signal_type = "EXTENSION"
+            elif avg_rsi <= 40 or avg_position_range <= 25:
+                signal = "🟢 BUY — Oversold / attractively valued"
+                signal_type = "ATTRACTION"
+            elif avg_conv >= 7.5 and avg_position_range < 50:
+                signal = "🟢 BUY — High conviction"
+                signal_type = "ATTRACTION"
             else:
                 signal = "🟡 MONITOR — Neutral positioning"
                 signal_type = "NEUTRAL"
