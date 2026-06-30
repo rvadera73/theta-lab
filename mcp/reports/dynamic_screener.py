@@ -248,16 +248,32 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
             regime_fit = min(regime_fit, 20)
             portfolio_note = (portfolio_note + "; Tier 3 avoid in bear") if portfolio_note else "Tier 3 avoid in bear"
 
-        rsi_component = _rsi_score(rsi)
-        tier_component = _tier_score(meta["tier"])
-        ivr_value = float(ivr) if ivr is not None else 0.0
-        score = (ivr_value * 0.4) + (rsi_component * 0.3) + (regime_fit * 0.2) + (tier_component * 0.1)
-        # Boost Rahul's macro-focus names so they surface prominently in screener
+        # --- Multi-factor composite (Quality/Value/Growth/Momentum/IVR/timing + gates) ---
+        fac_gates: list[str] = []
+        fac: dict[str, Any] = {}
+        fac_sub: dict[str, Any] = {}
+        try:
+            from factor_screener import get_factors as _ff, score as _fscore
+            fac = _ff(iv_key, ivr_override=ivr)
+            fr = _fscore(fac)
+            composite = fr["composite"]
+            fac_gates = fr["gates"]
+            fac_sub = fr["subscores"]
+        except Exception:
+            # Fallback to the legacy IVR/RSI formula if fundamentals are unavailable
+            composite = (float(ivr or 0) * 0.4) + (_rsi_score(rsi) * 0.3) + (regime_fit * 0.2) + (_tier_score(meta["tier"]) * 0.1)
+        # Mostly factor-driven, with a small regime/sector adjustment retained
+        score = 0.85 * composite + 0.15 * regime_fit
         if symbol in _FOCUS_SYMBOLS:
             score = min(score + _FOCUS_SCORE_BOOST, 100)
         strategy = _resolve_strategy(meta, in_portfolio, ivr, regime)
 
-        if ivr is not None and ivr >= RISK.get("iv_rank_min_new_entry", 40) and not earnings_soon and regime_fit >= 50:
+        # Value-trap / quality gates demote the signal regardless of how fat the premium is
+        if fac_gates:
+            gate_txt = "GATED: " + ",".join(fac_gates)
+            portfolio_note = (portfolio_note + "; " + gate_txt) if portfolio_note else gate_txt
+            signal = "SKIP"
+        elif ivr is not None and ivr >= RISK.get("iv_rank_min_new_entry", 40) and not earnings_soon and regime_fit >= 50:
             signal = "ENTER_NOW"
         elif ((ivr is not None and 25 <= ivr < RISK.get("iv_rank_min_new_entry", 40)) or earnings_soon or 25 <= regime_fit < 50):
             signal = "WATCH"
@@ -285,6 +301,12 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
             "regime": regime,
             "heavy_sectors": heavy_sectors,
             "opportunity_score": round(score, 1),
+            "factor_gates": fac_gates,
+            "rev_growth": fac.get("rev_growth"),
+            "value_gap": fac.get("value_gap"),
+            "roe": fac.get("roe"),
+            "mom_6m": fac.get("mom_6m"),
+            "factor_subscores": fac_sub,
             "notes": meta.get("notes", ""),
         }
     except Exception:
