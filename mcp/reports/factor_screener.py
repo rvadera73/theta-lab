@@ -68,7 +68,7 @@ def _timing_score(rsi: Optional[float]) -> Optional[float]:
 
 
 # ----------------------------- factor fetch ---------------------------------
-def get_factors(symbol: str) -> dict[str, Any]:
+def get_factors(symbol: str, ivr_override: Optional[float] = None) -> dict[str, Any]:
     t = yf.Ticker(symbol)
     info = t.info or {}
     try:
@@ -84,8 +84,8 @@ def get_factors(symbol: str) -> dict[str, Any]:
     mom_6m = (closes[-1] / closes[-126] - 1.0) if len(closes) >= 126 else None
     mom_12_1 = (closes[-21] / closes[-252] - 1.0) if len(closes) >= 252 else None
 
-    ivr = None
-    if get_iv_rank is not None:
+    ivr = ivr_override
+    if ivr is None and get_iv_rank is not None:
         try:
             iv = get_iv_rank(symbol)
             ivr = iv.get("iv_rank") if isinstance(iv, dict) else iv
