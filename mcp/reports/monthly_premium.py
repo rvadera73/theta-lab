@@ -27,14 +27,17 @@ SOURCES: list[tuple[str, str, str, dict | None]] = [
     ("Account C (634)", "Designated_Bene_Individual_XXX634_Transactions_*.csv", "schwab", None),
     ("Fidelity (Rahul)", "Accounts_History_fidelity_Rahul.csv", "fidelity", {
         "Traditional IRA": "Fidelity (Rahul)",
-        "ROTH IRA for Minor": "Fidelity (Rahul — Roth Minor)",
+        "ROTH IRA for Minor": "Fidelity (Rahul)",  # fold minor into Rahul -> 3 Fidelity accounts
     }),
     ("Fidelity (Rajul)", "Accounts_History_fidelity_Rajul.csv", "fidelity", {
         "ROTH IRA": "Fidelity (Rajul — Roth IRA)",
         "Rollover IRA": "Fidelity (Rajul — Rollover IRA)",
     }),
-    ("Robinhood (Individual)", "robinhood_rahul_individual.csv", "robinhood", None),
-    ("Robinhood (Traditional IRA)", "robinhood_rahul_traditional.csv", "robinhood", None),
+    # globs match new (hood-rahul-*) and legacy (robinhood_rahul_*) names; newest wins
+    ("Robinhood (Individual)", "*hood*dividual*.csv", "robinhood", None),
+    ("Robinhood (Traditional IRA)", "*hood*traditional*.csv", "robinhood", None),
+    # Vanguard OFX export has a positions section AND a transactions section
+    ("Vanguard (Rahul)", "*vanguard*.csv", "vanguard", None),
 ]
 
 
@@ -67,12 +70,29 @@ def _parse(fmt: str, path: str, acct_map: dict | None) -> dict[str, pd.Series]:
         opt = df[is_opt].copy()
         opt["m"] = pd.to_datetime(opt["Run Date"], errors="coerce").dt.to_period("M").astype(str)
         opt["amt"] = _money(opt["Amount ($)"])
-        out = {}
+        out: dict[str, pd.Series] = {}
         for acct_val, disp in (acct_map or {}).items():
             sub = opt[opt["Account"].astype(str).str.strip() == acct_val]
             if len(sub):
-                out[disp] = sub.groupby("m")["amt"].sum()
+                s = sub.groupby("m")["amt"].sum()
+                out[disp] = out[disp].add(s, fill_value=0) if disp in out else s
         return out
+
+    if fmt == "vanguard":
+        # Vanguard OFX CSV has a positions block then a transactions block; find the
+        # transactions header ('Trade Date' + 'Transaction Type') and parse from there.
+        raw = open(path, encoding="utf-8", errors="replace").read().splitlines()
+        hidx = next((i for i, ln in enumerate(raw) if "Trade Date" in ln and "Transaction Type" in ln), None)
+        if hidx is None:
+            return {}
+        from io import StringIO
+        df = pd.read_csv(StringIO("\n".join(raw[hidx:])))
+        df.columns = [str(c).strip() for c in df.columns]
+        opt = df[df["Transaction Type"].astype(str).str.lower().isin(
+            ["sell to open", "buy to close", "buy to open", "sell to close"])].copy()
+        opt["m"] = pd.to_datetime(opt["Trade Date"], errors="coerce").dt.to_period("M").astype(str)
+        opt["amt"] = _money(opt["Net Amount"])
+        return {"__self__": opt.groupby("m")["amt"].sum()}
 
     if fmt == "robinhood":
         df = pd.read_csv(path, on_bad_lines="skip", engine="python")
@@ -117,6 +137,31 @@ def to_table(result: dict[str, pd.Series]) -> pd.DataFrame:
     df["YTD"] = df.sum(axis=1)
     df.loc["TOTAL"] = df.sum(axis=0)
     return df
+
+
+def render_trend_block(width: int = 120) -> list[str]:
+    """Return formatted text lines for the YTD monthly-premium trend (for reports)."""
+    res = compute_monthly_premium()
+    if not res:
+        return ["YTD MONTHLY PREMIUM TREND: (no transaction history available)", ""]
+    tbl = to_table(res)
+    months = [c for c in tbl.columns if c != "YTD"]
+    lines = ["─" * width,
+             "YTD MONTHLY NET OPTIONS PREMIUM — BY ACCOUNT (from transaction history)",
+             "─" * width]
+    hdr = f"{'Account':<32}" + "".join(f"{m[-2:]:>11}" for m in months) + f"{'YTD':>13}"
+    lines.append(hdr)
+    lines.append("-" * len(hdr))
+    for acct in tbl.index:
+        if acct == "TOTAL":
+            lines.append("-" * len(hdr))
+        row = f"{acct:<32}" + "".join(f"{tbl.loc[acct, m]:>11,.0f}" for m in months) + f"{tbl.loc[acct, 'YTD']:>13,.0f}"
+        lines.append(row)
+    lines += ["",
+              "Net premium = STO/STC credits − BTC/BTO debits per month (option open/close only).",
+              "All 9 accounts (3 Schwab, 3 Fidelity, 1 Vanguard, 2 Robinhood). Months with no data = 0.",
+              ""]
+    return lines
 
 
 if __name__ == "__main__":
