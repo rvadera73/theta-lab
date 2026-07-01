@@ -598,17 +598,44 @@ async def load_us_positions() -> dict[str, Any]:
     all_positions: list[Position] = []
     balances: dict[str, dict[str, Any]] = {}
 
-    # ── Schwab accounts — reconstructed from exported transaction CSVs (NO live API) ──
-    # Data/auth policy: analysis is file+Yahoo first; Schwab API is not used here.
-    for label, cfg in ACCOUNTS.items():
-        if cfg.get("broker") != "schwab":
-            continue
+    # ── Schwab (live, parallel) ──────────────────────────────────────────────
+    schwab_accounts = {
+        label: os.getenv(cfg.get("hash_env", ""), "")
+        for label, cfg in ACCOUNTS.items()
+        if cfg.get("broker") == "schwab"
+    }
+    schwab_accounts = {k: v for k, v in schwab_accounts.items() if v}
+
+    if schwab_accounts:
         try:
-            txn_positions = reconstruct_positions_from_transactions(label)
-            if txn_positions:
-                all_positions.extend(txn_positions)
+            from schwab_client import get_all_positions, get_quotes, get_balances
+
+            async def _fetch(label: str, acct_hash: str) -> list[Position]:
+                try:
+                    raw = await get_all_positions(acct_hash)
+                    if not raw:
+                        return []
+                    symbols = sorted({
+                        (p.get("instrument", {}).get("underlyingSymbol")
+                         or p.get("instrument", {}).get("symbol", "").split()[0])
+                        for p in raw
+                        if p.get("instrument", {}).get("assetType") in ("EQUITY", "OPTION")
+                    })
+                    quotes = await get_quotes(symbols) if symbols else {}
+                    balances[label] = await get_balances(acct_hash)
+                    return parse_schwab_positions(raw, label, quotes)
+                except Exception:
+                    # Fallback: Try reconstructing from transaction history
+                    txn_positions = reconstruct_positions_from_transactions(label)
+                    if txn_positions:
+                        return txn_positions
+                    return []
+
+            results = await asyncio.gather(*[_fetch(l, h) for l, h in schwab_accounts.items()])
+            for r in results:
+                all_positions.extend(r)
         except Exception:
-            pass  # never block on one account
+            pass
 
     # ── CSV-based accounts (non-fatal each) ──────────────────────────────────
     csv_brokers = ("fidelity_csv", "robinhood_csv", "vanguard_csv")
