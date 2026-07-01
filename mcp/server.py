@@ -118,32 +118,13 @@ _audit_credentials()
 
 def _get_configured_accounts() -> dict[str, dict]:
     """
-    Returns all accounts from ACCOUNTS registry that have credentials in env.
-    Broker-agnostic: adding a new account only requires a new entry in config.ACCOUNTS.
+    Returns all accounts from the ACCOUNTS registry.
+
+    Data/auth policy: analysis is FILE-based (exported CSVs + Yahoo), so every
+    account is always 'configured' — no Schwab/Robinhood credentials required to
+    run analysis tools. (The live broker API has been removed.)
     """
-    result = {}
-    for label, cfg in ACCOUNTS.items():
-        broker = cfg.get("broker", "schwab")
-        if broker == "schwab":
-            hash_val = os.getenv(cfg.get("hash_env", ""), "")
-            if hash_val:
-                result[label] = {**cfg, "hash": hash_val}
-        elif broker == "robinhood":
-            username = os.getenv(cfg.get("username_env", ""), "")
-            password = os.getenv(cfg.get("password_env", ""), "")
-            if username and password:
-                result[label] = {**cfg}
-        elif broker in ("fidelity_csv", "robinhood_csv"):
-            csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-            if csv_path and os.path.exists(csv_path):
-                result[label] = {**cfg}
-        elif broker == "vanguard_csv":
-            pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
-            csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-            if (pdf_path and os.path.exists(pdf_path)) or (csv_path and os.path.exists(csv_path)):
-                result[label] = {**cfg}
-        # Future brokers: add elif here
-    return result
+    return {label: {**cfg} for label, cfg in ACCOUNTS.items()}
 
 
 def _account_hash_map() -> dict[str, str]:
@@ -1263,164 +1244,52 @@ async def call_tool(name: str, arguments: dict):
             configured = _get_configured_accounts()
             if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
+            # File-based (Schwab/Robinhood live API removed): positions from exported CSVs.
             account = arguments.get("account", "all")
-            from schwab_client import get_all_positions, get_quotes
-
-            results = {}
-            for acct_label, acct_hash in _target_accounts(account):
-                if not acct_hash:
-                    results[acct_label] = {"error": "hash not configured"}
-                    continue
-
-                positions = await get_all_positions(acct_hash)
-                quote_symbols = sorted({
-                    p.get("instrument", {}).get("symbol", "")
-                    for p in positions
-                    if p.get("instrument", {}).get("assetType") == "EQUITY"
-                })
-                quotes = await get_quotes(quote_symbols) if quote_symbols else {}
-                equities = []
-                options = []
-                for p in positions:
-                    inst = p.get("instrument", {})
-                    asset = inst.get("assetType", "")
-                    symbol = inst.get("symbol", "")
-                    qty = float(p.get("longQuantity", 0) or 0) - float(p.get("shortQuantity", 0) or 0)
-                    market_value = float(p.get("marketValue", 0) or 0)
-                    average_price = float(p.get("averagePrice", 0) or 0)
-
-                    if asset == "OPTION":
-                        short_qty = int(p.get("shortQuantity", 0) or 0)
-                        contracts = -short_qty if short_qty else int(qty)
-                        avg_short_price = float(p.get("averageShortPrice", average_price) or 0)
-                        unrealized = (
-                            avg_short_price * 100 * short_qty - abs(market_value)
-                            if short_qty
-                            else market_value - (average_price * max(int(qty), 0) * 100)
-                        )
-                        mark = abs(market_value) / (abs(contracts) * 100) if contracts else 0.0
-                        options.append({
-                            "symbol": inst.get("description", symbol),
-                            "underlying": inst.get("underlyingSymbol") or symbol.split()[0],
-                            "qty": contracts,
-                            "mark": round(mark, 2),
-                            "market_value": round(market_value, 2),
-                            "unrealized_pnl": round(unrealized, 2),
-                        })
-                    elif asset == "EQUITY":
-                        current_price = float(quotes.get(symbol, {}).get("lastPrice", average_price) or 0)
-                        equities.append({
-                            "symbol": symbol,
-                            "qty": int(qty),
-                            "current_price": round(current_price, 2),
-                            "average_price": round(average_price, 2),
-                            "market_value": round(market_value, 2),
-                            "unrealized_pnl": round((current_price - average_price) * qty, 2),
-                        })
-
-                results[acct_label] = {
-                    "equities": sorted(equities, key=lambda x: abs(x["market_value"]), reverse=True),
-                    "options": sorted(options, key=lambda x: abs(x["market_value"]), reverse=True),
-                    "total_positions": len(positions),
-                }
-            # Account D (Robinhood) — if credentials present
-            rh_cfg = _get_configured_accounts().get("D")
-            if rh_cfg and (account == "all" or account == "D"):
-                try:
-                    from robinhood_client import get_robinhood_positions
-                    from analysis.pnl import parse_robinhood_positions
-                    rh_equity, rh_opts = await asyncio.wait_for(
-                        asyncio.get_event_loop().run_in_executor(None, get_robinhood_positions),
-                        timeout=15,
-                    )
-                    rh_positions = parse_robinhood_positions(rh_equity, rh_opts, "D")
-                    equities_d = []
-                    options_d = []
-                    for pos in rh_positions:
-                        if pos.shares > 0:
-                            equities_d.append({
-                                "symbol": pos.symbol,
-                                "qty": pos.shares,
-                                "current_price": round(pos.current_price, 2),
-                                "average_price": round(pos.stock_cost_basis, 2),
-                                "market_value": round(pos.current_price * pos.shares, 2),
-                                "unrealized_pnl": round(pos.stock_pnl, 2),
-                            })
-                        for lg in pos.option_legs:
-                            options_d.append({
-                                "symbol": lg.description,
-                                "underlying": pos.symbol,
-                                "qty": lg.quantity,
-                                "mark": round(lg.current_mark / (abs(lg.quantity) * 100), 2) if lg.quantity else 0,
-                                "market_value": round(lg.current_mark, 2),
-                                "unrealized_pnl": round(lg.premium_received - lg.current_mark, 2),
-                            })
-                    results["D"] = {
-                        "equities": sorted(equities_d, key=lambda x: abs(x["market_value"]), reverse=True),
-                        "options": sorted(options_d, key=lambda x: abs(x["market_value"]), reverse=True),
-                        "total_positions": len(rh_positions),
-                    }
-                except Exception as e:
-                    results["D"] = {"error": f"Robinhood unavailable: {e}"}
+            all_positions = await _load_positions_all(account)
+            results: dict[str, Any] = {}
+            for pos in all_positions:
+                r = results.setdefault(pos.account, {"equities": [], "options": [], "total_positions": 0})
+                r["total_positions"] += 1
+                if getattr(pos, "shares", 0):
+                    r["equities"].append({
+                        "symbol": pos.symbol,
+                        "qty": int(pos.shares),
+                        "current_price": round(pos.current_price, 2),
+                    })
+                for leg in pos.option_legs:
+                    r["options"].append({
+                        "symbol": getattr(leg, "description", pos.symbol),
+                        "underlying": pos.symbol,
+                        "qty": leg.quantity,
+                        "strike": getattr(leg, "strike", None),
+                        "type": leg.option_type,
+                    })
             return [TextContent(type="text", text=json.dumps(results, indent=2))]
 
         elif name == "get_account_summary":
             configured = _get_configured_accounts()
             if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
+            # File-based: live cash balances require broker access (Schwab API removed).
+            # Report per-account position count + short-put collateral from the files.
             account = arguments.get("account", "all")
-            from schwab_client import get_balances
-
+            all_positions = await _load_positions_all(account)
+            by_acct: dict[str, list] = {}
+            for pos in all_positions:
+                by_acct.setdefault(pos.account, []).append(pos)
             results = {}
-            totals = {
-                "buying_power": 0.0,
-                "cash_balance": 0.0,
-                "liquidation_value": 0.0,
-                "available_funds": 0.0,
-            }
-            for acct_label, acct_hash in _target_accounts(account):
-                if not acct_hash:
-                    results[acct_label] = {"error": "hash not configured"}
-                    continue
-                balances = await get_balances(acct_hash)
-                summary = {
-                    "buying_power": round(float(balances.get("buyingPower", 0) or 0), 2),
-                    "cash_balance": round(float(balances.get("cashBalance", 0) or 0), 2),
-                    "liquidation_value": round(float(balances.get("liquidationValue", 0) or 0), 2),
-                    "available_funds": round(float(balances.get("availableFunds", 0) or 0), 2),
+            for acct_label, plist in sorted(by_acct.items()):
+                collateral = sum(
+                    abs(getattr(leg, "strike", 0) or 0) * 100 * abs(leg.quantity)
+                    for pos in plist for leg in pos.option_legs
+                    if leg.quantity < 0 and leg.option_type == "PUT"
+                )
+                results[acct_label] = {
+                    "positions": len(plist),
+                    "short_put_collateral": round(collateral, 2),
+                    "note": "Live cash balance requires broker access — file-based summary.",
                 }
-                results[acct_label] = summary
-                for key in totals:
-                    totals[key] += summary[key]
-            if account == "all":
-                results["totals"] = {key: round(value, 2) for key, value in totals.items()}
-            # Account D (Robinhood) — portfolio summary
-            rh_cfg = _get_configured_accounts().get("D")
-            if rh_cfg and (account == "all" or account == "D"):
-                try:
-                    import robin_stocks.robinhood as rh
-                    from robinhood_client import _ensure_login
-                    if _ensure_login():
-                        profile = rh.account.load_portfolio_profile() or {}
-                        equity_val = float(profile.get("equity", 0) or 0)
-                        last_val = float(profile.get("last_core_equity", equity_val) or equity_val)
-                        day_pnl = equity_val - last_val
-                        results["D"] = {
-                            "equity_value": round(equity_val, 2),
-                            "day_pnl": round(day_pnl, 2),
-                            "buying_power": round(float(profile.get("withdrawable_amount", 0) or 0), 2),
-                            "cash_balance": round(float(profile.get("withdrawable_amount", 0) or 0), 2),
-                            "liquidation_value": round(equity_val, 2),
-                            "available_funds": round(float(profile.get("withdrawable_amount", 0) or 0), 2),
-                        }
-                        if account == "all":
-                            for key in ("equity_value", "liquidation_value"):
-                                totals["liquidation_value"] = totals.get("liquidation_value", 0) + results["D"].get(key, 0)
-                            totals["buying_power"] += results["D"]["buying_power"]
-                        if account == "all":
-                            results["totals"] = {key: round(value, 2) for key, value in totals.items()}
-                except Exception as e:
-                    results["D"] = {"error": f"Robinhood unavailable: {e}"}
             return [TextContent(type="text", text=json.dumps(results, indent=2))]
 
         elif name == "get_position_detail":
