@@ -1126,7 +1126,6 @@ async def call_tool(name: str, arguments: dict):
             configured = _get_configured_accounts()
             if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
-            from analysis.regime import detect_regime
             from analysis.heat_scanner import assess_portfolio_heat
             account_filter = arguments.get("account", "all")
             regime_data = detect_regime()
