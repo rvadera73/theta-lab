@@ -1,6 +1,12 @@
 """
 Theta-lab configuration — persona guardrails and account parameters.
 All thresholds derived from trading_persona.md.
+
+DATA/AUTH POLICY: Analysis runs FILE + YAHOO first — NO Schwab API required.
+Market data/IV/fundamentals from Yahoo; positions/balances/marks from the exported
+CSVs in data/positions/ (option marks from the CSVs or Yahoo option chains). The
+Schwab API is OPTIONAL — needed only to programmatically place/dry-run orders (its
+OAuth refresh token expires ~weekly). Never gate analysis on Schwab credentials.
 """
 
 from dataclasses import dataclass, field
