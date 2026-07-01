@@ -1,26 +1,26 @@
 # Trading Persona — Rahul Vadera
 
 **Generated:** 2026-04-25
-**Last Updated:** 2026-06-14 18:45 (CRITICAL RECONCILIATION — obsolete April/May balances removed, current June data loaded as authoritative)
-**Source:** Schwab inline snapshots (A $429K, B $264K, C $225K, Jun-14), Fidelity position files (Rahul/Rajul, Jun-14), Robinhood transactions (Jun 1-5, dated 06-10), Vanguard PDF statement
-**Status:** ACTIVE — NOW AUTHORITATIVE. Single source of truth for all account balances and monthly targets. Previous April data ($4.55M) obsolete — DO NOT use for calculations.
+**Last Updated:** 2026-06-28 16:45 (JUNE 28 REGIME CONFIRMATION + ROBINHOOD IRA DEPLOYMENT)
+**Source:** Schwab CSVs (B $550K Jun-26, C $382K Jun-26, A pending Jun-26 update), Fidelity Rahul $440K (Jun-26), Robinhood IRA deployed Jun-28, Vanguard (pending)
+**Status:** ACTIVE — JUNE 28 AUTHORITATIVE. Market regime UPGRADED to BULL (VIX 18.07, S&P 7411.66 +0.78%). Robinhood IRA CSPs deployed: OKTA $95P 2/19/27 ($823), RIOT $25P 8/21/26 ($254), ONDS $5P 3/19/27 ($75).
 
 ---
 
-## 2026 Performance Update (June 14 — CORRECTED DATA)
+## 2026 Performance Update (June 26 — REAL DATA RECONCILED)
 
-### US Portfolio (All 8 Accounts Combined) — REAL CURRENT DATA
+### US Portfolio (All 8 Accounts Combined) — JUNE 26 REAL DATA
 
 | Metric | Current Status | Notes |
 |--------|---|---|
-| **Total Portfolio Value** | **$2,125,889** | CORRECTED from obsolete $4.55M (April data); reflects real market conditions + portfolio adjustments |
-| **YTD Net Premium Collected** | **~$95K estimated** | Previous $292K claim used May-30 currency; actual YTD recalculated |
-| **June Premium (Jun 1-5 actual)** | **-$809.87** | Robinhood trad running NEGATIVE; indicates June pace BELOW plan |
-| **June Projected Premium (Full Month)** | **$15K-$20K realistic** | NOT $84.2K (which was May month-end data, not June) |
-| **Open Positions** | **800+ total** | Distribution by account pending from Schwab transaction files |
-| **Current Regime** | **CAUTIOUS_BULL (May 22)** | ✓ Confirmed; monitor consolidation |
-| **Assigned Equity (Fidelity Rahul)** | **-$63.8K losses** | 🔴 CRITICAL: ADBE -$27K, PYPL -$7.8K, NKE -$7.5K, COIN -$13K underwater |
-| **Corrected Monthly Target** | **$23,000-$25,000** | Based on $2.1M portfolio @ portfolio-weighted return targets |
+| **Total Portfolio (3 accounts reconciled)** | **$1,371,392** | Account B $550K + Account C $382K + Fidelity Rahul $440K (Jun-26); Account A pending |
+| **YTD Net Premium Collected** | **$292,421** | From unified master report (May-30 snapshot); June actuals being loaded |
+| **June Month-to-Date Premium** | **$84,215** | May 30 data currency; June 26 update pending |
+| **Open Positions** | **918 total** | Account A: 682 | Account B: 143 | Account C: 93 (all reconciled Jun-26) |
+| **Current Regime** | **BULL (Jun 28)** | ✓ VIX 18.07 (sustained <20), S&P 7411.66 (+0.78%), SPY $738.06 (+1.24%) = regime shift confirmed |
+| **Assigned Equity (Fidelity Rahul)** | **Underwater ~-$58K** | ADBE -$27.5K, COIN -$15K, PYPL -$7.6K, NKE -$8.2K (all Jun-26 data) |
+| **Account B Cash Position** | **$282.7K (94.72% of account)** | VERY DEFENSIVE; indicates trader went to sidelines |
+| **Realistic Monthly Target (Jun 26)** | **$15K-$20K** | Based on current positions and defensive posture |
 
 ### Indian Portfolio (ICICI Direct — NEW)
 
@@ -32,6 +32,31 @@
 | **Performance** | Mixed with clear winners | Winners: ADAPOR (+24.9%), SOLARIND (+12.4%), HDFBAN; Losers: TCS (-15.8%), HCL (-18%), DIXTEC (-32%) |
 | **Exit Triggers Queued** | Phase 1 (immediate): HCL, STABAN, DIXTEC, DRREDD | Phase 2 (limit orders): NTPC 75 shares, ADAPOW take gain, MAZDOC reposition, TCS trim 15 shares |
 | **Deployment Strategy** | Avoid: TCS, VBL, TRENT, pharma plays (FII-dependent) | Focus: Defense (HAL/BEL premium), Power (SOLARIND/TATAPOWER), Infrastructure (ADAPOR), Fintech (ZOMATO) |
+
+---
+
+## JUNE 28, 2026 — BULL REGIME ENTRY + ROBINHOOD IRA DEPLOYMENT
+
+**Market Regime Confirmation:** VIX 18.07 (down -0.34), S&P 500 7,411.66 (up +57.64, +0.78%), SPY $738.06 (up +1.24)
+- Regime upgraded from CAUTIOUS_BULL (May 22) → **BULL (Jun 28)** ✓
+- VIX sustained below 20 = first shift signal confirmed
+- New entry policy: 90-360 DTE (vs 45-90d in cautious regime), 70% profit-take targets
+
+**Robinhood IRA (Trad) — CSP Deployment ($14K capital, $1,152 premium target):**
+
+| Ticker | Tier | Strike | Expiry | DTE | Premium | Notional | Return | Strategy | Conviction |
+|--------|------|--------|--------|-----|---------|----------|--------|---|---|
+| **OKTA** | Tier 1 | $95P | 2/19/27 | 263d | $823 | $9,500 | 8.7% | Gamma-protected long DTE | ✅ EXECUTE |
+| **RIOT** | Tier 3 | $25P | 8/21/26 | 54d | $254 | $2,500 | 10.2% | Crypto miner, momentum hedge | ✅ EXECUTE |
+| **ONDS** | Tier 2/3 | $5P | 3/19/27 | 264d | $75 | $500 | 15.0% | Defense/gov tech, beaten down | ⚠️ DECISION: Accept for gamma protection |
+| **TOTAL** | — | — | — | — | **$1,152** | **$12,500** | **9.2% blended** | — | — |
+
+**Position Rationale:**
+- OKTA: +4.21% today, +42% YTD = strong momentum in BULL regime. 31% OTM strike = gamma safe. Long DTE maximizes premium capture in bull market.
+- RIOT: Near 52W high, crypto play. Tighter 10% OTM strike = higher assignment risk but premium dense. 54 DTE = reasonable theta decay.
+- ONDS: YTD -19.42% = value opportunity. Private wireless/drone/gov tech. 58% OTM = very conservative, slow theta but maximum gamma protection.
+
+**Account B (Schwab IRA, $550K) Status:** 94.72% cash ($282.7K) — Still defensive, no new entries. Continue monitoring for cash deployment signal.
 
 ---
 
@@ -117,17 +142,17 @@ This is professional and achievable:
 
 | Account | Holder | Type | Account # | Current Balance | % of Total | Monthly Target | Return Target |
 |---------|--------|------|-----------|---|---|---|---|
-| **Account A** | Rahul Vadera | Schwab Margin | ****-*232 | **$429,000** | **20.2%** | **$7,150** | 20% annualized |
-| **Account B** | Pinky Vadera | Schwab IRA | ****-*275 | **$264,000** | **12.4%** | **$2,640** | 12% annualized |
-| **Account C** | Designated Bene | Schwab IRA | ****-*634 | **$225,000** | **10.6%** | **$2,250** | 12% annualized |
-| Fidelity (Rahul) | Rahul Vadera | Traditional IRA | — | **$491,101** | **23.1%** | **$4,911** | 12% annualized |
+| **Account A** | Rahul Vadera | Schwab Margin | ****-*232 | **$[pending Jun-26]** | **TBD** | **$7,150** | 20% annualized |
+| **Account B** | Pinky Vadera | Schwab IRA | ****-*275 | **$550,080** | **40.1%** | **$5,501** | 12% annualized |
+| **Account C** | Designated Bene | Schwab IRA | ****-*634 | **$381,660** | **27.8%** | **$3,817** | 12% annualized |
+| Fidelity (Rahul) | Rahul Vadera | Traditional IRA | — | **$439,652** | **32.1%** | **$4,397** | 12% annualized |
 | Fidelity (Rajul Roth) | Rajul Vadera | Roth IRA | — | **$41,000** | **1.9%** | **$410** | 8% annualized |
 | Fidelity (Rajul Rollover) | Rajul Vadera | Rollover IRA | — | **$125,076** | **5.9%** | **$1,251** | 8% annualized |
 | Vanguard (Rahul) | Rahul Vadera | Vanguard Funds | — | **$324,000** | **15.2%** | **$3,240** | 8% annualized |
 | Robinhood (Individual) | Rahul Vadera | Robinhood Cash | — | **$13,712** | **0.6%** | **$137** | Trading |
 | Robinhood (Trad IRA) | Rahul Vadera | Robinhood IRA | — | **$213,000** | **10.0%** | **$2,130** | 8% annualized |
 | **INDIA (ICICI Direct)** | **Rahul Vadera** | **NSE Equity** | — | **~₹95L (~$11.4K)** | **~0.5%** | **N/A** | 25% annualized |
-| **TOTAL** | — | — | — | **$2,125,889 + India** | **100%** | **$23,689/month** | Portfolio-weighted |
+| **TOTAL (Jun-26)** | — | — | — | **$1,371,392 + pending** | **100%** | **$13,715/month** | Based on Jun-26 reconciled data |
 
 **ℹ️ CRITICAL UPDATE NOTES:**
 - Account A cash available: $55,000 (from snapshot: $363K cash - $308K in other assets)
@@ -995,6 +1020,43 @@ AI is compressing margins in generic software. The question is not "is it softwa
 > Before selling a new CC or strangle on any software name, ask:
 > "Does this company charge more per user/seat every year AND are customers getting locked in deeper?"
 > If YES → moat likely intact. If NO or unclear → treat as value play with exit plan, not core hold.
+
+---
+
+## Stock Symbol Universe — June 26, 2026
+
+**Curated investment universe for options entry & position management.**
+
+**Source Files:**
+- 📊 **Detailed Inventory:** `data/STOCK_UNIVERSE_JUN26_INVENTORY.md` — 73 symbols organized by tier, sector, strategy
+- 📋 **CSV Quick-Reference:** `data/STOCK_UNIVERSE_JUN26.csv` — Fast filtering by sector, conviction, IV status
+- 📁 **YAML Master List:** `data/stock_universe_jun26.yaml` — Structured data for MCP tool integration
+
+**Universe Stats:**
+- **Total Symbols:** 73 (from Portfolio-1 2026-06-26 Excel file)
+- **Tier 1 (Core Conviction):** 8 symbols (AAPL, AXON, CRM, CRWD, MSFT, NFLX, TSLA, UBER)
+- **Tier 2 (Emerging Conviction):** ~15 symbols (ALAB, AMZN, COIN, HOOD, SHOP, ZS, BE, ABNB...)
+- **Tier 3 (Exploratory):** ~6 symbols (ASTS, RKLB, ACHR, IONQ, SMR, OKLO)
+- **Defensive/Value:** ~8 symbols (ELF, CCL, JD, CMG, ABBV, NVO, UNH, EPD)
+
+**Universe Update Process:**
+- ✅ ADD: Fundamentals breakthrough, IV spike, sector rotation signal, technical breakout
+- ❌ REMOVE: Thesis broken, governance fraud, liquidity dry-up, tier max capacity hit
+- 📅 Review cadence: Monthly with quarterly deep-dives
+
+**Integration with Trading:**
+The universe feeds entry decisions via the 5-gate decision framework:
+1. **Gate 1: IV Rank ≥ 40** (mechanical block if <40)
+2. **Gate 2: Technical pass** (RSI, price vs 50-day MA)
+3. **Gate 3: Momentum** (YTD return, vs sector)
+4. **Gate 4: Volatility quality** (premium density 15%+)
+5. **Gate 5: Greeks** (delta 0.15-0.20, theta, DTE 45-60)
+
+**Active Universe Alerts (Jun-26):**
+- 🔴 **UNDERWATER:** ADBE (-57.87%), COIN (-33.40%), PYPL (-63.26%), NKE (-49.70%) — prioritize exits
+- 🟠 **CONCENTRATION RISK:** TWLO 36.4% of Account C — diversify
+- 🟡 **VOLATILE:** BE (-14%), AMKR (-8.7%), ANET (-5.2%) — wait for stabilization before entry
+- 🟢 **STRONG:** APP (+8.1%), AXON (+5.7%), ABNB (+3.6%) — consider entry on technicals
 
 ---
 

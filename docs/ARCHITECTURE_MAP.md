@@ -4,6 +4,26 @@
 > script does, what input files it needs and from where, and where scripts overlap or
 > duplicate each other.
 
+## ✅ UPDATE (2026-06-30) — post-consolidation state
+
+The consolidation described below is DONE. Current truth:
+- **Reports:** MCP tool `generate_unified_master_report` → `unified_master_report_production.py`
+  → `open_positions_loader_v2` (all 9 accounts, from CSVs). The old CLI engine + duplicate
+  report scripts were deleted.
+- **Live MCP tools** (`get_portfolio_pnl`, `scan_profit_take_candidates`, `get_live_positions`,
+  `get_account_summary`, etc.) → `report_utils.load_us_positions` → **file-based** for every
+  broker (Schwab reconstructed from exported CSVs; Fidelity/Vanguard/Robinhood from CSVs).
+- **Data & Auth policy:** analysis is **file (exported CSVs) + Yahoo (market data/IV) only —
+  NO Schwab API.** `schwab_client.py` and `scripts/schwab_auth.py` were **deleted**; no broker
+  tokens are needed. Schwab remains only as account *labels* (A/B/C), loaded from files.
+- **Account-file contract:** `data/account_files.yaml` (canonical `brokerage_name[_type].csv`).
+- **New:** `monthly_premium.py` (YTD trend), `factor_screener.py` (multi-factor screen).
+- **Pruned:** `mcp/reports.archive/` (entire dead tree) and the stale `skills/options_trader.md`.
+
+The sections below are the original analysis that drove this consolidation (kept for history).
+
+---
+
 ## TL;DR — the single most important thing
 
 There are **two completely separate report engines** that both claim to produce the
