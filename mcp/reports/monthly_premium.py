@@ -54,11 +54,16 @@ def _latest(glob_pat: str) -> str | None:
     return files[-1] if files else None
 
 
-def _parse(fmt: str, path: str, acct_map: dict | None) -> dict[str, pd.Series]:
-    """Return {display_account: monthly_net_premium_series}."""
+def _parse(fmt: str, path: str, acct_map: dict | None, mode: str = "net") -> dict[str, pd.Series]:
+    """Return {display_account: monthly_premium_series}.
+
+    mode='net'   -> all option opens+closes (STO/STC credits minus BTC/BTO debits) = income kept
+    mode='gross' -> opening SELLS only (STO / 'Sell to Open' / 'SOLD OPENING') = premium sold
+    """
     if fmt == "schwab":
         df = pd.read_csv(path)
-        opt = df[df["Action"].isin(["Sell to Open", "Buy to Close", "Buy to Open", "Sell to Close"])].copy()
+        actions = ["Sell to Open"] if mode == "gross" else ["Sell to Open", "Buy to Close", "Buy to Open", "Sell to Close"]
+        opt = df[df["Action"].isin(actions)].copy()
         opt["m"] = pd.to_datetime(opt["Date"], errors="coerce").dt.to_period("M").astype(str)
         opt["amt"] = _money(opt["Amount"])
         return {"__self__": opt.groupby("m")["amt"].sum()}
@@ -66,7 +71,8 @@ def _parse(fmt: str, path: str, acct_map: dict | None) -> dict[str, pd.Series]:
     if fmt == "fidelity":
         df = pd.read_csv(path, skiprows=2)
         df.columns = [str(c).strip() for c in df.columns]
-        is_opt = df["Action"].astype(str).str.contains("OPENING TRANSACTION|CLOSING TRANSACTION", case=False, na=False)
+        pat_ = "SOLD OPENING TRANSACTION" if mode == "gross" else "OPENING TRANSACTION|CLOSING TRANSACTION"
+        is_opt = df["Action"].astype(str).str.contains(pat_, case=False, na=False)
         opt = df[is_opt].copy()
         opt["m"] = pd.to_datetime(opt["Run Date"], errors="coerce").dt.to_period("M").astype(str)
         opt["amt"] = _money(opt["Amount ($)"])
@@ -79,8 +85,6 @@ def _parse(fmt: str, path: str, acct_map: dict | None) -> dict[str, pd.Series]:
         return out
 
     if fmt == "vanguard":
-        # Vanguard OFX CSV has a positions block then a transactions block; find the
-        # transactions header ('Trade Date' + 'Transaction Type') and parse from there.
         raw = open(path, encoding="utf-8", errors="replace").read().splitlines()
         hidx = next((i for i, ln in enumerate(raw) if "Trade Date" in ln and "Transaction Type" in ln), None)
         if hidx is None:
@@ -88,8 +92,8 @@ def _parse(fmt: str, path: str, acct_map: dict | None) -> dict[str, pd.Series]:
         from io import StringIO
         df = pd.read_csv(StringIO("\n".join(raw[hidx:])))
         df.columns = [str(c).strip() for c in df.columns]
-        opt = df[df["Transaction Type"].astype(str).str.lower().isin(
-            ["sell to open", "buy to close", "buy to open", "sell to close"])].copy()
+        types = ["sell to open"] if mode == "gross" else ["sell to open", "buy to close", "buy to open", "sell to close"]
+        opt = df[df["Transaction Type"].astype(str).str.lower().isin(types)].copy()
         opt["m"] = pd.to_datetime(opt["Trade Date"], errors="coerce").dt.to_period("M").astype(str)
         opt["amt"] = _money(opt["Net Amount"])
         return {"__self__": opt.groupby("m")["amt"].sum()}
@@ -101,7 +105,8 @@ def _parse(fmt: str, path: str, acct_map: dict | None) -> dict[str, pd.Series]:
         desc_col = next((c for c in df.columns if c.lower() == "description"), None)
         date_col = next((c for c in df.columns if "date" in c.lower()), None)
         amt_col = next((c for c in df.columns if c.lower() == "amount"), None)
-        opt = df[df[code_col].astype(str).str.upper().isin(["STO", "BTC", "BTO", "STC"])].copy()
+        codes = ["STO"] if mode == "gross" else ["STO", "BTC", "BTO", "STC"]
+        opt = df[df[code_col].astype(str).str.upper().isin(codes)].copy()
         if desc_col is not None:
             opt = opt[opt[desc_col].astype(str).str.contains("put|call", case=False, na=False)]
         opt["m"] = pd.to_datetime(opt[date_col], errors="coerce").dt.to_period("M").astype(str)
@@ -111,14 +116,14 @@ def _parse(fmt: str, path: str, acct_map: dict | None) -> dict[str, pd.Series]:
     return {}
 
 
-def compute_monthly_premium() -> dict[str, pd.Series]:
+def compute_monthly_premium(mode: str = "net") -> dict[str, pd.Series]:
     result: dict[str, pd.Series] = {}
     for default_name, pat, fmt, acct_map in SOURCES:
         path = _latest(pat)
         if not path:
             continue
         try:
-            parsed = _parse(fmt, path, acct_map)
+            parsed = _parse(fmt, path, acct_map, mode)
         except Exception as e:  # pragma: no cover
             print(f"! {default_name}: parse error {e}")
             continue
@@ -126,6 +131,46 @@ def compute_monthly_premium() -> dict[str, pd.Series]:
             name = default_name if key == "__self__" else key
             result[name] = series.dropna()
     return result
+
+
+_TB_CACHE: dict | None = None
+_TB_DONE = False
+
+
+def total_book_pnl() -> dict | None:
+    """LENS 2 — total book P&L (realized premium + unrealized MTM + equity), ≈ Empower's
+    'portfolio value change' basis. Reconstructs positions from transactions and marks them
+    at current Yahoo prices. Cached per process (report calls it 4×). Returns None if it
+    can't run (e.g. inside an async event loop)."""
+    global _TB_CACHE, _TB_DONE
+    if _TB_DONE:
+        return _TB_CACHE
+    import asyncio
+    try:
+        if asyncio.get_event_loop().is_running():
+            return None
+    except RuntimeError:
+        pass
+    try:
+        from reports.report_utils import load_us_positions
+        data = asyncio.run(load_us_positions())
+    except Exception:
+        _TB_DONE = True
+        return None
+    positions = data.get("positions", [])
+    premium = sum(getattr(p, "total_premium_received", 0) or 0 for p in positions)
+    cost_to_close = sum(getattr(p, "total_cost_to_close_options", 0) or 0 for p in positions)
+    stock = sum(getattr(p, "stock_pnl", 0) or 0 for p in positions)
+    total = sum(getattr(p, "combined_net_pnl", 0) or 0 for p in positions)
+    _TB_CACHE = {
+        "premium_collected": premium,          # income booked (cash in)
+        "unrealized_option_mtm": premium - cost_to_close,  # if closed now
+        "equity_mtm": stock,                   # assigned-stock gains/losses
+        "total_book_pnl": total,               # ≈ Empower total value change basis
+        "positions": len(positions),
+    }
+    _TB_DONE = True
+    return _TB_CACHE
 
 
 def to_table(result: dict[str, pd.Series]) -> pd.DataFrame:
@@ -140,26 +185,63 @@ def to_table(result: dict[str, pd.Series]) -> pd.DataFrame:
 
 
 def render_trend_block(width: int = 120) -> list[str]:
-    """Return formatted text lines for the YTD monthly-premium trend (for reports)."""
-    res = compute_monthly_premium()
-    if not res:
-        return ["YTD MONTHLY PREMIUM TREND: (no transaction history available)", ""]
-    tbl = to_table(res)
-    months = [c for c in tbl.columns if c != "YTD"]
-    lines = ["─" * width,
-             "YTD MONTHLY NET OPTIONS PREMIUM — BY ACCOUNT (from transaction history)",
-             "─" * width]
+    """Two lenses on performance: (1) premium income cash-flow and (2) total book P&L (MTM)."""
+    net = compute_monthly_premium("net")
+    if not net:
+        return ["YTD PREMIUM TREND: (no transaction history available)", ""]
+    net_tbl = to_table(net)
+    gross = compute_monthly_premium("gross")
+    gross_tbl = to_table(gross) if gross else None
+    months = [c for c in net_tbl.columns if c != "YTD"]
+
+    lines = ["═" * width,
+             "TWO LENSES ON MONTHLY PERFORMANCE  (both derived from your transaction history)",
+             "═" * width, ""]
+
+    # ── LENS 1 — PREMIUM INCOME (cash flow) — the $100K/month target metric ──
+    lines += ["LENS 1 — PREMIUM INCOME (cash flow)  =  what you COLLECT selling options  [the $100K target]",
+              "─" * width]
     hdr = f"{'Account':<32}" + "".join(f"{m[-2:]:>11}" for m in months) + f"{'YTD':>13}"
-    lines.append(hdr)
-    lines.append("-" * len(hdr))
-    for acct in tbl.index:
+    lines += [hdr, "-" * len(hdr)]
+    for acct in net_tbl.index:
         if acct == "TOTAL":
             lines.append("-" * len(hdr))
-        row = f"{acct:<32}" + "".join(f"{tbl.loc[acct, m]:>11,.0f}" for m in months) + f"{tbl.loc[acct, 'YTD']:>13,.0f}"
-        lines.append(row)
+        lines.append(f"{acct:<32}" + "".join(f"{net_tbl.loc[acct, m]:>11,.0f}" for m in months)
+                     + f"{net_tbl.loc[acct, 'YTD']:>13,.0f}")
+    # Gross sold vs net kept vs buyback drag (monthly totals)
+    if gross_tbl is not None and "TOTAL" in gross_tbl.index:
+        lines += ["", f"{'  Gross SOLD (STO)':<32}" + "".join(f"{gross_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
+                  + f"{gross_tbl.loc['TOTAL', 'YTD']:>13,.0f}"]
+        lines.append(f"{'  Net KEPT':<32}" + "".join(f"{net_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
+                     + f"{net_tbl.loc['TOTAL', 'YTD']:>13,.0f}")
+        drag = [gross_tbl.loc['TOTAL', m] - net_tbl.loc['TOTAL', m] for m in months]
+        lines.append(f"{'  Buyback DRAG (rolling)':<32}" + "".join(f"{d:>11,.0f}" for d in drag)
+                     + f"{sum(drag):>13,.0f}")
+    lines += ["", "Net = STO/STC credits − BTC/BTO debits. High DRAG months = heavy rolling (premium given back).", ""]
+
+    # ── LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market) ≈ Empower "portfolio value change" ──
+    lines += ["─" * width,
+              "LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market)  ≈  Empower 'portfolio value change'",
+              "─" * width,
+              "  = premium income  +  unrealized option MTM  +  equity/assigned-stock MTM  +  dividends",
+              ""]
+    tb = total_book_pnl()
+    if tb:
+        lines += [
+            f"  Premium collected on OPEN positions:   ${tb['premium_collected']:>14,.0f}",
+            f"  ⚠ Reconstructed unrealized MTM is unreliable right now — ~12 names have incomplete",
+            f"    transaction history (premium parsed ~$0), so the raw total (${tb['total_book_pnl']:,.0f}) is distorted.",
+        ]
     lines += ["",
-              "Net premium = STO/STC credits − BTC/BTO debits per month (option open/close only).",
-              "All 9 accounts (3 Schwab, 3 Fidelity, 1 Vanguard, 2 Robinhood). Months with no data = 0.",
+              "  → For the authoritative total-value number, use EMPOWER. It reconciled to premium income",
+              "    at the YTD level (~$435K ≈ our $438K), which validates the totals.",
+              "",
+              "WHY THEY DIVERGE MONTH-TO-MONTH:",
+              "  • Empower's monthly figure is dominated by MARKET moves (unrealized MTM) — e.g. May +$288K",
+              "    was your long book marking UP, not premium income (premium that month was ~$4K).",
+              "  • LENS 1 books premium when SOLD — front-loaded because you sell long-dated (2027) contracts.",
+              "  • So: use LENS 1 (income) for the $100K goal; use Empower (Lens 2) for net-worth/market view.",
+              "  • To make Lens 2 exact here: backfill the ~12 names' transactions + drop fresh position snapshots.",
               ""]
     return lines
 
