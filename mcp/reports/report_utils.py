@@ -485,6 +485,27 @@ def fallback_us_positions() -> dict[str, Any]:
     }
 
 
+_SNAPSHOT_HOLDINGS_CACHE: set | None = None
+
+
+def _snapshot_holdings() -> set:
+    """Ground-truth held tickers from the position SNAPSHOTS (accurate, no phantoms).
+    Uses open_positions_loader_v2 but skips the Yahoo price fetch for speed. Cached."""
+    global _SNAPSHOT_HOLDINGS_CACHE
+    if _SNAPSHOT_HOLDINGS_CACHE is not None:
+        return _SNAPSHOT_HOLDINGS_CACHE
+    try:
+        import sys
+        sys.path.insert(0, "/home/rahulvadera/projects/theta-lab/scripts")
+        from open_positions_loader_v2 import OpenPositionsLoaderV2
+        loader = OpenPositionsLoaderV2()
+        loader.load_all_data()  # full load (cached once per process)
+        _SNAPSHOT_HOLDINGS_CACHE = set(loader.open_positions["ticker"].dropna().str.upper().unique())
+    except Exception:
+        _SNAPSHOT_HOLDINGS_CACHE = set()
+    return _SNAPSHOT_HOLDINGS_CACHE
+
+
 def reconstruct_positions_from_transactions(account: str = "A") -> list[Position] | None:
     """
     Reconstruct current positions from transaction history (fallback when live API unavailable).
@@ -500,8 +521,9 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
     if not pattern:
         return None
 
-    # Find latest transaction file
-    txn_files = list(STATEMENTS_DIR.glob(pattern))
+    # Find latest transaction file — prefer data/positions/ (current, per the file contract),
+    # fall back to data/statements/. Newest by mtime wins.
+    txn_files = list((DATA_DIR / "positions").glob(pattern)) + list(STATEMENTS_DIR.glob(pattern))
     if not txn_files:
         return None
     txn_file = max(txn_files, key=lambda x: x.stat().st_mtime)
@@ -535,12 +557,17 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
                     positions_dict[underlying]["contracts"][symbol] += qty
                 elif "Buy to Close" in action or "BTC" in action:
                     positions_dict[underlying]["contracts"][symbol] -= qty
+                elif "Assigned" in action or "Expired" in action:
+                    # short option closed by assignment/expiration — net it out
+                    positions_dict[underlying]["contracts"][symbol] -= abs(qty)
 
         # Convert to Position objects
         result = []
         for underlying in sorted(positions_dict.keys()):
             contracts = positions_dict[underlying]["contracts"]
-            live_contracts = {sym: qty for sym, qty in contracts.items() if qty != 0}
+            # Only NET-POSITIVE = genuine open short (STO not yet closed). Net-negative =
+            # orphaned Buy-to-Close whose Sell-to-Open predates this file window (phantom).
+            live_contracts = {sym: qty for sym, qty in contracts.items() if qty > 0}
 
             if live_contracts:
                 # Create Position with live option legs
@@ -562,6 +589,8 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
                         opt_type = "CALL" if opt_match.group(4) == "C" else "PUT"
                         expiry = datetime.strptime(expiry_str, "%m/%d/%Y").date()
                         dte = (expiry - date.today()).days
+                        if dte < 0:
+                            continue  # expired — no longer an open position
 
                         leg = OptionLeg(
                             option_type=opt_type,
@@ -649,13 +678,24 @@ async def load_us_positions() -> dict[str, Any]:
         except Exception:
             pass  # never block on one account
 
+    # If the live parsers produced nothing, use the fallback dataset as the source.
+    data_source = "LIVE"
     if not all_positions:
-        return fallback_us_positions()
+        fb = fallback_us_positions()
+        all_positions = fb.get("positions", [])
+        data_source = fb.get("data_source", "SNAPSHOT")
+
+    # Ground-truth filter (applies to BOTH parser and fallback positions): drop any
+    # position not in the actual position snapshots — removes phantoms from
+    # incomplete/orphaned transaction history.
+    holdings = _snapshot_holdings()
+    if holdings:
+        all_positions = [p for p in all_positions if str(p.symbol).upper() in holdings]
 
     return {
         "positions": all_positions,
         "balances": balances,
-        "data_source": "LIVE",
+        "data_source": data_source,
         "warning": None,
         "snapshot": load_snapshot(),
         "transactions": load_account_transactions(),
