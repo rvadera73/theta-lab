@@ -157,7 +157,12 @@ def total_book_pnl() -> dict | None:
     except Exception:
         _TB_DONE = True
         return None
-    positions = data.get("positions", [])
+    all_pos = data.get("positions", [])
+    # Only positions with COMPLETE entry data — exclude ones opened before the transaction
+    # window (premium ~0), which would otherwise distort MTM. (Per user: none closed recently,
+    # so these are simply pre-2026 opens we lack the entry premium for.)
+    positions = [p for p in all_pos if (getattr(p, "total_premium_received", 0) or 0) >= 50]
+    excluded = len(all_pos) - len(positions)
     premium = sum(getattr(p, "total_premium_received", 0) or 0 for p in positions)
     cost_to_close = sum(getattr(p, "total_cost_to_close_options", 0) or 0 for p in positions)
     stock = sum(getattr(p, "stock_pnl", 0) or 0 for p in positions)
@@ -168,6 +173,7 @@ def total_book_pnl() -> dict | None:
         "equity_mtm": stock,                   # assigned-stock gains/losses
         "total_book_pnl": total,               # ≈ Empower total value change basis
         "positions": len(positions),
+        "excluded": excluded,                  # pre-window opens (no entry premium)
     }
     _TB_DONE = True
     return _TB_CACHE
@@ -225,17 +231,16 @@ def render_trend_block(width: int = 120) -> list[str]:
               "─" * width,
               "  = premium income  +  unrealized option MTM  +  equity/assigned-stock MTM  +  dividends",
               ""]
-    tb = total_book_pnl()
-    if tb:
-        lines += [
-            f"  Premium collected on OPEN positions:   ${tb['premium_collected']:>14,.0f}",
-            f"  ⚠ Reconstructed unrealized MTM is unreliable right now — ~12 names have incomplete",
-            f"    transaction history (premium parsed ~$0), so the raw total (${tb['total_book_pnl']:,.0f}) is distorted.",
-        ]
-    lines += ["",
-              "  → For the authoritative total-value number, use EMPOWER. It reconciled to premium income",
-              "    at the YTD level (~$435K ≈ our $438K), which validates the totals.",
-              "",
+    lines += [
+        "  Total value = premium income (LENS 1, accurate) + unrealized option MTM + equity MTM + dividends.",
+        "  The MTM parts need CURRENT option marks, which live in your POSITION-SNAPSHOT exports (or live",
+        "  quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are",
+        "  stale). Transactions give income; marks give value — you need both, from different exports.",
+        "",
+        "  → Use EMPOWER for the authoritative total value. It reconciled to income at the YTD level",
+        "    (~$435K ≈ $438K), which validates the numbers.",
+        "  → To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).",
+        "",
               "WHY THEY DIVERGE MONTH-TO-MONTH:",
               "  • Empower's monthly figure is dominated by MARKET moves (unrealized MTM) — e.g. May +$288K",
               "    was your long book marking UP, not premium income (premium that month was ~$4K).",
