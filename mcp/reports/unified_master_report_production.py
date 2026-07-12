@@ -1151,6 +1151,9 @@ class UnifiedReportProduction:
         output.append("- Next data export: Daily position updates from all brokers")
         output.append("")
 
+        # WEEKLY EXECUTION PLAN (put/call + DTE aware — added per user request)
+        output.extend(self._format_weekly_execution_plan())
+
         # FOOTER
         output.append("=" * 120)
         output.append(f"Report generated: {today.isoformat()}")
@@ -1158,6 +1161,103 @@ class UnifiedReportProduction:
         output.append("=" * 120)
 
         return "\n".join(output)
+
+    def _format_weekly_execution_plan(self) -> list:
+        """Put/call + DTE-aware weekly execution plan (reliable: uses snapshot positions +
+        metrics, not the reconstruction P&L). Rules:
+          - short PUTS (OTM, 45-90 DTE): HOLD to 50-70% (don't close early = the premium leak)
+          - short CALLS: manage on DELTA (roll up/close), esp <30 DTE in a bull regime
+          - anything <21 DTE: take/roll (gamma zone)
+        """
+        import re
+        from datetime import date as _date
+        regime = (self.regime_data or {}).get("regime", "BULL")
+        out = ["=" * 120,
+               "WEEKLY EXECUTION PLAN  —  put/call + DTE aware",
+               f"  Regime: {regime}.  short PUTS (OTM, 45-90 DTE) → hold to 50-70%;  short CALLS → manage on",
+               "  DELTA (roll up+out / close, esp <30 DTE — theta won't save a tested call);  <21 DTE → take (gamma).",
+               "=" * 120, ""]
+
+        def _dte(sym):
+            s = str(sym)
+            m = re.search(r"(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})", s)
+            if m:
+                mo, d, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                y = y + 2000 if y < 100 else y
+                try:
+                    return (_date(y, mo, d) - _date.today()).days
+                except Exception:
+                    return None
+            m = re.search(r"(\d{2})(\d{2})(\d{2})[CP]", s)
+            if m:
+                try:
+                    return (_date(2000 + int(m.group(1)), int(m.group(2)), int(m.group(3))) - _date.today()).days
+                except Exception:
+                    return None
+            return None
+
+        from collections import defaultdict
+        # Best-effort near-expiry takes (per-contract where DTE parses)
+        take = defaultdict(lambda: {"legs": 0, "dtes": []})
+        try:
+            for _, r in self.open_positions.iterrows():
+                tk = str(r.get("ticker", "")).upper()
+                dte = _dte(r.get("symbol", ""))
+                if tk and tk != "NAN" and dte is not None and 0 <= dte < 21:
+                    take[tk]["legs"] += 1
+                    take[tk]["dtes"].append(dte)
+        except Exception:
+            pass
+
+        # Ticker-level RSI/conviction/heat (reliable) drives manage-vs-hold
+        reduce_, letrun = [], []
+        for tk, m in (self.metrics or {}).items():
+            rsi = m.get("rsi") or 50
+            conv = m.get("conviction") or 5
+            heat = str(m.get("heat_status", "")).upper()
+            if rsi >= 65 or "RED" in heat:
+                reduce_.append((tk, rsi, conv))
+            elif rsi <= 48 and conv >= 6:
+                letrun.append((tk, rsi, conv))
+
+        out.append("🔻 REDUCE / MANAGE  (overbought RSI≥65 or RED heat):")
+        out.append("   short CALLS here → roll up+out for credit or close (delta risk, theta won't save them);")
+        out.append("   short PUTS here → near max profit, fine to take.")
+        for tk, rsi, conv in sorted(reduce_, key=lambda x: -x[1])[:12]:
+            out.append(f"    {tk:6} RSI {rsi:>4.0f}  conv {conv:>3.1f}")
+        if not reduce_:
+            out.append("    (none overbought)")
+        out.append("")
+
+        out.append("⏳ TAKE / ROLL  (<21 DTE — gamma zone, don't hold to expiry):")
+        if take:
+            for tk, a in sorted(take.items(), key=lambda x: min(x[1]["dtes"]) if x[1]["dtes"] else 99):
+                out.append(f"    {tk:6} {a['legs']} leg(s) @ DTE {sorted(a['dtes'])}")
+        else:
+            out.append("    (none parsed under 21 DTE)")
+        out.append("")
+
+        out.append("✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to 50-70%, DON'T close early = the leak):")
+        if letrun:
+            out.append("    " + ", ".join(f"{tk}" for tk, _, _ in sorted(letrun, key=lambda x: x[1])))
+        else:
+            out.append("    (none)")
+        out.append("")
+
+        out.append("▶️ NEW ENTRIES  (redeploy freed collateral — 45-60 DTE CSP, delta 0.15-0.20, no new AI):")
+        buy = []
+        try:
+            for name, d in (self.sector_summary or {}).items():
+                if d.get("signal_type") == "ATTRACTION":
+                    buy.append(name)
+        except Exception:
+            pass
+        out.append(f"    🟢 BUY sectors now: {', '.join(buy) if buy else '(run screener)'}")
+        out.append("    Efficiency-optimized (growth × IV-yield × collateral granularity):")
+        out.append("      NU, ETN, CEG, TGT, DKNG  — prefer over BLK/JPM/CAT (huge collateral per contract).")
+        out.append("    → Run screen_new_entries / factor_screener for live strikes & IVR before selling.")
+        out.append("")
+        return out
 
     def generate_biweekly_report(self, today: date = None) -> str:
         """Generate comprehensive BI-WEEKLY report with trend analysis"""
