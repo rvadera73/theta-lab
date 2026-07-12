@@ -1,0 +1,63 @@
+====================================================================================================
+WEEKLY EXECUTION REPORT
+Week of: 2026-06-08 to 2026-06-10
+====================================================================================================
+
+PLANNED VS ACTUAL EXECUTION
+----------------------------------------------------------------------------------------------------
+Action                       Planned     Actual   Variance        %
+----------------------------------------------------------------------------------------------------
+Put Entries                        5          7         +2     +40%
+Call Entries                       3          4         +1     +33%
+Profit-Takes                       8         12         +4     +50%
+Risk Management                    2          3         +1     +50%
+
+Assessment: EXCEEDED TARGETS (Aggressive execution)
+
+WEEKLY P&L SUMMARY
+----------------------------------------------------------------------------------------------------
+Gross Profit (Entries):      $8,450
+Close Losses:                -$3,200
+Commissions:                 -$420
+----------------------------------------------------------------------------------------------------
+Net P&L (This Week):         $4,830
+
+WEEKLY P&L BY ACCOUNT
+----------------------------------------------------------------------------------------------------
+Account                                   This Week
+----------------------------------------------------------------------------------------------------
+Account A (232)                     $         2,950
+Account B (275)                     $         1,450
+Account C (634)                     $           280
+Fidelity (Rahul)                    $           430
+Vanguard (Rahul)                    $           220
+Robinhood (Individual)              $             0
+Robinhood (Traditional IRA)         $             0
+
+MARGIN VELOCITY CHECK
+----------------------------------------------------------------------------------------------------
+Current Margin Utilization:  142.0%
+Last Week:                   143.5%
+2 Weeks Ago:                 145.0%
+Velocity:                    -1.5% per week (improving)
+
+Status: POSITIVE TREND — margin reducing, but still critical
+Target: Get below 80% utilization by end of July
+
+WIN RATE BY POSITION TYPE
+----------------------------------------------------------------------------------------------------
+Position Type           This Week          YTD       Target
+----------------------------------------------------------------------------------------------------
+Puts                        88.5%        85.6%          85%
+Calls                      -50.0%       -11.0%         STOP
+Strangles                   75.0%        82.0%          80%
+
+NEXT WEEK RECOMMENDATIONS
+----------------------------------------------------------------------------------------------------
+1. CLOSE HIGH-CONVICTION WINNERS on next rally
+2. STOP HIGH-CONVICTION LOSERS (>25 DTE)
+3. REDUCE MARGIN: Execute 3-5 large closes to hit <100%
+4. SHIFT RATIO: Move to 80% puts / 20% calls strategy
+5. MONITOR NAKED CALLS: Ensure concentration <5%
+
+====================================================================================================

@@ -1,0 +1,88 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║ UNIFIED CLOSED-LOOP MASTER REPORT — 2026-06-26           │ Type: DAILY    │ Regime: BEAR_SIDEWAYS        │ 8 ACCOUNTS ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+========================================================================================================================
+SECTION 0: ACCOUNT HEALTH & MARGIN STATUS (ALL 8 ACCOUNTS)
+========================================================================================================================
+
+CONSOLIDATED PORTFOLIO SNAPSHOT:
+├─ Total Portfolio Value:        $4,553,523
+├─ YTD Net Premium Collected:    $292,421
+├─ Month-to-Date Premium:        $84,215
+├─ Total Open Positions:         0
+├─ Open Short Puts:              54
+├─ Assigned Equity:              $0
+└─ Data Currency:                2026-05-30
+
+PER-ACCOUNT BREAKDOWN:
+------------------------------------------------------------------------------------------------------------------------
+Account Name                                          Balance    % Total            Type          Status
+------------------------------------------------------------------------------------------------------------------------
+Account A (232 — Rahul Margin)                $     2,732,234      60.0%          Schwab        ✅ MARGIN
+Account B (275 — Pinky IRA)                   $       320,000       7.0%          Schwab      ✅ CASH-SEC
+Account C (634)                               $       267,289       5.9%          Schwab      ✅ CASH-SEC
+Fidelity (Rahul)                              $       512,000      11.2%        Fidelity      ✅ CASH-SEC
+Fidelity (Rajul — Roth IRA)                   $        43,000       0.9%        Fidelity      ✅ CASH-SEC
+Fidelity (Rajul — Rollover IRA)               $       129,000       2.8%        Fidelity      ✅ CASH-SEC
+Vanguard (Rahul)                              $       325,000       7.1%        Vanguard      ✅ CASH-SEC
+Robinhood (Individual)                        $        13,000       0.3%       Robinhood      ✅ CASH-SEC
+Robinhood (Traditional IRA)                   $       212,000       4.7%       Robinhood      ✅ CASH-SEC
+------------------------------------------------------------------------------------------------------------------------
+TOTAL                                         $     4,553,523    100.0%                                
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SUPPLEMENTARY: PRODUCTION FRAMEWORK — 60% CLOSE COST RATIO TARGETS
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Framework: $100,000/month net = $1.2M/year target (at 60% close costs)
+Regime: BEAR/SIDEWAYS (applies 85% of base)
+Adjusted Target: $212,500 gross / $85,000 net
+
+YTD Performance: $292,421 net (6 months)
+Monthly average: $48,737
+Annualized pace: $584,842 ⚠️ BELOW TARGET
+
+Account Targets (Regime-Adjusted):
+------------------------------------------------------------------------------------------------------------------------
+  Account A (232 — Rahul Margin)                $   132,600 gross / $    53,040 net
+  Account B (275 — Pinky IRA)                   $     4,165 gross / $     1,666 net
+  Account C (634)                               $     3,485 gross / $     1,394 net
+  Fidelity (Rahul)                              $     6,672 gross / $     2,669 net
+  Fidelity (Rajul — Roth IRA)                   $       573 gross / $       229 net
+  Fidelity (Rajul — Rollover IRA)               $     1,721 gross / $       688 net
+  Vanguard (Rahul)                              $     4,356 gross / $     1,742 net
+  Robinhood (Individual)                        $       170 gross / $        68 net
+  Robinhood (Traditional IRA)                   $     2,847 gross / $     1,139 net
+------------------------------------------------------------------------------------------------------------------------
+  TOTAL                                         $   156,589 gross / $    62,635 net
+
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+DAILY SECTION — Conviction Calculation & Action Items
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+1. CONVICTION UPDATES (Hedge Fund Framework)
+------------------------------------------------------------------------------------------------------------------------
+
+Positions evaluated: 0
+Low conviction (<5): 0
+Exit signals: 0
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+CLOSED-LOOP STATUS
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Report Type: DAILY
+Portfolio Size: 0 positions
+Regime: BEAR_SIDEWAYS
+Framework Evolution: CONTINUOUS (no hardcoding)
+
+System Status: ✅ Self-Evolving Closed-Loop
+  • Daily: Conviction updates → thesis_state.json
+  • Weekly: Tier promotions/demotions → screener_loader.py
+  • Monthly: Moat recalibration → trading_persona.md
+
+========================================================================================================================

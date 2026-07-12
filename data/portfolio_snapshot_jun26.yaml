@@ -1,0 +1,64 @@
+# Portfolio Snapshot — June 26, 2026
+# Generated from corrected position files (Account A, B, C, Fidelity Rajul)
+# Source: Individual-Positions, Contributory-Positions, Designated Bene, Portfolio_Positions CSVs
+
+last_updated: '2026-06-26'
+generated_by: 'reconciliation from correct Jun-26 position files'
+data_currency: '2026-06-26'
+
+portfolio_totals:
+  account_a_232:
+    name: 'Account A (232 — Rahul Margin)'
+    positions: 438357.98
+    cash: 327595.27
+    total: 765953.25
+    pct_of_portfolio: 45.1
+  
+  account_b_275:
+    name: 'Account B (275 — Pinky IRA)'
+    positions: 267374.15
+    cash: 282705.65
+    total: 550079.80
+    pct_of_portfolio: 32.4
+  
+  account_c_634:
+    name: 'Account C (634 — Designated Bene)'
+    positions: 225341.05
+    cash: 156370.05
+    total: 381711.10
+    pct_of_portfolio: 22.5
+  
+  fidelity_rajul:
+    name: 'Fidelity Rajul'
+    total: 1512.50
+    pct_of_portfolio: 0.1
+
+grand_totals:
+  total_positions: 931073.18
+  total_cash: 766670.97
+  total_portfolio: 1697744.15
+  
+ytd_metrics:
+  ytd_premium_collected: 292421
+  month_to_date_premium: 84215
+  open_positions: 918
+
+open_puts_by_account:
+  account_a: 'Multiple strangles across Tier 1/2/3'
+  account_b: 'CSP wheel positions'
+  account_c: 'CSP positions'
+
+regime: 'CAUTIOUS_BULL'
+regime_confirmed_date: '2026-05-22'
+
+critical_alerts:
+  - 'ADBE underwater: -$97,395.79 (-54.79%) — EXIT NEEDED'
+  - 'COIN underwater: -$7,476.66 (-33.64%) — TRIM POSITION'
+  - 'PYPL: BROKEN THESIS — immediate exit'
+  - 'TWLO concentration: 36.4% of Account C — DIVERSIFY'
+
+cash_position:
+  total_cash: 766670.97
+  pct_of_portfolio: 45.1
+  strategy: 'DEFENSIVE — ready for VIX spike entries'
+  

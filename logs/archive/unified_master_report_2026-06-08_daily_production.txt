@@ -1,0 +1,1784 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║ UNIFIED CLOSED-LOOP MASTER REPORT — 2026-06-08           │ Type: DAILY    │ Regime: BEAR_SIDEWAYS        │ 8 ACCOUNTS ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+========================================================================================================================
+SECTION 0: ACCOUNT HEALTH & MARGIN STATUS (ALL 8 ACCOUNTS)
+========================================================================================================================
+
+CONSOLIDATED PORTFOLIO SNAPSHOT:
+├─ Total Portfolio Value:        $4,553,523
+├─ YTD Net Premium Collected:    $292,421
+├─ Month-to-Date Premium:        $84,215
+├─ Total Open Positions:         918
+├─ Open Short Puts:              54
+├─ Assigned Equity:              $0
+└─ Data Currency:                2026-05-30
+
+PER-ACCOUNT BREAKDOWN:
+------------------------------------------------------------------------------------------------------------------------
+Account Name                                          Balance    % Total            Type          Status
+------------------------------------------------------------------------------------------------------------------------
+Account A (232 — Rahul Margin)                $     2,732,234      60.0%          Schwab        ✅ MARGIN
+Account B (275 — Pinky IRA)                   $       320,000       7.0%          Schwab      ✅ CASH-SEC
+Account C (634)                               $       267,289       5.9%          Schwab      ✅ CASH-SEC
+Fidelity (Rahul)                              $       512,000      11.2%        Fidelity      ✅ CASH-SEC
+Fidelity (Rajul — Roth IRA)                   $        43,000       0.9%        Fidelity      ✅ CASH-SEC
+Fidelity (Rajul — Rollover IRA)               $       129,000       2.8%        Fidelity      ✅ CASH-SEC
+Vanguard (Rahul)                              $       325,000       7.1%        Vanguard      ✅ CASH-SEC
+Robinhood (Individual)                        $        13,000       0.3%       Robinhood      ✅ CASH-SEC
+Robinhood (Traditional IRA)                   $       212,000       4.7%       Robinhood      ✅ CASH-SEC
+------------------------------------------------------------------------------------------------------------------------
+TOTAL                                         $     4,553,523    100.0%                                
+
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+DAILY SECTION — Conviction Calculation & Action Items
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+1. CONVICTION UPDATES (Hedge Fund Framework)
+------------------------------------------------------------------------------------------------------------------------
+
+Positions evaluated: 573
+Low conviction (<5): 573
+Exit signals: 573
+
+Positions with LOW conviction (monitor for exit):
+  • ABBV 05/15/2026 200.00 P Conviction 2/10
+  • ABBV 08/21/2026 200.00 P Conviction 2/10
+  • ABNB 03/19/2027 105.00 P Conviction 2/10
+  • ABNB 04/17/2026 120.00 P Conviction 2/10
+  • ABNB 06/17/2027 120.00 P Conviction 2/10
+  • ABNB 06/18/2026 120.00 P Conviction 2/10
+  • ABNB 06/18/2026 135.00 C Conviction 2/10
+  • ABNB 07/17/2026 115.00 P Conviction 2/10
+  • ABNB 12/18/2026 160.00 C Conviction 2/10
+  • ACHR 01/15/2027 5.00 P Conviction 2/10
+  • ACHR 01/15/2027 7.00 P Conviction 2/10
+  • ACHR 01/21/2028 5.00 P Conviction 2/10
+  • ADBE 03/19/2027 290.00 C Conviction 2/10
+  • ADBE 04/17/2026 350.00 C Conviction 2/10
+  • ADBE 04/17/2026 380.00 C Conviction 2/10
+  • ADBE 05/15/2026 290.00 C Conviction 2/10
+  • ADBE 06/05/2026 270.00 C Conviction 2/10
+  • ADBE 06/17/2027 340.00 C Conviction 2/10
+  • ADBE 06/18/2026 260.00 C Conviction 2/10
+  • ADBE 06/18/2026 290.00 C Conviction 2/10
+  • ADBE 06/18/2026 340.00 C Conviction 2/10
+  • ADBE 06/18/2026 400.00 C Conviction 2/10
+  • ADBE 07/17/2026 300.00 C Conviction 2/10
+  • ADBE 08/21/2026 265.00 C Conviction 2/10
+  • ADBE 08/21/2026 280.00 C Conviction 2/10
+  • ADBE 08/21/2026 390.00 C Conviction 2/10
+  • ADBE 08/21/2026 415.00 C Conviction 2/10
+  • ADBE 09/18/2026 260.00 C Conviction 2/10
+  • ADBE 09/18/2026 300.00 C Conviction 2/10
+  • ADBE 09/18/2026 330.00 C Conviction 2/10
+  • ADBE 09/18/2026 370.00 C Conviction 2/10
+  • ADBE 11/20/2026 200.00 P Conviction 2/10
+  • ADBE 11/20/2026 280.00 C Conviction 2/10
+  • ADBE 12/18/2026 290.00 C Conviction 2/10
+  • ADBE 12/18/2026 320.00 C Conviction 2/10
+  • ADBE 12/18/2026 390.00 C Conviction 2/10
+  • ALAB 01/15/2027 125.00 P Conviction 2/10
+  • ALAB 01/15/2027 90.00 P Conviction 2/10
+  • ALAB 04/16/2027 145.00 P Conviction 2/10
+  • ALAB 04/16/2027 150.00 P Conviction 2/10
+  • ALAB 07/17/2026 95.00 P Conviction 2/10
+  • ALB 03/20/2026 110.00 P Conviction 2/10
+  • ALB 03/20/2026 125.00 P Conviction 2/10
+  • ALB 03/20/2026 140.00 P Conviction 2/10
+  • ALB 03/20/2026 150.00 C Conviction 2/10
+  • ALB 03/20/2026 150.00 P Conviction 2/10
+  • ALB 06/18/2026 110.00 P Conviction 2/10
+  • ALB 06/18/2026 120.00 P Conviction 2/10
+  • ALB 06/18/2026 150.00 P Conviction 2/10
+  • ALB 09/18/2026 130.00 P Conviction 2/10
+  • ALB 12/18/2026 100.00 P Conviction 2/10
+  • AMZN 01/15/2027 185.00 P Conviction 2/10
+  • AMZN 03/19/2027 240.00 P Conviction 2/10
+  • AMZN 05/01/2026 180.00 P Conviction 2/10
+  • AMZN 05/15/2026 160.00 P Conviction 2/10
+  • AMZN 06/17/2027 210.00 P Conviction 2/10
+  • AMZN 06/18/2026 260.00 C Conviction 2/10
+  • AMZN 07/17/2026 190.00 P Conviction 2/10
+  • AMZN 07/17/2026 215.00 P Conviction 2/10
+  • AMZN 07/17/2026 255.00 P Conviction 2/10
+  • AMZN 08/21/2026 240.00 C Conviction 2/10
+  • AMZN 08/21/2026 245.00 P Conviction 2/10
+  • AMZN 09/18/2026 275.00 C Conviction 2/10
+  • AMZN 11/20/2026 210.00 P Conviction 2/10
+  • AMZN 12/18/2026 250.00 P Conviction 2/10
+  • AMZN 12/18/2026 255.00 C Conviction 2/10
+  • AMZN 12/18/2026 300.00 C Conviction 2/10
+  • ANET 01/15/2027 150.00 P Conviction 2/10
+  • ANET 01/15/2027 200.00 C Conviction 2/10
+  • ANET 03/19/2027 110.00 P Conviction 2/10
+  • ANET 03/19/2027 120.00 P Conviction 2/10
+  • ANET 03/19/2027 230.00 C Conviction 2/10
+  • ANET 05/15/2026 110.00 P Conviction 2/10
+  • ANET 06/17/2027 125.00 P Conviction 2/10
+  • ANET 06/17/2027 220.00 C Conviction 2/10
+  • ANET 06/18/2026 100.00 P Conviction 2/10
+  • ANET 06/18/2026 175.00 C Conviction 2/10
+  • ANET 07/17/2026 120.00 P Conviction 2/10
+  • ANET 08/21/2026 190.00 C Conviction 2/10
+  • ANET 08/21/2026 95.00 P Conviction 2/10
+  • ANET 09/18/2026 110.00 P Conviction 2/10
+  • ANET 09/18/2026 120.00 P Conviction 2/10
+  • ANET 12/18/2026 125.00 P Conviction 2/10
+  • ANET 12/18/2026 145.00 P Conviction 2/10
+  • ANET 12/18/2026 150.00 P Conviction 2/10
+  • ANET 12/18/2026 190.00 C Conviction 2/10
+  • ANET 12/18/2026 210.00 C Conviction 2/10
+  • APH 03/19/2027 110.00 P Conviction 2/10
+  • APH 03/19/2027 220.00 C Conviction 2/10
+  • APH 08/21/2026 95.00 P Conviction 2/10
+  • APH 11/20/2026 110.00 P Conviction 2/10
+  • APH 12/18/2026 145.00 P Conviction 2/10
+  • APH 12/18/2026 180.00 C Conviction 2/10
+  • APLD 01/15/2027 20.00 P Conviction 2/10
+  • APP 04/17/2026 440.00 P Conviction 2/10
+  • APP 05/15/2026 350.00 P Conviction 2/10
+  • APP 05/15/2026 480.00 C Conviction 2/10
+  • APP 06/17/2027 380.00 P Conviction 2/10
+  • APP 06/17/2027 450.00 P Conviction 2/10
+  • APP 06/17/2027 580.00 C Conviction 2/10
+  • APP 06/18/2026 450.00 P Conviction 2/10
+  • APP 06/18/2026 470.00 C Conviction 2/10
+  • APP 07/17/2026 370.00 P Conviction 2/10
+  • APP 07/17/2026 460.00 P Conviction 2/10
+  • APP 08/21/2026 400.00 P Conviction 2/10
+  • APP 08/21/2026 490.00 C Conviction 2/10
+  • APP 08/21/2026 550.00 C Conviction 2/10
+  • APP 08/21/2026 580.00 P Conviction 2/10
+  • APP 11/20/2026 350.00 P Conviction 2/10
+  • APP 12/18/2026 440.00 P Conviction 2/10
+  • APP 12/18/2026 500.00 C Conviction 2/10
+  • ASML 03/20/2026 950.00 P Conviction 2/10
+  • ASML 07/17/2026 780.00 P Conviction 2/10
+  • ASML 09/18/2026 1100.00 P Conviction 2/10
+  • ASML 09/18/2026 950.00 P Conviction 2/10
+  • ASTS 01/15/2027 75.00 P Conviction 2/10
+  • ATEN 12/18/2026 22.50 P Conviction 2/10
+  • AXON 01/15/2027 420.00 P Conviction 2/10
+  • AXON 01/15/2027 620.00 C Conviction 2/10
+  • AXON 03/19/2027 560.00 C Conviction 2/10
+  • AXON 03/19/2027 600.00 C Conviction 2/10
+  • AXON 03/20/2026 600.00 P Conviction 2/10
+  • AXON 05/15/2026 425.00 C Conviction 2/10
+  • AXON 05/15/2026 510.00 C Conviction 2/10
+  • AXON 05/22/2026 420.00 C Conviction 2/10
+  • AXON 06/18/2026 410.00 C Conviction 2/10
+  • AXON 06/18/2026 470.00 C Conviction 2/10
+  • AXON 06/18/2026 470.00 P Conviction 2/10
+  • AXON 06/18/2026 500.00 C Conviction 2/10
+  • AXON 06/18/2026 560.00 C Conviction 2/10
+  • AXON 06/18/2026 620.00 C Conviction 2/10
+  • AXON 06/26/2026 440.00 C Conviction 2/10
+  • AXON 07/17/2026 480.00 C Conviction 2/10
+  • AXON 09/18/2026 450.00 C Conviction 2/10
+  • AXON 09/18/2026 470.00 C Conviction 2/10
+  • AXON 09/18/2026 500.00 C Conviction 2/10
+  • AXON 09/18/2026 600.00 C Conviction 2/10
+  • AXON 12/18/2026 500.00 C Conviction 2/10
+  • AXON 12/18/2026 540.00 P Conviction 2/10
+  • AXON 12/18/2026 580.00 C Conviction 2/10
+  • AXON 12/18/2026 600.00 C Conviction 2/10
+  • AXON 12/18/2026 710.00 C Conviction 2/10
+  • BA 05/15/2026 185.00 P Conviction 2/10
+  • BA 05/15/2026 200.00 P Conviction 2/10
+  • BA 09/18/2026 185.00 P Conviction 2/10
+  • BA 09/18/2026 190.00 P Conviction 2/10
+  • BA 12/18/2026 190.00 P Conviction 2/10
+  • BA 12/18/2026 195.00 P Conviction 2/10
+  • BABA 03/19/2027 110.00 P Conviction 2/10
+  • BABA 04/17/2026 125.00 P Conviction 2/10
+  • BABA 09/18/2026 125.00 P Conviction 2/10
+  • BE 01/15/2027 170.00 P Conviction 2/10
+  • BE 06/17/2027 165.00 P Conviction 2/10
+  • BE 06/17/2027 170.00 P Conviction 2/10
+  • BE 07/17/2026 210.00 P Conviction 2/10
+  • BE 11/20/2026 190.00 P Conviction 2/10
+  • BE 12/18/2026 380.00 C Conviction 2/10
+  • BRKB 06/17/2027 430.00 P Conviction 2/10
+  • BRKB 12/18/2026 450.00 P Conviction 2/10
+  • BWXT 01/15/2027 160.00 P Conviction 2/10
+  • CAVA 03/20/2026 65.00 P Conviction 2/10
+  • CCJ 01/15/2027 110.00 P Conviction 2/10
+  • CCJ 01/21/2028 95.00 P Conviction 2/10
+  • CCL 01/15/2027 25.00 P Conviction 2/10
+  • CCL 03/19/2027 23.00 P Conviction 2/10
+  • CCL 03/19/2027 25.00 P Conviction 2/10
+  • CIFR 01/15/2027 20.00 P Conviction 2/10
+  • CMG 06/18/2026 33.20 P Conviction 2/10
+  • CMG 07/17/2026 30.00 P Conviction 2/10
+  • CMG 09/18/2026 30.00 P Conviction 2/10
+  • CMG 09/18/2026 32.50 P Conviction 2/10
+  • CMG 12/18/2026 35.20 P Conviction 2/10
+  • COIN 01/15/2027 240.00 C Conviction 2/10
+  • COIN 01/15/2027 300.00 C Conviction 2/10
+  • COIN 03/19/2027 250.00 C Conviction 2/10
+  • COIN 05/15/2026 280.00 C Conviction 2/10
+  • COIN 05/21/2027 145.00 P Conviction 2/10
+  • COIN 06/05/2026 230.00 C Conviction 2/10
+  • COIN 06/12/2026 230.00 C Conviction 2/10
+  • COIN 06/26/2026 200.00 C Conviction 2/10
+  • COIN 07/17/2026 170.00 P Conviction 2/10
+  • COIN 07/17/2026 200.00 C Conviction 2/10
+  • COIN 07/17/2026 240.00 C Conviction 2/10
+  • COIN 09/18/2026 230.00 C Conviction 2/10
+  • COIN 09/18/2026 240.00 C Conviction 2/10
+  • COIN 09/18/2026 250.00 C Conviction 2/10
+  • COIN 12/18/2026 120.00 P Conviction 2/10
+  • COIN 12/18/2026 160.00 P Conviction 2/10
+  • COIN 12/18/2026 250.00 C Conviction 2/10
+  • CRCL 04/17/2026 95.00 P Conviction 2/10
+  • CRCL 06/17/2027 150.00 C Conviction 2/10
+  • CRCL 06/17/2027 95.00 P Conviction 2/10
+  • CRCL 06/18/2026 105.00 P Conviction 2/10
+  • CRCL 06/18/2026 65.00 P Conviction 2/10
+  • CRCL 09/18/2026 105.00 P Conviction 2/10
+  • CRCL 09/18/2026 135.00 C Conviction 2/10
+  • CRCL 10/16/2026 140.00 C Conviction 2/10
+  • CRCL 10/16/2026 95.00 P Conviction 2/10
+  • CRCL 12/18/2026 155.00 C Conviction 2/10
+  • CRM 01/15/2027 280.00 C Conviction 2/10
+  • CRM 03/19/2027 220.00 C Conviction 2/10
+  • CRM 03/19/2027 230.00 C Conviction 2/10
+  • CRM 03/19/2027 250.00 C Conviction 2/10
+  • CRM 04/17/2026 280.00 C Conviction 2/10
+  • CRM 04/17/2026 300.00 C Conviction 2/10
+  • CRM 05/15/2026 320.00 C Conviction 2/10
+  • CRM 06/18/2026 200.00 C Conviction 2/10
+  • CRM 07/17/2026 200.00 C Conviction 2/10
+  • CRM 08/21/2026 220.00 C Conviction 2/10
+  • CRM 08/21/2026 230.00 C Conviction 2/10
+  • CRM 08/21/2026 240.00 C Conviction 2/10
+  • CRM 08/21/2026 260.00 C Conviction 2/10
+  • CRM 09/18/2026 190.00 C Conviction 2/10
+  • CRM 09/18/2026 200.00 C Conviction 2/10
+  • CRM 10/16/2026 190.00 C Conviction 2/10
+  • CRM 11/20/2026 240.00 C Conviction 2/10
+  • CRM 12/18/2026 230.00 C Conviction 2/10
+  • CRM 12/18/2026 280.00 C Conviction 2/10
+  • CRWD 01/15/2027 550.00 C Conviction 2/10
+  • CRWD 03/19/2027 320.00 P Conviction 2/10
+  • CRWD 06/12/2026 650.00 P Conviction 2/10
+  • CRWD 06/17/2027 420.00 P Conviction 2/10
+  • CRWD 06/17/2027 450.00 P Conviction 2/10
+  • CRWD 06/17/2027 550.00 P Conviction 2/10
+  • CRWD 06/18/2026 370.00 P Conviction 2/10
+  • CRWD 07/17/2026 390.00 P Conviction 2/10
+  • CRWD 07/17/2026 420.00 P Conviction 2/10
+  • CRWD 07/17/2026 470.00 P Conviction 2/10
+  • CRWD 07/17/2026 500.00 P Conviction 2/10
+  • CRWD 07/17/2026 520.00 C Conviction 2/10
+  • CRWD 08/21/2026 800.00 C Conviction 2/10
+  • CRWD 09/18/2026 430.00 P Conviction 2/10
+  • CRWD 09/18/2026 470.00 P Conviction 2/10
+  • CRWD 09/18/2026 480.00 C Conviction 2/10
+  • CRWD 09/18/2026 550.00 C Conviction 2/10
+  • CRWD 09/18/2026 550.00 P Conviction 2/10
+  • CRWD 10/16/2026 520.00 P Conviction 2/10
+  • CRWD 11/20/2026 290.00 P Conviction 2/10
+  • CRWD 12/18/2026 340.00 P Conviction 2/10
+  • CRWD 12/18/2026 620.00 C Conviction 2/10
+  • CRWV 06/18/2026 105.00 P Conviction 2/10
+  • D 01/15/2027 65.00 P Conviction 2/10
+  • D 03/19/2027 65.00 P Conviction 2/10
+  • DIS 01/15/2027 105.00 C Conviction 2/10
+  • DIS 01/15/2027 130.00 C Conviction 2/10
+  • DIS 03/19/2027 125.00 C Conviction 2/10
+  • DIS 06/17/2027 95.00 P Conviction 2/10
+  • DIS 06/18/2026 105.00 P Conviction 2/10
+  • DIS 09/18/2026 105.00 P Conviction 2/10
+  • DIS 12/18/2026 100.00 P Conviction 2/10
+  • DIS 12/18/2026 110.00 P Conviction 2/10
+  • DVN 01/15/2027 35.00 P Conviction 2/10
+  • DVN 10/16/2026 45.00 P Conviction 2/10
+  • ELF 01/15/2027 45.00 P Conviction 2/10
+  • ELF 01/15/2027 55.00 P Conviction 2/10
+  • ELF 08/21/2026 70.00 P Conviction 2/10
+  • EPD 03/19/2027 35.00 P Conviction 2/10
+  • ETSY 06/18/2026 60.00 C Conviction 2/10
+  • ETSY 06/18/2026 60.00 P Conviction 2/10
+  • ETSY 06/18/2026 65.00 C Conviction 2/10
+  • ETSY 06/18/2026 65.00 P Conviction 2/10
+  • ETSY 09/18/2026 55.00 P Conviction 2/10
+  • ETSY 09/18/2026 60.00 C Conviction 2/10
+  • ETSY 12/18/2026 60.00 C Conviction 2/10
+  • ETSY 12/18/2026 65.00 P Conviction 2/10
+  • EWJ 01/15/2027 83.84 P Conviction 2/10
+  • EWJ 01/15/2027 84.84 P Conviction 2/10
+  • EWJ 06/18/2026 76.84 P Conviction 2/10
+  • EWJ 09/18/2026 85.00 P Conviction 2/10
+  • EWW 01/15/2027 67.00 P Conviction 2/10
+  • EWY 01/15/2027 100.00 P Conviction 2/10
+  • EWY 01/15/2027 105.00 P Conviction 2/10
+  • EWY 01/15/2027 110.00 P Conviction 2/10
+  • EWY 07/17/2026 92.00 P Conviction 2/10
+  • EWZ 12/18/2026 34.00 P Conviction 2/10
+  • EXPE 01/15/2027 155.00 P Conviction 2/10
+  • EXPE 03/19/2027 190.00 P Conviction 2/10
+  • EXPE 06/18/2026 210.00 P Conviction 2/10
+  • EXPE 09/18/2026 200.00 P Conviction 2/10
+  • FMC 01/15/2027 15.00 C Conviction 2/10
+  • FMC 01/15/2027 20.00 C Conviction 2/10
+  • FSLR 01/15/2027 140.00 P Conviction 2/10
+  • FSLR 03/19/2027 190.00 P Conviction 2/10
+  • FSLR 04/17/2026 190.00 P Conviction 2/10
+  • FSLR 09/18/2026 180.00 P Conviction 2/10
+  • FSLR 12/18/2026 175.00 P Conviction 2/10
+  • GEV 01/15/2027 560.00 P Conviction 2/10
+  • GEV 01/15/2027 680.00 P Conviction 2/10
+  • GEV 06/17/2027 760.00 P Conviction 2/10
+  • GEV 06/17/2027 800.00 P Conviction 2/10
+  • GEV 06/18/2026 470.00 P Conviction 2/10
+  • GEV 07/17/2026 850.00 P Conviction 2/10
+  • GEV 07/17/2026 950.00 P Conviction 2/10
+  • GEV 12/18/2026 580.00 P Conviction 2/10
+  • HOOD 03/19/2027 55.00 P Conviction 2/10
+  • HOOD 03/19/2027 60.00 P Conviction 2/10
+  • HOOD 03/19/2027 70.00 P Conviction 2/10
+  • HOOD 10/16/2026 90.00 P Conviction 2/10
+  • HUT 06/17/2027 47.00 P Conviction 2/10
+  • HUT 06/17/2027 50.00 P Conviction 2/10
+  • IBIT 01/15/2027 35.00 P Conviction 2/10
+  • IBIT 01/15/2027 38.00 P Conviction 2/10
+  • IBIT 03/19/2027 36.00 P Conviction 2/10
+  • IBIT 03/20/2026 45.00 P Conviction 2/10
+  • IBIT 08/21/2026 30.00 P Conviction 2/10
+  • IBIT 08/21/2026 50.00 P Conviction 2/10
+  • IBIT 10/16/2026 35.00 P Conviction 2/10
+  • IBIT 10/16/2026 45.00 P Conviction 2/10
+  • IBIT 10/16/2026 52.00 C Conviction 2/10
+  • IBM 01/15/2027 280.00 C Conviction 2/10
+  • IBM 03/19/2027 300.00 C Conviction 2/10
+  • IBM 10/16/2026 270.00 P Conviction 2/10
+  • IBN 01/15/2027 23.00 P Conviction 2/10
+  • INMD 01/15/2027 15.00 C Conviction 2/10
+  • INMD 01/16/2026 15.00 C Conviction 2/10
+  • INMD 05/15/2026 15.00 C Conviction 2/10
+  • INMD 08/21/2026 15.00 C Conviction 2/10
+  • IONQ 01/15/2027 20.00 P Conviction 2/10
+  • IONQ 01/15/2027 22.50 P Conviction 2/10
+  • IONQ 01/15/2027 25.00 P Conviction 2/10
+  • IONQ 01/21/2028 35.00 P Conviction 2/10
+  • IONQ 03/19/2027 30.00 P Conviction 2/10
+  • IONQ 11/20/2026 25.00 P Conviction 2/10
+  • ISRG 03/19/2027 390.00 P Conviction 2/10
+  • ISRG 06/18/2026 470.00 P Conviction 2/10
+  • ISRG 07/17/2026 495.00 P Conviction 2/10
+  • ISRG 10/16/2026 520.00 C Conviction 2/10
+  • ISRG 12/18/2026 520.00 C Conviction 2/10
+  • JD 03/19/2027 27.00 P Conviction 2/10
+  • JD 03/20/2026 30.00 P Conviction 2/10
+  • JD 06/18/2026 28.00 P Conviction 2/10
+  • JD 09/18/2026 30.00 P Conviction 2/10
+  • JD 12/18/2026 32.00 C Conviction 2/10
+  • JOBY 03/19/2027 8.00 P Conviction 2/10
+  • KTOS 01/15/2027 45.00 P Conviction 2/10
+  • LAC 01/15/2027 4.50 P Conviction 2/10
+  • LAC 01/21/2028 5.00 P Conviction 2/10
+  • LAC 05/15/2026 5.00 P Conviction 2/10
+  • LASR 09/18/2026 60.00 P Conviction 2/10
+  • LASR 12/18/2026 60.00 P Conviction 2/10
+  • LLY 01/15/2027 1070.00 C Conviction 2/10
+  • LLY 01/15/2027 820.00 P Conviction 2/10
+  • LLY 03/19/2027 780.00 P Conviction 2/10
+  • LLY 03/19/2027 850.00 P Conviction 2/10
+  • LLY 06/17/2027 1100.00 C Conviction 2/10
+  • LLY 06/17/2027 850.00 P Conviction 2/10
+  • LLY 06/17/2027 870.00 P Conviction 2/10
+  • LLY 09/18/2026 1100.00 C Conviction 2/10
+  • LLY 10/16/2026 840.00 P Conviction 2/10
+  • LMT 01/15/2027 440.00 P Conviction 2/10
+  • LMT 03/19/2027 520.00 P Conviction 2/10
+  • LMT 06/18/2026 410.00 P Conviction 2/10
+  • LYFT 01/15/2027 15.00 P Conviction 2/10
+  • LYFT 03/19/2027 15.00 C Conviction 2/10
+  • LYFT 03/20/2026 14.00 C Conviction 2/10
+  • LYFT 12/18/2026 18.00 C Conviction 2/10
+  • MCHI 05/15/2026 61.00 P Conviction 2/10
+  • META 02/20/2026 610.00 P Conviction 2/10
+  • META 02/20/2026 650.00 P Conviction 2/10
+  • META 03/19/2027 520.00 P Conviction 2/10
+  • META 05/15/2026 620.00 P Conviction 2/10
+  • META 12/18/2026 550.00 P Conviction 2/10
+  • MMYT 12/18/2026 40.00 P Conviction 2/10
+  • MP 02/20/2026 55.00 P Conviction 2/10
+  • MP 03/19/2027 50.00 P Conviction 2/10
+  • MP 03/19/2027 55.00 P Conviction 2/10
+  • MP 06/18/2026 55.00 P Conviction 2/10
+  • MP 09/18/2026 50.00 P Conviction 2/10
+  • MP 09/18/2026 55.00 P Conviction 2/10
+  • MP 12/18/2026 60.00 P Conviction 2/10
+  • MRK 01/15/2027 100.00 P Conviction 2/10
+  • MSFT 05/15/2026 420.00 P Conviction 2/10
+  • MSFT 06/17/2027 370.00 P Conviction 2/10
+  • MSFT 07/17/2026 410.00 P Conviction 2/10
+  • MSFT 07/17/2026 415.00 C Conviction 2/10
+  • MSFT 10/16/2026 440.00 C Conviction 2/10
+  • MU 01/15/2027 260.00 P Conviction 2/10
+  • MU 03/19/2027 370.00 P Conviction 2/10
+  • MU 08/21/2026 400.00 P Conviction 2/10
+  • MU 09/17/2027 520.00 P Conviction 2/10
+  • NBIS 09/18/2026 85.00 P Conviction 2/10
+  • NEE 02/19/2027 80.00 P Conviction 2/10
+  • NEE 12/18/2026 82.50 P Conviction 2/10
+  • NFLX 01/15/2027 80.00 P Conviction 2/10
+  • NFLX 03/19/2027 120.00 C Conviction 2/10
+  • NFLX 03/19/2027 130.00 C Conviction 2/10
+  • NFLX 03/19/2027 95.00 P Conviction 2/10
+  • NFLX 03/20/2026 98.00 P Conviction 2/10
+  • NFLX 05/15/2026 104.00 P Conviction 2/10
+  • NFLX 06/17/2027 80.00 P Conviction 2/10
+  • NFLX 07/17/2026 110.00 C Conviction 2/10
+  • NFLX 07/17/2026 75.00 P Conviction 2/10
+  • NFLX 07/17/2026 85.00 P Conviction 2/10
+  • NFLX 11/20/2026 130.00 C Conviction 2/10
+  • NFLX 11/20/2026 80.00 P Conviction 2/10
+  • NFLX 12/18/2026 110.00 C Conviction 2/10
+  • NFLX 12/18/2026 85.00 P Conviction 2/10
+  • NIO 06/18/2026 5.50 C Conviction 2/10
+  • NIO 11/20/2026 5.00 C Conviction 2/10
+  • NKE 01/15/2027 60.00 C Conviction 2/10
+  • NKE 03/19/2027 55.00 C Conviction 2/10
+  • NKE 04/17/2026 60.00 P Conviction 2/10
+  • NKE 06/18/2026 45.00 C Conviction 2/10
+  • NKE 09/18/2026 50.00 C Conviction 2/10
+  • NKE 09/18/2026 67.50 C Conviction 2/10
+  • NKE 10/16/2026 52.50 C Conviction 2/10
+  • NKE 10/16/2026 62.50 C Conviction 2/10
+  • NKE 11/20/2026 45.00 C Conviction 2/10
+  • NKE 12/18/2026 47.50 C Conviction 2/10
+  • NOC 03/19/2027 480.00 P Conviction 2/10
+  • NOC 03/20/2026 480.00 P Conviction 2/10
+  • NOC 05/15/2026 485.00 P Conviction 2/10
+  • NOC 08/21/2026 550.00 P Conviction 2/10
+  • NTRA 11/20/2026 190.00 P Conviction 2/10
+  • NU 01/15/2027 15.00 P Conviction 2/10
+  • NU 03/19/2027 13.00 P Conviction 2/10
+  • NVDA 03/19/2027 165.00 P Conviction 2/10
+  • NVDA 06/17/2027 175.00 P Conviction 2/10
+  • NVDA 12/18/2026 175.00 P Conviction 2/10
+  • NVO 03/19/2027 35.00 P Conviction 2/10
+  • NVO 06/17/2027 40.00 P Conviction 2/10
+  • NVO 07/17/2026 55.00 P Conviction 2/10
+  • NVO 09/18/2026 55.00 C Conviction 2/10
+  • NVO 09/18/2026 55.00 P Conviction 2/10
+  • NVO 12/18/2026 50.00 C Conviction 2/10
+  • NVO 12/18/2026 50.00 P Conviction 2/10
+  • OKTA 01/15/2027 90.00 P Conviction 2/10
+  • OKTA 02/20/2026 92.50 C Conviction 2/10
+  • OKTA 03/19/2027 80.00 C Conviction 2/10
+  • OKTA 03/19/2027 82.50 C Conviction 2/10
+  • OKTA 05/15/2026 80.00 C Conviction 2/10
+  • OKTA 05/15/2026 92.50 C Conviction 2/10
+  • OKTA 08/21/2026 100.00 P Conviction 2/10
+  • OKTA 08/21/2026 87.50 C Conviction 2/10
+  • OKTA 09/18/2026 80.00 C Conviction 2/10
+  • OKTA 09/18/2026 80.00 P Conviction 2/10
+  • OKTA 09/18/2026 97.50 C Conviction 2/10
+  • OKTA 12/18/2026 82.50 C Conviction 2/10
+  • OKTA 12/18/2026 97.50 C Conviction 2/10
+  • PFE 12/18/2026 25.00 P Conviction 2/10
+  • PYPL 01/15/2027 47.50 C Conviction 2/10
+  • PYPL 01/15/2027 50.00 C Conviction 2/10
+  • PYPL 01/15/2027 60.00 C Conviction 2/10
+  • PYPL 03/19/2027 50.00 C Conviction 2/10
+  • PYPL 04/17/2026 65.00 C Conviction 2/10
+  • PYPL 05/15/2026 45.00 C Conviction 2/10
+  • PYPL 05/15/2026 62.50 C Conviction 2/10
+  • PYPL 05/15/2026 72.50 C Conviction 2/10
+  • PYPL 07/17/2026 65.00 C Conviction 2/10
+  • PYPL 07/17/2026 67.50 C Conviction 2/10
+  • PYPL 09/18/2026 47.50 C Conviction 2/10
+  • PYPL 09/18/2026 67.50 C Conviction 2/10
+  • PYPL 09/18/2026 75.00 C Conviction 2/10
+  • PYPL 11/20/2026 45.00 C Conviction 2/10
+  • PYPL 11/20/2026 65.00 C Conviction 2/10
+  • PYPL 12/18/2026 70.00 C Conviction 2/10
+  • QBTS 01/15/2027 12.00 P Conviction 2/10
+  • QBTS 03/19/2027 15.00 P Conviction 2/10
+  • QQQ 09/30/2026 525.00 P Conviction 2/10
+  • QQQ 12/18/2026 550.00 P Conviction 2/10
+  • QUBT 01/15/2027 8.00 P Conviction 2/10
+  • RBLX 06/17/2027 35.00 P Conviction 2/10
+  • RBLX 06/26/2026 47.00 C Conviction 2/10
+  • RBLX 08/21/2026 55.00 C Conviction 2/10
+  • RBLX 12/18/2026 75.00 C Conviction 2/10
+  • RBLX 12/18/2026 90.00 C Conviction 2/10
+  • RBRK 01/15/2027 52.50 P Conviction 2/10
+  • RGTI 11/20/2026 15.00 P Conviction 2/10
+  • RIOT 01/15/2027 10.00 P Conviction 2/10
+  • RIOT 01/15/2027 18.00 P Conviction 2/10
+  • RIOT 01/21/2028 13.00 P Conviction 2/10
+  • RIOT 01/21/2028 15.00 P Conviction 2/10
+  • RKLB 01/15/2027 60.00 P Conviction 2/10
+  • RKLB 01/15/2027 70.00 P Conviction 2/10
+  • RKLB 01/21/2028 60.00 P Conviction 2/10
+  • RKLB 03/19/2027 70.00 P Conviction 2/10
+  • RKLB 03/19/2027 90.00 P Conviction 2/10
+  • RKLB 07/17/2026 50.00 P Conviction 2/10
+  • RKLB 12/18/2026 65.00 P Conviction 2/10
+  • ROKU 03/19/2027 85.00 P Conviction 2/10
+  • RTX 01/15/2027 165.00 P Conviction 2/10
+  • RTX 03/19/2027 140.00 P Conviction 2/10
+  • RTX 03/19/2027 145.00 P Conviction 2/10
+  • RTX 03/19/2027 155.00 P Conviction 2/10
+  • RTX 08/21/2026 160.00 P Conviction 2/10
+  • RTX 08/21/2026 165.00 P Conviction 2/10
+  • SBUX 02/19/2027 95.00 P Conviction 2/10
+  • SBUX 06/18/2026 75.00 P Conviction 2/10
+  • SHOP 03/19/2027 95.00 P Conviction 2/10
+  • SHOP 04/17/2026 130.00 P Conviction 2/10
+  • SHOP 06/17/2027 90.00 P Conviction 2/10
+  • SHOP 11/20/2026 90.00 P Conviction 2/10
+  • SMR 01/15/2027 10.00 P Conviction 2/10
+  • SONY 01/15/2027 20.00 P Conviction 2/10
+  • TAN 01/15/2027 50.00 P Conviction 2/10
+  • TCOM 06/17/2027 45.00 P Conviction 2/10
+  • TSLA 06/17/2027 320.00 P Conviction 2/10
+  • TSLA 09/18/2026 370.00 P Conviction 2/10
+  • TSLA 11/20/2026 310.00 P Conviction 2/10
+  • TSM 01/15/2027 270.00 P Conviction 2/10
+  • TSM 01/15/2027 280.00 P Conviction 2/10
+  • TSM 06/17/2027 290.00 P Conviction 2/10
+  • TSM 06/17/2027 300.00 P Conviction 2/10
+  • TSM 08/21/2026 250.00 P Conviction 2/10
+  • TSM 08/21/2026 260.00 P Conviction 2/10
+  • TWLO 01/15/2027 145.00 C Conviction 2/10
+  • TWLO 01/15/2027 150.00 C Conviction 2/10
+  • TWLO 04/17/2026 140.00 C Conviction 2/10
+  • TWLO 07/17/2026 140.00 C Conviction 2/10
+  • TWLO 09/18/2026 165.00 C Conviction 2/10
+  • UBER 01/15/2027 65.00 P Conviction 2/10
+  • UBER 01/15/2027 67.50 P Conviction 2/10
+  • UBER 01/15/2027 75.00 P Conviction 2/10
+  • UBER 03/19/2027 65.00 P Conviction 2/10
+  • UBER 06/17/2027 67.50 P Conviction 2/10
+  • UBER 08/21/2026 72.50 P Conviction 2/10
+  • UBER 11/20/2026 72.50 P Conviction 2/10
+  • ULTA 03/19/2027 490.00 P Conviction 2/10
+  • ULTA 03/20/2026 525.00 P Conviction 2/10
+  • ULTA 09/18/2026 520.00 P Conviction 2/10
+  • ULTA 11/20/2026 390.00 P Conviction 2/10
+  • UNH 03/19/2027 300.00 P Conviction 2/10
+  • UNH 03/19/2027 320.00 P Conviction 2/10
+  • UNH 03/19/2027 340.00 C Conviction 2/10
+  • UNH 03/19/2027 400.00 C Conviction 2/10
+  • UNH 04/17/2026 300.00 P Conviction 2/10
+  • UNH 06/18/2026 380.00 C Conviction 2/10
+  • UNH 07/17/2026 260.00 P Conviction 2/10
+  • UNH 09/18/2026 300.00 P Conviction 2/10
+  • UNH 11/20/2026 270.00 P Conviction 2/10
+  • UNH 11/20/2026 350.00 P Conviction 2/10
+  • UNH 12/18/2026 290.00 P Conviction 2/10
+  • UNH 12/18/2026 320.00 P Conviction 2/10
+  • UNH 12/18/2026 330.00 C Conviction 2/10
+  • UNH 12/18/2026 420.00 C Conviction 2/10
+  • USAR 01/15/2027 17.00 P Conviction 2/10
+  • USAR 01/21/2028 17.00 P Conviction 2/10
+  • VRT 03/19/2027 270.00 P Conviction 2/10
+  • VST 01/15/2027 125.00 P Conviction 2/10
+  • VST 03/19/2027 110.00 P Conviction 2/10
+  • VST 03/19/2027 125.00 P Conviction 2/10
+  • VST 03/19/2027 230.00 C Conviction 2/10
+  • VST 04/17/2026 180.00 P Conviction 2/10
+  • VST 09/18/2026 150.00 P Conviction 2/10
+  • VST 09/18/2026 210.00 C Conviction 2/10
+  • VST 12/18/2026 105.00 P Conviction 2/10
+  • VST 12/18/2026 210.00 C Conviction 2/10
+  • VST 12/18/2026 230.00 C Conviction 2/10
+  • XLE 01/15/2027 60.00 C Conviction 2/10
+  • XLE 11/20/2026 55.00 P Conviction 2/10
+  • XLE 12/18/2026 57.50 P Conviction 2/10
+  • XLE 12/31/2026 65.00 C Conviction 2/10
+  • XOM 11/20/2026 125.00 P Conviction 2/10
+  • XOM 11/20/2026 130.00 P Conviction 2/10
+  • XOM 12/18/2026 125.00 P Conviction 2/10
+  • XOM 12/18/2026 140.00 P Conviction 2/10
+  • XYZ 01/15/2027 55.00 P Conviction 2/10
+  • XYZ 03/20/2026 65.00 C Conviction 2/10
+  • XYZ 04/17/2026 70.00 P Conviction 2/10
+  • XYZ 09/18/2026 72.50 C Conviction 2/10
+  • XYZ 09/18/2026 75.00 C Conviction 2/10
+  • XYZ 12/18/2026 62.50 P Conviction 2/10
+  • XYZ 12/18/2026 65.00 C Conviction 2/10
+  • ZBH 06/18/2026 100.00 C Conviction 2/10
+  • ZBH 06/18/2026 90.00 P Conviction 2/10
+  • ZBH 09/18/2026 95.00 C Conviction 2/10
+  • ZBH 12/18/2026 85.00 C Conviction 2/10
+  • ZS 03/19/2027 170.00 C Conviction 2/10
+  • ZS 06/18/2026 110.00 P Conviction 2/10
+  • ZS 08/21/2026 200.00 C Conviction 2/10
+  • ZS 11/20/2026 135.00 P Conviction 2/10
+  • ZS 12/18/2026 105.00 P Conviction 2/10
+  • ZS 12/18/2026 180.00 C Conviction 2/10
+
+Positions with MULTIPLE exit signals (review today):
+  • LLY 03/19/2027 850.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 09/18/2026 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 03/19/2027 250.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BE 11/20/2026 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 05/15/2026 290.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NOC 08/21/2026 550.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 08/21/2026 550.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RTX 01/15/2027 165.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BA 12/18/2026 195.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 06/18/2026 470.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MSFT 07/17/2026 415.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MU 03/19/2027 370.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 07/17/2026 85.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XOM 11/20/2026 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 12/18/2026 255.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CCL 03/19/2027 25.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 11/20/2026 290.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVO 09/18/2026 55.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 06/18/2026 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TWLO 01/15/2027 145.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 03/19/2027 240.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UBER 11/20/2026 72.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CCL 03/19/2027 23.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 06/17/2027 380.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • JD 09/18/2026 30.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RBLX 06/17/2027 35.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XLE 12/18/2026 57.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CIFR 01/15/2027 20.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 12/18/2026 500.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 06/17/2027 450.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • FSLR 04/17/2026 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 03/20/2026 45.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 01/15/2027 50.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UBER 06/17/2027 67.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APLD 01/15/2027 20.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 09/18/2026 200.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APH 11/20/2026 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 01/15/2027 280.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 06/18/2026 500.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MSFT 07/17/2026 410.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 11/20/2026 350.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 03/19/2027 130.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RIOT 01/15/2027 18.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ULTA 03/19/2027 490.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABNB 06/18/2026 135.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 08/21/2026 265.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 05/15/2026 104.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • QBTS 03/19/2027 15.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • INMD 05/15/2026 15.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 06/18/2026 260.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CMG 07/17/2026 30.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 09/18/2026 60.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VRT 03/19/2027 270.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 06/18/2026 60.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 03/19/2027 400.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 03/20/2026 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ASML 07/17/2026 780.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWY 01/15/2027 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 03/19/2027 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NOC 03/20/2026 480.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSLA 06/17/2027 320.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • D 01/15/2027 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MP 03/19/2027 50.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ISRG 12/18/2026 520.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 11/20/2026 80.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 12/18/2026 500.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 07/17/2026 200.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 01/15/2027 620.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LMT 01/15/2027 440.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 09/18/2026 1100.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSLA 09/18/2026 370.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 12/18/2026 60.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 07/17/2026 500.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 06/18/2026 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 06/18/2026 470.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWY 01/15/2027 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 01/15/2027 130.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 03/20/2026 98.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 12/18/2026 300.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BA 05/15/2026 185.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CMG 09/18/2026 30.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UBER 01/15/2027 75.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 08/21/2026 240.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 06/18/2026 260.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 06/18/2026 400.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LMT 06/18/2026 410.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CCL 01/15/2027 25.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 12/18/2026 85.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVO 07/17/2026 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 09/18/2026 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 03/19/2027 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NTRA 11/20/2026 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TWLO 01/15/2027 150.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LYFT 01/15/2027 15.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 03/19/2027 125.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWJ 06/18/2026 76.84 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UBER 03/19/2027 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ELF 01/15/2027 45.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 11/20/2026 45.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 05/15/2026 280.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • HOOD 10/16/2026 90.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 09/18/2026 240.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • HOOD 03/19/2027 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • INMD 01/15/2027 15.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 04/17/2026 440.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 01/15/2027 240.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVO 12/18/2026 50.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABBV 05/15/2026 200.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • USAR 01/21/2028 17.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LAC 01/15/2027 4.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 12/18/2026 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBN 01/15/2027 23.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MP 06/18/2026 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSLA 11/20/2026 310.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SBUX 06/18/2026 75.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • QBTS 01/15/2027 12.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 09/18/2026 190.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 08/21/2026 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 06/26/2026 440.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BABA 04/17/2026 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 10/16/2026 190.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 12/18/2026 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MP 12/18/2026 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PFE 12/18/2026 25.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 06/18/2026 45.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LASR 09/18/2026 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 06/18/2026 370.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IONQ 01/15/2027 22.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 12/18/2026 320.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 01/15/2027 560.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 01/15/2027 550.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 06/17/2027 550.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 05/15/2026 80.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 06/17/2027 220.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TWLO 04/17/2026 140.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RBRK 01/15/2027 52.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LASR 12/18/2026 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 12/18/2026 280.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 11/20/2026 350.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TCOM 06/17/2027 45.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RTX 03/19/2027 140.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 06/18/2026 560.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XOM 11/20/2026 130.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 12/18/2026 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XYZ 03/20/2026 65.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 03/19/2027 36.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 12/18/2026 580.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NU 01/15/2027 15.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 06/18/2026 380.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BRKB 06/17/2027 430.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 01/15/2027 47.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 03/19/2027 320.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MMYT 12/18/2026 40.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • QQQ 09/30/2026 525.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UBER 08/21/2026 72.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZS 06/18/2026 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XOM 12/18/2026 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 12/18/2026 710.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • HOOD 03/19/2027 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 09/18/2026 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RBLX 08/21/2026 55.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MP 03/19/2027 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RKLB 12/18/2026 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RKLB 01/15/2027 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 12/18/2026 70.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 05/15/2026 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 09/18/2026 50.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ACHR 01/15/2027 7.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DVN 10/16/2026 45.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 07/17/2026 470.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 12/18/2026 210.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 08/21/2026 50.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NEE 12/18/2026 82.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 12/18/2026 420.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 09/18/2026 67.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RTX 08/21/2026 165.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 03/19/2027 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ASML 03/20/2026 950.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 09/18/2026 130.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWJ 01/15/2027 83.84 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 01/15/2027 680.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVDA 12/18/2026 175.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALAB 01/15/2027 90.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UBER 01/15/2027 67.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 05/15/2026 320.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 12/18/2026 290.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 01/15/2027 185.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 07/17/2026 170.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • META 02/20/2026 610.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • HOOD 03/19/2027 70.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RTX 03/19/2027 145.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSM 08/21/2026 250.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LMT 03/19/2027 520.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 06/17/2027 760.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 01/15/2027 420.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 01/15/2027 90.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • META 03/19/2027 520.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RKLB 03/19/2027 90.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • JD 12/18/2026 32.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 06/17/2027 800.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 09/18/2026 300.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 12/18/2026 250.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVO 12/18/2026 50.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NBIS 09/18/2026 85.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 09/18/2026 550.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 12/18/2026 340.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 08/21/2026 800.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 06/26/2026 200.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ISRG 06/18/2026 470.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BA 12/18/2026 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ATEN 12/18/2026 22.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • META 05/15/2026 620.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 06/17/2027 150.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 11/20/2026 210.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 11/20/2026 280.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RIOT 01/15/2027 10.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ELF 08/21/2026 70.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 08/21/2026 87.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 03/19/2027 780.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 09/18/2026 500.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 09/18/2026 210.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 01/15/2027 60.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MSFT 05/15/2026 420.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 12/18/2026 97.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 03/19/2027 290.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LYFT 03/19/2027 15.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RKLB 01/15/2027 70.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 03/19/2027 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BE 06/17/2027 165.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CMG 12/18/2026 35.20 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • FSLR 01/15/2027 140.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ACHR 01/15/2027 5.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 06/17/2027 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSM 06/17/2027 300.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 11/20/2026 130.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 07/17/2026 390.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 05/22/2026 420.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 06/18/2026 100.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • HUT 06/17/2027 50.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 09/18/2026 80.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 09/18/2026 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SHOP 06/17/2027 90.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 12/18/2026 320.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 09/18/2026 260.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 06/18/2026 150.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 07/17/2026 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 08/21/2026 220.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 01/15/2027 820.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MP 09/18/2026 50.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 04/17/2026 380.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 12/18/2026 290.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 07/17/2026 480.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APH 12/18/2026 180.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MP 09/18/2026 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 04/17/2026 280.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XLE 11/20/2026 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 05/15/2026 62.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SHOP 04/17/2026 130.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZS 08/21/2026 200.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 05/15/2026 350.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 01/15/2027 60.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ULTA 03/20/2026 525.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 12/18/2026 210.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 12/18/2026 580.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZBH 06/18/2026 100.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RKLB 07/17/2026 50.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SHOP 11/20/2026 90.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 03/19/2027 320.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RKLB 01/21/2028 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 07/17/2026 200.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ISRG 03/19/2027 390.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABNB 06/17/2027 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BE 01/15/2027 170.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XYZ 12/18/2026 62.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVO 03/19/2027 35.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 11/20/2026 240.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBM 03/19/2027 300.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ISRG 07/17/2026 495.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SONY 01/15/2027 20.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LYFT 12/18/2026 18.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 06/17/2027 870.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 04/17/2026 60.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ASML 09/18/2026 950.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • JD 03/20/2026 30.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWJ 01/15/2027 84.84 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVDA 06/17/2027 175.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 07/17/2026 255.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 08/21/2026 390.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 12/18/2026 82.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 01/15/2027 80.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • USAR 01/15/2027 17.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ACHR 01/21/2028 5.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 12/18/2026 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 06/17/2027 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CMG 06/18/2026 33.20 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • META 02/20/2026 650.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 06/17/2027 80.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 06/17/2027 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 12/18/2026 330.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 01/15/2027 35.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 03/19/2027 82.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 05/15/2026 92.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 09/18/2026 430.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ASML 09/18/2026 1100.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 06/05/2026 270.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BE 12/18/2026 380.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 03/19/2027 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVO 06/17/2027 40.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BRKB 12/18/2026 450.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RIOT 01/21/2028 13.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 12/18/2026 440.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 08/21/2026 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 02/20/2026 92.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 07/17/2026 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TWLO 09/18/2026 165.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BABA 09/18/2026 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 09/18/2026 80.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XOM 12/18/2026 140.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ULTA 11/20/2026 390.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EXPE 09/18/2026 200.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CCJ 01/21/2028 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • FSLR 09/18/2026 180.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 06/18/2026 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 08/21/2026 280.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 05/15/2026 480.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVDA 03/19/2027 165.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 09/18/2026 67.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZBH 06/18/2026 90.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 08/21/2026 400.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 12/18/2026 145.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 03/19/2027 560.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZS 03/19/2027 170.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 06/18/2026 470.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 08/21/2026 100.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 06/18/2026 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 10/16/2026 35.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 09/18/2026 550.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • FSLR 12/18/2026 175.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 06/17/2027 420.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 12/18/2026 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 04/17/2026 300.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 01/15/2027 38.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EXPE 06/18/2026 210.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 04/17/2026 350.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • QUBT 01/15/2027 8.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 03/19/2027 250.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 09/18/2026 480.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 09/18/2026 97.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 11/20/2026 45.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BA 09/18/2026 185.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BWXT 01/15/2027 160.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 07/17/2026 370.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 06/18/2026 65.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 09/18/2026 250.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 12/18/2026 150.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NU 03/19/2027 13.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • JD 03/19/2027 27.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 03/19/2027 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 09/18/2026 47.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 03/20/2026 150.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 12/18/2026 190.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 07/17/2026 215.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 12/18/2026 600.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWY 01/15/2027 100.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 09/18/2026 150.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 08/21/2026 245.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RIOT 01/21/2028 15.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 09/18/2026 600.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 07/17/2026 65.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZS 12/18/2026 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 03/19/2027 55.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 03/19/2027 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 10/16/2026 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBM 10/16/2026 270.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 06/17/2027 450.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABNB 03/19/2027 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MCHI 05/15/2026 61.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SHOP 03/19/2027 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 06/05/2026 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RBLX 12/18/2026 90.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 06/17/2027 1100.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 12/18/2026 100.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NIO 06/18/2026 5.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BA 05/15/2026 200.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 03/20/2026 150.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 12/18/2026 250.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ROKU 03/19/2027 85.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NEE 02/19/2027 80.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 06/18/2026 290.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BA 09/18/2026 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 01/15/2027 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DVN 01/15/2027 35.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 07/17/2026 460.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • META 12/18/2026 550.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RBLX 12/18/2026 75.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • FSLR 03/19/2027 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IONQ 01/21/2028 35.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 07/17/2026 240.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CAVA 03/20/2026 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBM 01/15/2027 280.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MSFT 10/16/2026 440.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XYZ 09/18/2026 72.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • INMD 08/21/2026 15.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 03/19/2027 50.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RTX 03/19/2027 155.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 04/17/2026 65.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 12/18/2026 110.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 12/18/2026 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 05/21/2027 145.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ELF 01/15/2027 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 03/19/2027 340.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 04/17/2026 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NOC 03/19/2027 480.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 10/16/2026 52.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • VST 04/17/2026 180.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZBH 09/18/2026 95.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EPD 03/19/2027 35.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 11/20/2026 270.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 09/18/2026 300.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 03/20/2026 140.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XYZ 12/18/2026 65.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 12/18/2026 160.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TWLO 07/17/2026 140.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 12/18/2026 47.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWV 06/18/2026 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EXPE 03/19/2027 190.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 09/18/2026 370.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MU 01/15/2027 260.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWJ 09/18/2026 85.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • FMC 01/15/2027 15.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SMR 01/15/2027 10.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 05/15/2026 510.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NIO 11/20/2026 5.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 06/18/2026 470.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RGTI 11/20/2026 15.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZS 12/18/2026 180.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 01/15/2027 300.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 12/18/2026 620.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 06/18/2026 450.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ASTS 01/15/2027 75.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ISRG 10/16/2026 520.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 03/19/2027 220.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 08/21/2026 190.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 09/18/2026 330.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 06/18/2026 340.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 10/16/2026 52.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MRK 01/15/2027 100.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABNB 07/17/2026 115.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 04/17/2026 300.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 11/20/2026 200.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 10/16/2026 140.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALAB 04/16/2027 150.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 05/15/2026 425.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 06/18/2026 200.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XLE 01/15/2027 60.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RBLX 06/26/2026 47.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 06/18/2026 620.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BE 06/17/2027 170.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 09/18/2026 275.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XYZ 01/15/2027 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 10/16/2026 840.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IONQ 03/19/2027 30.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 09/18/2026 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 08/21/2026 30.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZS 11/20/2026 135.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IONQ 11/20/2026 25.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSM 06/17/2027 290.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 06/18/2026 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 01/15/2027 1070.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TAN 01/15/2027 50.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 07/17/2026 75.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 05/15/2026 72.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 07/17/2026 950.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 12/18/2026 540.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSM 01/15/2027 280.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CCJ 01/15/2027 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IONQ 01/15/2027 25.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • D 03/19/2027 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • FMC 01/15/2027 20.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWZ 12/18/2026 34.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABNB 12/18/2026 160.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 07/17/2026 300.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 07/17/2026 67.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • JD 06/18/2026 28.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 12/18/2026 155.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UBER 01/15/2027 65.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NKE 10/16/2026 62.50 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALAB 01/15/2027 125.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 12/18/2026 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APH 12/18/2026 145.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RTX 08/21/2026 160.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 01/15/2027 150.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABNB 04/17/2026 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALAB 04/16/2027 145.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 07/17/2026 420.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BE 07/17/2026 210.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APH 03/19/2027 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 07/17/2026 520.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 03/19/2027 600.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 06/17/2027 340.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LYFT 03/20/2026 14.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LAC 05/15/2026 5.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 07/17/2026 110.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NOC 05/15/2026 485.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • GEV 07/17/2026 850.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MU 08/21/2026 400.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NFLX 03/19/2027 120.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 08/21/2026 260.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 06/18/2026 105.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • OKTA 03/19/2027 80.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APH 08/21/2026 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • JOBY 03/19/2027 8.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 08/21/2026 415.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 09/18/2026 470.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EXPE 01/15/2027 155.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • HUT 06/17/2027 47.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ZBH 12/18/2026 85.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWY 07/17/2026 92.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 11/20/2026 65.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSM 08/21/2026 260.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 09/18/2026 470.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • SBUX 02/19/2027 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • QQQ 12/18/2026 550.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 08/21/2026 580.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ETSY 09/18/2026 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 06/18/2026 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRCL 09/18/2026 135.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 01/15/2027 200.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 12/18/2026 100.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • KTOS 01/15/2027 45.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 03/19/2027 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • COIN 06/12/2026 230.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IBIT 10/16/2026 45.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 08/21/2026 490.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • TSM 01/15/2027 270.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 03/19/2027 300.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 05/01/2026 180.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • RKLB 03/19/2027 70.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XYZ 09/18/2026 75.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MSFT 06/17/2027 370.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XYZ 04/17/2026 70.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 06/17/2027 210.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APP 06/17/2027 580.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 10/16/2026 520.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 09/18/2026 450.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABBV 08/21/2026 200.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRWD 06/12/2026 650.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • DIS 01/15/2027 105.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • INMD 01/16/2026 15.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CMG 09/18/2026 32.50 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ANET 06/18/2026 175.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • BABA 03/19/2027 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • UNH 07/17/2026 260.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • APH 03/19/2027 220.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ADBE 12/18/2026 390.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MP 02/20/2026 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ABNB 06/18/2026 120.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LAC 01/21/2028 5.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ULTA 09/18/2026 520.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • IONQ 01/15/2027 20.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • LLY 06/17/2027 850.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • EWW 01/15/2027 67.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 05/15/2026 45.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 03/20/2026 600.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • XLE 12/31/2026 65.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • CRM 08/21/2026 240.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • NVO 09/18/2026 55.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • PYPL 09/18/2026 75.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALB 03/20/2026 110.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • MU 09/17/2027 520.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AMZN 05/15/2026 160.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • AXON 06/18/2026 410.00 C
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+  • ALAB 07/17/2026 95.00 P
+     - CONVICTION_DROP: Conviction 2/10 (threshold < 4)
+
+
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+CLOSED-LOOP STATUS
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Report Type: DAILY
+Portfolio Size: 573 positions
+Regime: BEAR_SIDEWAYS
+Framework Evolution: CONTINUOUS (no hardcoding)
+
+System Status: ✅ Self-Evolving Closed-Loop
+  • Daily: Conviction updates → thesis_state.json
+  • Weekly: Tier promotions/demotions → screener_loader.py
+  • Monthly: Moat recalibration → trading_persona.md
+
+========================================================================================================================

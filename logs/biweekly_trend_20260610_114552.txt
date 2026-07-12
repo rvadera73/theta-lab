@@ -1,0 +1,73 @@
+====================================================================================================
+BI-WEEKLY TREND & RISK REPORT
+Period: 2026-05-27 to 2026-06-10
+====================================================================================================
+
+EDGE VALIDITY ASSESSMENT
+----------------------------------------------------------------------------------------------------
+
+PUT-SELLING EDGE:
+  Status:      VALID ✓
+  YTD P&L:     +$107,000
+  Win Rate:    85.6%
+  Track Record: CONSISTENT (Jan-Jun performance stable)
+
+CALL-SELLING EDGE:
+  Status:      INVALID ✗
+  YTD P&L:     -$11,000
+  Win Rate:    NEGATIVE
+  Recommendation: PHASE OUT entirely
+
+STRANGLE EDGE:
+  Status:      DEGRADED (diluted by weak call-side)
+  Collapsed May 1-8: Lost $105K on APP positions
+  Recommendation: Stop selling; reduce to 15% max allocation
+
+MARKET BREAKDOWN SCENARIOS
+----------------------------------------------------------------------------------------------------
+
+SPX -10% Scenario (Intraday crash):
+  Current Margin:        142.0%
+  Post-Crash Estimate:   160-170%
+  Outcome:               FORCED LIQUIDATION (Account A)
+  Action Required:       IMMEDIATE - reduce to <100%
+
+SPX -15% Scenario (Deeper move):
+  Margin Estimate:       175-190%
+  Outcome:               MARGIN CALL (emergency liquidation)
+  Recovery Time:         5-7 days to unwind positions
+
+SPX +5% Scenario (Rally):
+  Margin Estimate:       135-140%
+  Outcome:               Still critical, but buying time
+  Opportunity:           Use rally to close 5-10 positions
+
+REGIME CHANGE SIGNALS TO WATCH
+----------------------------------------------------------------------------------------------------
+IV Rank Spike >70:       Sell volatility aggressively
+VIX Break >20:           Reduce call sales; increase put sizes
+SPX Support Break:       Prepare for emergency fund deployment
+Earnings Season:         Reduce strangles (event risk)
+
+RECOMMENDED STRATEGY (Next 2-4 Weeks)
+----------------------------------------------------------------------------------------------------
+
+IMMEDIATE PRIORITIES:
+1. Reduce margin from 142% to <80% (non-negotiable)
+   → Close 10-15 low-conviction positions
+   → Target: $50-100K in realized closes
+
+2. Rebalance strategy: 80% puts / 20% calls
+   → Close all naked short calls
+   → Focus new entries on put-selling
+
+3. Consolidate portfolio: Eliminate positions <$50 unrealized
+   → Reduce position count from 238 to 150-180
+   → Improve portfolio manageability
+
+WEEKLY EXECUTION TARGETS:
+   → 5-7 new put entries
+   → 3-5 profit-take closes (on 50%+ winners)
+   → 2-3 stop losses (on conviction losers)
+
+====================================================================================================

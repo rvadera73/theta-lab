@@ -1,0 +1,807 @@
+╔======================================================================================================================╗
+║ UNIFIED MASTER REPORT — DAILY (260 POSITIONS)                │ Type: DAILY    │ Regime: BULL             ║            
+║ July 12, 2026 — 12:00 AM ET                                                                                            ║
+╚======================================================================================================================╝
+
+========================================================================================================================
+SECTION 0: ACCOUNT HEALTH, FRAMEWORK STATUS & GAP ANALYSIS
+========================================================================================================================
+
+CONSOLIDATED PORTFOLIO SNAPSHOT:
+├─ Total Portfolio Balance:      $2,163,000
+├─ Total notional exposure:      $   5,252,067
+├─ Total option requirement:     $   1,861,546
+├─ Positions with short puts:    79
+├─ Positions with short calls:   26
+├─ YTD Net Premium:              $     438,617  (live from transactions)
+├─ Month-to-Date Premium:        $       2,508
+└─ Snapshot currency:            2026-05-30
+
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+TWO LENSES ON MONTHLY PERFORMANCE  (both derived from your transaction history)
+════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+LENS 1 — PREMIUM INCOME (cash flow)  =  what you COLLECT selling options  [the $100K target]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Account                                  01         02         03         04         05         06         07          YTD
+--------------------------------------------------------------------------------------------------------------------------
+Account A (232)                      45,402     10,781     96,241     94,510    -18,837    -15,311        552      213,338
+Account B (275)                      18,121       -713      4,785      9,665      6,551      4,493          0       42,902
+Account C (634)                      10,989      3,313      2,971      2,940      1,339      4,338      2,252       28,142
+Fidelity (Rahul)                     16,643        620     11,401     21,397     11,903      2,495       -357       64,102
+Fidelity (Rajul — Roth IRA)              47        228         87      2,498        162      3,731          0        6,753
+Fidelity (Rajul — Rollover IRA)           0      3,379        100     10,911     -2,725        134       -451       11,348
+Robinhood (Individual)                2,429        254          0          0         91       -729          0        2,045
+Robinhood (Traditional IRA)          14,524      2,528      8,963     10,336      2,763        998          0       40,112
+Vanguard (Rahul)                      7,897        778      7,598      4,532      2,408      6,150        512       29,875
+--------------------------------------------------------------------------------------------------------------------------
+TOTAL                               116,052     21,168    132,146    156,789      3,655      6,299      2,508      438,617
+
+  Gross SOLD (STO)                  181,739     68,408    199,758    324,125    349,672    243,331     22,885    1,389,918
+  Net KEPT                          116,052     21,168    132,146    156,789      3,655      6,299      2,508      438,617
+  Buyback DRAG (rolling)             65,687     47,240     67,612    167,336    346,017    237,032     20,377      951,301
+
+Net = STO/STC credits − BTC/BTO debits. High DRAG months = heavy rolling (premium given back).
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market)  ≈  Empower 'portfolio value change'
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  = premium income  +  unrealized option MTM  +  equity/assigned-stock MTM  +  dividends
+
+  Total value = premium income (LENS 1, accurate) + unrealized option MTM + equity MTM + dividends.
+  The MTM parts need CURRENT option marks, which live in your POSITION-SNAPSHOT exports (or live
+  quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are
+  stale). Transactions give income; marks give value — you need both, from different exports.
+
+  → Use EMPOWER for the authoritative total value. It reconciled to income at the YTD level
+    (~$435K ≈ $438K), which validates the numbers.
+  → To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).
+
+WHY THEY DIVERGE MONTH-TO-MONTH:
+  • Empower's monthly figure is dominated by MARKET moves (unrealized MTM) — e.g. May +$288K
+    was your long book marking UP, not premium income (premium that month was ~$4K).
+  • LENS 1 books premium when SOLD — front-loaded because you sell long-dated (2027) contracts.
+  • So: use LENS 1 (income) for the $100K goal; use Empower (Lens 2) for net-worth/market view.
+  • To make Lens 2 exact here: backfill the ~12 names' transactions + drop fresh position snapshots.
+
+PER-ACCOUNT BREAKDOWN:
+------------------------------------------------------------------------------------------------------------------------
+Account                                Balance      %       Notional      Opt Req       Type          Status
+------------------------------------------------------------------------------------------------------------------------
+Account A (232)                $       403,000  18.6% $    3,437,486 $    618,747     Margin        ✅ MARGIN
+  ├─ 114 option positions | Monthly target: $18,600 | Equity: ADBE 300sh, AXON 200sh, XYZ 200sh, COIN 100sh, ETSY 100sh +10 more
+Account B (275)                $       261,000  12.1% $      344,774 $    282,650   Cash-Sec            ✅ OK
+  ├─ 27 option positions | Monthly target: $12,100 | Equity: FMC 100sh, CRM 100sh
+Account C (634)                $       266,000  12.3% $      306,679 $    156,320   Cash-Sec            ✅ OK
+  ├─ 26 option positions | Monthly target: $12,300 | Equity: ABNB 100sh, INMD 100sh, NKE 100sh, NIO 200sh, TWLO 524sh
+Fidelity (Rahul)               $       500,000  23.1% $      658,311 $    603,522   Cash-Sec            ✅ OK
+  ├─ 47 option positions | Monthly target: $23,100 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, NIO 800sh, CRM 200sh
+Fidelity (Rajul — Roth IRA)    $        49,000   2.3% $       55,663 $     48,307   Cash-Sec            ✅ OK
+  ├─ 10 option positions | Monthly target: $2,300 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
+Fidelity (Rajul — Rollover IRA) $       129,000   6.0% $      152,100 $    152,000   Cash-Sec            ✅ OK
+  ├─ 12 option positions | Monthly target: $5,960
+Vanguard (Rahul)               $       322,000  14.9% $            0 $          0   Cash-Sec            ✅ OK
+  └─ No open positions | Monthly target: $14,900
+Robinhood (Individual)         $        13,000   0.6% $       17,780 $          0   Cash-Sec            ✅ OK
+  ├─ 4 option positions | Monthly target: $600
+Robinhood (Traditional IRA)    $       220,000  10.2% $      279,275 $          0   Cash-Sec            ✅ OK
+  ├─ 20 option positions | Monthly target: $10,160
+------------------------------------------------------------------------------------------------------------------------
+TOTAL                          $     2,163,000 100.0% $    5,252,067 $  1,861,546
+
+DEFINITIONS:
+  • Notional = Stock price × contracts × 100 (underlying value of options position)
+  • Opt Req = Strike × contracts × 100 for short puts + current_price × contracts × 100 for naked calls (covered calls = $0)
+  • For margin accounts: verify Opt Req < 80% of account balance
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+60% CLOSE COST RATIO FRAMEWORK — CONSOLIDATED VIEW
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+FRAMEWORK OVERVIEW:
+  Base: $100,000/month net = $1.2M/year (at 60% close costs)
+  Current Regime: BULL (applies 100% of base)
+  Adjusted Target: $100,000 net per month
+
+PERFORMANCE VS TARGET (YTD CUMULATIVE):
+  Target (7 months):     $700,000
+  Actual YTD:                 $292,421
+  Gap to close:               $407,579 (58.2%)
+  Monthly average (YTD):      $41,774
+  Monthly average needed:     $100,000
+  Monthly gap:                $-9,100
+
+POSITION TIER DISTRIBUTION → GAP CLOSURE:
+  Tier 1 (22 positions): $ 83,600/month (  84% of $100,000 target)
+  Tier 2 (38 positions): $ 38,000/month (  38% of target)
+  Tier 3 (25 positions): $-12,500/month ( -12% drag)
+  Current total: 85 positions = $109,100/month (109% of target)
+
+GAP CLOSURE PATH:
+  To hit $100,000 target: Need 0 more Tier 1 positions
+  Alternative: Scale existing OR exit 10 worst Tier 3 positions
+  Capital required for 0 new positions: $0 (0 × $10K)
+
+ACCOUNT-LEVEL GAP BREAKDOWN:
+  ✅ Account A (232)                          Target $  18,631 | Actual $  20,326 | Gap $  -1,695 ( -9.1%)
+  ✅ Account B (275)                          Target $  12,066 | Actual $  13,164 | Gap $  -1,098 ( -9.1%)
+  ✅ Account C (634)                          Target $  12,297 | Actual $  13,416 | Gap $  -1,119 ( -9.1%)
+  ✅ Fidelity (Rahul)                         Target $  23,116 | Actual $  25,219 | Gap $  -2,103 ( -9.1%)
+  ✅ Fidelity (Rajul — Rollover IRA)          Target $   5,963 | Actual $   6,506 | Gap $    -543 ( -9.1%)
+  ✅ Fidelity (Rajul — Roth IRA)              Target $   2,265 | Actual $   2,471 | Gap $    -206 ( -9.1%)
+  ✅ Robinhood (Individual)                   Target $     601 | Actual $     655 | Gap $     -54 ( -9.0%)
+  ✅ Robinhood (Traditional IRA)              Target $  10,171 | Actual $  11,096 | Gap $    -925 ( -9.1%)
+  ⚠️ Vanguard (Rahul)                         Target $  14,886 | Actual $       0 | Gap $  14,886 (100.0%)
+
+RISK GUARDRAILS:
+├─ Margin floor (Account A only): 50% utilization
+├─ Margin alert: >75% utilization → review new entries
+├─ Margin emergency: >80% utilization → reduce positions
+├─ Cash floor (all accounts): $75,000 minimum to trade
+├─ Cash emergency: <$50,000 → deploy emergency fund
+└─ Current status: ⚠️ MONITOR
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SUPPLEMENTARY: PRODUCTION FRAMEWORK — 60% CLOSE COST RATIO TARGETS
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Framework: $100,000/month net = $1.2M/year target (at 60% close costs)
+Regime: BULL (applies 100% of base)
+Adjusted Target: $250,000 gross / $100,000 net
+
+YTD Performance: $292,421 net (7 months)
+Monthly average: $41,774
+Annualized pace: $501,293 ⚠️ BELOW TARGET
+
+Account Targets (Regime-Adjusted):
+------------------------------------------------------------------------------------------------------------------------
+  Account A (232)                               $    46,500 gross / $    18,600 net
+  Account B (275)                               $    30,250 gross / $    12,100 net
+  Account C (634)                               $    30,750 gross / $    12,300 net
+  Fidelity (Rahul)                              $    57,750 gross / $    23,100 net
+  Fidelity (Rajul — Roth IRA)                   $     5,750 gross / $     2,300 net
+  Fidelity (Rajul — Rollover IRA)               $    15,000 gross / $     6,000 net
+  Vanguard (Rahul)                              $    37,250 gross / $    14,900 net
+  Robinhood (Individual)                        $     1,500 gross / $       600 net
+  Robinhood (Traditional IRA)                   $    25,500 gross / $    10,200 net
+------------------------------------------------------------------------------------------------------------------------
+  TOTAL                                         $   250,250 gross / $   100,100 net
+
+========================================================================================================================
+SECTION 1: SYSTEM STATUS & PORTFOLIO SNAPSHOT
+========================================================================================================================
+
+Total open positions:        260
+Unique tickers:              85
+Active accounts:             9
+Data currency:               2026-07-12
+Live prices:                 85 tickers fetched from Yahoo Finance
+
+========================================================================================================================
+SECTION 2: CONVICTION UPDATES (Yahoo Finance Derived) + FRAMEWORK CONTRIBUTION
+========================================================================================================================
+
+TIER CONTRIBUTION TO TARGET:
+  Tier 1 (22 positions): $ 83,600/month | Each contributes $3,800/month (4.2% of $100,000)
+  Tier 2 (38 positions): $ 38,000/month | Each contributes $1,000/month (1.1% of target)
+  Tier 3 (25 positions): $-12,500/month | Each drags -$500/month (-0.6% of target)
+  Portfolio: 109,100/month (109% of target) — Need $-9,100 more
+
+HIGH (Tier 1: 8-10) CONVICTION — 22 positions | Total contribution: $83,600/month (83.6% of target)
+------------------------------------------------------------------------------------------------------------------------
+  🟢 NFLX   | $  73.37 | Value: $     80707 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Oversold / Attractive
+      └─ Puts only: 11 contracts ($    80,707)
+  🟡 UBER   | $  74.54 | Value: $     52178 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Puts only: 7 contracts ($    52,178)
+  🟡 MSFT   | $ 385.10 | Value: $    231060 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Stagger: 5 puts ($   192,550) + 1 calls ($    38,510)
+  🟡 NKE    | $  44.37 | Value: $     22185 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Stagger: 1 puts ($     4,437) + 4 calls ($    17,748)
+  🟡 BABA   | $ 112.33 | Value: $     22466 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Puts only: 2 contracts ($    22,466)
+  🟡 NOC    | $ 539.63 | Value: $    107926 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Puts only: 2 contracts ($   107,926)
+  🟢 ULTA   | $ 469.20 | Value: $     46920 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Oversold / Attractive
+      └─ Puts only: 1 contracts ($    46,920)
+  🟡 SONY   | $  20.85 | Value: $      2085 | Conv:  9.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Puts only: 1 contracts ($     2,085)
+  🟡 RBLX   | $  55.35 | Value: $     33210 | Conv:  8.5/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Stagger: 3 puts ($    16,605) + 3 calls ($    16,605)
+  🟡 CRM    | $ 163.32 | Value: $     81660 | Conv:  8.5/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Stagger: 1 puts ($    16,332) + 4 calls ($    65,328)
+  🟢 INFY   | $  10.94 | Value: $      3282 | Conv:  8.5/10 | Contribution: $ 3,800/mo (3.8%) | Oversold / Attractive
+      └─ Stagger: 2 puts ($     2,188) + 1 calls ($     1,094)
+  🟡 HDB    | $  26.51 | Value: $      2651 | Conv:  8.5/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Puts only: 1 contracts ($     2,651)
+  🟢 SPCX   | $ 145.30 | Value: $     14530 | Conv:  8.5/10 | Contribution: $ 3,800/mo (3.8%) | Oversold / Attractive
+      └─ Puts only: 1 contracts ($    14,530)
+  🟡 TCOM   | $  42.80 | Value: $      4280 | Conv:  8.5/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Puts only: 1 contracts ($     4,280)
+  🟡 PYPL   | $  46.32 | Value: $     69480 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Calls only: 15 contracts ($    69,480)
+  🟢 COIN   | $ 159.07 | Value: $    174977 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Oversold / Attractive
+      └─ Stagger: 5 puts ($    79,535) + 6 calls ($    95,442)
+  🟡 LYFT   | $  15.61 | Value: $     10927 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Stagger: 3 puts ($     4,683) + 4 calls ($     6,244)
+  🟡 ZS     | $ 139.27 | Value: $     55708 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Stagger: 3 puts ($    41,781) + 1 calls ($    13,927)
+  🟡 DKNG   | $  26.48 | Value: $      5295 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
+      └─ Puts only: 2 contracts ($     5,295)
+  🟢 ACHR   | $   4.73 | Value: $       946 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Oversold / Attractive
+      └─ Puts only: 2 contracts ($       946)
+
+MODERATE (Tier 2: 6-8) CONVICTION — 38 positions | Total contribution: $38,000/month (38.0% of target)
+------------------------------------------------------------------------------------------------------------------------
+  🟢 WIT    | $   1.87 | Value: $      1309 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Oversold / Attractive
+      └─ Puts only: 7 contracts ($     1,309)
+  🟢 SMR    | $   9.04 | Value: $      6328 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Oversold / Attractive
+      └─ Puts only: 7 contracts ($     6,328)
+  🟡 JD     | $  28.20 | Value: $     14100 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+      └─ Stagger: 2 puts ($     5,640) + 3 calls ($     8,460)
+  🟢 AMZN   | $ 245.34 | Value: $     73602 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Stagger: 2 puts ($    49,068) + 1 calls ($    24,534)
+  🟡 MP     | $  52.21 | Value: $     15663 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+      └─ Puts only: 3 contracts ($    15,663)
+  🟢 XOM    | $ 138.88 | Value: $     27776 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Puts only: 2 contracts ($    27,776)
+  🟡 GOOGL  | $ 357.18 | Value: $     71436 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+      └─ Puts only: 2 contracts ($    71,436)
+  🟢 LMT    | $ 523.22 | Value: $    104644 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Puts only: 2 contracts ($   104,644)
+  🟢 KTOS   | $  48.19 | Value: $      9638 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Oversold / Attractive
+      └─ Puts only: 2 contracts ($     9,638)
+  🟢 OKLO   | $  48.85 | Value: $      4885 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Oversold / Attractive
+      └─ Puts only: 1 contracts ($     4,885)
+  🟢 ZBH    | $  91.34 | Value: $      9134 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Calls only: 1 contracts ($     9,134)
+  🔴 ADBE   | $ 223.64 | Value: $    134184 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Overbought / Extended
+      └─ Stagger: 1 puts ($    22,364) + 5 calls ($   111,820)
+  🟢 META   | $ 669.21 | Value: $    267684 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Puts only: 4 contracts ($   267,684)
+  🟢 DVN    | $  42.23 | Value: $     12669 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Puts only: 3 contracts ($    12,669)
+  🟡 LASR   | $  72.05 | Value: $     14410 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+      └─ Puts only: 2 contracts ($    14,410)
+  🟢 PL     | $  26.05 | Value: $      5210 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Puts only: 2 contracts ($     5,210)
+  🟡 EXPE   | $ 270.83 | Value: $     27083 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+      └─ Puts only: 1 contracts ($    27,083)
+  🟡 EPD    | $  37.27 | Value: $      3727 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+      └─ Puts only: 1 contracts ($     3,727)
+  🟢 NU     | $  13.76 | Value: $      1376 | Conv:  7.0/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Puts only: 1 contracts ($     1,376)
+  🟢 APP    | $ 506.98 | Value: $    304188 | Conv:  6.5/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+      └─ Stagger: 4 puts ($   202,792) + 2 calls ($   101,396)
+
+LOW (Tier 3: <6) CONVICTION — 25 positions | Total contribution: $-12,500/month (-12.5% of target)
+------------------------------------------------------------------------------------------------------------------------
+  🔴 NVO    | $  49.48 | Value: $     29688 | Conv:  5.5/10 | Contribution: $  -500/mo (0.0%) | Overbought / Extended
+      └─ Puts only: 6 contracts ($    29,688)
+  🟢 IONQ   | $  42.86 | Value: $     25716 | Conv:  5.5/10 | Contribution: $  -500/mo (0.0%) | Oversold / Attractive
+      └─ Puts only: 6 contracts ($    25,716)
+  🔴 ANET   | $ 186.96 | Value: $    112176 | Conv:  5.5/10 | Contribution: $  -500/mo (0.0%) | Overbought / Extended
+      └─ Stagger: 3 puts ($    56,088) + 3 calls ($    56,088)
+  🟡 CCJ    | $  95.99 | Value: $     28797 | Conv:  5.5/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 3 contracts ($    28,797)
+  🟡 QUBT   | $   8.66 | Value: $       866 | Conv:  5.5/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 1 contracts ($       866)
+  🟡 AXON   | $ 565.80 | Value: $    735540 | Conv:  5.0/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Stagger: 4 puts ($   226,320) + 9 calls ($   509,220)
+  🟡 OKTA   | $ 138.63 | Value: $    152493 | Conv:  5.0/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Stagger: 4 puts ($    55,452) + 7 calls ($    97,041)
+  🔴 TWLO   | $ 214.56 | Value: $    150192 | Conv:  5.0/10 | Contribution: $  -500/mo (0.0%) | Overbought / Extended
+      └─ Stagger: 2 puts ($    42,912) + 5 calls ($   107,280)
+  🟡 ELF    | $  76.75 | Value: $     30700 | Conv:  5.0/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 4 contracts ($    30,700)
+  🔴 MMYT   | $  58.62 | Value: $     17586 | Conv:  5.0/10 | Contribution: $  -500/mo (0.0%) | Overbought / Extended
+      └─ Puts only: 3 contracts ($    17,586)
+  🔴 SBUX   | $ 106.01 | Value: $     10601 | Conv:  5.0/10 | Contribution: $  -500/mo (0.0%) | Overbought / Extended
+      └─ Puts only: 1 contracts ($    10,601)
+  🟢 VST    | $ 158.86 | Value: $     15886 | Conv:  5.0/10 | Contribution: $  -500/mo (0.0%) | Neutral positioning
+      └─ Puts only: 1 contracts ($    15,886)
+  🟢 ASTS   | $  73.32 | Value: $     21996 | Conv:  4.5/10 | Contribution: $  -500/mo (0.0%) | Neutral positioning
+      └─ Puts only: 3 contracts ($    21,996)
+  🟡 TSM    | $ 434.11 | Value: $    130233 | Conv:  4.5/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 3 contracts ($   130,233)
+  🟡 GEV    | $1091.57 | Value: $    218314 | Conv:  4.5/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 2 contracts ($   218,314)
+  🟢 BE     | $ 244.61 | Value: $    146766 | Conv:  4.0/10 | Contribution: $  -500/mo (0.0%) | Neutral positioning
+      └─ Stagger: 5 puts ($   122,305) + 1 calls ($    24,461)
+  🟢 RKLB   | $  81.04 | Value: $     48624 | Conv:  4.0/10 | Contribution: $  -500/mo (0.0%) | Neutral positioning
+      └─ Puts only: 6 contracts ($    48,624)
+  🟡 ALAB   | $ 412.97 | Value: $    123891 | Conv:  4.0/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 3 contracts ($   123,891)
+  🟡 APH    | $ 159.06 | Value: $     15906 | Conv:  4.0/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 1 contracts ($    15,906)
+  🟡 LITE   | $ 802.01 | Value: $     80201 | Conv:  4.0/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 1 contracts ($    80,201)
+
+========================================================================================================================
+SECTION 3: POSITION HEAT DISTRIBUTION
+========================================================================================================================
+
+🟢 GREEN (Attractive/Oversold):   34 positions ( 40.0%)
+🟡 YELLOW (Neutral):              41 positions ( 48.2%)
+🔴 RED (Extended/Overbought):    10 positions ( 11.8%)
+
+========================================================================================================================
+SECTION 4: MARKET REGIME & SIGNALS
+========================================================================================================================
+
+Current Regime: BULL
+Note: Regime auto-detected from data. No caution flags active.
+
+VIX: 15.0 — VIX 15.0 sustained < 20
+S&P 500: 7575 (50d MA: 7433, 200d MA: 6965)
+  Above 50d MA: True | Above 200d MA: True
+
+========================================================================================================================
+SECTOR ANALYSIS & ROTATION FRAMEWORK
+========================================================================================================================
+
+SECTOR SNAPSHOT — Conviction & Valuation Positioning:
+
+Sector                     Positions   Avg Conv   Avg RSI   52W %ile                                   Signal
+------------------------------------------------------------------------------------------------------------------------
+Technology                        91       6.56      56.9       42.7                                🟡 NEUTRAL
+Healthcare                        11       5.36      67.6       47.5                                 🔴 REDUCE
+Consumer Cyclical                 21       6.88      55.2       42.4                                🟡 NEUTRAL
+Industrials                       42       5.51      43.3       38.4                                🟡 NEUTRAL
+Energy                             9       6.61      43.4       48.9                                🟡 NEUTRAL
+Utilities                          2       6.25      33.4       16.4                                    🟢 BUY
+Communication Services            25       7.48      52.2       30.0                                🟡 NEUTRAL
+Defense                            4       7.62      57.9       42.6                                    🟢 BUY
+Brand-Quality (Non-AI)            21       6.57      59.4       45.1                                🟡 NEUTRAL
+Basic Materials                    6       6.75      20.6       26.6                                    🟢 BUY
+Financial Services                28       7.54      52.0       18.7                                    🟢 BUY
+
+
+DETAILED SECTOR BREAKDOWN:
+
+
+TECHNOLOGY
+├─ Positions: 91 | Total notional: $1,618,070
+├─ Avg conviction: 6.56/10 | Avg RSI: 56.9
+├─ Position in 52W range: 42.7% (0=low, 100=high)
+├─ 🟡 MONITOR — Neutral positioning
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):     29 positions
+   ├─ MODERATE (6-8):  30 positions
+   └─ LOW (<6):        32 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:    25 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:   55 positions (neutral/approaching extremes)
+   └─ 🔴 RED:      11 positions (extended/overbought)
+
+   Top Positions in Technology:
+   ├─ LITE     $      80,201 | Conv   4.0/10 | Heat YELLOW
+   ├─ TSM      $      43,411 | Conv   4.5/10 | Heat YELLOW
+   ├─ TSM      $      43,411 | Conv   4.5/10 | Heat YELLOW
+   ├─ TSM      $      43,411 | Conv   4.5/10 | Heat YELLOW
+   ├─ TWLO     $      42,912 | Conv   5.0/10 | Heat RED
+
+
+HEALTHCARE
+├─ Positions: 11 | Total notional: $400,356
+├─ Avg conviction: 5.36/10 | Avg RSI: 67.6
+├─ Position in 52W range: 47.5% (0=low, 100=high)
+├─ 🔴 REDUCE — Overbought / extended
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      2 positions
+   ├─ MODERATE (6-8):   1 positions
+   └─ LOW (<6):         8 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:     3 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:    0 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       8 positions (extended/overbought)
+
+   Top Positions in Healthcare:
+   ├─ LLY      $     118,858 | Conv   2.5/10 | Heat RED
+   ├─ LLY      $     118,858 | Conv   2.5/10 | Heat RED
+   ├─ UNH      $      42,462 | Conv   3.0/10 | Heat RED
+   ├─ ISRG     $      40,678 | Conv   8.0/10 | Heat GREEN
+   ├─ ISRG     $      40,678 | Conv   8.0/10 | Heat GREEN
+
+
+CONSUMER CYCLICAL
+├─ Positions: 21 | Total notional: $233,521
+├─ Avg conviction: 6.88/10 | Avg RSI: 55.2
+├─ Position in 52W range: 42.4% (0=low, 100=high)
+├─ 🟡 MONITOR — Neutral positioning
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      5 positions
+   ├─ MODERATE (6-8):  12 positions
+   └─ LOW (<6):         4 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:     4 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:   12 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       5 positions (extended/overbought)
+
+   Top Positions in Consumer Cyclical:
+   ├─ TSLA     $      40,776 | Conv   6.5/10 | Heat GREEN
+   ├─ EXPE     $      27,083 | Conv   7.0/10 | Heat YELLOW
+   ├─ AMZN     $      24,534 | Conv   7.5/10 | Heat GREEN
+   ├─ AMZN     $      24,534 | Conv   7.5/10 | Heat GREEN
+   ├─ AMZN     $      24,534 | Conv   7.5/10 | Heat GREEN
+
+
+INDUSTRIALS
+├─ Positions: 42 | Total notional: $1,286,868
+├─ Avg conviction: 5.51/10 | Avg RSI: 43.3
+├─ Position in 52W range: 38.4% (0=low, 100=high)
+├─ 🟡 MONITOR — Neutral positioning
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      3 positions
+   ├─ MODERATE (6-8):  12 positions
+   └─ LOW (<6):        27 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:    26 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:   16 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       0 positions (extended/overbought)
+
+   Top Positions in Industrials:
+   ├─ AXON     $     113,160 | Conv   5.0/10 | Heat YELLOW
+   ├─ GEV      $     109,157 | Conv   4.5/10 | Heat YELLOW
+   ├─ GEV      $     109,157 | Conv   4.5/10 | Heat YELLOW
+   ├─ AXON     $      56,580 | Conv   5.0/10 | Heat YELLOW
+   ├─ AXON     $      56,580 | Conv   5.0/10 | Heat YELLOW
+
+
+ENERGY
+├─ Positions: 9 | Total notional: $72,969
+├─ Avg conviction: 6.61/10 | Avg RSI: 43.4
+├─ Position in 52W range: 48.9% (0=low, 100=high)
+├─ 🟡 MONITOR — Neutral positioning
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      0 positions
+   ├─ MODERATE (6-8):   6 positions
+   └─ LOW (<6):         3 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:     5 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:    4 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       0 positions (extended/overbought)
+
+   Top Positions in Energy:
+   ├─ XOM      $      13,888 | Conv   7.5/10 | Heat GREEN
+   ├─ XOM      $      13,888 | Conv   7.5/10 | Heat GREEN
+   ├─ CCJ      $       9,599 | Conv   5.5/10 | Heat YELLOW
+   ├─ CCJ      $       9,599 | Conv   5.5/10 | Heat YELLOW
+   ├─ CCJ      $       9,599 | Conv   5.5/10 | Heat YELLOW
+
+
+UTILITIES
+├─ Positions: 2 | Total notional: $20,771
+├─ Avg conviction: 6.25/10 | Avg RSI: 33.4
+├─ Position in 52W range: 16.4% (0=low, 100=high)
+├─ 🟢 BUY — Oversold / attractively valued
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      0 positions
+   ├─ MODERATE (6-8):   1 positions
+   └─ LOW (<6):         1 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:     2 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:    0 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       0 positions (extended/overbought)
+
+   Top Positions in Utilities:
+   ├─ VST      $      15,886 | Conv   5.0/10 | Heat GREEN
+   ├─ OKLO     $       4,885 | Conv   7.5/10 | Heat GREEN
+
+
+COMMUNICATION SERVICES
+├─ Positions: 25 | Total notional: $795,473
+├─ Avg conviction: 7.48/10 | Avg RSI: 52.2
+├─ Position in 52W range: 30.0% (0=low, 100=high)
+├─ 🟡 MONITOR — Neutral positioning
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):     10 positions
+   ├─ MODERATE (6-8):  15 positions
+   └─ LOW (<6):         0 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:    14 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:   11 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       0 positions (extended/overbought)
+
+   Top Positions in Communication Services:
+   ├─ META     $      66,921 | Conv   7.0/10 | Heat GREEN
+   ├─ META     $      66,921 | Conv   7.0/10 | Heat GREEN
+   ├─ META     $      66,921 | Conv   7.0/10 | Heat GREEN
+   ├─ META     $      66,921 | Conv   7.0/10 | Heat GREEN
+   ├─ APP      $      50,698 | Conv   6.5/10 | Heat GREEN
+
+
+DEFENSE
+├─ Positions: 4 | Total notional: $232,163
+├─ Avg conviction: 7.62/10 | Avg RSI: 57.9
+├─ Position in 52W range: 42.6% (0=low, 100=high)
+├─ 🟢 BUY — High conviction
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      1 positions
+   ├─ MODERATE (6-8):   3 positions
+   └─ LOW (<6):         0 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:     2 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:    2 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       0 positions (extended/overbought)
+
+   Top Positions in Defense:
+   ├─ NOC      $     107,926 | Conv   9.0/10 | Heat YELLOW
+   ├─ LMT      $      52,322 | Conv   7.5/10 | Heat GREEN
+   ├─ LMT      $      52,322 | Conv   7.5/10 | Heat GREEN
+   ├─ RTX      $      19,593 | Conv   6.5/10 | Heat YELLOW
+
+
+BRAND-QUALITY (NON-AI)
+├─ Positions: 21 | Total notional: $236,682
+├─ Avg conviction: 6.57/10 | Avg RSI: 59.4
+├─ Position in 52W range: 45.1% (0=low, 100=high)
+├─ 🟡 MONITOR — Neutral positioning
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      6 positions
+   ├─ MODERATE (6-8):   4 positions
+   └─ LOW (<6):        11 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:     1 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:   13 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       7 positions (extended/overbought)
+
+   Top Positions in Brand-Quality (Non-AI):
+   ├─ ULTA     $      46,920 | Conv   9.0/10 | Heat GREEN
+   ├─ ANET     $      18,696 | Conv   5.5/10 | Heat RED
+   ├─ ANET     $      18,696 | Conv   5.5/10 | Heat RED
+   ├─ ANET     $      18,696 | Conv   5.5/10 | Heat RED
+   ├─ ANET     $      18,696 | Conv   5.5/10 | Heat RED
+
+
+BASIC MATERIALS
+├─ Positions: 6 | Total notional: $53,478
+├─ Avg conviction: 6.75/10 | Avg RSI: 20.6
+├─ Position in 52W range: 26.6% (0=low, 100=high)
+├─ 🟢 BUY — Oversold / attractively valued
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):      0 positions
+   ├─ MODERATE (6-8):   6 positions
+   └─ LOW (<6):         0 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:     3 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:    3 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       0 positions (extended/overbought)
+
+   Top Positions in Basic Materials:
+   ├─ ALB      $      12,605 | Conv   6.0/10 | Heat GREEN
+   ├─ ALB      $      12,605 | Conv   6.0/10 | Heat GREEN
+   ├─ ALB      $      12,605 | Conv   6.0/10 | Heat GREEN
+   ├─ MP       $       5,221 | Conv   7.5/10 | Heat YELLOW
+   ├─ MP       $       5,221 | Conv   7.5/10 | Heat YELLOW
+
+
+FINANCIAL SERVICES
+├─ Positions: 28 | Total notional: $301,717
+├─ Avg conviction: 7.54/10 | Avg RSI: 52.0
+├─ Position in 52W range: 18.7% (0=low, 100=high)
+├─ 🟢 BUY — Oversold / attractively valued
+
+   Conviction Distribution:
+   ├─ HIGH (8-10):     20 positions
+   ├─ MODERATE (6-8):   8 positions
+   └─ LOW (<6):         0 positions
+
+   Heat Distribution:
+   ├─ 🟢 GREEN:    18 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:   10 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       0 positions (extended/overbought)
+
+   Top Positions in Financial Services:
+   ├─ PYPL     $      23,160 | Conv   8.0/10 | Heat YELLOW
+   ├─ COIN     $      15,907 | Conv   8.0/10 | Heat GREEN
+   ├─ COIN     $      15,907 | Conv   8.0/10 | Heat GREEN
+   ├─ COIN     $      15,907 | Conv   8.0/10 | Heat GREEN
+   ├─ COIN     $      15,907 | Conv   8.0/10 | Heat GREEN
+
+========================================================================================================================
+
+========================================================================================================================
+SECTOR ROTATION FRAMEWORK
+========================================================================================================================
+
+PRIORITY 1: BUY SIGNALS (Attractive pricing + conviction)
+  ✓ Basic Materials: Conv 6.8/10, RSI 20.6, 52W %ile 26.6
+    🟢 BUY — Oversold / attractively valued
+  ✓ Financial Services: Conv 7.5/10, RSI 52.0, 52W %ile 18.7
+    🟢 BUY — Oversold / attractively valued
+  ✓ Defense: Conv 7.6/10, RSI 57.9, 52W %ile 42.6
+    🟢 BUY — High conviction
+  ✓ Utilities: Conv 6.2/10, RSI 33.4, 52W %ile 16.4
+    🟢 BUY — Oversold / attractively valued
+
+PRIORITY 2: HOLD SIGNALS (Conviction intact but extended)
+  (None currently)
+
+PRIORITY 3: REDUCE SIGNALS (Extended positioning or low conviction)
+  ✗ Healthcare: Conv 5.4/10, RSI 67.6, 52W %ile 47.5
+    🔴 REDUCE — Overbought / extended
+
+PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)
+  ◇ Technology: Conv 6.6/10, RSI 56.9, 52W %ile 42.7
+    🟡 MONITOR — Neutral positioning
+  ◇ Consumer Cyclical: Conv 6.9/10, RSI 55.2, 52W %ile 42.4
+    🟡 MONITOR — Neutral positioning
+  ◇ Brand-Quality (Non-AI): Conv 6.6/10, RSI 59.4, 52W %ile 45.1
+    🟡 MONITOR — Neutral positioning
+  ◇ Communication Services: Conv 7.5/10, RSI 52.2, 52W %ile 30.0
+    🟡 MONITOR — Neutral positioning
+  ◇ Industrials: Conv 5.5/10, RSI 43.3, 52W %ile 38.4
+    🟡 MONITOR — Neutral positioning
+  ◇ Energy: Conv 6.6/10, RSI 43.4, 52W %ile 48.9
+    🟡 MONITOR — Neutral positioning
+
+========================================================================================================================
+
+========================================================================================================================
+SECTION 5: POSITION DISTRIBUTION BY ACCOUNT
+========================================================================================================================
+
+Account A (232)                    : 114 positions ( 43.8%) █████████████████████
+Fidelity (Rahul)                   :  47 positions ( 18.1%) █████████
+Account B (275)                    :  27 positions ( 10.4%) █████
+Account C (634)                    :  26 positions ( 10.0%) █████
+Robinhood (Traditional IRA)        :  20 positions (  7.7%) ███
+Fidelity (Rajul — Rollover IRA)    :  12 positions (  4.6%) ██
+Fidelity (Rajul — Roth IRA)        :  10 positions (  3.8%) █
+Robinhood (Individual)             :   4 positions (  1.5%) 
+Vanguard (Rahul)                   :   0 positions (  0.0%) 
+
+========================================================================================================================
+SECTION 6: POSITION HEAT MATRIX & PRIORITY ACTION
+========================================================================================================================
+
+
+🔴 CRITICAL — ACTION REQUIRED (15 positions)
+------------------------------------------------------------------------------------------------------------------------
+   1. LLY      | $ 1188.58 |  2 contracts | Value: $    237716 | Conv:  2.5/10 | RSI:  65.5 | Overbought / Extended
+   2. GEV      | $ 1091.57 |  2 contracts | Value: $    218314 | Conv:  4.5/10 | RSI:  48.3 | Approaching extremes
+   3. TWLO     | $  214.56 |  7 contracts | Value: $    150192 | Conv:  5.0/10 | RSI:  83.8 | Overbought / Extended
+   4. ADBE     | $  223.64 |  6 contracts | Value: $    134184 | Conv:  7.0/10 | RSI:  82.1 | Overbought / Extended
+   5. TSM      | $  434.11 |  3 contracts | Value: $    130233 | Conv:  4.5/10 | RSI:  42.3 | Approaching extremes
+   6. ALAB     | $  412.97 |  3 contracts | Value: $    123891 | Conv:  4.0/10 | RSI:  49.4 | Approaching extremes
+   7. ANET     | $  186.96 |  6 contracts | Value: $    112176 | Conv:  5.5/10 | RSI:  59.4 | Overbought / Extended
+   8. LITE     | $  802.01 |  1 contracts | Value: $     80201 | Conv:  4.0/10 | RSI:  45.2 | Approaching extremes
+   9. UNH      | $  424.62 |  1 contracts | Value: $     42462 | Conv:  3.0/10 | RSI:  62.9 | Overbought / Extended
+  10. NVO      | $   49.48 |  6 contracts | Value: $     29688 | Conv:  5.5/10 | RSI:  78.7 | Overbought / Extended
+  ... and 5 more RED/low conviction positions
+
+🟡 MONITOR — WATCH FOR CHANGES (36 positions)
+------------------------------------------------------------------------------------------------------------------------
+   1. AXON     | $  565.80 | 13 contracts | Value: $    735540 | Conv:  5.0/10 | RSI:  70.8
+   2. MSFT     | $  385.10 |  6 contracts | Value: $    231060 | Conv:  9.0/10 | RSI:  52.9
+   3. OKTA     | $  138.63 | 11 contracts | Value: $    152493 | Conv:  5.0/10 | RSI:  71.4
+   4. NOC      | $  539.63 |  2 contracts | Value: $    107926 | Conv:  9.0/10 | RSI:  57.7
+   5. IBM      | $  287.56 |  3 contracts | Value: $     86268 | Conv:  6.0/10 | RSI:  71.6
+   6. CRM      | $  163.32 |  5 contracts | Value: $     81660 | Conv:  8.5/10 | RSI:  64.5
+   7. CRWD     | $  187.18 |  4 contracts | Value: $     74872 | Conv:  6.5/10 | RSI:  62.6
+   8. GOOGL    | $  357.18 |  2 contracts | Value: $     71436 | Conv:  7.5/10 | RSI:  42.5
+  ... and 28 more YELLOW positions
+
+🟢 HEALTHY — LET RUN (34 positions)
+------------------------------------------------------------------------------------------------------------------------
+  34 positions are attractively priced (oversold/neutral)
+  Most oversold candidates (lowest RSI):
+    • ALB      RSI  14.1 | Conv 6.0/10
+    • SMR      RSI  15.2 | Conv 7.5/10
+    • OKLO     RSI  22.1 | Conv 7.5/10
+
+PORTFOLIO HEAT ALLOCATION:
+  🔴 CRITICAL:  25.2% ($   1,326,117)
+  🟡 MONITOR:   41.1% ($   2,158,376)
+  🟢 HEALTHY:   33.7% ($   1,767,575)
+
+========================================================================================================================
+SECTION 6.5: CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS
+========================================================================================================================
+
+
+🟢 RISK LEVEL: GREEN
+Summary: ✅ BULL regime stable. All indicators healthy. Proceed with normal sizing.
+
+Indicator Status:
+------------------------------------------------------------------------------------------------------------------------
+  ⚠️ BREADTH              | Value: 58.97435897435898 | Status: YELLOW     | Threshold: 60% (caution), 50% (alert)
+  ✅ AD_RATIO             | Value: 1.380952380952381 | Status: GREEN      | Threshold: 1.0 (caution), 0.8 (alert)
+  ✅ VIX_TERM             | Value: CONTANGO        | Status: GREEN      | Threshold: Contango (normal) → Flat (caution) → Backwardation (alert)
+  ✅ HYOAS                | Value: 380 bps         | Status: GREEN      | Threshold: 400 (caution), 450 (alert)
+  ✅ PCR                  | Value: 0.75            | Status: GREEN      | Threshold: 1.0 (caution), 1.2 (alert)
+  ✅ YIELD_CURVE          | Value: 0.60%           | Status: GREEN      | Threshold: Inverted (alert), <0.1% (caution), >0.5% (normal)
+
+Crash Probability Forecast (Probabilistic):
+------------------------------------------------------------------------------------------------------------------------
+  🟢 30-day crash probability:   11.0%  |  Action: 🟢 NORMAL: Proceed with standard sizing
+  🟢 60-day crash probability:   19.0%
+  🟢 90-day crash probability:   28.0%
+  📌 Primary risk factor: BREADTH elevated
+
+Recommended Actions:
+------------------------------------------------------------------------------------------------------------------------
+  • ✅ No action needed
+  • Proceed with normal entry sizing
+  • Monitor for any signal changes
+
+========================================================================================================================
+SECTION 7: ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT
+========================================================================================================================
+
+
+EXECUTION SEQUENCE (Do in this order):
+
+1️⃣  CLOSE NOW 🔴 (10 positions)
+   └─ Why: Extended/overbought + structural risk. Act before deterioration.
+   └─ Gap Impact: Closing 10 RED positions saves ~$5,000/month drag
+       Moves gap from $-9,100 to $-14,100 (-5.0% improvement)
+       • LLY      | Contracts:  2 | Notional: $   237,716 | Overbought / Extended
+       • TWLO     | Contracts:  7 | Notional: $   150,192 | Overbought / Extended
+       • ADBE     | Contracts:  6 | Notional: $   134,184 | Overbought / Extended
+       • ANET     | Contracts:  6 | Notional: $   112,176 | Overbought / Extended
+       • UNH      | Contracts:  1 | Notional: $    42,462 | Overbought / Extended
+       • ... and 5 more RED positions
+
+2️⃣  MONITOR FOR ROLLS 🟡 (5 positions at risk)
+   └─ Why: Approaching strike or extremes. Roll if thesis intact, close if thesis broken.
+   └─ Gap Impact: Preserve existing $5,000/month contribution from MODERATE conviction positions
+       • GEV      | Contracts:  2 | Conv: 4.5/10 | Approaching extremes
+       • TSM      | Contracts:  3 | Conv: 4.5/10 | Approaching extremes
+       • ALAB     | Contracts:  3 | Conv: 4.0/10 | Approaching extremes
+       • LITE     | Contracts:  1 | Conv: 4.0/10 | Approaching extremes
+       • APH      | Contracts:  1 | Conv: 4.0/10 | Approaching extremes
+
+3️⃣  LET RUN — NOTHING NEEDED 🟢 (34 positions)
+   └─ Why: Attractive pricing (oversold) + adequate conviction. No action required.
+   └─ Gap Impact: 34 healthy positions contribute $34,000/month baseline (expected)
+       ✅ 34 positions: Continue monitoring weekly
+
+4️⃣  OPPORTUNITY — HIGH CONVICTION ENTRIES 🟢 (8 names)
+   └─ Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.
+   └─ Gap Impact: Adding 8 Tier 1 entries = $30,400/month
+       Closes gap from $-9,100 to $-39,500 (30.4% closure)
+       • NFLX     Conv 9.0/10 | RSI  41.1 | Value $    80,707
+       • ULTA     Conv 9.0/10 | RSI  55.6 | Value $    46,920
+       • SPCX     Conv 8.5/10 | RSI  29.1 | Value $    14,530
+       • INFY     Conv 8.5/10 | RSI  55.6 | Value $     3,282
+       • COIN     Conv 8.0/10 | RSI  47.1 | Value $   174,977
+
+PORTFOLIO STATUS & GAP TRAJECTORY:
+  ✅ Total positions scanned: 85
+  🔴 Critical actions: 10 closes + 5 monitors
+  🟡 Yellow cautions: 36
+  🟢 Green healthy: 34
+  📊 Market regime: BULL
+
+GAP CLOSURE SUMMARY:
+  Current gap: $-9,100 (-9.1% below target)
+  After closes: $-14,100 (saves ~-5.0%)
+  After new Tier 1 entries: $-39,500 (30.4% to gap closure)
+  Path to target: Execute closes → add HIGH conviction Tier 1 → scale over 2-3 weeks
+
+========================================================================================================================
+Report generated: 2026-07-12 | Data source: OpenPositionsLoaderV2 + Yahoo Finance + Technical Analysis
+========================================================================================================================

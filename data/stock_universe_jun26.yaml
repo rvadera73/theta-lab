@@ -1,0 +1,83 @@
+name: Portfolio-1 Stock Universe
+data_date: '2026-06-26'
+source: Portfolio-1 2026-06-26 (1).xlsx
+total_symbols: 73
+symbols:
+- AAPL
+- ABBV
+- ABNB
+- ALAB
+- ALB
+- AMKR
+- AMZN
+- ANET
+- APH
+- APP
+- AXON
+- BABA
+- BE
+- BRK.B
+- BROS
+- BWXT
+- CCJ
+- CCL
+- CIFR
+- COIN
+- COST
+- CRWD
+- ELF
+- EXPE
+- GEV
+- GOOG
+- HDB
+- HOOD
+- HUT
+- IBN
+- INTC
+- IONQ
+- JD
+- KTOS
+- LAC
+- LASR
+- LITE
+- LLY
+- META
+- MMYT
+- MP
+- MRK
+- MRVL
+- MSFT
+- NFLX
+- NTRA
+- NU
+- NVDA
+- OKLO
+- OKTA
+- ONDS
+- PBR
+- PL
+- PYPL
+- QBTS
+- RBRK
+- RGTI
+- RIOT
+- RKLB
+- ROKU
+- RTX
+- SHOP
+- SMR
+- SONY
+- SPCX
+- STNE
+- TCOM
+- TSLA
+- TSM
+- TWLO
+- UBER
+- UNH
+- XOM
+metadata:
+  tier_1_count: 9
+  tier_2_count: pending_classification
+  tier_3_count: pending_classification
+  update_frequency: as needed

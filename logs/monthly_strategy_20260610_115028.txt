@@ -1,0 +1,80 @@
+====================================================================================================
+MONTHLY STRATEGY REVIEW
+Month: June 2026 | YTD: 2026
+====================================================================================================
+
+MONTHLY PERFORMANCE (June, YTD, Annual Pace)
+----------------------------------------------------------------------------------------------------
+Account                            June Target     June Actual        YTD Pace
+----------------------------------------------------------------------------------------------------
+Account A (232)                $        60,000 $        15,800 $        48,500
+Account B (275)                $         7,040 $         2,950 $        48,500
+Account C (634)                $         5,880 $         1,200 $        48,500
+Fidelity (Rahul)               $        11,240 $         3,200 $        48,500
+Vanguard (Rahul)               $         7,120 $         1,100 $        48,500
+----------------------------------------------------------------------------------------------------
+TOTAL                          $        91,280 $        24,250 $        48,500
+
+Status: BEHIND TARGET (26% of monthly goal achieved)
+
+YTD PROGRESS VS ANNUAL TARGET
+----------------------------------------------------------------------------------------------------
+YTD Actual (Jan-Jun):        $148,000
+Annual Target:               $1,200,000
+YTD % of Target:             12.3%
+
+Required Monthly Avg (H2):   $150,286
+Current Monthly Avg (H1):    $24,667
+
+🔴 PACE GAP: Behind by $125,619/month in H2
+
+H2 RECOVERY PLAN (Jul-Dec 2026)
+----------------------------------------------------------------------------------------------------
+
+Q3 Focus (Jul-Sep):
+  1. MARGIN REDUCTION (Weeks 1-4)
+     → Target: 142% → <80%
+     → Close 10-15 low-conviction positions
+     → Expected freed margin: $250-400K
+
+  2. STRATEGY REBALANCING (Weeks 2-8)
+     → Shift to 80% puts / 20% calls
+     → Close all unprofitable calls
+     → Increase put entry pace to 2-3x
+
+  3. EXECUTION PACE (Ongoing)
+     → Weekly targets: 5-7 put entries, 3-5 closes
+     → Monthly target: $25-35K net
+     → KPI: Win rate ≥85%, margin <80%
+
+Q4 Focus (Oct-Dec):
+  1. YEAR-END TAX MANAGEMENT
+     → Harvest losses in Oct-Nov ($30-50K target)
+     → Offset realized gains
+
+  2. AGGRESSIVE EXECUTION (Holiday volatility)
+     → Increase position sizes 10-15%
+     → Target: $35-50K monthly net
+
+  3. MARGIN OPTIMIZATION
+     → Maintain <50% utilization for stability
+     → Prepare for Jan account rebalancing
+
+RISK MANAGEMENT STATUS
+----------------------------------------------------------------------------------------------------
+
+Margin Breach:
+  Current:     142% (CRITICAL)
+  Priority:    HIGHEST (must fix this month)
+  Action:      Execute $50-100K in closes
+
+Concentration Risk:
+  Naked Calls:    Ensure <5% allocation
+  Strangles:      Reduce to <15% allocation
+  Account A AXON: Currently 16% (threshold: 15%) — REDUCE
+
+Win Rate Degradation:
+  Jan-Jun Avg: 82% (Target: 85%)
+  Action:      Review entry criteria; tighten stops
+
+====================================================================================================

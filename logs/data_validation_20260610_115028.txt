@@ -1,0 +1,86 @@
+====================================================================================================
+DATA VALIDATION & COMPLETENESS REPORT
+Generated: 2026-06-10 11:50:28 ET
+====================================================================================================
+
+LOADED ACCOUNTS SUMMARY
+----------------------------------------------------------------------------------------------------
+Account                             Status         Confidence
+----------------------------------------------------------------------------------------------------
+Account A (232)                     LOADED                98%
+Account B (275)                     LOADED                98%
+Account C (634)                     LOADED                98%
+Fidelity (Rahul)                    LOADED                85%
+Fidelity (Rajul - Roth)             LOADED                85%
+Fidelity (Rajul - Rollover)         LOADED                85%
+Vanguard (Rahul)                    LOADED                75%
+Robinhood (Individual)              LOADED                95%
+Robinhood (Traditional IRA)         LOADED                95%
+
+DETAILED VALIDATION LOG
+----------------------------------------------------------------------------------------------------
+[LOADED] Account A (232)
+        Transactions from Individual_XXX232_Transactions_20260609-135608.csv
+[LOADED] Account B (275)
+        Transactions from Contributory_XXX275_Transactions_20260530-161127.csv
+[LOADED] Account C (634)
+        Transactions from Designated_Bene_Individual_XXX634_Transactions_20260530-161206.csv
+[LOADED] Fidelity (Rahul)
+        Positions from Portfolio_Positions_Jun-08-2026-Rahul.csv
+[LOADED] Fidelity (Rajul - Roth)
+        Positions from Portfolio_Positions_Jun-08-2026 -Rajul.csv
+[LOADED] Fidelity (All)
+        Transactions from Accounts_History -Fidelity-Rahul.csv
+[LOADED] Vanguard (Rahul)
+        Positions from Vanguard Histroy-Rahul.csv
+[LOADED] Vanguard (Rahul)
+        Transactions from Vanguard Histroy-Rahul.csv
+[LOADED] Vanguard (Rahul)
+        Positions from AccountHistorty-Vanguard-Rahul.csv
+[LOADED] Vanguard (Rahul)
+        Transactions from AccountHistorty-Vanguard-Rahul.csv
+[LOADED] Robinhood (Individual)
+        Transactions from robinhood-individual.csv (16 trades, net P&L: $2,773.25)
+[LOADED] Robinhood (Traditional IRA)
+        Transactions from robinhood-traditional.csv (78 trades, net P&L: $38,303.27)
+
+DATA CONFIDENCE BY BROKERAGE
+----------------------------------------------------------------------------------------------------
+Schwab                                98%
+Fidelity                              85%
+Vanguard                              75%
+Robinhood                             95%
+
+KNOWN DATA GAPS & LIMITATIONS
+----------------------------------------------------------------------------------------------------
+
+Robinhood (Individual & Traditional IRA):
+  • Complete transaction history CSV data loaded
+  • Trades: Individual (24 trans), Traditional IRA (600+ trans)
+  • Data period: Jan 2026 - Jun 2026
+  • Confidence: 95% (CSV format, no PDFs required)
+
+Fidelity:
+  • Account naming variation: 'Rajul' vs 'Rahul' (multiple IRAs)
+  • Confidence: 85%
+
+Vanguard:
+  • Filename typo: 'Histroy' vs 'History' (handled)
+  • Some positions show 0 shares (possibly closed; data incomplete)
+  • Confidence: 75%
+
+Schwab (Account A/B/C):
+  • Complete position and transaction CSV data
+  • Most recent data: June 9, 2026
+  • Confidence: 98%
+
+RECOMMENDATIONS FOR DATA COMPLETENESS
+----------------------------------------------------------------------------------------------------
+1. Standardize Fidelity account naming (confirm IRA types)
+2. Get Vanguard statement export with confirmed positions
+3. Enhanced Robinhood data: Add current holdings snapshot (CSS/PDF parse)
+4. Export full transaction history for all 8 accounts (Jan 1 - Current)
+5. Implement weekly automated data refresh for live reporting
+6. Add current market prices for all open positions (real-time)
+
+====================================================================================================

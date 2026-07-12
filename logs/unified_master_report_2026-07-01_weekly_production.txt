@@ -1,0 +1,379 @@
+========================================================================================================================
+UNIFIED MASTER REPORT — WEEKLY STAGE
+Week 1 of July — Wednesday, July 01, 2026 — 8:00 AM ET
+Regime: CAUTIOUS_BULL
+========================================================================================================================
+
+REPORT CADENCE: Weekly Action Report (Monday)
+Data Sources: 260 live positions, IV rank scan, market regime analysis
+
+========================================================================================================================
+SECTION 0: ACCOUNT HEALTH, FRAMEWORK STATUS & GAP ANALYSIS
+========================================================================================================================
+
+CONSOLIDATED PORTFOLIO SNAPSHOT:
+├─ Total Portfolio Balance:      $2,163,000
+├─ Total notional exposure:      $   5,333,177
+├─ Total option requirement:     $   1,865,918
+├─ Positions with short puts:    79
+├─ Positions with short calls:   26
+├─ YTD Net Premium:              $     434,526  (live from transactions)
+├─ Month-to-Date Premium:        $       4,716
+└─ Snapshot currency:            2026-05-30
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+YTD MONTHLY NET OPTIONS PREMIUM — BY ACCOUNT (from transaction history)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Account                                  01         02         03         04         05         06          YTD
+---------------------------------------------------------------------------------------------------------------
+Account A (232)                      45,402     10,781     96,241     94,510    -18,837    -16,894      211,203
+Account B (275)                      18,121       -713      4,785      9,665      6,551      4,493       42,902
+Account C (634)                      10,989      3,313      2,971      2,940      1,339      4,338       25,890
+Fidelity (Rahul)                     16,643        620     11,401     21,397     11,903      2,495       64,459
+Fidelity (Rajul — Roth IRA)              47        228         87      2,498        162      3,731        6,753
+Fidelity (Rajul — Rollover IRA)           0      3,379        100     10,911     -2,725        134       11,799
+Robinhood (Individual)                2,429        254          0          0         91       -729        2,045
+Robinhood (Traditional IRA)          14,524      2,528      8,963     10,336      2,763        998       40,112
+Vanguard (Rahul)                      7,897        778      7,598      4,532      2,408      6,150       29,363
+---------------------------------------------------------------------------------------------------------------
+TOTAL                               116,052     21,168    132,146    156,789      3,655      4,716      434,526
+
+Net premium = STO/STC credits − BTC/BTO debits per month (option open/close only).
+All 9 accounts (3 Schwab, 3 Fidelity, 1 Vanguard, 2 Robinhood). Months with no data = 0.
+
+PER-ACCOUNT BREAKDOWN:
+------------------------------------------------------------------------------------------------------------------------
+Account                                Balance      %       Notional      Opt Req       Type          Status
+------------------------------------------------------------------------------------------------------------------------
+Account A (232)                $       403,000  18.6% $    3,493,225 $    628,781     Margin        ✅ MARGIN
+  ├─ 114 option positions | Monthly target: $18,600 | Equity: ADBE 300sh, AXON 200sh, XYZ 200sh, COIN 100sh, ETSY 100sh +10 more
+Account B (275)                $       261,000  12.1% $      408,796 $    282,650   Cash-Sec            ✅ OK
+  ├─ 27 option positions | Monthly target: $12,100 | Equity: FMC 100sh, CRM 100sh
+Account C (634)                $       266,000  12.3% $      300,738 $    156,320   Cash-Sec            ✅ OK
+  ├─ 26 option positions | Monthly target: $12,300 | Equity: ABNB 100sh, INMD 100sh, NKE 100sh, NIO 200sh, TWLO 524sh
+Fidelity (Rahul)               $       500,000  23.1% $      628,673 $    598,603   Cash-Sec            ✅ OK
+  ├─ 47 option positions | Monthly target: $23,100 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, NIO 800sh, CRM 200sh
+Fidelity (Rajul — Roth IRA)    $        49,000   2.3% $       58,982 $     47,565   Cash-Sec            ✅ OK
+  ├─ 10 option positions | Monthly target: $2,300 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
+Fidelity (Rajul — Rollover IRA) $       129,000   6.0% $      151,611 $    152,000   Cash-Sec            ✅ OK
+  ├─ 12 option positions | Monthly target: $5,960
+Vanguard (Rahul)               $       322,000  14.9% $            0 $          0   Cash-Sec            ✅ OK
+  └─ No open positions | Monthly target: $14,900
+Robinhood (Individual)         $        13,000   0.6% $       17,101 $          0   Cash-Sec            ✅ OK
+  ├─ 4 option positions | Monthly target: $600
+Robinhood (Traditional IRA)    $       220,000  10.2% $      274,051 $          0   Cash-Sec            ✅ OK
+  ├─ 20 option positions | Monthly target: $10,160
+------------------------------------------------------------------------------------------------------------------------
+TOTAL                          $     2,163,000 100.0% $    5,333,177 $  1,865,918
+
+DEFINITIONS:
+  • Notional = Stock price × contracts × 100 (underlying value of options position)
+  • Opt Req = Strike × contracts × 100 for short puts + current_price × contracts × 100 for naked calls (covered calls = $0)
+  • For margin accounts: verify Opt Req < 80% of account balance
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+60% CLOSE COST RATIO FRAMEWORK — CONSOLIDATED VIEW
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+FRAMEWORK OVERVIEW:
+  Base: $100,000/month net = $1.2M/year (at 60% close costs)
+  Current Regime: CAUTIOUS_BULL (applies 90% of base)
+  Adjusted Target: $90,000 net per month
+
+PERFORMANCE VS TARGET (YTD CUMULATIVE):
+  Target (6 months):     $540,000
+  Actual YTD:                 $292,421
+  Gap to close:               $247,579 (45.8%)
+  Monthly average (YTD):      $48,737
+  Monthly average needed:     $90,000
+  Monthly gap:                $38,900
+
+POSITION TIER DISTRIBUTION → GAP CLOSURE:
+  Tier 1 (12 positions): $ 45,600/month (  51% of $90,000 target)
+  Tier 2 (28 positions): $ 28,000/month (  31% of target)
+  Tier 3 (45 positions): $-22,500/month ( -25% drag)
+  Current total: 85 positions = $51,100/month (57% of target)
+
+GAP CLOSURE PATH:
+  To hit $90,000 target: Need 11 more Tier 1 positions
+  Alternative: Scale existing OR exit 18 worst Tier 3 positions
+  Capital required for 11 new positions: $110,000 (11 × $10K)
+
+ACCOUNT-LEVEL GAP BREAKDOWN:
+  ⚠️ Account A (232)                          Target $  16,768 | Actual $   9,520 | Gap $   7,248 ( 43.2%)
+  ⚠️ Account B (275)                          Target $  10,859 | Actual $   6,166 | Gap $   4,693 ( 43.2%)
+  ⚠️ Account C (634)                          Target $  11,067 | Actual $   6,284 | Gap $   4,783 ( 43.2%)
+  ⚠️ Fidelity (Rahul)                         Target $  20,804 | Actual $  11,812 | Gap $   8,992 ( 43.2%)
+  ⚠️ Fidelity (Rajul — Rollover IRA)          Target $   5,367 | Actual $   3,047 | Gap $   2,320 ( 43.2%)
+  ⚠️ Fidelity (Rajul — Roth IRA)              Target $   2,038 | Actual $   1,157 | Gap $     881 ( 43.2%)
+  ⚠️ Robinhood (Individual)                   Target $     540 | Actual $     307 | Gap $     233 ( 43.1%)
+  ⚠️ Robinhood (Traditional IRA)              Target $   9,153 | Actual $   5,197 | Gap $   3,956 ( 43.2%)
+  ⚠️ Vanguard (Rahul)                         Target $  13,398 | Actual $       0 | Gap $  13,398 (100.0%)
+
+RISK GUARDRAILS:
+├─ Margin floor (Account A only): 50% utilization
+├─ Margin alert: >75% utilization → review new entries
+├─ Margin emergency: >80% utilization → reduce positions
+├─ Cash floor (all accounts): $75,000 minimum to trade
+├─ Cash emergency: <$50,000 → deploy emergency fund
+└─ Current status: ⚠️ MONITOR
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+SUPPLEMENTARY: PRODUCTION FRAMEWORK — 60% CLOSE COST RATIO TARGETS
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Framework: $100,000/month net = $1.2M/year target (at 60% close costs)
+Regime: CAUTIOUS_BULL (applies 90% of base)
+Adjusted Target: $225,000 gross / $90,000 net
+
+YTD Performance: $292,421 net (6 months)
+Monthly average: $48,737
+Annualized pace: $584,842 ⚠️ BELOW TARGET
+
+Account Targets (Regime-Adjusted):
+------------------------------------------------------------------------------------------------------------------------
+  Account A (232)                               $    41,850 gross / $    16,740 net
+  Account B (275)                               $    27,225 gross / $    10,890 net
+  Account C (634)                               $    27,675 gross / $    11,070 net
+  Fidelity (Rahul)                              $    51,975 gross / $    20,790 net
+  Fidelity (Rajul — Roth IRA)                   $     5,175 gross / $     2,070 net
+  Fidelity (Rajul — Rollover IRA)               $    13,500 gross / $     5,400 net
+  Vanguard (Rahul)                              $    33,525 gross / $    13,410 net
+  Robinhood (Individual)                        $     1,350 gross / $       540 net
+  Robinhood (Traditional IRA)                   $    22,950 gross / $     9,180 net
+------------------------------------------------------------------------------------------------------------------------
+  TOTAL                                         $   225,225 gross / $    90,090 net
+
+========================================================================================================================
+SECTION 1: WEEKLY MARKET REGIME FORECAST
+========================================================================================================================
+
+**Regime: CAUTIOUS_BULL**
+
+Current signals:
+├─ VIX: 17.6 (VIX 17.6 sustained < 20)
+├─ S&P 500 50-MA: +69
+└─ S&P 500 200-MA: +510
+
+**Probability of regime shift this week:** 15% | **Probability of staying CAUTIOUS_BULL:** 85% ✅
+
+========================================================================================================================
+SECTION 2: WEEKLY ACTION PRIORITIES + GAP CLOSURE IMPACT
+========================================================================================================================
+
+Priority 1 — Execute on HIGH Conviction positions:
+├─ 12 positions with Conv ≥8/10 identified
+├─ Contribution: $45,600/month = 51% of target
+├─ Gap to close: $38,900/month → Need 11 more Tier 1 positions
+├─ ULTA: Conv 9.0 | Contribution $3,800/mo | Value $45,912 | Heat: GREEN
+├─ UBER: Conv 8.5 | Contribution $3,800/mo | Value $52,850 | Heat: YELLOW
+├─ PYPL: Conv 8.0 | Contribution $3,800/mo | Value $66,570 | Heat: YELLOW
+
+Priority 2 — Monitor LOW Conviction positions for exit:
+├─ 45 positions with Conv <6/10 identified
+├─ Drag impact: $22,500/month drag (-25.0% of target)
+├─ Action: Close worst RED positions to eliminate drag
+├─ NVO: Conv 5.5 | Drag $500/mo | Value $29,004 | RSI 90.8 (CONCERN: Overbought / Extended)
+├─ ABNB: Conv 5.5 | Drag $500/mo | Value $14,717 | RSI 67.3 (CONCERN: Overbought / Extended)
+├─ UNH: Conv 5.5 | Drag $500/mo | Value $41,982 | RSI 60.2 (CONCERN: Overbought / Extended)
+
+Priority 3 — IV Rank Entry Gate Check:
+├─ Tier 1 entry candidates (IVR ≥40): 17 names
+├─ Potential contribution: $64,600/month if all deployed
+├─ Capital required: $170,000 (17 × $10K per position)
+├─ Gap closure from new entries: 72% of $$38900 gap
+├─ WIT: IVR 100.0 | $2.17 | Contributes $3,800/mo if added
+├─ OKTA: IVR 98.2 | $131.31 | Contributes $3,800/mo if added
+├─ AXON: IVR 68.4 | $510.60 | Contributes $3,800/mo if added
+├─ TWLO: IVR 63.2 | $198.77 | Contributes $3,800/mo if added
+├─ SHOP: IVR 50.7 | $114.21 | Contributes $3,800/mo if added
+
+WEEKLY PACE TO MONTH-END TARGET:
+├─ Days left in month: 31
+├─ Weekly target pace: $20,785/week
+├─ Current run rate: $51,100/month (57% of target)
+└─ Required this week: Execute HIGH priority 1 items to stay on pace
+
+========================================================================================================================
+SECTION 3: TOP-5 WEEKLY ACTION ITEMS
+========================================================================================================================
+
+**#1 — NVO POSITION REVIEW**
+└─ Conv 5.5, Heat RED, RSI 90.8
+
+**#2 — CRWD POSITION REVIEW**
+└─ Conv 2.0, Heat RED, RSI 72.0
+
+**#3 — ALAB POSITION REVIEW**
+└─ Conv 5.0, Heat RED, RSI 68.4
+
+**#4 — TSM POSITION REVIEW**
+└─ Conv 3.5, Heat RED, RSI 58.2
+
+**#5 — MMYT POSITION REVIEW**
+└─ Conv 5.0, Heat RED, RSI 81.8
+
+========================================================================================================================
+SECTION 4: POSITION HEAT BY ACCOUNT
+========================================================================================================================
+
+**Account A (232):**
+- Open positions: 114
+- Status: MONITOR
+
+**Fidelity (Rahul):**
+- Open positions: 47
+- Status: MONITOR
+
+**Account B (275):**
+- Open positions: 27
+- Status: MONITOR
+
+**Account C (634):**
+- Open positions: 26
+- Status: MONITOR
+
+**Robinhood (Traditional IRA):**
+- Open positions: 20
+- Status: MONITOR
+
+**Fidelity (Rajul — Rollover IRA):**
+- Open positions: 12
+- Status: MONITOR
+
+**Fidelity (Rajul — Roth IRA):**
+- Open positions: 10
+- Status: MONITOR
+
+**Robinhood (Individual):**
+- Open positions: 4
+- Status: MONITOR
+
+**Vanguard (Rahul):**
+- Open positions: 0
+- Status: MONITOR
+
+========================================================================================================================
+SECTION 5: IV RANK & ENTRY GATE (Weekly Scan)
+========================================================================================================================
+
+**Tier 1 Entry Candidates (IVR ≥ 40):**
+✅ WIT: 100.0 IVR | $2.17
+✅ OKTA: 98.2 IVR | $131.31
+✅ UBER: 93.2 IVR | $75.50
+✅ MSFT: 89.1 IVR | $368.57
+✅ RBLX: 76.2 IVR | $54.34
+✅ BE: 69.5 IVR | $275.01
+✅ AXON: 68.4 IVR | $510.60
+✅ TWLO: 63.2 IVR | $198.77
+✅ SMR: 59.3 IVR | $10.26
+✅ SHOP: 50.7 IVR | $114.21
+
+**Tier 1 BLOCKED (IVR < 40):**
+❌ PYPL: 20.3 IVR (below gate)
+❌ COIN: 36.6 IVR (below gate)
+❌ NFLX: 34.9 IVR (below gate)
+❌ LYFT: 28.9 IVR (below gate)
+❌ APP: 27.5 IVR (below gate)
+
+========================================================================================================================
+SECTION 6: WEEKLY CASH & MARGIN FORECAST
+========================================================================================================================
+
+Starting position (Weekly):
+- Estimated margin utilization: 56% (safe, below 80% alert)
+- Cash to trade: Adequate for 2-3 new entries per tier
+- Option requirement: Within normal range for portfolio size
+
+Mid-week impact (Expected):
+- If actions executed: Margin utilization improves 2-3%
+- If new entries: Deployment of $20-25K capital estimated
+
+End-of-week projection:
+- Margin utilization: 54-56% (improving)
+- Available capital: Healthy, supports continued operations
+
+========================================================================================================================
+SECTION 7: WEEKLY THETA & P&L TRACKING
+========================================================================================================================
+
+Target pace: $122.7K/month ($2,905/day average)
+
+Weekly forecast (52 trading days/year):
+- 12 HIGH conviction positions contributing theta
+- Estimated theta accumulation: $2,900 - $3,500 (on target)
+- P&L drivers: Time decay (primary), IV changes (secondary), assignment/rolls (tactical)
+
+Month-to-date projection:
+- Week 1 pace: ~$14500
+- On pace for monthly target: $122.7K ✅
+
+========================================================================================================================
+SECTION 8: RISK & GUARDRAILS (Weekly Check)
+========================================================================================================================
+
+Greeks Portfolio Level:
+- Delta: +16 (target ±25) ✅ IN RANGE
+- Gamma: 0.39 (target ≤1.0) ✅ IN RANGE
+- Theta: $385/day (target ≥$300) ✅ IN RANGE
+- Vega: $240 (IV sensitivity) ✅ SAFE
+
+Margin guardrails:
+- Used: 56% (hard ceiling 80%) ✅ SAFE
+- Available: Adequate for operations ✅
+- Emergency fund: Intact and separate ✅
+
+Position concentration:
+- GREEN heat: 42 positions (acceptable risk)
+- RED heat: 12 positions (monitor actively)
+- No structural breaches detected ✅
+
+========================================================================================================================
+SECTION 9: DECISION TREE — END-OF-WEEK (Friday 4 PM ET)
+========================================================================================================================
+
+**IF HIGH conviction positions cleared:**
+→ Approve new STRANGLE entries on Tier 1 names (SHOP, CRM candidates)
+→ Size: 45-60 DTE, delta 0.15-0.20 puts, 0.20 calls
+→ Deploy ~$20-25K capital
+→ Expected net +$2-3K weekly P&L ✅
+
+**IF action items NOT completed by Thursday:**
+→ Extend execution to Monday (no penalty)
+→ Delay new entries to following week (stagger 1 week)
+→ Focus on execution quality, not speed
+
+**IF IV Rank improves (>40 gate):**
+→ Queue new entries for Tier 1 names
+→ Size at 25% of full position, scale remaining 75% over 3 weeks
+
+**IF RED positions worsen:**
+→ Close positions at loss if conviction drops <4/10
+→ Redeploy capital to GREEN opportunities
+
+========================================================================================================================
+SECTION 10: FRAMEWORK STATUS & AUTOMATION
+========================================================================================================================
+
+Daily Conviction Tracking:     ✅ Real-time, 12 HIGH identified
+Earnings Date Monitoring:      ✅ Integrated in technical analysis
+Momentum Trend Tracking:       ✅ RSI, MACD, Bollinger Bands (all active)
+Multi-Trigger Exit Logic:      ✅ 12 RED detected, monitoring
+Greeks Guardrails:             ✅ All in range, portfolio balanced
+Regime Detection:              ✅ CAUTIOUS_BULL confirmed
+Win Rate Tracking:             ✅ Conviction-based entry filtration
+IV Rank Entry Gate:            ✅ 17 names qualified (IVR ≥40)
+Sharpe Ratio (7-day rolling):  ✅ 1.7+ target maintained
+
+Automation notes:
+- GitHub Actions: Weekly email Monday 8 AM ET
+- Daily logs: Conviction history persisted in JSON
+- Re-stagger tracking: Position management windows open
+- Next data export: Daily position updates from all brokers
+
+========================================================================================================================
+Report generated: 2026-07-01
+Next Weekly Report: Wednesday, July 08, 2026 08:00 AM ET
+========================================================================================================================

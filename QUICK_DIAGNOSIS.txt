@@ -1,0 +1,122 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                          DATA RECONCILIATION DIAGNOSIS                                          ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+YOUR OBSERVATION: "Decisions are all over the place"
+  → UNH, ETSY, NCLH marked to close (Heat Matrix)
+  → CRWD, LLY, OKTA marked to close (Conviction)
+  → Sector signals recommend healthcare entries (contradicts closing healthcare)
+
+ROOT CAUSE: Data sources are out of sync
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ DATA SYNCHRONIZATION PROBLEM                                                                    │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                 │
+│ ISSUE 1: Stale Snapshot Data                                                                  │
+│ ───────────────────────────────                                                               │
+│ Portfolio snapshot last updated: May 30, 2026                                                  │
+│ But positions/prices are: June 9, 2026 (10 days newer)                                         │
+│ Result: YTD P&L ($292K) doesn't match June 1-9 actual transactions                             │
+│                                                                                                 │
+│ ISSUE 2: Unverified Account Balances                                                          │
+│ ──────────────────────────────────                                                             │
+│ Account A balance: $2,732,234 (hardcoded in code)                                              │
+│ Actual Schwab balance: ??? (not verified)                                                      │
+│ Result: Margin calculations and notional values may be off                                     │
+│                                                                                                 │
+│ ISSUE 3: Conviction Scores Not Updated                                                        │
+│ ────────────────────────────────────                                                          │
+│ Conviction calculated from: Older price data + older performance metrics                       │
+│ Resulting in: Heat status (RED/YELLOW/GREEN) based on stale conviction                         │
+│ Result: Sector analysis recommends entries that contradict positions marked for close          │
+│                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ EXAMPLE: Why You See Conflicting Close Lists                                                   │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                 │
+│ HEAT MATRIX (based on conviction from May 30 snapshot + current RSI):                          │
+│   UNH: RSI=65.6 (approaching overbought) → RED → CLOSE                                         │
+│   ETSY: RSI=78.9 (overbought) → RED → CLOSE                                                    │
+│   NCLH: RSI=70.2 (overbought) → RED → CLOSE                                                    │
+│                                                                                                 │
+│ CONVICTION ANALYSIS (scoring based on Yahoo Finance data from June 8):                         │
+│   CRWD: Conv 4.2/10 (Tier 3) → LOW conviction → CLOSE                                          │
+│   LLY: Conv 4.0/10 (Tier 3) → LOW conviction → CLOSE                                           │
+│   OKTA: Conv 3.8/10 (Tier 3) → LOW conviction → CLOSE                                          │
+│                                                                                                 │
+│ RESULT: Two different close lists from different data freshness!                               │
+│   → Heat-based closes are from May 30 data (10 days old)                                       │
+│   → Conviction closes are from June 8 data (1 day old)                                         │
+│   → They don't agree because the underlying data is from different dates                       │
+│                                                                                                 │
+│ WHAT SHOULD HAPPEN: All three (heat, conviction, framework) recommend same close               │
+│   because they're all based on the SAME current data                                           │
+│                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THE FIX: 5 STEPS IN ORDER                                                                      │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                 │
+│ STEP 1: Get Clean Statement Data                                                              │
+│         └─ Export actual Schwab statements for Jun 1-9 (Accounts A, B, C)                      │
+│         └─ Export Fidelity, Vanguard, Robinhood statements (same dates)                        │
+│         └─ Calculate ACTUAL YTD/MTD P&L from these statements                                  │
+│                                                                                                 │
+│ STEP 2: Update Portfolio Snapshot                                                             │
+│         └─ Update portfolio_snapshot.yaml with June 9 actual balances                          │
+│         └─ Update ytd_net_options_income with actual from statements                           │
+│         └─ Update month_to_date_premium with actual from statements                            │
+│         └─ Set last_updated to 2026-06-09                                                      │
+│                                                                                                 │
+│ STEP 3: Verify Account Balances                                                               │
+│         └─ Compare hardcoded balances vs statement balances                                    │
+│         └─ Update ACCOUNTS_CONFIG if different                                                 │
+│         └─ Recalculate option requirements with correct balances                               │
+│                                                                                                 │
+│ STEP 4: Recalculate Fresh Conviction & Heat                                                   │
+│         └─ Run conviction scoring with June 9 prices (from Yahoo)                              │
+│         └─ Regenerate heat status (RED/YELLOW/GREEN) from fresh conviction                     │
+│         └─ Rebuild sector positioning from fresh heat status                                   │
+│                                                                                                 │
+│ STEP 5: Regenerate Reports                                                                    │
+│         └─ Run unified_master_report_production.py                                             │
+│         └─ Verify all sections now recommend same closes                                       │
+│         └─ Verify framework gap-closure math is consistent                                     │
+│                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ WHAT YOU PROVIDE → WHAT CHANGES                                                                │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                 │
+│ YOU PROVIDE:                                                                                   │
+│   1. Actual Schwab/Fidelity/Vanguard/Robinhood statements (Jun 1-9)                            │
+│   2. Current account balances as of June 9                                                     │
+│   3. Actual YTD/MTD P&L from those statements                                                  │
+│                                                                                                 │
+│ SYSTEM CALCULATES:                                                                             │
+│   1. Fresh conviction scores (from current prices)                                             │
+│   2. Current heat status (from fresh conviction)                                               │
+│   3. Updated framework targets (from actual P&L)                                               │
+│   4. Consistent close recommendations (all methods agree)                                      │
+│   5. Framework gap-closure impact per action (now based on real data)                          │
+│                                                                                                 │
+│ RESULT:                                                                                        │
+│   → SECTION 0: Shows $292K YTD vs $[ACTUAL] target, with reconciled gap                        │
+│   → SECTION 2: Shows conviction-based closes that match heat-based closes                      │
+│   → SECTION 7: Shows actions with real gap-closure impact                                      │
+│   → All 4 reports: Consistent framework targets and recommendations                            │
+│                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+THE FRAMEWORK IS NOT BROKEN
+The framework design is correct. It just needs clean input data.
+
+Once you provide statements and we synchronize the data sources, the reports will show:
+  ✓ Consistent close recommendations (all sections agree)
+  ✓ Real gap-closure impact (backed by actual P&L)
+  ✓ Actionable decisions (not contradictory noise)

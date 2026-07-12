@@ -1,0 +1,76 @@
+====================================================================================================
+THETA-LAB LIVE DASHBOARD — ALL 8 ACCOUNTS
+Generated: 2026-06-10 11:45:38 ET
+====================================================================================================
+
+PORTFOLIO HEALTH (All 8 Accounts)
+----------------------------------------------------------------------------------------------------
+Total Portfolio Value:       $4,553,523
+Total Unrealized P&L:        $0
+YTD P&L (Estimated):         $148,000
+
+ACCOUNT-LEVEL BREAKDOWN
+----------------------------------------------------------------------------------------------------
+Account                                     Balance   Margin %  Positions   Confidence
+----------------------------------------------------------------------------------------------------
+Account A (232)                     $     2,732,234     142.0%          0          98%
+Account B (275)                     $       320,000        N/A          0          98%
+Account C (634)                     $       267,289        N/A          0          98%
+Fidelity (Rahul)                    $       512,000        N/A         63          85%
+Fidelity (Rajul - Roth)             $        43,000        N/A         25          85%
+Fidelity (Rajul - Rollover)         $       129,000        N/A          0          85%
+Vanguard (Rahul)                    $       325,000        N/A          0          75%
+Robinhood (Individual)              $        13,000        N/A        350          60%
+Robinhood (Traditional IRA)         $       212,000        N/A          0          60%
+
+MARGIN STATUS (Account A - Margin Account)
+----------------------------------------------------------------------------------------------------
+Current Utilization:         142.0%
+Margin Zone:                 LIQUIDATION_IMMINENT
+Status:                      MARGIN_BREACH
+Interest Charged:            YES
+Liquidation Risk:            HIGH
+
+Margin Framework Reference:
+  Safe Zone (0-80%):       No charges, normal operations
+  Caution Zone (80-110%):  Watch closely, interest starting
+  Alert Zone (110-130%):   11.82% interest charged
+  Emergency Zone (130-140%): Forced liquidation risk
+  Liquidation (>140%):     BROKER FORCES LIQUIDATION
+
+ACTIVE RISK ALERTS
+----------------------------------------------------------------------------------------------------
+🔴 [CRITICAL] MARGIN_BREACH
+   Message: Margin utilization at 142.0%
+   Action: REDUCE EXPOSURE IMMEDIATELY
+   Detail: Account A will face forced liquidation if margin rises further
+
+🟡 [WARNING] CONCENTRATION
+   Message: Naked calls exceed recommended 5% threshold
+   Action: CLOSE ON FIRST 3-5% PROFIT
+   Detail: Examples: LLY $1100C, AMZN $300C, ANET $200C
+
+ℹ [INFO] EDGE_VALIDITY
+   Message: Put-selling edge VALID (+107K YTD); Call-selling INVALID (-11K YTD)
+   Action: SHIFT TO 80/20 PUT/CALL RATIO
+   Detail: Win rate: Puts 85.6% vs Calls negative; phase out calls
+
+POSITION TYPE BREAKDOWN & GUARDRAILS
+----------------------------------------------------------------------------------------------------
+NAKED_CALLS          Max: 5%       Risk: HIGH      
+  Examples: LLY $1100C, AMZN $300C, ANET $200C
+STRANGLES            Max: 15%      Risk: MEDIUM    
+  Examples: APP multi-strike, AXON collar, NFLX put ladder
+PUTS                 Max: 50%      Risk: LOWER     
+  Win Rate: 85.6%
+  YTD P&L: $107,000
+
+MARKET REGIME CONTEXT
+----------------------------------------------------------------------------------------------------
+IV Rank:                     45 (medium compression)
+VIX:                         18 (normal/stable)
+Market Regime:               SIDEWAYS
+
+Implication: Put-selling favorable; avoid short calls
+
+====================================================================================================

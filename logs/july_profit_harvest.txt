@@ -1,0 +1,36 @@
+THETA-LAB — JULY 2026 PROFIT-HARVEST SCAN
+Generated: 2026-06-30 | Regime: CAUTIOUS_BULL | Profit target: 40-50%
+Source: position files (Jun 26) — Schwab API tokens expired, re-auth via scripts/schwab_auth.py
+====================================================================================
+
+LEGIT HARVEST CANDIDATES (close & recycle collateral) — ranked by net $ banked
+
+SYM     ACCT   PremRcvd   CostClose    NetBank   %Cap
+----------------------------------------------------------
+ADBE    A        21,021      7,477      13,544    64%
+CRM     A        10,028      4,223       5,805    58%
+PYPL    A         9,077      5,275       3,802    42%   (permanent-exit: harvest & reduce)
+GEV     B         3,090      1,040       2,050    66%
+ASML    A         2,273        810       1,463    64%
+ELF     B         2,185      1,324         861    39%
+NKE     A         1,881      1,067         814    43%
+EXPE    B         2,006      1,265         741    37%
+BRKB    A           489          0         489   100%   (expired worthless)
+RTX     B         1,089        655         434    40%
+JD      A           619        260         359    58%
+ABBV    A           299         74         225    75%
+MMYT    B           528        338         190    36%
+INMD    C           288        187         101    35%
+----------------------------------------------------------
+TOTAL net banked if harvested:      $30,878
+Total buyback cost (frees collateral): $23,995
+
+EXCLUDED — data artifacts (premium parsed ~$0 -> nonsense %): JOBY, TAN, ACHR,
+RIOT, CRWD, USAR, QBTS, EWW, ATEN, IBN, MSFT, BA. Backfill their transaction
+history to score them correctly.
+
+JULY PLAN:
+  1. Harvest the winners above (bank ~$31K net; ADBE+CRM = $19K).
+  2. Redeploy freed collateral into order-sheet names (see july_order_sheet.txt).
+  3. Keep close-cost <=60% on everything else.
+  Realistic July net given long-dated book + 86% utilization: ~$50-65K.

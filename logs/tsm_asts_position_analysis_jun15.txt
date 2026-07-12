@@ -1,0 +1,173 @@
+================================================================================
+ACTUAL POSITIONS EXECUTED: TSM + ASTS Analysis
+June 15, 2026
+================================================================================
+
+POSITION 1: TSM 340P (March 19, 2027)
+─────────────────────────────────────────────────────────────────────────────
+Strike: $340
+Expiration: March 19, 2027 (assume) = ~280 DTE
+Premium collected: $2,650
+Capital required: $34,000 (340 × 100 shares)
+
+**Return Analysis:**
+- Return on capital: $2,650 ÷ $34,000 = 7.8% over 280 days
+- Annualized: 7.8% × (365 ÷ 280) = **10.2% annualized** ❌ LOW
+
+**PROBLEM:** This is UNDERPRICED for 280 DTE.
+- Expected premium at 280 DTE should be 12-15% of capital = $4,080-$5,100
+- You collected only 7.8%, leaving $1,400-$2,400 on the table
+
+**Why underprice?**
+Likely causes:
+1. TSM IV is compressed (IVR <40) → check IVR when entered
+2. Selling too far OTM ($340 on $180-190 current price?) → check current price
+3. 280 DTE is TOO LONG for standard premium strategy
+
+**Assessment: YELLOW FLAG** — Good execution but weak premium quality
+
+---
+
+POSITION 2: ASTS 65P (October 16, 2026)
+─────────────────────────────────────────────────────────────────────────────
+Strike: $65
+Expiration: October 16, 2026 = ~120 DTE (approximately)
+Premium collected: $930
+Capital required: $6,500 (65 × 100 shares)
+
+**Return Analysis:**
+- Return on capital: $930 ÷ $6,500 = 14.3% over 120 days
+- Annualized: 14.3% × (365 ÷ 120) = **43.5% annualized** ✅ EXCELLENT
+
+**GOOD:** This is appropriately priced for 120 DTE short-dated play.
+- Matches expectations for 4-month option with elevated space sector IV
+- Reasonable premium capture
+
+**Assessment: GREEN** — Good entry, acceptable premium quality
+
+---
+
+================================================================================
+COMBINED PORTFOLIO STATUS
+================================================================================
+
+| Position | Capital | Premium | DTE | Return | Annualized | Rating |
+|----------|---------|---------|-----|--------|-----------|--------|
+| TSM | $34K | $2,650 | 280 | 7.8% | 10.2% | 🟡 |
+| ASTS | $6.5K | $930 | 120 | 14.3% | 43.5% | 🟢 |
+| **TOTAL** | **$40.5K** | **$3,580** | — | — | — | — |
+
+**Status vs. $5K Target:**
+- Deployed: $40.5K
+- Premium collected: $3,580
+- **Shortfall: $1,420** (29% short of $5K goal)
+- **Remaining capital:** $159.5K (assuming $200K Account B)
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+**ISSUE 1: TSM 340P is Underperforming (7.8% return)**
+
+Option A: HOLD TSM until assignment (280 days is long)
+- Pro: Captures full theta decay over time
+- Con: Capital locked up for 9 months; could deploy elsewhere at better returns
+- Timeline: Mar 19, 2027 (very long wait)
+
+Option B: CLOSE TSM early (cut losses, redeploy)
+- If premium eroded to ~$2,000-$2,200: Realize $400-650 loss
+- Redeploy $34K to higher-return 45-60 DTE positions
+- Example: CRWD/APH/TWLO would generate $5-6K combined on $34K
+- Net result: Better premium, shorter duration, faster capital turnover
+
+Option C: ROLL TSM to shorter DTE (reduce duration, capture better premium)
+- Close Mar 2027 position (take loss if needed)
+- Open Sep 2026 position at different strike
+- Reduces DTE, improves annualized return
+
+**RECOMMENDATION: Option B or C**
+- TSM 280 DTE at 10% annualized is weak for premium strategy
+- Redeploy to 45-60 DTE positions earning 40-50% annualized
+- Better capital efficiency
+
+---
+
+**ISSUE 2: Total Premium is $3,580 (Short $1,420 of $5K goal)**
+
+Add 1-2 more positions to close gap:
+
+Option 1: Add one high-IV position
+- CRWD 630P (60 DTE) = $30K capital, $2.2K premium
+- Total: $70.5K deployed, $5.78K premium ✓ HITS TARGET
+
+Option 2: Add two mid-IV positions
+- OKTA 115P (60 DTE) = $12K capital, $900 premium
+- GEV 32P (60 DTE) = $3K capital, $300 premium
+- Total: $55.5K deployed, $4.78K premium (close to target)
+
+Option 3: Swap TSM for better position
+- Close TSM (lose $400-650 on exit)
+- Deploy $34K elsewhere:
+  - MSFT 395P (60 DTE) = $40K capital, $1.5K premium
+  - Total: $46.5K deployed, $4.43K premium (need 1 more small position)
+
+---
+
+**ISSUE 3: ASTS Tier 3 Risk**
+
+ASTS 65P at 120 DTE:
+- ✓ Good premium ($930)
+- ✓ Reasonable DTE
+- ❌ Tier 3 (speculative, high execution risk in microcap space)
+- ❌ Space sector volatile; earnings/approval catalyst risk
+
+Recommendation: HOLD (premium is good) but monitor:
+- Watch for earnings announcements (IV spike could help rolls)
+- Monitor space sector momentum
+- If assigned: Hold shares briefly for CC opportunity, then exit
+
+================================================================================
+PATH TO $5K PREMIUM ON YOUR CURRENT $40.5K
+================================================================================
+
+**Scenario A: Keep TSM, Add CRWD**
+- Keep: TSM $34K + ASTS $6.5K
+- Add: CRWD 630P ($30K, $2.2K premium)
+- Total: $70.5K deployed, $5.78K premium ✅
+
+**Scenario B: Replace TSM, Keep ASTS**
+- Close: TSM (realize loss)
+- Keep: ASTS $6.5K
+- Add: CRWD ($30K, $2.2K) + APH ($20K, $1.5K) + OKTA ($12K, $900)
+- Total: $68.5K deployed, $5.6K premium ✅
+
+**Scenario C: Aggressive (Full $40.5K redeploy)**
+- Close: TSM ($34K freed) + ASTS ($6.5K freed, or keep)
+- Add: CRWD ($30K, $2.2K) + MSFT ($40K, $1.5K) + OKTA ($12K, $900)
+- Total: $82K deployed, $4.6K premium (need 1 small add)
+
+================================================================================
+FINAL VERDICT
+================================================================================
+
+**What you got RIGHT:**
+✅ ASTS 65P execution (14.3% return, good premium capture)
+✅ Freed BA position (eliminated dead weight)
+✅ Both positions use 120-280 DTE (acceptable for IRA)
+
+**What needs adjustment:**
+❌ TSM 340P is underpriced (7.8% return on 280 DTE)
+❌ Total premium $3,580 is still short of $5K goal
+❌ Capital efficiency could be improved
+
+**Recommended next step:**
+1. **Keep ASTS** (good trade)
+2. **Close or roll TSM** (weak premium; redeploy to 45-60 DTE positions)
+3. **Add CRWD + 1 other** to hit $5K target on ~$70K total
+
+Do you want to:
+A) Add CRWD to existing positions (simplest)?
+B) Close TSM and redeploy (optimize premium)?
+C) Keep both and find smaller additions?
+
+================================================================================

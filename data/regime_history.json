@@ -1,0 +1,59 @@
+{
+  "2026-06-09": {
+    "regime": "TRANSITIONING",
+    "confidence": 1.0,
+    "signals": {
+      "vix": [
+        "TRANSITIONING",
+        1.0
+      ],
+      "technicals": [
+        "TRANSITIONING",
+        0.7
+      ],
+      "breadth": [
+        "TRANSITIONING",
+        1.0
+      ],
+      "iv_rank": [
+        "TRANSITIONING",
+        1.0
+      ],
+      "put_call": [
+        "TRANSITIONING",
+        1.0
+      ]
+    },
+    "signal_scores": {
+      "BULL": 0,
+      "TRANSITIONING": 4.7,
+      "BEAR": 0
+    },
+    "shift_to": "BULL",
+    "shift_probability": 0.0,
+    "vix": {
+      "current": 19.24,
+      "previous": 18.92,
+      "change": 0.32,
+      "30d_avg": 17.35,
+      "trend": "stable"
+    },
+    "technicals": {
+      "current_price": 7377.26,
+      "ma50": 7194.7,
+      "ma200": 6868.34,
+      "above_50ma": true,
+      "above_200ma": true,
+      "ma50_vs_ma200": 326.35,
+      "ma50_slope": "down",
+      "distance_from_200ma": 508.91
+    },
+    "breadth": {
+      "winners_pct": 0.5,
+      "assessment": "TRANSITIONING",
+      "note": "No data"
+    },
+    "iv_rank": 50.0,
+    "put_call": 1.0
+  }
+}

@@ -1,0 +1,494 @@
+================================================================================
+TACTICAL ROTATION PLAN: 2-Week Action + 45-Day Execution
+June 15-30, 2026 + July 1-31, 2026 (45-Day Horizon)
+================================================================================
+
+Based on: Agent market outlook (Jun 15 snapshot), economic calendar, sector momentum,
+Risk regime: CAUTIOUS_BULL (sideways with upside bias)
+
+================================================================================
+EXECUTIVE SUMMARY: Will Defense & AI Hold? Risk Assessment
+================================================================================
+
+✅ DEFENSE SECTOR: STRONG CONVICTION, LIMITED RISK (Next 45 Days)
+─────────────────────────────────────────────────────────────────────────
+Thesis: $1.05T defense budget FY 2026 (+17% YoY), $271B RTX backlog visible through 2027
+Catalysts (Jun 15-Jul 31):
+  • Q2 earnings cycle (late June): RTX, LMT, NOC all report → validate backlog thesis
+  • FOMC (Jun 16-17): Hold confirmed → zero rate cuts through Nov = defense spending secure
+  • Congressional budget debate starts LATE July/August (NOT THIS MONTH)
+
+Risk to Defense (45-day horizon): LOW (8% probability)
+  • Scenario: Defense budget cut debate emerges in August → forces Aug-Sep pullback
+  • Near-term (Jun 15-Jul 31): No major policy risk
+  • Geopolitical tailwind: Taiwan/Ukraine/NATO tensions persist through summer
+  • Valuation: RTX $183.53 with 17.5% upside to $215.73 = FAIR not stretched
+
+VERDICT: Defense is SAFE to scale through July 31. RTX/LMT calls for Q2 earnings confidence.
+
+✅ AI SPENDING THEME: REAL BUT POWER-CONSTRAINED (Next 45 Days)
+─────────────────────────────────────────────────────────────────────────
+Thesis: Big Five capex ($660-690B) = real; Power constraint = multi-year growth driver
+Catalysts (Jun 15-Jul 31):
+  • Q2 earnings (late June): MSFT, AMZN, GOOGL all report on Azure/AWS capex
+  • Supply chain: Memory cost inflation ($25B headwind) → watch guidance for compression
+  • EU AI Act Phase 2 (Aug 2): Regulatory cost increases AFTER this window
+  • Rate environment: Flat through July → capex spending continues
+
+Risk to AI (45-day horizon): MEDIUM (35% probability of pullback)
+  • Scenario 1 (Jul 2 jobs disappoint): Growth scare → tech pullback -5% in 2-3 days
+  • Scenario 2 (Jul 14 CPI prints hot): Inflation fears → AI valuation compression -8%
+  • Concentration risk: NVDA -12.8% from May peak; already correcting
+  • Regulatory overhang: EU AI Act language may trigger tech selloff Aug 2-5
+
+VERDICT: AI is SAFER to scale via MSFT/AMZN/GOOGL (hyperscalers) than NVDA (concentration).
+Don't overweight NVDA calls; prefer strangle on MSFT (earnings buffer).
+
+================================================================================
+RISK PROFILE COMPARISON (45-Day Horizon)
+================================================================================
+
+DEFENSE (RTX/LMT):
+  Upside:      +8-17% by Jul 31 (Q2 earnings beat, backlog visibility)
+  Downside:    -5-8% only if Congressional budget debate emerges (LOW probability this month)
+  Risk/Reward: 1:2 (small downside, larger upside)
+  Volatility:  STABLE (defense names have 15-20 IV, predictable)
+  Catalyst timing: Q2 earnings mid-late June (high conviction event)
+  Verdict:     ✅ DEFENSIVE SECTOR with offensive upside (best risk/reward of themes)
+
+AI CAPEX (MSFT/AMZN/GOOGL):
+  Upside:      +5-12% by Jul 31 (capex guidance beats, power narrative confirmed)
+  Downside:    -8-12% if jobs/CPI disappoint (MEDIUM probability)
+  Risk/Reward: 1:1 (balanced, macro dependent)
+  Volatility:  ELEVATED (tech names have 25-35 IV, macro-sensitive)
+  Catalyst timing: Q2 earnings + economic data (DUAL catalyst uncertainty)
+  Verdict:     ⚠️ HIGHER VOLATILITY, but real conviction story if macro holds
+
+NVDA (AI Concentration):
+  Upside:      +15-20% IF sector breaks out (already -12.8% from May)
+  Downside:    -12-18% if supply-demand imbalance emerges (execution risk real)
+  Risk/Reward: 1:1 (flipped downside, requires higher conviction)
+  Volatility:  EXTREME (40-50 IV, stock-specific moves)
+  Verdict:     ❌ SKIP for next 45 days; prefer scaled approach via hyperscalers
+
+SIZING RECOMMENDATION (45-Day Risk-Adjusted):
+  • Defense (RTX/LMT): 40-50% of new capital (best risk/reward, earnings confidence)
+  • AI Hyperscalers (MSFT/AMZN/GOOGL): 30-40% of new capital (real thesis, macro risk)
+  • NVDA: 0-10% of new capital (only if you have >70% bull conviction on earnings)
+  • Diversification (ZS, ALAB, etc.): 10-20% to reduce sector concentration
+
+================================================================================
+2-WEEK ACTION PLAN (Jun 15-30, 2026)
+================================================================================
+
+**TIMING PRINCIPLE**: Next 2 weeks are QUIET before Jul 2 jobs report catalyst.
+Use this window to stage positions into winners BEFORE earnings season intensifies.
+
+WEEK 1 (Jun 15-21) — ESTABLISH TIER 1 DEFENSE CORE
+───────────────────────────────────────────────────────────────────────────
+
+**Monday-Wednesday (Jun 15-18):**
+  Position: Enter RTX (Raytheon Technologies)
+  Thesis: Highest-conviction defense name; Q2 earnings due late June
+  Entry strategy:
+    • Current: $183.53
+    • Target entry: $180-185 (limit buy, add on any 2-3% dip)
+    • Strategy: Sell CSP $175 (50 DTE, Jun 15) → collect $2,000-2,500 premium
+    • If assigned: Hold for CC ladder (230, 240, 250 strikes staggered)
+    • If expires worthless: Repeat CSP at slightly different strike next week
+
+  Sizing: 2-3 CSP contracts ($175 × 100 × 2-3 = $35K-52.5K notional)
+  Expected premium: $5,000-7,500/month (2-3 puts × $2.5K-3.5K each)
+  Catalyst: Q2 earnings (likely Jun 24-27), backlog guidance confirmation
+  Risk limit: If RTX drops below $175 AND jobs report disappoints Jul 2, close 1 contract
+
+**Wednesday-Friday (Jun 18-21):**
+  Position: Enter LMT (Lockheed Martin) — SECONDARY confirmation
+  Thesis: Pure-play defense; validation of sector thesis
+  Entry strategy:
+    • Current: $532.14 (elevated after recent run)
+    • Target entry: $520-530 (wait for 2-3% pullback, don't chase)
+    • Strategy: Sell CSP $510 (60 DTE, staggered with RTX)
+    • Sizing: 1-2 CSP contracts ($510 × 100 × 1-2 = $51K-102K notional)
+
+  Sizing caveat: LMT is already at +11.3% YTD. Only enter if RTX entry worked AND you have
+  conviction that defense thesis is intact through Aug Congressional debate.
+
+  Expected premium: $3,000-4,000/month (1-2 puts × $3K-4K each)
+  Catalyst: Q2 earnings (expected early July), validate sales growth
+  Risk limit: Only if LMT breaks below $500 support
+
+**Week 2 (Jun 22-28) — ESTABLISH TIER 1 AI HYPERSCALER CORE**
+───────────────────────────────────────────────────────────────────────────
+
+**Monday-Wednesday (Jun 22-25):**
+  Position: Enter MSFT (Microsoft) — ANCHOR AI PLAY
+  Thesis: Azure capex backlog real; enterprise AI adoption confirmed; straddle earnings
+  Entry strategy:
+    • Current: ~$420-430 (check live)
+    • Target entry: $415-420 (slight dip into earnings)
+    • Strategy: STRANGLE (short call + short put at different strikes)
+      - Short 430C (45 DTE) = collect $2,500-3,000
+      - Short 400P (45 DTE) = collect $2,000-2,500
+      - Combined = $4,500-5,500 total credit per contract
+    • Sizing: 2-3 strangle contracts
+
+  Earnings buffer: Q2 earnings likely Jun 24-25. Strangle entry AFTER earnings closes
+  (Jun 26-27) to avoid volatility crush surprise. If earnings beat, stock likely $435+
+  and calls are safe. If earnings miss, premium is fat and you can roll puts down.
+
+  Expected premium: $6,000-8,000/month (2-3 strangles × $2.2K-2.8K avg)
+  Catalyst: Q2 earnings confirmation + Azure capex guidance reaffirm
+  Risk limit: If MSFT breaks below $400 support, close 1 short put
+
+**Thursday-Friday (Jun 27-28) — CONFIRM AI THEME WITH SECONDARY ENTRY**
+  Position: Enter AMZN (Amazon) OR GOOGL (Google) — DIVERSIFY AI EXPOSURE
+  Thesis: AWS capex + advertising AI adoption (Google) = parallel catalysts
+  Entry strategy:
+    • AMZN: Sell CSP $200-210 (45 DTE) = $2,500-3,500 premium
+    • GOOGL: Sell CSP $210-220 (45 DTE) = $2,000-3,000 premium
+    • Sizing: 1 contract each (don't over-concentrate in Big Five)
+
+  Expected premium: $2,500-3,500/month per name
+  Catalyst: Q2 earnings (late June), capex guidance
+  Risk limit: Only enter if MSFT strangle was successful (premium collected, no assignment)
+
+**By End of Week 2 (Jun 28):**
+  Positions established:
+    ✓ RTX (2-3 CSPs): $5,000-7,500/month
+    ✓ LMT (1-2 CSPs): $3,000-4,000/month
+    ✓ MSFT (2-3 strangles): $6,000-8,000/month
+    ✓ AMZN or GOOGL (1 CSP): $2,500-3,500/month
+
+  Expected new premium: $16,500-23,000/month from NEW positions alone
+  Plus: Existing OKTA, TWLO, NFLX, ELF positions = $25,000-30,000/month
+  ─────────────────────────────────────────────────────
+  TOTAL JUNE PROJECTION: $41,500-53,000/month (within reach of $100K with other accounts)
+
+================================================================================
+45-DAY ROTATION STRATEGY (Jun 15 - Jul 31, 2026)
+================================================================================
+
+PHASE 1 (Jun 15-30) — ESTABLISH CORE DEFENSE & AI
+───────────────────────────────────────────────────────────────────────────
+Actions completed above (RTX, LMT, MSFT, AMZN/GOOGL entries)
+Market regime: QUIET before major catalysts
+Tactical focus: Stage positions into quality names at reasonable entry levels
+
+PHASE 2 (Jul 1-5) — MONITOR EARNINGS + ECONOMIC SETUP
+───────────────────────────────────────────────────────────────────────────
+**Key dates:**
+  • Jul 2: June jobs report (unemployment, wage growth, participation)
+  • Jul 3: Market closed (Independence Day)
+  • Jul 4: Market closed
+  • Jul 5: Early data reaction, position adjustments
+
+**What to watch:**
+  Jobs report "soft landing" signal:
+    ✓ If payroll growth 100-150K + unemployment 4.0-4.2%: BULLISH for growth (tech rallies)
+    ✗ If payroll < 50K OR unemployment spikes to 4.5%+: BEARISH for growth (tech tumbles)
+
+**If jobs beat (bullish scenario):**
+  • Action: SCALE AI positions (add MSFT 410P put, AMZN 200P put)
+  • Defense holds firm (non-correlated positive)
+  • Expected move: Tech +3-5%, Defense +1-2%
+  • Premium generation: INCREASES (IV drops but delta improves)
+
+**If jobs miss (bearish scenario):**
+  • Action: REDUCE Tech concentration, HOLD Defense (defensive)
+  • Close 1 MSFT strangle leg (call side, take profit if available)
+  • Keep Defense (RTX/LMT) — non-correlated, thesis intact
+  • Expected move: Tech -5-8%, Defense -1-2% (outperformance)
+  • Premium generation: DECREASES in tech, STABLE in defense
+
+PHASE 3 (Jul 6-14) — CPI RELEASE CATALYST + MID-MONTH REBALANCE
+───────────────────────────────────────────────────────────────────────────
+**Key date: Jul 14 (June CPI release, most critical data point)**
+  • Market has priced in: ~2.8% YoY inflation (same as previous month)
+  • Surprise scenario HIGH: Inflation trending down to 2.5-2.7% (bullish, rate cuts may come)
+  • Surprise scenario LOW: Inflation re-accelerating to 3.0%+ (bearish, rates stay higher longer)
+
+**Before CPI (Jul 6-13):**
+  • Close any profitable puts at 40-50% for credit harvesting
+  • This gives you dry powder if CPI miss creates opportunity
+  • Example: If RTX 175P at 50% profit ($1,250 credit), close it
+  • Redeploy proceeds into NFLX or ZS (Tier 2 additions)
+
+**After CPI (Jul 15-20):**
+  If CPI beats (inflation down → bullish):
+    • MSFT + AMZN calls safe, can roll up and out
+    • Defense continues higher (non-inflationary secular growth)
+    • Action: ADD NFLX CSPs (communications leader, secular streaming growth)
+    • Action: ADD ZS CSPs (cybersecurity, inflation-neutral recurring revenue)
+    • Expected: Tech +2-4%, Defense +1-2%
+
+  If CPI misses (inflation up → bearish):
+    • MSFT + AMZN strangles face short call risk (close call side, keep puts)
+    • Defense outperforms (government spending doesn't care about inflation)
+    • Action: TRIM MSFT call exposure, KEEP RTX
+    • Action: ADD consumer defensive (ELF CSPs, consumer value trade-down)
+    • Expected: Tech -3-5%, Defense +0-2%
+
+PHASE 4 (Jul 21-31) — EARNINGS DIGEST + PORTFOLIO REBALANCING
+───────────────────────────────────────────────────────────────────────────
+**End of Q2 earnings cycle:**
+  • All major positions have reported (RTX, LMT, MSFT, AMZN, GOOGL, NFLX)
+  • Reality check: Is capex guidance real? Are defense backlogs holding?
+  • Valuation reset: Any positions should be re-rated based on guidance
+
+**Portfolio rebalance decisions:**
+  1. Which defense names beat? (RTX? LMT?) → Scale the winner
+  2. Which AI names beat? (MSFT? AMZN?) → Scale the winner
+  3. Which Tier 2 names are ready to graduate? (OKTA, CRWD → higher sizing?)
+  4. Any thesis breaks? (Close it, claim tax loss if underwater)
+
+**Action plan:**
+  • For each position that reported:
+    - If beat AND guidance raised: SCALE (add 1-2 more contracts of CSP/strangle)
+    - If beat AND guidance maintained: HOLD (don't chase)
+    - If miss AND guidance cut: CLOSE or TRIM (take loss, redeploy)
+
+**Target for end of July:**
+  Defense allocation: 4-6 CSP contracts (RTX + LMT combined) = $10-15K/month
+  AI allocation: 3-4 strangle/CSP contracts (MSFT + 1-2 hyperscaler) = $8-12K/month
+  Tier 2 allocation: OKTA + CRWD + ZS + ELF ladder = $12-16K/month
+  Account B/C: Existing CSP wheels = $25-30K/month
+  ─────────────────────────────────────────────────────────────
+  TOTAL: $55-73K/month by end of July
+
+================================================================================
+ROTATION DECISION TREE (45-Day Risk Management)
+================================================================================
+
+**MONITOR THESE SIGNALS DAILY (triggers for action):**
+
+1. **VIX > 25 (Elevated volatility)**
+   Action: FAVORABLE for premium collection. Add 1-2 new CSP contracts.
+   Defense: Buy dip on RTX/LMT (-3-5% move)
+   AI: Sell strangles on MSFT/AMZN (wider bid-ask spreads)
+   Timing: Window typically 2-5 days
+
+2. **VIX < 12 (Complacency)**
+   Action: UNFAVORABLE for premium collection (low IV). Reduce new entries.
+   Defense: No new CSPs. Keep existing positions.
+   AI: Roll existing positions out in time for more credit.
+   Timing: Compression may last weeks; don't fight it
+
+3. **RTX or LMT earnings beat**
+   Action: SCALE defense (add 1-2 CSPs on next dip)
+   Thesis: Backlog thesis validated, buyers emerge
+   Sizing: Add to existing 2-3 RTX positions with new CSP at +2-3% strike spread
+
+4. **MSFT or AMZN earnings miss guidance**
+   Action: TRIM AI (close 1 MSFT call leg, keep put for dip buying)
+   Thesis: Capex may be pulling forward (bad guidance = buyers overestimate demand)
+   Sizing: Close highest profitable leg, wait for redeployment signal
+
+5. **S&P 500 breaks below 50-day MA**
+   Action: DEFENSIVE rotation. Overweight RTX/LMT vs MSFT/AMZN.
+   Thesis: Market weakness = tech underperforms, defense outperforms
+   Sizing: Close 1 MSFT strangle, add 1 RTX CSP
+
+6. **Congress hints at defense budget cuts (early August)**
+   Action: TRIM RTX/LMT (take 50% profit if available)
+   Thesis: Political risk to thesis
+   Sizing: Close 1 of 2-3 RTX CSPs, keep 1-2 for longer term
+
+7. **Tech sector rallies >10% from current levels**
+   Action: TAKE PROFITS (don't hold all the way up)
+   Thesis: Mean reversion, don't get caught at the top
+   Sizing: Close MSFT strangles at 40-50% profit, roll puts to lower strikes
+
+================================================================================
+SECTOR-SPECIFIC ENTRY LEVELS & MECHANICS (45-Day Execution)
+================================================================================
+
+**DEFENSE SECTOR POSITIONS**
+
+RTX (Raytheon Technologies) — TIER 1, PRIMARY DEFENSE VEHICLE
+─────────────────────────────────────────────────────────────
+Current: $183.53
+Target P&L: +8-15% by Jul 31 ($195-210)
+Entry mechanics:
+  • Sell CSP 175 strike (60 DTE): Collect $2,500-3,000
+  • Sell CSP 165 strike (45 DTE): Collect $1,800-2,200
+  • Sell CSP 180 strike (30 DTE): Collect $1,200-1,500
+  Total: 3 contracts, ladder across expirations
+
+Exit mechanics:
+  • Close 175 CSP at 40-50% profit = $1,000-1,500 credit freed
+  • Roll 165 CSP up to 185 for net credit if called away
+  • Let 180 CSP ride to assignment if ITM (expect assigned at higher price)
+
+Expected monthly: $5,000-7,500 (adjust for new entries over 45 days)
+Catalyst confidence: ★★★★★ (backlog visible, Q2 earnings validation)
+
+LMT (Lockheed Martin) — TIER 1, SECONDARY DEFENSE, PREMIUM STABILITY
+─────────────────────────────────────────────────────────────────────
+Current: $532.14
+Target P&L: +5-12% by Jul 31 ($560-600)
+Entry mechanics:
+  • Sell CSP 510 strike (60 DTE): Collect $2,000-2,500
+  • Sell CSP 490 strike (45 DTE): Collect $1,200-1,500
+  Total: 2 contracts, ladder across expirations
+
+Exit mechanics:
+  • Close 510 CSP at 50% profit if hit = $1,000-1,250 credit freed
+  • Roll 490 CSP down if stock rallies above 530 (never let long-term CSP expire ITM at loss)
+
+Expected monthly: $3,000-4,000 (adjust for new entries over 45 days)
+Catalyst confidence: ★★★★☆ (strong earnings expected, but already up 11.3% YTD — slightly stretched)
+
+**AI SECTOR POSITIONS**
+
+MSFT (Microsoft) — TIER 1, ANCHOR AI PLAY, BROADEST EXPOSURE
+─────────────────────────────────────────────────────────────
+Current: ~$420-430 (check live)
+Target P&L: +5-10% by Jul 31 ($440-475)
+Entry mechanics (STRANGLE = balanced approach):
+  • Sell 430 CALL (45 DTE): Collect $2,500-3,000
+  • Sell 400 PUT (45 DTE): Collect $2,000-2,500
+  • Combined: $4,500-5,500 per contract
+
+Exit mechanics:
+  • If call ITM (MSFT > 430): Close call, keep put → bank the credit
+  • If put ITM (MSFT < 400): Close put, keep call → let call ride up
+  • If both ITM: Close both, take loss OR roll both out + down/up
+
+Expected monthly: $6,000-8,000 (2-3 strangles, plus scalp rolls)
+Catalyst confidence: ★★★★★ (Q2 earnings validation + Azure capex narrative)
+
+AMZN (Amazon) — TIER 1, AWS CAPEX SECONDARY AI PLAY
+──────────────────────────────────────────────────────
+Current: ~$210-215 (check live)
+Target P&L: +5-12% by Jul 31 ($220-245)
+Entry mechanics (CSP only, simpler than MSFT strangle):
+  • Sell 200 PUT (45 DTE): Collect $2,500-3,500
+  • Sizing: 1-2 contracts
+  Total: $2,500-7,000 per month
+
+Exit mechanics:
+  • If assigned: Hold for CC wheel (call the position out)
+  • If expires worthless: Keep credit, repeat next month
+  • Target: Close at 50% profit
+
+Expected monthly: $2,500-3,500 (scale 2 contracts if market favorable)
+Catalyst confidence: ★★★★☆ (AWS capex real, but market knows this already)
+
+GOOGL (Google) — TIER 1, SEARCH AI + ADVERTISING SECULAR GROWTH
+────────────────────────────────────────────────────────────────
+Current: ~$210-220 (check live)
+Target P&L: +3-8% by Jul 31 ($215-240)
+Entry mechanics (CSP, lower conviction than MSFT/AMZN):
+  • Sell 200 PUT (45 DTE): Collect $1,500-2,500
+  • Sizing: 1 contract maximum
+
+Exit mechanics:
+  • Similar to AMZN — close at 50% profit, accept assignment, or let expire
+
+Expected monthly: $1,500-2,500 (1 contract only)
+Catalyst confidence: ★★★☆☆ (AI narrative real but search dominance already priced in)
+
+**TIER 2 ADDITIONS (Later in 45-day period, if conditions allow)**
+
+ZS (Zscaler) — Cybersecurity + AI = double catalyst
+  Entry: 45+ DTE, $135-140 CSP → Collect $1,500-2,000
+  Expected: $2,500-3,000/month (1-2 contracts)
+
+ELF (E.L.F. Beauty) — Oversold consumer defensive (RSI 28.6 = BUY)
+  Entry: High IV, 45 DTE, $40-35 CSP → Collect $2,000-2,500
+  Expected: $2,000-3,000/month (1-2 contracts, highest IV bonus)
+
+NFLX (Netflix) — Streaming secular, add after MSFT/AMZN earnings confirm
+  Entry: 45 DTE, $80-85 CSP → Collect $1,500-2,000
+  Expected: $2,500-3,500/month (1-2 contracts)
+
+================================================================================
+FINAL POSITION SIZING BY MID-JULY (45-DAY TARGET)
+================================================================================
+
+**TIER 1 (Defense & AI Hyperscalers): 60% of new premium**
+  ├─ RTX (2-3 CSPs):           $5,000-7,500/month
+  ├─ LMT (1-2 CSPs):           $3,000-4,000/month
+  ├─ MSFT (2-3 strangles):     $6,000-8,000/month
+  ├─ AMZN (1-2 CSPs):          $2,500-3,500/month
+  └─ Subtotal:                 $16,500-23,000/month
+
+**TIER 2 (Emerging, Confirmation Plays): 30% of new premium**
+  ├─ OKTA (existing):          $5,850/month (hold)
+  ├─ CRWD (existing):          $2,000-3,000/month
+  ├─ ZS (new):                 $2,500-3,000/month
+  ├─ NFLX (new, after earnings): $2,500-3,500/month
+  ├─ ELF (oversold opportunity): $2,000-3,000/month
+  └─ Subtotal:                 $14,850-21,350/month
+
+**TIER 3 (Exploratory, minimal): 5-10% of new premium**
+  ├─ RKLB, ASTS, ACHR, IBIT, HUT (existing): $3,500/month (hold)
+  └─ Subtotal:                 $3,500/month
+
+**ACCOUNT B/C (Existing CSP Wheels): 25-30% of total**
+  Account B (IRA conservative):  $20,000/month
+  Account C (TWLO + ladder):     $17,000/month
+  Subtotal:                     $37,000/month
+
+═══════════════════════════════════════════════════════════════════════════════
+
+**TOTAL MONTHLY PREMIUM BY END OF JULY:**
+  Tier 1 (Defense + AI):        $16,500-23,000
+  Tier 2 (Confirmation):        $14,850-21,350
+  Tier 3 (Exploratory):         $3,500
+  Account B/C (Wheels):         $37,000
+  ─────────────────────────────────────
+  **TOTAL: $71,850-84,850/month by end of July**
+
+**Add existing Account A winners (OKTA 5.85K, TWLO 8.5K, ETSY 500, UNH 1.2K) = $16,050**
+─────────────────────────────────────────────────────────────────────────
+**GRAND TOTAL: $87,900-100,900/month by end of July** ✓ WITHIN $100K TARGET
+
+================================================================================
+KEY RISK CHECKS (45-Day Guardrails)
+================================================================================
+
+1. **Margin Usage (Account A)**
+   Current: $631K margin requirement, $55K available cash
+   Target: Keep available cash > $75K at all times
+   Trigger: If cash drops below $50K, close 50% of profitable positions
+
+2. **Sector Concentration**
+   Defense allocation: 20-25% of total premium (not > 30%)
+   AI allocation: 25-30% of total premium (not > 40%)
+   Other: 45-55% (locked in via Account B/C wheels + diversified Tier 2)
+
+3. **Single-Name Concentration**
+   No single name (RTX, MSFT, AMZN) should generate > 10% of total monthly premium
+   Current max is MSFT at 6-8% (safe)
+
+4. **Leverage (VIX-Adjusted)**
+   If VIX > 30: Reduce new entries by 50%
+   If VIX < 12: No new CSPs until IV normalizes
+
+5. **Earnings Season Timing**
+   Jun 15-30: Stage positions (low catalyst risk)
+   Jul 1-20: Major catalysts (jobs + CPI) — reduce new entries, harvest profits
+   Jul 21-31: Rebalance based on earnings results
+
+================================================================================
+SUMMARY: DEFENSE & AI ARE SAFE BETS FOR NEXT 45 DAYS
+================================================================================
+
+✓ Defense (RTX/LMT): STRONG conviction, LOW risk. Safe to 2x position through July.
+  Why: $1.05T budget real, backlog visible, no Congressional debate this month.
+  Risk: Congressional debate Aug-Sep = -5-8% pullback. Manage with dry powder.
+
+✓ AI (MSFT/AMZN/GOOGL): REAL capex spending, MEDIUM risk on macro data.
+  Why: Big Five committing $660-690B, Power constraint = sticky demand.
+  Risk: If Jul 2 jobs disappoint OR Jul 14 CPI hot → -5-10% pullback in 2-3 days.
+  Mitigation: Scale MSFT via strangle (balanced delta), keep tighter stops on calls.
+
+⚠️ NVDA: Skip for 45 days. Already -12.8% from peak. Concentration risk real.
+  Better to participate via MSFT/AMZN/GOOGL strangles (broad exposure, better risk).
+
+✓ Rotation timing: PERFECT window Jun 15-30 to stage positions before earnings.
+  Major catalysts: Jul 2 (jobs), Jul 14 (CPI) = decision points for scale/trim.
+
+═══════════════════════════════════════════════════════════════════════════════
