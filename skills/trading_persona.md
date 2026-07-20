@@ -1,3 +1,32 @@
+# ⚠️ SUPERSEDED — 2026-07-20
+
+**This file is no longer the active persona document and should not be treated as current.**
+
+- **The skill actually loads:** `skills/options-trader/trading_persona.md`
+  (= `~/.claude/skills/trading_persona.md`). That is the canonical file going forward —
+  read/edit that one, not this one.
+- **No code reads this file.** A full-repo search confirmed nothing in the report-generation
+  pipeline (`unified_master_report_production.py`, `OpenPositionsLoaderV2`, etc.) parses it —
+  it was always a hand-typed narrative snapshot, never a live data source. Live account data
+  comes from `data/portfolio_snapshot.yaml` and the actual broker CSV exports.
+- **What was merged out of this file into the canonical one (2026-07-20):** the 5-Gate
+  Technical Decision Framework, the 7-Layer Macro Crash Detection Framework, and the
+  P&L-based Tier Reclassification principle — these were genuinely reusable and evergreen.
+- **What was deliberately NOT merged, because it's wrong or expired:**
+  - The **India Portfolio Strategy** section below has the same stale exit-trigger rationale
+    a 2026-07-20 audit found and corrected (e.g. STABAN's "-43% loss" and DRREDD's "pharma
+    not in theme" framing — both factually contradicted by live data that session). The
+    current, correct India logic lives in `data/india_config.yaml` +
+    `mcp/routines/india_us_evening_report.py`, not in prose here.
+  - The **"45-Day Rotation Strategy (Jun 15 - Jul 31, 2026)"** section describes a trade plan
+    for a window that has already elapsed.
+  - All dated account balances/P&L snapshots (April/May/June 2026) below are stale — check
+    the live reports for current numbers, not this file.
+
+Kept for historical reference only.
+
+---
+
 # Trading Persona — Rahul Vadera
 
 **Generated:** 2026-04-25

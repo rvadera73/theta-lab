@@ -76,6 +76,113 @@ The thesis must break — not just the price.
 
 ---
 
+## Tier Reclassification — By Profitability, Not IVR/Conviction Score
+
+**Merged 2026-07-20** from `skills/trading_persona.md` (the long-running hand-maintained
+persona doc — see the India section at the bottom of this file for how it and this
+canonical file diverged, and why only the reusable frameworks below were merged in).
+
+**Problem this fixes:** tiering positions by IVR/conviction alone ignores whether the
+position is actually working. A tier should reflect real P&L, not just how the position
+was scored at entry.
+
+| Tier | Equity P&L | Option Strategy | Position Size |
+|------|---|---|---|
+| **Tier 1 (Profitable)** | +0% to +100% | Sell 1-3 contracts CSPs/CCs per underlying; ladder strikes | Full allocation: 3-5 contracts max |
+| **Tier 2 (Breakeven)** | -10% to 0% | Sell CSPs only; close existing short calls; hold for assignment | Reduced: 1-2 contracts max |
+| **Tier 3 (Underwater -25%+)** | -25% to -100% | Exit equity OR close all options; do NOT scale options | Minimal: 1 contract exploratory only; do NOT add |
+
+**Professional reasoning (not emotional):** a position deep underwater on the equity leg
+is a broken position, not a "sell more premium to average down" opportunity. Scaling
+options on a name to offset an equity loss locks in the loss while compounding risk.
+Right approach: exit the losing equity, close the associated losing options, redeploy
+into positions with positive equity P&L. This is a **principle**, not a one-time snapshot
+— re-apply it to whatever the current live P&L shows, not the dated example numbers this
+was originally written against.
+
+---
+
+## Professional Technical Decision Framework — 5-Gate Entry Analysis
+
+**Merged 2026-07-20** from `skills/trading_persona.md`. Supplemental to fundamentals-first
+research (per Trader Profile principle 8-9) — use to size/time an entry the fundamental
+thesis has already justified, not to originate one.
+
+### Gate 1: IV Rank (Mechanical Filter) — PRIMARY objective gate, all positions pass this first
+
+| IVR | Status | Action |
+|-----|--------|--------|
+| **≥60%** | ✅ PASS | Proceed to Gates 2-5 |
+| **40-59%** | ✅ PASS | Proceed to Gates 2-5 |
+| **<40%** | ❌ BLOCK | Do NOT proceed; insufficient premium density |
+
+If IVR <40, position is automatically blocked regardless of Gates 2-5.
+
+### Gates 2-5: Red & Green Flag Analysis (after passing Gate 1)
+
+**Gate 2 — Technical Strength:** Green = price above 50-day MA, RSI 40-60, 3+ day uptrend.
+Yellow = price near 50-day MA (±2%), RSI 30-40/60-70, choppy. Red = price below 50-day MA
+3+ days, RSI <30 or >75, 5+ day downtrend.
+
+**Gate 3 — Momentum & Relative Strength:** Green = +20% to +100% recent, beating sector,
+earnings beat + guidance raise. Yellow = 0-20% recent, in-line with sector. Red = -10% to
+-50% recent, trailing sector by 10%+, guidance cut/miss.
+
+**Gate 4 — Volatility Quality & Premium Density:** Green = IV percentile >70%, IVR >70%
+(peak but not crush-risk), premium >20% capital/45-DTE. Yellow = IV percentile 50-70%, IVR
+60-70%, premium 15-20%. Red = IV percentile <50%, IVR >80% (imminent crush risk), premium
+<10% (weak).
+
+**Gate 5 — Risk/Reward & Greeks:** Green = delta 0.15-0.20 (80-85% PoP), theta 3-5% daily
+decay, DTE 45-60, Tier 1/2 conviction. Yellow = delta 0.10-0.15 or 0.20-0.25, DTE 30-45 or
+60-90, Tier 2 mixed. Red = delta <0.10 or >0.30, DTE <30 or >180 (inefficient capital),
+Tier 3 or thesis broken.
+
+### Final Recommendation Logic (Gates 1-5 Combined)
+
+| Gate 1 | Gates 2-5 | Decision | Action |
+|---|---|---|---|
+| PASS (IVR ≥40) | 3+ GREEN | ✅ ENTER FULL SIZE | Deploy full allocation |
+| PASS (IVR ≥40) | 2 GREEN, 1-2 YELLOW | 🟡 CONDITIONAL | Reduce size 50%; wait for confirmation |
+| PASS (IVR ≥40) | 1+ RED | ❌ DEFER/SKIP | Wait for conditions to improve |
+| BLOCK (IVR <40) | anything | ❌ HARD BLOCK | Do not enter; exit any existing position |
+
+---
+
+## Macro Risk Framework — 7-Layer Crash Detection
+
+**Merged 2026-07-20** from `skills/trading_persona.md`. Ties macro risk signals to
+actionable position-reduction decisions rather than "market feels risky" intuition.
+
+### The 7 Layers
+
+1. **Breadth (% S&P 500 above 50-day MA):** GREEN >60% | YELLOW 50-60% | RED <50%
+2. **Advance-Decline Ratio:** GREEN >1.0 | YELLOW 0.8-1.0 | RED <0.8
+3. **VIX Term Structure:** GREEN contango (normal) | YELLOW flat | RED backwardation
+4. **Credit Spreads (HY OAS):** GREEN <400bps | YELLOW 400-450bps | RED >450bps
+5. **Put/Call Ratio:** GREEN <1.0 | YELLOW 1.0-1.2 | RED >1.2
+6. **Yield Curve (10Y-2Y):** GREEN >0.5% | YELLOW 0.1-0.5% | RED <0.1% (inverted)
+7. **Earnings Quality (qualitative):** guidance beats/misses, revenue realization, management credibility
+
+### Probability Model → Staged Response
+
+Base rate ~6% monthly crash probability; each RED signal adds +15% to 30-day probability,
+each YELLOW adds +5%.
+
+| 30-Day Prob | Stage | Action |
+|---|---|---|
+| <20% | GREEN | Proceed with full sizing |
+| 20-40% | YELLOW-1 | Close 20% of lowest-conviction positions (Tier 3 first, conviction <6/10); no rolling, just exit; cash 10%→15% |
+| 40-60% | YELLOW-2 | Close all overbought Tier 1/2 (RSI >70); reduce major positions to 75% size; new entries defensive-sector only; cash 10%→20-25% |
+| 60-70% | RED-Emerging | Close 50% of gross exposure; emergency protocol |
+| >70% | RED-Critical | 70% cash, 30% defensive only; close ALL naked calls or hedge with long puts |
+
+**Replaces "I feel like the market might crash, let me close 30%" with a specific,
+signal-driven stage and a matching playbook** — same principle as the India regime
+detector (`detect_india_regime()`) added this session: compute the signal, don't guess it.
+
+---
+
 ---
 
 ## Strategy Architecture (Confirmed by Trader)
