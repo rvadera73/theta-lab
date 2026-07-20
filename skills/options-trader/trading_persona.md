@@ -642,6 +642,9 @@ Reports should flag:
 - **Missing:** Account margin utilization % and available cash (requires broker API or manual export)
 - **Missing:** Separated puts/calls breakdown for staggers (currently shows combined notional)
 - **Data gap:** BRKB delisted; handled gracefully but flagged
+- **Bug (2026-07-20):** `scan_roll_candidates` throws `float division by zero` — not yet
+  root-caused. Do roll/DTE analysis manually until fixed (theta-decay-by-√(time) estimate
+  worked fine as a substitute the same day this was found).
 
 ---
 
