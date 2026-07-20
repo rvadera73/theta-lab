@@ -1,9 +1,25 @@
 # India portfolio config — edit this file, commit + push to take effect.
 # Script reads this at runtime; no Python changes needed.
 
-# ICICI Direct symbols to mark as KEEP in the equity P&L table.
-# Updated 2026-04-30: aligned to 5 growth themes —
-#   Power/Electricity | Defense | Hospitals | Real Estate | Value (Banking/Infra)
+# ICICI Direct symbols tagged with a "(core)" thematic label in the equity report.
+# INFORMATIONAL ONLY as of 2026-07-19 — this list no longer determines the report's
+# KEEP/WATCH/verdict (that's now a live conviction score in enhanced_metrics.py,
+# recomputed every run: revenue/earnings growth + analyst rating as the primary
+# signal, RSI/MACD/PE/52w-position as supplemental). This list is just the
+# long-term thematic story for each name, and the theme set itself is now
+# auto-checked every report run against real NSE sector index momentum
+# (check_sector_themes() in india_us_evening_report.py) — see flags below.
+#
+# 6 growth themes as of 2026-07-19 (was 5 as of 2026-04-30 — Pharma added):
+#   Power/Electricity | Defense | Hospitals | Real Estate | Value (Banking/Infra) | Pharma
+#
+# 2026-07-19 sector-momentum audit (3mo/6mo NSE sector index returns vs Nifty 50):
+#   - Pharma sector +14.0%/+12.7% — outperformed 4 of the then-5 core themes while
+#     being excluded entirely. Added as a 6th theme (see AURPHA below).
+#   - Defense/PSU proxy (Nifty PSE) -6.1% 3mo (but +1.7% 6mo, so not yet a sustained
+#     cooling signal) — softer than when the theme was set; auto-flagged COOLING in
+#     the report if it stays negative on both windows in future runs.
+#   - IT confirmed correctly excluded (-8.1%/-23.1%).
 core_portfolio:
   - HINAER    # HAL — Defense (zero debt, 30% profit growth)
   - BHAELE    # BEL — Defense (zero debt, 20% profit growth)
@@ -18,6 +34,12 @@ core_portfolio:
   - BAJFI     # Bajaj Finance — NBFC (48% revenue growth)
   - DLFLIM    # DLF — Real Estate
   - ZOMLIM    # Zomato — Consumer/Food Delivery (growth)
+  - AURPHA    # Aurobindo Pharma — Pharma (added 2026-07-19: sector outperforming,
+              # conviction 7-8/10, no red flags — the pharma representative.
+              # NOTE: DRREDD (Dr Reddy's) is NOT added despite the same sector —
+              # its earnings collapsed -86% YoY and it's analyst-downgraded to
+              # hold; that's a company-specific problem the strong sector doesn't
+              # offset. See its live verdict in the report, not this list.
 
 # Watchlist — target entry zones. Not yet purchased.
 watchlist:
@@ -69,25 +91,21 @@ exit_triggers:
   # GENOVE: sold
   # SUZENE: sold
   # ANARAJ: not in holdings
+  # HCLTEC: sold (0 shares as of 2026-07-19 statement)
+  # DIXTEC: sold (0 shares as of 2026-07-19 statement)
+  # MAZDOC: sold (0 shares as of 2026-07-19 statement)
+  # HERHON: sold (0 shares as of 2026-07-19 statement)
 
   # --- Phase 1: Cut losses / trim on bounce ---
-  - icici_symbol: HCLTEC
-    trigger: 1265
-    shares: all
-    phase: 1
-    action: "Cut loss on bounce >= 1,265 (IT headwinds, flat earnings)"
-
+  # 2026-07-19 review: rationale text ("-43% loss") contradicts the actual held lot
+  # (75 sh @ avg 933, currently +12%/+8,384 gain per 2026-07-19 statement). Fundamental
+  # thesis may still stand but this is not a loss-cut. Trader decision: hold and watch
+  # trend for ~90 days (review ~2026-10-17) rather than act on the stale rationale now.
   - icici_symbol: STABAN
     trigger: 0
     shares: all
     phase: 1
     action: "Exit immediately — -40% earnings growth, insurance sector headwinds, -43% loss"
-
-  - icici_symbol: DIXTEC
-    trigger: 12000
-    shares: all
-    phase: 1
-    action: "Sell on bounce >= 12,000 (2% revenue growth, fwd PE expensive, -32% in 1Y)"
 
   - icici_symbol: DRREDD
     trigger: 1350
@@ -96,6 +114,9 @@ exit_triggers:
     action: "Exit on bounce >= 1,350 — pharma not in core theme, -14% earnings growth"
 
   # --- Phase 2: Near-trigger limit orders ---
+  # 2026-07-19 review: trigger (414) sits above the entire 89-day trading range
+  # (342-410); stock at 89d low, trending away from trigger. Trader decision: keep
+  # level as-is, watch trend for ~90 days (review ~2026-10-17) rather than re-anchor now.
   - icici_symbol: NTPC
     trigger: 414
     shares: 75
@@ -108,24 +129,16 @@ exit_triggers:
     phase: 2
     action: "Exit >= 230 — take 38%+ gain, re-enter lower (stock ran 108% in 1Y)"
 
-  - icici_symbol: MAZDOC
-    trigger: 2800
-    shares: all
-    phase: 2
-    action: "Exit all >= 2,800 — redeploy to SOLARINDS/KAYNES for same defense theme"
-
-  - icici_symbol: HERHON
-    trigger: 5500
-    shares: all
-    phase: 2
-    action: "Exit >= 5,500 — auto 2W not in core 5 themes, EV transition risk"
-
   - icici_symbol: YATHOS
     trigger: 820
     shares: all
     phase: 2
     action: "Exit all at market — already above 750 trigger (sell at open)"
 
+  # 2026-07-19 review: trigger (2,700) sits 5.4% above the 89-day high (2,562), never
+  # touched; stock down -6.2% over 89d. Share count also stale (config says trim 15 of
+  # 30; actual holding is 100 sh per 2026-07-19 statement). Trader decision: keep level
+  # as-is, watch trend for ~90 days (review ~2026-10-17) — do not re-anchor or resize now.
   - icici_symbol: TCS
     trigger: 2700
     shares: 15

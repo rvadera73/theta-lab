@@ -168,6 +168,16 @@ def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
         pe_ratio = info.get('trailingPE', None)
         week_52_high = info.get('fiftyTwoWeekHigh', None)
         week_52_low = info.get('fiftyTwoWeekLow', None)
+        revenue_growth = info.get('revenueGrowth', None)
+        earnings_growth = info.get('earningsGrowth', None)
+        if earnings_growth is None:
+            earnings_growth = info.get('earningsQuarterlyGrowth', None)
+        analyst_rating = info.get('recommendationKey', None)
+        target_mean = info.get('targetMeanPrice', None)
+        target_upside_pct = (
+            (target_mean / current_price - 1) * 100
+            if target_mean and current_price else None
+        )
 
         # Calculate position in 52-week range (0-100)
         position_in_range = 50.0
@@ -187,9 +197,18 @@ def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
         macd_data = TechnicalIndicators.macd(closes)
         bb_data = TechnicalIndicators.bollinger_bands(closes)
 
-        # Determine conviction score (0-10) based on multiple factors
+        # Determine conviction score (0-10). Fundamentals are weighted as the
+        # PRIMARY signal (larger swing) with technicals SUPPLEMENTAL — matching
+        # the trading persona's stated philosophy ("fundamentals + macro instinct
+        # is the research engine... technicals are supplemental, not primary").
+        # A technical-only version of this formula shipped 2026-07-19 and was found
+        # to score Dr Reddy's (DRREDDY.NS) at 8.0/10 — the HIGHEST conviction in a
+        # 23-name India audit — purely because it was oversold with a "fair" PE,
+        # while its earnings had actually collapsed -86% YoY with an analyst
+        # downgrade to hold. That's the exact failure mode this weighting prevents.
         conviction = 5.0  # baseline
 
+        # --- Technical component (supplemental) ---
         # RSI contribution: 0-2 points
         if rsi < 30:
             conviction += 2.0  # Oversold = bullish
@@ -215,6 +234,44 @@ def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
             conviction += 0.5  # Fair valuation
         elif pe_ratio and pe_ratio > 40:
             conviction -= 0.5  # Expensive
+
+        # --- Fundamental component (primary — wider swing than technicals above) ---
+        if revenue_growth is not None:
+            if revenue_growth > 0.20:
+                conviction += 1.5
+            elif revenue_growth > 0.05:
+                conviction += 0.5
+            elif revenue_growth < -0.05:
+                conviction -= 1.0
+
+        if earnings_growth is not None:
+            if earnings_growth > 0.20:
+                conviction += 1.5
+            elif earnings_growth >= 0:
+                conviction += 0.5
+            elif earnings_growth > -0.20:
+                conviction -= 0.5
+            else:
+                conviction -= 2.5  # Earnings deteriorating sharply — dominant signal
+
+        if analyst_rating in ("strong_buy",):
+            conviction += 1.5
+        elif analyst_rating in ("buy",):
+            conviction += 0.75
+        elif analyst_rating in ("hold",):
+            conviction -= 0.5
+        elif analyst_rating in ("sell", "strong_sell", "underperform"):
+            conviction -= 2.0
+
+        if target_upside_pct is not None:
+            if target_upside_pct > 15:
+                conviction += 1.0
+            elif target_upside_pct > 0:
+                conviction += 0.3
+            elif target_upside_pct > -15:
+                conviction -= 1.0
+            else:
+                conviction -= 2.0  # Analyst target below current price
 
         conviction = max(1, min(10, conviction))  # Clamp to 1-10
 
@@ -246,6 +303,10 @@ def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
             "pe_ratio": round(pe_ratio, 2) if pe_ratio else None,
             "heat_status": heat_status,
             "heat_reason": heat_reason,
+            "revenue_growth": round(revenue_growth * 100, 1) if revenue_growth is not None else None,
+            "earnings_growth": round(earnings_growth * 100, 1) if earnings_growth is not None else None,
+            "analyst_rating": analyst_rating,
+            "target_upside_pct": round(target_upside_pct, 1) if target_upside_pct is not None else None,
         }
     except Exception as e:
         logger.warning(f"Error fetching metrics for {ticker}: {e}")
@@ -263,6 +324,10 @@ def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
             "pe_ratio": None,
             "heat_status": "YELLOW",
             "heat_reason": "Data unavailable",
+            "revenue_growth": None,
+            "earnings_growth": None,
+            "analyst_rating": None,
+            "target_upside_pct": None,
         }
 
 

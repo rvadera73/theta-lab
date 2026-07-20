@@ -537,3 +537,73 @@ Reports should flag:
 - **Data gap:** BRKB delisted; handled gracefully but flagged
 
 ---
+
+## India Equity + F&O Reporting — 2026-07-20 Architecture Update
+
+**Status:** Production. `mcp/routines/india_us_evening_report.py`, runs Sun-Thu 8 PM IST via
+GitHub Actions (`--no-email` locally saves HTML to `logs/` instead of sending). Reads
+`7500069840_*.csv` (equity transactions) and `7510078170_*.csv` (F&O open positions) from
+`data/statements/` — drop new ICICI Direct exports there (newest by mtime wins).
+
+**Root problem found and fixed this session:** the report's "regime" and every equity
+KEEP/WATCH tag were driven by hand-set text and a static `exit_triggers` price list in
+`data/india_config.yaml`, none of it re-checked after being written (much of it back to
+April 2026). A same-day audit found triggers wrong in **both directions** — DRREDD's
+trigger cited "-14% earnings growth" while actual earnings had collapsed -86% YoY, and
+STABAN's trigger cited "-43% loss" while the real position was +12% profitable. The regime
+line ("FII net sellers 18+ months") was hardcoded and never connected to any live data at
+all — same corner-cutting pattern to check for anywhere else in this codebase.
+
+**What changed:**
+- **Regime**: now calls `analysis/india_regime.py:detect_india_regime()` (VIX + Nifty
+  50/200-day MA signals) instead of printing static text. Supports `INDIA_REGIME_OVERRIDE`
+  env var (`.env`) for a trader call when the technical tie-break default (ties resolve to
+  BEAR_SIDEWAYS) looks too conservative — e.g. sustained VIX compression the formula
+  under-weights. Set 2026-07-20 to TRANSITIONING; **revisit ~2026-10-17** or sooner if
+  signals reverse.
+- **Equity verdicts**: static core-list/price-trigger tagging replaced with a **live
+  conviction score**, fundamentals-weighted as PRIMARY (revenue/earnings growth, analyst
+  rating, target-price upside) with technicals (RSI/MACD/PE/52-week position) as
+  SUPPLEMENTAL — matching this persona's stated philosophy ("fundamentals + macro instinct
+  is the research engine... technicals are supplemental, not primary"), which the
+  technical-only version of the US formula had actually been violating. Fixed in the
+  **shared** `mcp/reports/enhanced_metrics.py:get_ticker_metrics()` — the US reports use
+  this too, so the fix and its 5-field output (`revenue_growth`, `earnings_growth`,
+  `analyst_rating`, `target_upside_pct`, plus existing technicals) apply to both markets.
+  Verdict bands: **WEAK** (conviction <4, or YELLOW heat + conviction <5 — fundamentals
+  genuinely bad), **EXTENDED** (RED heat/technically overbought regardless of conviction —
+  a good business can still be a trim candidate, this is NOT the same as WEAK), **MONITOR**
+  (YELLOW heat + ok conviction, or GREEN heat + low conviction — value-trap check), **LET
+  RUN** (GREEN heat + ok conviction). Every row shows its own plain-English reason
+  (`_verdict_reason()`) — don't ship a verdict without a driver explanation again.
+- **Sector & market-cap momentum** (`check_sector_themes()`): recomputed every run against
+  17 NSE sector/cap-segment indices (Nifty 50, Next 50, Midcap 100, Nifty 500, Pharma, IT,
+  Auto, Realty, Energy, Bank, PSU Bank, FMCG, Metal, Infra, PSE, Media, Consumption — no
+  reliable Yahoo ticker found for Nifty Smallcap 100, Private Bank, Commodities, or
+  Manufacturing as of this date). Flags COOLING (a core theme's sector underperforming
+  Nifty 50 on both 3mo and 6mo) and RECONSIDER (a non-core sector outperforming by 10+ pts
+  on both windows). Caught Pharma outperforming 4 of the then-5 core themes while being
+  the stated reason to exit DRREDD — added as a 6th core theme via AURPHA (Aurobindo
+  Pharma, NOT Dr Reddy's — DRREDD's problem is company-specific, the sector strength
+  doesn't offset an 86% earnings collapse). Defense/PSU flagged softer (-6.1% 3mo, still
+  +1.7% 6mo — not yet a sustained COOLING signal, worth another look next run).
+- **New Entry Candidates** (`check_watchlist()`): `data/india_config.yaml`'s `watchlist`
+  section (target entry zones for stocks not yet owned) is now live-checked every run —
+  current price + fresh conviction vs. the planned entry zone, gated on
+  `regime.new_entries_allowed`. Previously only checked manually when asked.
+- `data/india_config.yaml`'s `core_portfolio` list is now **informational only** (a
+  thematic tag shown in reports) — it no longer determines any verdict.
+
+**Known gaps (2026-07-20):**
+- NIFSEL F&O contracts aren't recognized by the Black-Scholes underlying-index map and get
+  silently dropped from the F&O table — cross-check against the raw ICICI statement's own
+  realized/unrealized P&L for that underlying if it's open.
+- Hospitals has no clean standalone NSE sector index on Yahoo — theme validation for that
+  bucket relies on stock-level conviction only (APOHOS, YATHOS), not a sector-momentum check.
+- `_format_research_card` in `mcp/server.py` was broken (function body present, `def` line
+  missing — call sites had been silently failing on `research_symbol`/`run_screener`/
+  `scan_sector` for both US and India). Fixed and syntax-validated 2026-07-20, but the
+  running MCP server process needs a restart to load it — check it actually works before
+  trusting those three tools again.
+
+---

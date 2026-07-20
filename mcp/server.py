@@ -484,7 +484,17 @@ def _format_symbol_heat(heat: dict | None) -> list[str]:
     return lines
 
 
-
+def _format_research_card(
+    symbol: str, tech: dict[str, Any], ivr: dict[str, Any], earnings: list,
+    portfolio_check: dict[str, Any], regime: str,
+) -> str:
+    """
+    Render a single research/screener card: signal line, flags, recommended
+    strategy, rationale, roll summary, portfolio notes, and any open-leg heat.
+    Was called from research_symbol/scan_sector/run_screener but its `def` line
+    was missing (the body fell through as orphaned module-level statements) —
+    restored 2026-07-20 from the call sites' argument shapes and the intact body.
+    """
     meta = portfolio_check.get("meta", {})
     tier_text = _tier_label(meta.get("tier"))
     sector_text = meta.get("sector", "Unmapped")
