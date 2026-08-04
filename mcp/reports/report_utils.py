@@ -694,6 +694,21 @@ async def load_us_positions() -> dict[str, Any]:
         all_positions = fb.get("positions", [])
         data_source = fb.get("data_source", "SNAPSHOT")
 
+    # Backfill missing prices via a real Yahoo Finance call. The CSV parsers only
+    # set current_price from an OWNED-EQUITY row in the export; a pure options
+    # position (short put/call with no shares held — the normal case for
+    # cash-secured puts and naked calls, i.e. most of this book) has no such row,
+    # so the merge step hardcoded current_price=0.0 as a placeholder and NEVER
+    # actually called Yahoo for it. That silently cascaded into scan_position_heat
+    # /scan_profit_take_candidates/scan_roll_candidates treating the majority of
+    # open legs as NO_PRICE (found: 49 of 55 legs) — not a Yahoo outage, a code
+    # path that skipped the live lookup entirely for anything without owned shares.
+    for pos in all_positions:
+        if not pos.current_price or pos.current_price <= 0:
+            live = current_price(pos.symbol)
+            if live:
+                pos.current_price = live
+
     # Ground-truth filter (applies to BOTH parser and fallback positions): drop any
     # position not in the actual position snapshots — removes phantoms from
     # incomplete/orphaned transaction history.

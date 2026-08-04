@@ -157,8 +157,16 @@ class TechnicalIndicators:
         }
 
 
-def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
-    """Get comprehensive metrics for a ticker from Yahoo Finance"""
+def get_ticker_metrics(ticker: str, current_price: float, option_type: str = None) -> Dict:
+    """Get comprehensive metrics for a ticker from Yahoo Finance.
+
+    option_type: None (default) or 'C'/'CALL' use the original RSI treatment
+    (calibrated for call-side risk: overbought = bad). Pass 'P'/'PUT' to use
+    the put-side RSI treatment instead — see the RSI block below for why
+    these differ. Default is unchanged so all existing callers (portfolio-wide
+    ticker tiering in batch_get_metrics, sector rotation) keep prior behavior;
+    pass 'P' explicitly wherever the caller knows it's evaluating a put entry.
+    """
 
     try:
         stock = yf.Ticker(ticker)
@@ -206,74 +214,119 @@ def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
         # 23-name India audit — purely because it was oversold with a "fair" PE,
         # while its earnings had actually collapsed -86% YoY with an analyst
         # downgrade to hold. That's the exact failure mode this weighting prevents.
-        conviction = 5.0  # baseline
+        # Accumulate a raw score first, then rescale by its own achievable range
+        # (below) rather than adding to a baseline and clamping the overflow.
+        # The old approach (baseline 5.0 + additive points, clamp to 1-10) let the
+        # raw sum run from -11 to +11 around that baseline (range of 22) while the
+        # display range is only 9 wide — any stock clearing roughly half its
+        # criteria strongly blew past the ceiling. Result: 20+ completely
+        # different names (SaaS platforms next to a cyclical memory-chip maker)
+        # all landed on the identical "10.0/10", destroying differentiation at
+        # exactly the point where it matters most (ranking "best of the best").
+        raw_score = 0.0
 
         # --- Technical component (supplemental) ---
-        # RSI contribution: 0-2 points
-        if rsi < 30:
-            conviction += 2.0  # Oversold = bullish
-        elif rsi > 70:
-            conviction -= 1.0  # Overbought = bearish
-        elif 40 < rsi < 60:
-            conviction += 0.5  # Neutral tendency
+        # RSI contribution — direction-dependent (GitHub issue #1, backtest
+        # 2026-07-31 against 343 real closed trades from Account A, split by
+        # option type). A single "overbought = bad" rule is only true for
+        # calls; puts showed the opposite pattern in this account's actual
+        # history, so the two are now scored separately rather than sharing
+        # one sign.
+        is_put = str(option_type or '').upper() in ('P', 'PUT')
+        if is_put:
+            # PUT calibration — n=343 backtest: overbought entries were this
+            # account's BEST-performing put setup (98.3% win rate, n=59, mean
+            # +25.1%), not the worst. Neutral (91.0%, n=100) and oversold
+            # (92.9%, n=14 — smallest sample) were close behind. All three
+            # buckets are strong for puts, so contributions are modest and
+            # uniformly positive rather than mirroring the call-side swing —
+            # the data doesn't support a bigger spread than this at n=343.
+            if rsi > 70:
+                raw_score += 1.0   # best-performing put bucket in backtest
+            elif 40 < rsi < 60:
+                raw_score += 0.75  # neutral, nearly as strong
+            elif rsi < 30:
+                raw_score += 0.75  # smallest sample (n=14) — don't overweight
+        else:
+            # CALL calibration (also the default when option_type not given —
+            # existing generic ticker-tiering use). Backtest confirmed this
+            # direction is correct for calls: oversold entries were calls'
+            # best setup (84.0% win rate, +20.1% mean), overbought their worst
+            # (72.7% win rate) — matches the original "AI melt-up" heat-scanner
+            # warning. Max +2.0 / min -1.0.
+            if rsi < 30:
+                raw_score += 2.0  # Oversold = bullish
+            elif rsi > 70:
+                raw_score -= 1.0  # Overbought = bearish
+            elif 40 < rsi < 60:
+                raw_score += 0.5  # Neutral tendency
 
-        # MACD contribution: 0-2 points
+        # MACD contribution: max +1.5 / min -1.0
         if macd_data['histogram'] > 0 and macd_data['macd'] > macd_data['signal']:
-            conviction += 1.5  # Bullish
+            raw_score += 1.5  # Bullish
         elif macd_data['histogram'] < 0 and macd_data['macd'] < macd_data['signal']:
-            conviction -= 1.0  # Bearish
+            raw_score -= 1.0  # Bearish
 
-        # Position in range contribution: 0-1.5 points
+        # Position in range contribution: max +1.5 / min -1.0
         if position_in_range < 25:
-            conviction += 1.5  # Near 52-week low = attractive
+            raw_score += 1.5  # Near 52-week low = attractive
         elif position_in_range > 85:
-            conviction -= 1.0  # Near 52-week high = extended
+            raw_score -= 1.0  # Near 52-week high = extended
 
-        # P/E ratio contribution: 0-1 point
+        # P/E ratio contribution: max +0.5 / min -0.5
         if pe_ratio and 15 < pe_ratio < 30:
-            conviction += 0.5  # Fair valuation
+            raw_score += 0.5  # Fair valuation
         elif pe_ratio and pe_ratio > 40:
-            conviction -= 0.5  # Expensive
+            raw_score -= 0.5  # Expensive
 
         # --- Fundamental component (primary — wider swing than technicals above) ---
         if revenue_growth is not None:
             if revenue_growth > 0.20:
-                conviction += 1.5
+                raw_score += 1.5  # max +1.5 / min -1.0
             elif revenue_growth > 0.05:
-                conviction += 0.5
+                raw_score += 0.5
             elif revenue_growth < -0.05:
-                conviction -= 1.0
+                raw_score -= 1.0
 
         if earnings_growth is not None:
             if earnings_growth > 0.20:
-                conviction += 1.5
+                raw_score += 1.5  # max +1.5 / min -2.5
             elif earnings_growth >= 0:
-                conviction += 0.5
+                raw_score += 0.5
             elif earnings_growth > -0.20:
-                conviction -= 0.5
+                raw_score -= 0.5
             else:
-                conviction -= 2.5  # Earnings deteriorating sharply — dominant signal
+                raw_score -= 2.5  # Earnings deteriorating sharply — dominant signal
 
         if analyst_rating in ("strong_buy",):
-            conviction += 1.5
+            raw_score += 1.5  # max +1.5 / min -2.0
         elif analyst_rating in ("buy",):
-            conviction += 0.75
+            raw_score += 0.75
         elif analyst_rating in ("hold",):
-            conviction -= 0.5
+            raw_score -= 0.5
         elif analyst_rating in ("sell", "strong_sell", "underperform"):
-            conviction -= 2.0
+            raw_score -= 2.0
 
         if target_upside_pct is not None:
             if target_upside_pct > 15:
-                conviction += 1.0
+                raw_score += 1.0  # max +1.0 / min -2.0
             elif target_upside_pct > 0:
-                conviction += 0.3
+                raw_score += 0.3
             elif target_upside_pct > -15:
-                conviction -= 1.0
+                raw_score -= 1.0
             else:
-                conviction -= 2.0  # Analyst target below current price
+                raw_score -= 2.0  # Analyst target below current price
 
-        conviction = max(1, min(10, conviction))  # Clamp to 1-10
+        # Achievable range derived directly from the max/min noted on each
+        # component above: RSI(2.0) + MACD(1.5) + range(1.5) + PE(0.5)
+        # + revenue(1.5) + earnings(1.5) + rating(1.5) + upside(1.0) = 11.0 max;
+        # -1.0-1.0-1.0-0.5-1.0-2.5-2.0-2.0 = -11.0 min. Symmetric +/-11.
+        # Rescale onto the 5-wide half-range around baseline 5.0 so hitting 10.0
+        # requires maxing EVERY component at once (a true "perfect" stock), not
+        # just clearing a handful of independent thresholds.
+        MAX_RAW_SCORE = 11.0
+        conviction = 5.0 + 5.0 * (raw_score / MAX_RAW_SCORE)
+        conviction = max(1, min(10, conviction))  # safety net only — should rarely bind now
 
         # Determine heat status (RED/YELLOW/GREEN)
         if rsi > 75 or position_in_range > 90:
@@ -331,12 +384,18 @@ def get_ticker_metrics(ticker: str, current_price: float) -> Dict:
         }
 
 
-def batch_get_metrics(tickers: list, prices: dict) -> dict:
-    """Get metrics for multiple tickers"""
+def batch_get_metrics(tickers: list, prices: dict, option_types: dict = None) -> dict:
+    """Get metrics for multiple tickers.
+
+    option_types: optional {ticker: 'P'|'C'} — the dominant option type held
+    for that ticker, so the RSI component uses the right calibration (see
+    get_ticker_metrics). Omit to keep the prior call-context/generic default.
+    """
+    option_types = option_types or {}
     results = {}
     for ticker in tickers:
         price = prices.get(ticker, 0)
-        results[ticker] = get_ticker_metrics(ticker, price)
+        results[ticker] = get_ticker_metrics(ticker, price, option_type=option_types.get(ticker))
     return results
 
 

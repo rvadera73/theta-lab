@@ -135,7 +135,7 @@
         "expires_at": "2026-08-01T02:44:12+00:00"
       }
     ],
-    "last_updated": "2026-05-06T15:46:41+00:00"
+    "last_updated": "2026-07-24T14:53:50+00:00"
   },
   "DELL": {
     "flags": [
@@ -366,15 +366,6 @@
   "COIN": {
     "flags": [
       {
-        "flag": "REGULATORY_RISK",
-        "confidence": 0.9,
-        "source": "manual override: seeded from screener_universe initial state",
-        "notes": "seeded from screener_universe initial state",
-        "is_hard_block": false,
-        "evaluated_at": "2026-05-03T02:44:12+00:00",
-        "expires_at": "2026-06-02T02:44:12+00:00"
-      },
-      {
         "flag": "HIGH_DEBT",
         "confidence": 0.9,
         "source": "manual override: seeded from screener_universe initial state",
@@ -382,8 +373,18 @@
         "is_hard_block": false,
         "evaluated_at": "2026-05-03T02:44:12+00:00",
         "expires_at": "2026-08-01T02:44:12+00:00"
+      },
+      {
+        "flag": "REGULATORY_RISK",
+        "confidence": 0.8,
+        "source": "screener_universe seed (human research \u2014 will expire and re-evaluate)",
+        "notes": "",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:47:27+00:00",
+        "expires_at": "2026-08-30T19:47:27+00:00"
       }
-    ]
+    ],
+    "last_updated": "2026-07-31T19:47:27+00:00"
   },
   "MSTR": {
     "flags": [
@@ -405,7 +406,8 @@
         "evaluated_at": "2026-05-03T02:44:12+00:00",
         "expires_at": "2026-08-01T02:44:12+00:00"
       }
-    ]
+    ],
+    "last_updated": "2026-07-31T19:49:26+00:00"
   },
   "NTPC": {
     "flags": [
@@ -574,7 +576,7 @@
   },
   "POWERINDIA": {
     "flags": [],
-    "last_updated": "2026-05-03T07:52:07+00:00"
+    "last_updated": "2026-07-20T12:30:49+00:00"
   },
   "PCAR": {
     "flags": [
@@ -677,7 +679,7 @@
   },
   "SCHW": {
     "flags": [],
-    "last_updated": "2026-05-03T07:52:42+00:00"
+    "last_updated": "2026-07-31T19:48:41+00:00"
   },
   "MA": {
     "flags": [],
@@ -685,7 +687,7 @@
   },
   "V": {
     "flags": [],
-    "last_updated": "2026-05-03T07:52:43+00:00"
+    "last_updated": "2026-07-31T19:48:58+00:00"
   },
   "JPM": {
     "flags": [
@@ -709,11 +711,11 @@
         "source": "yfinance business summary mentions China revenue/sales",
         "notes": "Verify: >30% China revenue exposure to tariff/ban risk",
         "is_hard_block": false,
-        "evaluated_at": "2026-05-03T07:52:43+00:00",
-        "expires_at": "2026-06-02T07:52:43+00:00"
+        "evaluated_at": "2026-07-31T19:51:42+00:00",
+        "expires_at": "2026-08-30T19:51:42+00:00"
       }
     ],
-    "last_updated": "2026-05-03T07:52:43+00:00"
+    "last_updated": "2026-07-31T19:51:42+00:00"
   },
   "NFLX": {
     "flags": [],
@@ -732,20 +734,20 @@
       {
         "flag": "THIN_MARGINS",
         "confidence": 0.95,
-        "source": "yfinance operatingMargins=4.2%",
-        "notes": "Operating margin 4.2% < 5% \u2014 price-taker / commodity assembler",
+        "source": "yfinance operatingMargins=1.4%",
+        "notes": "Operating margin 1.4% < 5% \u2014 price-taker / commodity assembler",
         "is_hard_block": false,
-        "evaluated_at": "2026-05-03T07:56:29+00:00",
-        "expires_at": "2026-08-01T07:56:29+00:00"
+        "evaluated_at": "2026-08-01T16:01:39+00:00",
+        "expires_at": "2026-10-30T16:01:39+00:00"
       },
       {
         "flag": "LOW_MOAT",
         "confidence": 0.75,
-        "source": "yfinance grossMargins=19.1%",
-        "notes": "Gross margin 19.1% \u2014 limited pricing power, easily substituted",
+        "source": "yfinance grossMargins=18.9%",
+        "notes": "Gross margin 18.9% \u2014 limited pricing power, easily substituted",
         "is_hard_block": false,
-        "evaluated_at": "2026-05-03T07:56:29+00:00",
-        "expires_at": "2026-08-01T07:56:29+00:00"
+        "evaluated_at": "2026-08-01T16:01:39+00:00",
+        "expires_at": "2026-10-30T16:01:39+00:00"
       },
       {
         "flag": "CHINA_EXPOSURE",
@@ -753,11 +755,11 @@
         "source": "yfinance business summary mentions China revenue/sales",
         "notes": "Verify: >30% China revenue exposure to tariff/ban risk",
         "is_hard_block": false,
-        "evaluated_at": "2026-05-03T07:56:29+00:00",
-        "expires_at": "2026-06-02T07:56:29+00:00"
+        "evaluated_at": "2026-08-01T16:01:39+00:00",
+        "expires_at": "2026-08-31T16:01:39+00:00"
       }
     ],
-    "last_updated": "2026-05-03T07:56:29+00:00"
+    "last_updated": "2026-08-01T16:01:39+00:00"
   },
   "ABNB": {
     "flags": [],
@@ -783,10 +785,222 @@
         "expires_at": "2026-08-01T07:56:34+00:00"
       }
     ],
-    "last_updated": "2026-05-03T07:56:34+00:00"
+    "last_updated": "2026-07-31T19:46:43+00:00"
   },
   "SHOP": {
     "flags": [],
     "last_updated": "2026-05-03T07:56:35+00:00"
+  },
+  "SBIN.NS": {
+    "flags": [
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.75,
+        "source": "yfinance grossMargins=0.0%",
+        "notes": "Gross margin 0.0% \u2014 limited pricing power, easily substituted",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-19T14:31:14+00:00",
+        "expires_at": "2026-10-17T14:31:14+00:00"
+      }
+    ],
+    "last_updated": "2026-07-20T12:47:13+00:00"
+  },
+  "AXON": {
+    "flags": [
+      {
+        "flag": "THIN_MARGINS",
+        "confidence": 0.95,
+        "source": "yfinance operatingMargins=3.7%",
+        "notes": "Operating margin 3.7% < 5% \u2014 price-taker / commodity assembler",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-24T14:53:27+00:00",
+        "expires_at": "2026-10-22T14:53:27+00:00"
+      }
+    ],
+    "last_updated": "2026-07-24T14:53:27+00:00"
+  },
+  "APP": {
+    "flags": [],
+    "last_updated": "2026-07-24T14:53:47+00:00"
+  },
+  "FCX": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:46:36+00:00"
+  },
+  "NEM": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:46:40+00:00"
+  },
+  "HOOD": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:47:32+00:00"
+  },
+  "GS": {
+    "flags": [
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "yfinance debtToEquity=6.5x",
+        "notes": "D/E 6.5x > 3x threshold",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:48:06+00:00",
+        "expires_at": "2026-10-29T19:48:06+00:00"
+      }
+    ],
+    "last_updated": "2026-07-31T19:48:06+00:00"
+  },
+  "MS": {
+    "flags": [
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "yfinance debtToEquity=5.0x",
+        "notes": "D/E 5.0x > 3x threshold",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:48:26+00:00",
+        "expires_at": "2026-10-29T19:48:26+00:00"
+      }
+    ],
+    "last_updated": "2026-07-31T19:48:26+00:00"
+  },
+  "WFC": {
+    "flags": [
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.75,
+        "source": "yfinance grossMargins=0.0%",
+        "notes": "Gross margin 0.0% \u2014 limited pricing power, easily substituted",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:49:10+00:00",
+        "expires_at": "2026-10-29T19:49:10+00:00"
+      }
+    ],
+    "last_updated": "2026-07-31T19:49:10+00:00"
+  },
+  "TCOM": {
+    "flags": [
+      {
+        "flag": "CHINA_EXPOSURE",
+        "confidence": 0.6,
+        "source": "yfinance business summary mentions China revenue/sales",
+        "notes": "Verify: >30% China revenue exposure to tariff/ban risk",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:49:45+00:00",
+        "expires_at": "2026-08-30T19:49:45+00:00"
+      }
+    ],
+    "last_updated": "2026-08-01T16:01:47+00:00"
+  },
+  "MMYT": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:49:58+00:00"
+  },
+  "NCLH": {
+    "flags": [
+      {
+        "flag": "HIGH_DEBT",
+        "confidence": 0.9,
+        "source": "yfinance debtToEquity=6.6x",
+        "notes": "D/E 6.6x > 3x threshold",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:50:03+00:00",
+        "expires_at": "2026-10-29T19:50:03+00:00"
+      },
+      {
+        "flag": "GOING_CONCERN",
+        "confidence": 0.85,
+        "source": "yfinance cash=0.2B, FCF=-1.5B/yr",
+        "notes": "Only 1 months cash runway",
+        "is_hard_block": true,
+        "evaluated_at": "2026-07-31T19:50:03+00:00",
+        "expires_at": "2026-08-30T19:50:03+00:00"
+      }
+    ],
+    "last_updated": "2026-07-31T19:50:03+00:00"
+  },
+  "SCCO": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:52:58+00:00"
+  },
+  "VALE": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:53:01+00:00"
+  },
+  "AA": {
+    "flags": [
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.75,
+        "source": "yfinance grossMargins=19.7%",
+        "notes": "Gross margin 19.7% \u2014 limited pricing power, easily substituted",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:53:10+00:00",
+        "expires_at": "2026-10-29T19:53:10+00:00"
+      }
+    ],
+    "last_updated": "2026-07-31T19:53:10+00:00"
+  },
+  "CLF": {
+    "flags": [
+      {
+        "flag": "THIN_MARGINS",
+        "confidence": 0.95,
+        "source": "yfinance operatingMargins=0.3%",
+        "notes": "Operating margin 0.3% < 5% \u2014 price-taker / commodity assembler",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:53:14+00:00",
+        "expires_at": "2026-10-29T19:53:14+00:00"
+      },
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.75,
+        "source": "yfinance grossMargins=-1.1%",
+        "notes": "Gross margin -1.1% \u2014 limited pricing power, easily substituted",
+        "is_hard_block": false,
+        "evaluated_at": "2026-07-31T19:53:14+00:00",
+        "expires_at": "2026-10-29T19:53:14+00:00"
+      }
+    ],
+    "last_updated": "2026-07-31T19:53:14+00:00"
+  },
+  "BX": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:53:18+00:00"
+  },
+  "APO": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:53:22+00:00"
+  },
+  "BKNG": {
+    "flags": [],
+    "last_updated": "2026-07-31T19:53:26+00:00"
+  },
+  "RKT": {
+    "flags": [
+      {
+        "flag": "GOING_CONCERN",
+        "confidence": 0.85,
+        "source": "yfinance cash=2.7B, FCF=-4.3B/yr",
+        "notes": "Only 7 months cash runway",
+        "is_hard_block": true,
+        "evaluated_at": "2026-07-31T19:53:40+00:00",
+        "expires_at": "2026-08-30T19:53:40+00:00"
+      }
+    ],
+    "last_updated": "2026-07-31T19:53:40+00:00"
+  },
+  "HDB": {
+    "flags": [
+      {
+        "flag": "LOW_MOAT",
+        "confidence": 0.75,
+        "source": "yfinance grossMargins=0.0%",
+        "notes": "Gross margin 0.0% \u2014 limited pricing power, easily substituted",
+        "is_hard_block": false,
+        "evaluated_at": "2026-08-01T16:01:43+00:00",
+        "expires_at": "2026-10-30T16:01:43+00:00"
+      }
+    ],
+    "last_updated": "2026-08-01T16:01:43+00:00"
   }
 }

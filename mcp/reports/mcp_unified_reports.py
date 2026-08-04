@@ -38,7 +38,7 @@ async def generate_daily_report_tool(report_date: Optional[str] = None) -> dict:
         generator = UnifiedReportProduction()
         report = generator.generate_daily_report(today)
 
-        output_file = f"logs/unified_master_report_{today.isoformat()}_daily_production.txt"
+        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_daily_production.txt"
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(report)
@@ -91,7 +91,7 @@ async def generate_weekly_report_tool(report_date: Optional[str] = None) -> dict
         generator = UnifiedReportProduction()
         report = generator.generate_weekly_report(today)
 
-        output_file = f"logs/unified_master_report_{today.isoformat()}_weekly_production.txt"
+        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_weekly_production.txt"
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(report)
@@ -142,7 +142,7 @@ async def generate_biweekly_report_tool(report_date: Optional[str] = None) -> di
         generator = UnifiedReportProduction()
         report = generator.generate_biweekly_report(today)
 
-        output_file = f"logs/unified_master_report_{today.isoformat()}_biweekly_production.txt"
+        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_biweekly_production.txt"
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(report)
@@ -192,7 +192,7 @@ async def generate_monthly_report_tool(report_date: Optional[str] = None) -> dic
         generator = UnifiedReportProduction()
         report = generator.generate_monthly_report(today)
 
-        output_file = f"logs/unified_master_report_{today.isoformat()}_monthly_production.txt"
+        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_monthly_production.txt"
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(report)
@@ -255,7 +255,7 @@ async def generate_all_reports_tool(report_date: Optional[str] = None) -> dict:
 
         output_files = {}
         for report_type, report_text in reports.items():
-            output_file = f"logs/unified_master_report_{today.isoformat()}_{report_type}_production.txt"
+            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.txt"
             Path(output_file).parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 f.write(report_text)

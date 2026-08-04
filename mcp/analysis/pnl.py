@@ -353,9 +353,12 @@ def parse_fidelity_csv(csv_path: str, account_filter: str | None = None) -> dict
         if parsed:
             underlying, expiry, option_type, strike = parsed
             try:
-                dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+                raw_dte = (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days
             except ValueError:
-                dte = 0
+                raw_dte = 0
+            if raw_dte < 0:
+                continue  # already expired — not an open position
+            dte = raw_dte
             contracts = int(abs(qty))
             is_short = qty < 0
             leg = OptionLeg(
@@ -450,9 +453,12 @@ def parse_robinhood_csv(csv_path: str, account_label: str) -> list["Position"]:
             underlying, date_str, cp, strike_s = opt_match.groups()
             try:
                 expiry = datetime.strptime(date_str, "%m/%d/%Y").strftime("%Y-%m-%d")
-                dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+                raw_dte = (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days
             except ValueError:
-                expiry, dte = "", 0
+                expiry, raw_dte = "", 0
+            if raw_dte < 0:
+                continue  # already expired — not an open position
+            dte = raw_dte
             contracts = int(abs(qty))
             is_short = qty < 0
             avg_cost_per_contract = avg_cost * 100
@@ -541,9 +547,12 @@ def _parse_vanguard_row(line: str, today):
         underlying, yy, mm, dd, cp, strike_s = opt_m.groups()
         expiry = f"20{yy}-{mm}-{dd}"
         try:
-            dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+            raw_dte = (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days
         except ValueError:
-            dte = 0
+            raw_dte = 0
+        if raw_dte < 0:
+            return None  # already expired — not an open position
+        dte = raw_dte
         contracts = int(abs(qty))
         is_short = qty < 0
         return ("option", underlying, OptionLeg(
@@ -637,9 +646,12 @@ def parse_vanguard_csv(csv_path: str, account_label: str) -> list["Position"]:
                 underlying, yy, mm, dd, cp, strike_s = m.groups()
                 expiry = f"20{yy}-{mm}-{dd}"
                 try:
-                    dte = max(0, (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days)
+                    raw_dte = (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days
                 except ValueError:
-                    dte = 0
+                    raw_dte = 0
+                if raw_dte < 0:
+                    continue  # already expired — not an open position
+                dte = raw_dte
                 contracts = int(abs(shares))
                 is_short = shares < 0
                 leg = OptionLeg(

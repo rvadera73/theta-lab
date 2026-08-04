@@ -19,7 +19,7 @@ from typing import Literal
 
 from config import HEAT_THRESHOLDS, HEAT_REGIME_ACTIONS
 
-HeatColor = Literal["GREEN", "YELLOW", "RED"]
+HeatColor = Literal["GREEN", "YELLOW", "RED", "UNKNOWN"]
 
 @dataclass
 class LegHeat:
@@ -43,14 +43,17 @@ class LegHeat:
         pr = self.premium_received
         ctc = self.cost_to_close
 
-        # Skip legs with no live price — can't compute distance
+        # Legs with no live price can't be assessed — this is NOT the same as
+        # "safe". Surfacing them as GREEN was hiding real risk (e.g. SMR/OKLO
+        # puts sat unassessed for months while displaying as healthy). Use a
+        # distinct UNKNOWN color so they're visibly separate from verified-safe.
         if not self.current_price or self.current_price <= 0:
             self.distance_pct = 0.0
             self.pnl_pct = 0.0
             self.loss_multiple = 0.0
-            self.color = "GREEN"
+            self.color = "UNKNOWN"
             self.action = "NO_PRICE"
-            self.reason = "No live price available — skipped"
+            self.reason = "No live price available — NOT assessed, do not treat as safe"
             self.stagger_dte = max(180, self.dte + 75)
             return
 
@@ -185,7 +188,7 @@ def assess_portfolio_heat(
     heat_legs = [LegHeat(**lg) for lg in legs]
     regime_cfg = HEAT_REGIME_ACTIONS.get(regime, HEAT_REGIME_ACTIONS["BULL"])
 
-    by_color: dict[str, list[LegHeat]] = {"RED": [], "YELLOW": [], "GREEN": []}
+    by_color: dict[str, list[LegHeat]] = {"RED": [], "YELLOW": [], "GREEN": [], "UNKNOWN": []}
     for leg in heat_legs:
         by_color[leg.color].append(leg)
 
@@ -276,9 +279,10 @@ def assess_portfolio_heat(
 
     return {
         "by_color": {
-            "RED":    [_leg_summary(l) for l in by_color["RED"]],
-            "YELLOW": [_leg_summary(l) for l in by_color["YELLOW"]],
-            "GREEN":  [_leg_summary(l) for l in by_color["GREEN"]],
+            "RED":     [_leg_summary(l) for l in by_color["RED"]],
+            "YELLOW":  [_leg_summary(l) for l in by_color["YELLOW"]],
+            "GREEN":   [_leg_summary(l) for l in by_color["GREEN"]],
+            "UNKNOWN": [_leg_summary(l) for l in by_color["UNKNOWN"]],
         },
         "counts": {k: len(v) for k, v in by_color.items()},
         "regime": regime,
@@ -347,15 +351,17 @@ def format_heat_block(heat: dict, title: str = "Portfolio Heat") -> str:
     Shows RED/YELLOW legs with actions, stagger capacity per name, GREEN count summarised.
     """
     c = heat["counts"]
-    emoji_map = {"RED": "🔴", "YELLOW": "🟡"}
+    emoji_map = {"RED": "🔴", "YELLOW": "🟡", "UNKNOWN": "⚪"}
+    unknown_ct = c.get("UNKNOWN", 0)
     lines = [
         f"### 🌡️ {title}",
-        f"**{c['RED']} RED · {c['YELLOW']} YELLOW · {c['GREEN']} GREEN**   "
+        f"**{c['RED']} RED · {c['YELLOW']} YELLOW · {c['GREEN']} GREEN"
+        f"{f' · {unknown_ct} UNKNOWN (no price — not assessed)' if unknown_ct else ''}**   "
         f"{'⛔ Scale back new strangles.' if heat['scale_back_new_entries'] else ''}",
         heat["protocol"],
         "",
     ]
-    for color in ("RED", "YELLOW"):
+    for color in ("RED", "YELLOW", "UNKNOWN"):
         items = heat["by_color"][color]
         if not items:
             continue
@@ -391,9 +397,9 @@ def format_heat_html(heat: dict) -> str:
         "<b>⛔ Scale back new strangles until RED/YELLOW calls are resolved.</b><br>"
         if heat["scale_back_new_entries"] else ""
     )
-    color_map = {"RED": "#c0392b", "YELLOW": "#e67e22", "GREEN": "#27ae60"}
+    color_map = {"RED": "#c0392b", "YELLOW": "#e67e22", "GREEN": "#27ae60", "UNKNOWN": "#7f8c8d"}
     rows = []
-    for color in ("RED", "YELLOW", "GREEN"):
+    for color in ("RED", "YELLOW", "GREEN", "UNKNOWN"):
         items = heat["by_color"][color]
         for it in items:
             bg = color_map[color]
@@ -413,7 +419,7 @@ def format_heat_html(heat: dict) -> str:
     rows_html = "\n".join(rows) if rows else "<tr><td colspan='9'>No open legs.</td></tr>"
     return f"""
 <div style="margin:20px 0">
-  <h3>🌡️ Portfolio Heat — {c['RED']} RED · {c['YELLOW']} YELLOW · {c['GREEN']} GREEN</h3>
+  <h3>🌡️ Portfolio Heat — {c['RED']} RED · {c['YELLOW']} YELLOW · {c['GREEN']} GREEN · {c.get('UNKNOWN', 0)} UNKNOWN</h3>
   <p>{heat['protocol']}<br>{scale_msg}</p>
   <table border='1' cellpadding='5' cellspacing='0' style='border-collapse:collapse;width:100%;font-size:0.9em'>
     <thead style='background:#2c3e50;color:white'>

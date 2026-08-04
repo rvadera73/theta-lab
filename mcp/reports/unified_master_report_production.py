@@ -39,18 +39,32 @@ except ImportError as e:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# CONFIGURATION — ALL 8 ACCOUNTS WITH BALANCES & MONTHLY TARGETS
+# CONFIGURATION — ALL ACCOUNTS WITH BALANCES & MONTHLY TARGETS
+# Balances refreshed 2026-07-31 from that month's exports where a cash/MM
+# line is present in the file (Fidelity, Vanguard). Schwab exports here are
+# POSITIONS ONLY (no cash/margin balance line), so summing them ~doubles the
+# true net-liq for margin/short-option-heavy books — Account A/B/C and both
+# Robinhood balances are left at their last manually-confirmed figures and
+# are NOT independently verified by this month's data. Re-confirm from each
+# broker's account-summary screen (not the positions export) if updating.
+#
+# monthly_target = round(balance / total_of_9_options_accounts * 100,000) —
+# the $100K/month base pool is split across the 9 OPTIONS-TRADING accounts
+# only. The Fidelity 401K is a passive, options-free account (per persona:
+# "passive accounts... excluded from these caps") and gets monthly_target=0,
+# never billed against the premium-income target.
 # ═══════════════════════════════════════════════════════════════════
 ACCOUNTS_CONFIG = {
-    'Account A (232)': {'balance': 403000, 'margin': True, 'monthly_target': 18600},
-    'Account B (275)': {'balance': 261000, 'margin': False, 'monthly_target': 12100},
-    'Account C (634)': {'balance': 266000, 'margin': False, 'monthly_target': 12300},
-    'Fidelity (Rahul)': {'balance': 500000, 'margin': False, 'monthly_target': 23100},
-    'Fidelity (Rajul — Roth IRA)': {'balance': 49000, 'margin': False, 'monthly_target': 2300},
-    'Fidelity (Rajul — Rollover IRA)': {'balance': 129000, 'margin': False, 'monthly_target': 5960},
-    'Vanguard (Rahul)': {'balance': 322000, 'margin': False, 'monthly_target': 14900},
-    'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'monthly_target': 600},
-    'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'monthly_target': 10160},
+    'Account A (232)': {'balance': 403000, 'margin': True, 'monthly_target': 18750},
+    'Account B (275)': {'balance': 261000, 'margin': False, 'monthly_target': 12144},
+    'Account C (634)': {'balance': 266000, 'margin': False, 'monthly_target': 12377},
+    'Fidelity (Rahul)': {'balance': 498560, 'margin': False, 'monthly_target': 23196},
+    'Fidelity (Rajul — Roth IRA)': {'balance': 39158, 'margin': False, 'monthly_target': 1822},
+    'Fidelity (Rajul — Rollover IRA)': {'balance': 128081, 'margin': False, 'monthly_target': 5959},
+    'Vanguard (Rahul)': {'balance': 320492, 'margin': False, 'monthly_target': 14912},
+    'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'monthly_target': 605},
+    'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'monthly_target': 10236},
+    'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'monthly_target': 0},
 }
 
 TOTAL_PORTFOLIO_BALANCE = sum(acc['balance'] for acc in ACCOUNTS_CONFIG.values())
@@ -96,9 +110,19 @@ class UnifiedReportProduction:
         self.regime_data = detect_regime()
         self.snapshot = self._load_portfolio_snapshot()
 
-        # Get metrics for all positions
+        # Get metrics for all positions. Dominant option type per ticker (by
+        # contract count) tells get_ticker_metrics whether to use the put- or
+        # call-calibrated RSI treatment (GitHub issue #1) — a name with both
+        # (a stagger) uses whichever side has more contracts; ties/no-options
+        # fall back to the original generic default.
+        option_types = {}
+        if 'option_type' in self.open_positions.columns:
+            for ticker, grp in self.open_positions.groupby('ticker'):
+                counts = grp.groupby('option_type')['net_quantity'].sum()
+                if len(counts) > 0 and counts.max() > 0:
+                    option_types[ticker] = counts.idxmax()
         self.metrics = batch_get_metrics(
-            self.position_summary.index.tolist(), self.prices
+            self.position_summary.index.tolist(), self.prices, option_types=option_types
         )
 
         # Get IV rank for top tickers
@@ -1635,10 +1659,10 @@ class UnifiedReportProduction:
             'monthly': self.generate_monthly_report(today)
         }
 
-        # Save all reports
+        # Save all reports (absolute path — cwd of the calling process isn't reliable)
         output_files = {}
         for report_type, report_text in reports.items():
-            output_file = f"logs/unified_master_report_{today.isoformat()}_{report_type}_production.txt"
+            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.txt"
             Path(output_file).parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 f.write(report_text)

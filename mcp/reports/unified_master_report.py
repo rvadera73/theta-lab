@@ -60,8 +60,12 @@ async def generate_unified_master_report(
 
     output_file = None
     if save_to_file:
+        # Absolute path: the MCP server's cwd is whatever launched it (often the
+        # client's own working directory, not this project folder), so a bare
+        # "logs/..." relative path silently writes reports somewhere else.
         output_file = (
-            f"logs/unified_master_report_{today.isoformat()}_{report_type.lower()}_production.txt"
+            f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_"
+            f"{today.isoformat()}_{report_type.lower()}_production.txt"
         )
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:

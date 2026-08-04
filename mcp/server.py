@@ -1058,10 +1058,10 @@ async def call_tool(name: str, arguments: dict):
             lines = [
                 f"## Profit-Take Candidates",
                 f"**Regime:** {regime} | **Threshold:** {int(low*100)}-{int(high*100)}% of premium received",
-                f"**{len(candidates)} position(s) at or past profit target**", ""
+                f"**{len(candidates)} position(s) at or past profit target (whole-symbol, all legs netted)**", ""
             ]
             if not candidates:
-                lines.append("✅ No positions currently at profit target.")
+                lines.append("✅ No whole-position candidates (a symbol only qualifies here if ALL its legs netted together clear the target).")
             for pos, acct, sig in candidates:
                 lines += [
                     f"### {pos.symbol} — Account {acct} — {sig['pct_captured']}% captured",
@@ -1069,6 +1069,35 @@ async def call_tool(name: str, arguments: dict):
                     f"- Cost to close: ${pos.total_cost_to_close_options:,.0f}",
                     f"- Net P&L (combined): ${pos.combined_net_pnl:,.0f}",
                     f"- **Action:** {sig['recommendation']}",
+                    ""
+                ]
+
+            # Per-leg candidates: a stagger can have one profitable leg and one
+            # underwater leg on the same symbol — netting them together (above)
+            # hides the profitable leg. Per your stagger doctrine ("profit close
+            # thresholds are independent per leg"), surface those separately.
+            leg_candidates = []
+            for pos in all_positions:
+                for lg in pos.option_legs:
+                    pr = lg.premium_received or 0
+                    if pr <= 0:
+                        continue
+                    ctc = lg.current_mark or 0
+                    pct = (pr - ctc) / pr
+                    if pct >= low:
+                        leg_candidates.append((pos, lg, pct))
+            leg_candidates.sort(key=lambda x: x[2], reverse=True)
+
+            lines.append(f"## Per-Leg Harvest Candidates (stagger-aware) — {len(leg_candidates)} leg(s)")
+            lines.append("")
+            if not leg_candidates:
+                lines.append("✅ No individual legs at profit target.")
+            for pos, lg, pct in leg_candidates:
+                lines += [
+                    f"### {pos.symbol} {lg.option_type} ${lg.strike:.0f} exp {lg.expiry} — Account {pos.account} — {pct*100:.0f}% captured",
+                    f"- Premium received (this leg): ${lg.premium_received:,.0f}",
+                    f"- Cost to close (this leg): ${lg.current_mark:,.0f}",
+                    f"- **Action:** HARVEST this leg — BTC and re-stagger, independent of other legs on {pos.symbol}",
                     ""
                 ]
             return [TextContent(type="text", text="\n".join(lines))]
@@ -1142,9 +1171,11 @@ async def call_tool(name: str, arguments: dict):
             if not all_legs:
                 return [TextContent(type="text", text="⚠️ No open option legs found (or live data unavailable).")]
             result = assess_portfolio_heat(all_legs, regime_str)
+            unknown_ct = result["counts"].get("UNKNOWN", 0)
             lines = [
                 f"## 🌡️ Position Heat Scan — Regime: {regime_str}",
-                f"**{result['counts']['RED']} RED** · **{result['counts']['YELLOW']} YELLOW** · {result['counts']['GREEN']} GREEN",
+                f"**{result['counts']['RED']} RED** · **{result['counts']['YELLOW']} YELLOW** · {result['counts']['GREEN']} GREEN"
+                + (f" · **{unknown_ct} UNKNOWN (no live price — NOT assessed, do not treat as safe)**" if unknown_ct else ""),
                 "",
                 result["protocol"],
                 "",
@@ -1152,7 +1183,7 @@ async def call_tool(name: str, arguments: dict):
             if result["scale_back_new_entries"]:
                 lines.append("⛔ **Scale back new strangles until RED/YELLOW calls are resolved.**")
                 lines.append("")
-            for color, emoji in [("RED", "🔴"), ("YELLOW", "🟡"), ("GREEN", "🟢")]:
+            for color, emoji in [("RED", "🔴"), ("YELLOW", "🟡"), ("GREEN", "🟢"), ("UNKNOWN", "⚪")]:
                 items = result["by_color"][color]
                 if not items:
                     continue

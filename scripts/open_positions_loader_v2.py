@@ -174,18 +174,22 @@ class OpenPositionsLoaderV2:
                     print(f"! Error loading {account_name}: {e}")
 
         # Fidelity accounts - try position files first, fall back to transaction files
-        # Canonical filenames per contract. Rajul file holds BOTH IRAs; the account
-        # TYPE lives in the 'Account Number' column (Fidelity column shift).
+        # Canonical filenames per contract. Both files hold MULTIPLE accounts; the account
+        # TYPE lives in the account-number column (name/case has shifted across exports —
+        # seen as both 'Account Number' and 'Account number' — so it's matched case-insensitively).
         fidelity_account_patterns = [
-            (['fidelity_rahul.csv'], 'Fidelity (Rahul)', None),
-            (['fidelity_rajul.csv'], None, {  # Map by 'Account Number' column value
+            (['fidelity_rahul.csv'], None, {  # Rahul file: Traditional IRA (options wheel) + 401K
+                'Traditional IRA': 'Fidelity (Rahul)',
+                'PRECISE SOFTWARE SOL': 'Fidelity 401K (Rahul)',
+            }, ['ROTH IRA for Minor']),  # negligible custodial account — dropped, not tracked
+            (['fidelity_rajul.csv'], None, {  # Map by account-number column value
                 'ROTH IRA': 'Fidelity (Rajul — Roth IRA)',
                 'Rollover IRA': 'Fidelity (Rajul — Rollover IRA)',
                 'ROTH IRA for Minor': 'Fidelity (Rajul — Roth IRA)',
-            }),
+            }, []),
         ]
 
-        for patterns, default_account_name, account_map in fidelity_account_patterns:
+        for patterns, default_account_name, account_map, drop_values in fidelity_account_patterns:
             # Try each pattern in order
             if isinstance(patterns, str):
                 patterns = [patterns]
@@ -230,13 +234,21 @@ class OpenPositionsLoaderV2:
 
                     # If we have a mapping, use Account column to assign account names
                     if account_map:
-                        # Fidelity column shift: the account TYPE is in 'Account Number'
-                        # ('ROTH IRA' / 'Rollover IRA'), not 'Account Name'.
-                        if 'Account Number' in df.columns:
-                            df['account_name'] = df['Account Number'].map(account_map)
+                        # Fidelity column shift: the account TYPE is in the account-number
+                        # column ('ROTH IRA' / 'Rollover IRA' / etc), not 'Account Name'.
+                        # Column name casing has changed across exports ('Account Number'
+                        # vs 'Account number') so match it case-insensitively.
+                        acct_num_col = next(
+                            (c for c in df.columns if str(c).strip().lower() == 'account number'),
+                            None
+                        )
+                        if acct_num_col:
+                            if drop_values:
+                                df = df[~df[acct_num_col].isin(drop_values)].copy()
+                            df['account_name'] = df[acct_num_col].map(account_map)
                             # Rows below the holdings block (totals/disclaimer) have no type
                             df['account_name'] = df['account_name'].ffill()
-                            df['account_name'] = df['account_name'].fillna('Fidelity (Rajul — Rollover IRA)')
+                            df['account_name'] = df['account_name'].fillna(list(account_map.values())[0])
                         else:
                             # Transaction file - use default account name
                             df['account_name'] = default_account_name
