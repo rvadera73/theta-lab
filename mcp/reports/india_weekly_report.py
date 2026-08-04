@@ -20,7 +20,7 @@ from analysis.india_statement_parser import (
     build_positions_from_statements,
     load_india_config,
 )
-from report_utils import current_price as _live_price
+from report_utils import current_price as _live_price, yf_symbol
 from config import (
     INDIA_ACCOUNT,
     INDIA_PERMANENT_EXITS,
@@ -28,6 +28,12 @@ from config import (
     Regime,
     RISK,
 )
+
+try:
+    from enhanced_metrics import get_ticker_metrics
+except ImportError:
+    get_ticker_metrics = None
+from routines.india_us_evening_report import _verdict_from_conviction, _verdict_reason
 
 # yfinance tickers for NSE indices used as FNO underlyings
 _INDEX_TICKERS = {
@@ -107,6 +113,16 @@ def _priority(position: Position, regime_str: str) -> tuple[int, str, str]:
         return 3, "MONITOR", "Approaching roll threshold"
     if position.symbol in INDIA_PERMANENT_EXITS:
         return 2, "REVIEW", "On permanent exit list — accelerate exit"
+    verdict = getattr(position, "_verdict", None)
+    if verdict == "WEAK":
+        # Fundamentally weak, not just technically hot — surface ahead of healthy
+        # names regardless of P&L size, same tier as a roll-approaching signal.
+        return 4, verdict, _verdict_reason(position._conviction_metrics)
+    if verdict == "EXTENDED":
+        # Good business, just technically overbought — a trim-consideration, not
+        # a thesis break. Keep at WATCH tier so it doesn't crowd out WEAK names,
+        # but still carries its own verdict label/reason instead of the generic one.
+        return 5, verdict, _verdict_reason(position._conviction_metrics)
     return 5, "WATCH", "No immediate action needed"
 
 
@@ -207,7 +223,7 @@ def _map_breeze_to_positions(raw_positions: list[dict]) -> list[Position]:
 def _map_breeze_equity_to_positions(raw_holdings: list[dict], india_cfg: dict) -> list[Position]:
     """Convert live demat holdings from get_demat_holdings() into Position objects."""
     core_portfolio = set(india_cfg.get("core_portfolio", []))
-    exit_triggers  = {e["symbol"]: e for e in india_cfg.get("exit_triggers", [])}
+    exit_triggers  = {e["icici_symbol"]: e for e in india_cfg.get("exit_triggers", [])}
     permanent_exits = set(india_cfg.get("permanent_exits", []))
 
     positions = []
@@ -335,6 +351,12 @@ async def generate_india_weekly_report(
                 pos.current_price = idx_prices[pos.symbol]
 
     for pos in positions:
+        if get_ticker_metrics is not None and pos.shares > 0 and pos.symbol not in _INDEX_TICKERS:
+            m = get_ticker_metrics(yf_symbol(pos.symbol, india=True), pos.current_price)
+            m["position_52w"] = m["position_in_52w_range"]  # _verdict_reason expects this key name
+            pos._conviction_metrics = m
+            pos._verdict, pos._verdict_color = _verdict_from_conviction(m["conviction"], m["heat_status"])
+
         pri, label, reason = _priority(pos, regime)
         combined_pnl = pos.combined_net_pnl
         profit_sig = pos.profit_take_signal(regime)
@@ -358,6 +380,7 @@ async def generate_india_weekly_report(
             "permanent_exit":   pos.symbol in INDIA_PERMANENT_EXITS,
             "exit_trigger":     getattr(pos, "_exit_trigger", None),
             "is_core":          getattr(pos, "_is_core", False),
+            "conviction_metrics": getattr(pos, "_conviction_metrics", None),
         })
 
     # Sort by priority then largest absolute P&L
@@ -408,6 +431,12 @@ async def generate_india_weekly_report(
                     )
             if act["is_core"]:
                 lines.append("💎 **CORE HOLD** — Keep unless exit trigger hit")
+            if act["label"] in ("WEAK", "EXTENDED") and act["conviction_metrics"]:
+                m = act["conviction_metrics"]
+                lines.append(
+                    f"⚠️ **{act['label']}** — conviction {m['conviction']:.1f}/10, "
+                    f"RSI {m['rsi']:.0f}, {m['position_in_52w_range']:.0f}% of 52w range"
+                )
             if act["profit_signal"]["signal"]:
                 lines.append(f"✅ **Profit target hit:** {act['profit_signal']['recommendation']}")
             if act["loss_flag"]["flag"]:
