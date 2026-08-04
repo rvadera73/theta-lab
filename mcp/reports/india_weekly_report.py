@@ -20,6 +20,7 @@ from analysis.india_statement_parser import (
     build_positions_from_statements,
     load_india_config,
 )
+from report_utils import current_price as _live_price
 from config import (
     INDIA_ACCOUNT,
     INDIA_PERMANENT_EXITS,
@@ -36,6 +37,17 @@ _INDEX_TICKERS = {
     "FINNIFTY": "NIFTY_FIN_SERVICE.NS",
     "MIDCPNIFTY": "NIFTY_MIDCAP_100.NS",
 }
+
+
+def _backfill_equity_prices(positions: list) -> None:
+    """Statement-fallback positions carry avg cost as current_price; overwrite
+    with a live yfinance quote where available (mirrors report_utils.load_india_positions)."""
+    for pos in positions:
+        if pos.symbol in _INDEX_TICKERS or pos.shares <= 0:
+            continue
+        live = _live_price(pos.symbol, india=True)
+        if live:
+            pos.current_price = live
 
 
 def _fetch_index_prices(symbols: list[str]) -> dict[str, float]:
@@ -283,6 +295,7 @@ async def generate_india_weekly_report(
         try:
             india_cfg = load_india_config()
             positions = build_positions_from_statements(india_cfg)
+            _backfill_equity_prices(positions)
         except Exception as e:
             lines.append(f"⚠️ Could not parse local statements: {e}")
             positions = []
@@ -304,12 +317,14 @@ async def generate_india_weekly_report(
                 lines.append(f"_Live equity: {len(raw_equity)} holdings from ICICI demat._\n")
             else:
                 equity_positions = build_positions_from_statements(india_cfg, fno_only=False, equity_only=True)
+                _backfill_equity_prices(equity_positions)
                 positions.extend(equity_positions)
                 lines.append("_Equity: loaded from local statement (demat API unavailable outside market hours)._\n")
 
         except Exception as e:
             lines.append(f"⚠️ Breeze API error ({e}) — falling back to local statements.\n")
             positions = build_positions_from_statements(india_cfg)
+            _backfill_equity_prices(positions)
 
     # Enrich index positions (NIFTY, CNXBAN) with live underlying price from yfinance
     index_syms = [p.symbol for p in positions if p.symbol in _INDEX_TICKERS and p.current_price == 0.0]

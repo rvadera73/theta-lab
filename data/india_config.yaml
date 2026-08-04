@@ -96,52 +96,68 @@ exit_triggers:
   # MAZDOC: sold (0 shares as of 2026-07-19 statement)
   # HERHON: sold (0 shares as of 2026-07-19 statement)
 
-  # --- Phase 1: Cut losses / trim on bounce ---
-  # 2026-07-19 review: rationale text ("-43% loss") contradicts the actual held lot
-  # (75 sh @ avg 933, currently +12%/+8,384 gain per 2026-07-19 statement). Fundamental
-  # thesis may still stand but this is not a loss-cut. Trader decision: hold and watch
-  # trend for ~90 days (review ~2026-10-17) rather than act on the stale rationale now.
+  # --- Watch / hold — NOT immediate exits (corrected 2026-08-04, re-verified live) ---
+  # Re-verified 2026-08-04 against fresh statement + live Yahoo data. The 2026-07-19
+  # review already caught this rationale text as stale but the action string itself
+  # was never corrected, so it kept rendering as "Exit immediately" in every report
+  # since. Actual: 75 sh @ avg cost 932.52, live price 1042.70 = +11.8% profit (not a
+  # loss). SBI is a bank, not insurance. Real earningsGrowth is -3.1%, not -40%.
+  # Trader decision (2026-07-19, still valid): hold and watch trend, review ~2026-10-17.
   - icici_symbol: STABAN
     trigger: 0
     shares: all
-    phase: 1
-    action: "Exit immediately — -40% earnings growth, insurance sector headwinds, -43% loss"
+    phase: 3
+    action: "HOLD — thesis intact, +11.8% profit as of 2026-08-04 (not a loss-cut). Review 2026-10-17, do not exit on this trigger."
 
+  # Re-verified 2026-08-04: 45 sh @ avg cost 1226.13, live price 1172.60 = -4.4%
+  # (small loss, direction was right). Earnings are worse than the config stated —
+  # real earningsGrowth -68.7%, not -14% — which reinforces rather than weakens the
+  # "exit on bounce" thesis. Price crossed 1350 at some point in the last 89 days
+  # (89d high 1367.03) and has since pulled back below the trigger — if that bounce
+  # wasn't acted on, the window was missed; re-arm for the next bounce.
   - icici_symbol: DRREDD
     trigger: 1350
     shares: all
-    phase: 1
-    action: "Exit on bounce >= 1,350 — pharma not in core theme, -14% earnings growth"
+    phase: 2
+    action: "Exit on bounce >= 1,350 — pharma not in core theme, real earnings growth -68.7% (worse than originally stated, thesis still holds)"
 
-  # --- Phase 2: Near-trigger limit orders ---
-  # 2026-07-19 review: trigger (414) sits above the entire 89-day trading range
-  # (342-410); stock at 89d low, trending away from trigger. Trader decision: keep
-  # level as-is, watch trend for ~90 days (review ~2026-10-17) rather than re-anchor now.
+  # Re-verified 2026-08-04: trigger (414) still sits above the 89-day range (89d
+  # high 410.20, low 341.85); stock at 343.65, near its 89-day low again. Share
+  # count corrected: actual holding is 125 (not 200 — a 100-share sale already
+  # happened 2026-05-21). At avg cost ~375.61, position is -8.5%. Trader decision
+  # (2026-07-19, still valid): keep level as-is, watch trend, review ~2026-10-17.
   - icici_symbol: NTPC
     trigger: 414
     shares: 75
-    phase: 2
-    action: "Trim 75 of 200 shares >= 414 (reduce concentration, redeploy to KAYNES/GVT&D)"
+    phase: 3
+    action: "WATCH — trigger (414) sits above the 89-day range, not close. Actual holding 125 sh (corrected from stale 200), -8.5% unrealized. Review 2026-10-17, do not re-anchor now."
 
   - icici_symbol: ADAPOW
     trigger: 230
     shares: all
     phase: 2
-    action: "Exit >= 230 — take 38%+ gain, re-enter lower (stock ran 108% in 1Y)"
+    action: "Exit >= 230 — take 38%+ gain, re-enter lower (stock ran 108% in 1Y). Live price 209.95, not yet triggered; recent buys at ~208-219 look like averaging, not exit prep."
 
+  # Re-verified 2026-08-04: fixed the trigger-vs-text mismatch (field said 820, text
+  # said 750). Live price 845.50 IS above the real 820 trigger — this one is
+  # genuinely actionable today, unlike the others in this block. ~150 sh @ avg cost
+  # ~782.92 = +8.0% profit.
   - icici_symbol: YATHOS
     trigger: 820
     shares: all
-    phase: 2
-    action: "Exit all at market — already above 750 trigger (sell at open)"
+    phase: 1
+    action: "Exit all at market — price 845.50 above the 820 trigger, +8.0% profit on ~150 sh. Genuinely actionable now."
 
-  # 2026-07-19 review: trigger (2,700) sits 5.4% above the 89-day high (2,562), never
-  # touched; stock down -6.2% over 89d. Share count also stale (config says trim 15 of
-  # 30; actual holding is 100 sh per 2026-07-19 statement). Trader decision: keep level
-  # as-is, watch trend for ~90 days (review ~2026-10-17) — do not re-anchor or resize now.
+  # Re-verified 2026-08-04: trigger (2,700) still sits ~5.4% above the 89-day high
+  # (2,561.53), never touched. Share count corrected: actual holding is 100 (not the
+  # stale "15 of 30" — averaging continued after the 2026-07-19 review with more
+  # buys at 2,279.60 and 2,093.50). At avg cost ~2,524.29, live price 2,460 = -2.5%
+  # (improved from -6.2% in July as the newer, cheaper lots pulled the average down).
+  # Trader decision (2026-07-19, still valid): keep level as-is, watch trend, review
+  # ~2026-10-17 — do not re-anchor or resize now.
   - icici_symbol: TCS
     trigger: 2700
-    shares: 15
-    phase: 2
-    action: "Trim 15 of 30 shares >= 2,700 — IT headwinds, US slowdown risk, redeploy"
+    shares: 100
+    phase: 3
+    action: "WATCH — trigger (2,700) sits well above the 89-day high, not close. Actual holding 100 sh (corrected from stale 30), -2.5% unrealized. Review 2026-10-17, do not re-anchor or resize now."
 
