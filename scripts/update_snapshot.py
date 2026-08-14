@@ -3,11 +3,14 @@ Auto-generate portfolio_snapshot.yaml from:
   - Schwab positions CSV  (holdings, open options)  — data/statements/
   - Schwab per-account Transactions CSVs (232/275/634)  — data/positions/
   - Fidelity per-person Accounts_History CSVs (Rahul/Rajul)  — data/positions/
+  - Vanguard export  (vanguard_rahul.csv)  — data/positions/
   - Robinhood activity CSVs (Individual + Traditional IRA)  — data/positions/
 
-Vanguard is NOT included — no transaction-level Vanguard export exists yet
-(only position snapshots), so Vanguard premium doesn't feed this snapshot.
-Known, accepted gap — do not attempt to infer it from position deltas.
+Vanguard's export (vanguard_rahul.csv) is actually THREE concatenated
+sections in one file: a small current-holdings snapshot, a full transaction
+history (what feeds premium here — see parse_vanguard_transactions), and an
+always-empty trailing section. Don't assume it's holdings-only just because
+its top section looks like a snapshot — read the whole file.
 
 Robinhood uses whatever full-history export is currently canonical in
 data/positions/ (robinhood_rahul_individual.csv / robinhood_rahul_traditional.csv
@@ -21,11 +24,12 @@ Weekly workflow:
   1. Export positions from Schwab (Account A) → drop in data/statements/
   2. Export per-account transactions from Schwab (232/275/634) → data/positions/
   3. Export Accounts_History from Fidelity (Rahul + Rajul) → data/positions/
-  4. Export Robinhood activity (full history, not YTD) → data/positions/  (optional
+  4. Export Vanguard activity → data/positions/vanguard_rahul.csv
+  5. Export Robinhood activity (full history, not YTD) → data/positions/  (optional
      — reuses the last good file if skipped)
-  5. python3 scripts/update_snapshot.py
-  6. Set month_to_date_equity_change manually
-  7. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
+  6. python3 scripts/update_snapshot.py
+  7. Set month_to_date_equity_change manually
+  8. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
 """
 
 import os
@@ -84,6 +88,13 @@ def find_fidelity_transactions() -> dict[str, str]:
         if files:
             found[person] = max(files, key=os.path.getmtime)
     return found
+
+
+def find_vanguard_transactions() -> str | None:
+    """Vanguard's export lives in data/positions/ under the same canonical name
+    the main unified report already loads."""
+    path = os.path.join(POSITIONS_DIR, "vanguard_rahul.csv")
+    return path if os.path.exists(path) else None
 
 
 _ROBINHOOD_FILES = {
@@ -396,7 +407,70 @@ def parse_fidelity_transactions(filepath: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Metrics from Schwab + Fidelity + Robinhood transactions
+# Vanguard transaction history parser.
+# The Vanguard export (vanguard_rahul.csv) is actually THREE concatenated
+# sections, each with its own header line: (1) a small current-holdings
+# snapshot, (2) a full transaction history — the one this parser reads — and
+# (3) an always-empty trailing section. Section 2's header:
+#   Account Number, Trade Date, Settlement Date, Transaction Type,
+#   Transaction Description, Investment Name, Symbol, Shares, Share Price,
+#   Principal Amount, Commissions and Fees, Net Amount, Accrued Interest,
+#   Account Type
+# Trade Date is already YYYY-MM-DD. Symbol, when present, looks like
+# "LITE 270716 P 560.00" (ticker, YYMMDD, P/C, strike) — often blank on rows
+# that aren't the original opening trade, so it's used best-effort, not as a
+# gate (unlike Schwab, where Symbol is reliably populated on every row).
+# ---------------------------------------------------------------------------
+
+_VANGUARD_TXN_HEADER = "Account Number,Trade Date,Settlement Date,Transaction Type"
+_VANGUARD_ACTIONS = {"sell to open": "Sell to Open", "buy to close": "Buy to Close", "expired": "Expired"}
+_VANGUARD_SYMBOL = re.compile(r"^([A-Z]+)\s+(\d{2})(\d{2})(\d{2})\s+([PC])\s+[\d.]+$")
+
+
+def parse_vanguard_transactions(filepath: str, account_label: str) -> list[dict]:
+    """Parse the transaction-history section of a Vanguard export into the shared
+    option-txn shape. See module comment above for why this is section 2 of 3."""
+    with open(filepath, newline="", encoding="utf-8-sig") as f:
+        lines = f.readlines()
+
+    start = next((i for i, l in enumerate(lines) if l.startswith(_VANGUARD_TXN_HEADER)), None)
+    if start is None:
+        return []
+    # Section ends at the next blank line or the next header-looking line.
+    end = next((i for i in range(start + 1, len(lines)) if not lines[i].strip()), len(lines))
+
+    rows = []
+    reader = csv.DictReader(lines[start:end])
+    for row in reader:
+        action = _VANGUARD_ACTIONS.get((row.get("Transaction Type") or "").strip().lower())
+        if not action:
+            continue
+        txn_date = _parse_date(_clean(row.get("Trade Date") or ""))
+        if not txn_date:
+            continue
+
+        underlying, opt_type = None, "P"
+        sym_match = _VANGUARD_SYMBOL.match((row.get("Symbol") or "").strip())
+        if sym_match:
+            underlying = sym_match.group(1)
+            opt_type = sym_match.group(5)
+        elif re.search(r"\bcall\b", row.get("Investment Name") or "", re.IGNORECASE):
+            opt_type = "C"
+
+        rows.append({
+            "Date": txn_date.isoformat(),
+            "Action": action,
+            "underlying": underlying,
+            "opt_type": opt_type,
+            "Amount": _parse_amount(row.get("Net Amount") or "0"),
+            "account": account_label,
+            "_desc": (row.get("Investment Name") or row.get("Transaction Description") or "").strip(),
+        })
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Metrics from Schwab + Fidelity + Vanguard + Robinhood transactions
 # ---------------------------------------------------------------------------
 
 def compute_metrics(txns: list[dict], equity_symbols: list[str]) -> dict:
@@ -515,6 +589,12 @@ def build_snapshot() -> dict:
         fid_txns = parse_fidelity_transactions(path)
         print(f"  Fidelity txns ({person}) — {os.path.basename(path)}: {len(fid_txns)} option trades")
         txns.extend(fid_txns)
+
+    vanguard_file = find_vanguard_transactions()
+    if vanguard_file:
+        vg_txns = parse_vanguard_transactions(vanguard_file, "Vanguard (Rahul)")
+        print(f"  Vanguard txns — {os.path.basename(vanguard_file)}: {len(vg_txns)} option trades")
+        txns.extend(vg_txns)
 
     # Add ALL transactions from each Robinhood CSV as the canonical Robinhood source
     for acct_label, rh_file in find_robinhood_transactions().items():
