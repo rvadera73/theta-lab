@@ -13,13 +13,13 @@ SECTION 0: ACCOUNT HEALTH, FRAMEWORK STATUS & GAP ANALYSIS
 ========================================================================================================================
 
 CONSOLIDATED PORTFOLIO SNAPSHOT:
-├─ Total Portfolio Balance:      $2,341,491
-├─ Total notional exposure:      $   6,457,856
-├─ Total option requirement:     $   2,470,295
+├─ Total Portfolio Balance:      $2,341,494
+├─ Total notional exposure:      $   6,447,891
+├─ Total option requirement:     $   2,467,554
 ├─ Positions with short puts:    89
 ├─ Positions with short calls:   30
-├─ YTD Net Premium:              $     451,958  (live from transactions)
-├─ Month-to-Date Premium:        $      11,800
+├─ YTD Net Premium:              $     210,632  (live from transactions)
+├─ Month-to-Date Premium:        $      43,585
 └─ Snapshot currency:            2026-08-14
 
 ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -30,23 +30,24 @@ LENS 1 — PREMIUM INCOME (cash flow)  =  what you COLLECT selling options  [the
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Account                                  01         02         03         04         05         06         07         08          YTD
 -------------------------------------------------------------------------------------------------------------------------------------
-Account A (232)                      45,402     10,781     96,241     94,510    -18,837    -15,311        552          0      213,338
-Account B (275)                      18,121       -713      4,785      9,665      6,551      4,493          0          0       42,902
-Account C (634)                      10,989      3,313      2,971      2,940      1,339      4,338      2,252          0       28,142
-Fidelity (Rahul)                     16,643        620     11,401     21,397     11,903      2,495       -357          0       64,102
-Fidelity (Rajul — Roth IRA)              47        228         87      2,498        162      3,731          0          0        6,753
-Fidelity (Rajul — Rollover IRA)           0      3,379        100     10,911     -2,725        134       -451          0       11,348
-Robinhood (Individual)                2,429        254          0          0         91       -729          0          0        2,045
-Robinhood (Traditional IRA)          14,524      2,528      8,963     10,336      2,763        998        688        527       41,327
-Vanguard (Rahul)                      7,897        778      7,598      4,532      2,408      6,150      1,365     11,273       42,001
+Account A (232)                      10,255     12,483     23,800     20,880     -1,244     -2,884     20,362     27,916      111,568
+Account B (275)                          31      3,322      1,546      4,894      9,709      3,948        575        385       24,410
+Account C (634)                          31        934        449      1,959      4,435      1,321      2,286      4,524       15,939
+Fidelity (Rahul)                         17      1,824      1,231      5,580      4,947     10,629      5,151      2,860       32,239
+Fidelity (Rajul — Rollover IRA)           0          0          0        944        932          0        667      3,045        5,588
+Fidelity (Rajul — Roth IRA)               0          0          0         95        189      1,028      1,326        136        2,774
+Robinhood (Individual)                    0        107          0          0        205         -9          0          0          303
+Robinhood (Traditional IRA)               0        518        816      6,275      2,879      2,087        517      4,719       17,811
 -------------------------------------------------------------------------------------------------------------------------------------
-TOTAL                               116,052     21,168    132,146    156,789      3,655      6,299      4,049     11,800      451,958
+TOTAL                                10,334     19,188     27,842     40,627     22,052     16,120     30,884     43,585      210,632
 
-  Gross SOLD (STO)                  181,739     68,408    199,758    324,125    349,672    243,331     26,826     26,812    1,420,671
-  Net KEPT                          116,052     21,168    132,146    156,789      3,655      6,299      4,049     11,800      451,958
-  Buyback DRAG (rolling)             65,687     47,240     67,612    167,336    346,017    237,032     22,777     15,012      968,713
+  Gross SOLD (STO, opened this month)    181,739     68,408    199,758    324,125    349,672    243,331    135,826    150,304    1,653,163
+  Net REALIZED (FIFO, closed this month)     10,334     19,188     27,842     40,627     22,052     16,120     30,884     43,585      210,632
 
-Net = STO/STC credits − BTC/BTO debits. High DRAG months = heavy rolling (premium given back).
+Net REALIZED = FIFO-matched close gain/loss, attributed to the month a position CLOSED
+(assignment counts as a close). Gross SOLD = premium collected on positions OPENED that
+month — a different basis, so Gross minus Net is not a meaningful 'drag' figure; a position
+opened this month may not close for months. See scripts/realized_pnl.py for the full method.
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market)  ≈  Empower 'portfolio value change'
@@ -58,8 +59,10 @@ LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market)  ≈  Empower 'portfolio value c
   quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are
   stale). Transactions give income; marks give value — you need both, from different exports.
 
-  → Use EMPOWER for the authoritative total value. It reconciled to income at the YTD level
-    (~$435K ≈ $438K), which validates the numbers.
+  → Use EMPOWER for the authoritative total value. (A prior version of this note claimed a
+    specific $435K/$438K reconciliation — that was against LENS 1's OLD same-month cash-flow
+    total, not the FIFO-realized figure above; re-verify against Empower with today's numbers
+    rather than trusting that stale comparison.)
   → To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).
 
 WHY THEY DIVERGE MONTH-TO-MONTH:
@@ -73,28 +76,30 @@ PER-ACCOUNT BREAKDOWN:
 ------------------------------------------------------------------------------------------------------------------------
 Account                                Balance      %       Notional      Opt Req       Type          Status
 ------------------------------------------------------------------------------------------------------------------------
-Account A (232)                $       403,000  17.2% $    4,053,351 $    729,603     Margin        ✅ MARGIN
-  ├─ 139 option positions | Monthly target: $18,750 | Equity: ADBE 300sh, AXON 200sh, XYZ 200sh, COIN 100sh, ETSY 100sh +10 more
-Account B (275)                $       261,000  11.1% $      369,174 $    288,750   Cash-Sec            ✅ OK
-  ├─ 22 option positions | Monthly target: $12,144 | Equity: FMC 100sh, CRM 100sh
-Account C (634)                $       266,000  11.4% $      357,436 $    214,400   Cash-Sec            ✅ OK
-  ├─ 24 option positions | Monthly target: $12,377 | Equity: ABNB 100sh, INMD 100sh, NKE 100sh, NIO 200sh, TWLO 524sh
-Fidelity (Rahul)               $       498,560  21.3% $      694,782 $    616,736   Cash-Sec            ✅ OK
-  ├─ 43 option positions | Monthly target: $23,196 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, NIO 800sh, CRM 200sh
-Fidelity (Rajul — Roth IRA)    $        39,158   1.7% $       54,253 $     48,600   Cash-Sec            ✅ OK
-  ├─ 8 option positions | Monthly target: $1,822 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
-Fidelity (Rajul — Rollover IRA) $       128,081   5.5% $      182,888 $    161,150   Cash-Sec            ✅ OK
-  ├─ 13 option positions | Monthly target: $5,959
-Vanguard (Rahul)               $       320,492  13.7% $      447,022 $    411,056   Cash-Sec            ✅ OK
-  ├─ 25 option positions | Monthly target: $14,912
-Robinhood (Individual)         $        13,000   0.6% $       20,390 $          0   Cash-Sec            ✅ OK
-  ├─ 4 option positions | Monthly target: $605
-Robinhood (Traditional IRA)    $       220,000   9.4% $      278,561 $          0   Cash-Sec            ✅ OK
-  ├─ 19 option positions | Monthly target: $10,236
+Account A (232)                $       403,000  17.2% $    4,048,588 $    728,746     Margin        ✅ MARGIN
+  ├─ 139 option positions | Monthly target: $28,615 | Equity: ADBE 300sh, AXON 200sh, XYZ 200sh, COIN 100sh, ETSY 100sh +10 more
+Account B (275)                $       261,000  11.1% $      369,829 $    288,750   Cash-Sec            ✅ OK
+  ├─ 22 option positions | Monthly target: $10,669 | Equity: FMC 100sh, CRM 100sh
+Account C (634)                $       266,000  11.4% $      356,703 $    214,400   Cash-Sec            ✅ OK
+  ├─ 24 option positions | Monthly target: $10,874 | Equity: ABNB 100sh, INMD 100sh, NKE 100sh, NIO 200sh, TWLO 524sh
+Fidelity (Rahul)               $       498,560  21.3% $      692,892 $    615,664   Cash-Sec            ✅ OK
+  ├─ 43 option positions | Monthly target: $20,380 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, NIO 800sh, CRM 200sh
+Fidelity (Rajul — Roth IRA)    $        39,158   1.7% $       54,150 $     48,347   Cash-Sec            ✅ OK
+  ├─ 8 option positions | Monthly target: $1,601 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
+Fidelity (Rajul — Rollover IRA) $       128,081   5.5% $      182,455 $    161,150   Cash-Sec            ✅ OK
+  ├─ 13 option positions | Monthly target: $5,236
+Vanguard (Rahul)               $       320,492  13.7% $      445,137 $    410,497   Cash-Sec            ✅ OK
+  ├─ 25 option positions | Monthly target: $13,101
+Robinhood (Individual)         $        13,000   0.6% $       20,182 $          0   Cash-Sec            ✅ OK
+  ├─ 4 option positions | Monthly target: $531
+Robinhood (Traditional IRA)    $       220,000   9.4% $      277,955 $          0   Cash-Sec            ✅ OK
+  ├─ 19 option positions | Monthly target: $8,993
 Fidelity 401K (Rahul)          $       192,200   8.2% $            0 $          0   Cash-Sec            ✅ OK
   └─ No open positions | Monthly target: $0
+Fidelity (Rahul — Roth IRA Minor) $             3   0.0% $            0 $          0   Cash-Sec            ✅ OK
+  └─ No open positions | Monthly target: $0
 ------------------------------------------------------------------------------------------------------------------------
-TOTAL                          $     2,341,491 100.0% $    6,457,856 $  2,470,295
+TOTAL                          $     2,341,494 100.0% $    6,447,891 $  2,467,554
 
 DEFINITIONS:
   • Notional = Stock price × contracts × 100 (underlying value of options position)
@@ -113,17 +118,17 @@ FRAMEWORK OVERVIEW:
 
 PERFORMANCE VS TARGET (YTD CUMULATIVE):
   Target (8 months):     $800,000
-  Actual YTD:                 $452,333
-  Gap to close:               $347,667 (43.5%)
-  Monthly average (YTD):      $56,542
+  Actual YTD:                 $210,630
+  Gap to close:               $589,370 (73.7%)
+  Monthly average (YTD):      $26,329
   Monthly average needed:     $100,000
-  Monthly gap:                $-17,100
+  Monthly gap:                $-14,300
 
 POSITION TIER DISTRIBUTION → GAP CLOSURE:
-  Tier 1 (17 positions): $ 64,600/month (  65% of $100,000 target)
-  Tier 2 (60 positions): $ 60,000/month (  60% of target)
+  Tier 1 (16 positions): $ 60,800/month (  61% of $100,000 target)
+  Tier 2 (61 positions): $ 61,000/month (  61% of target)
   Tier 3 (15 positions): $ -7,500/month (  -8% drag)
-  Current total: 92 positions = $117,100/month (117% of target)
+  Current total: 92 positions = $114,300/month (114% of target)
 
 GAP CLOSURE PATH:
   To hit $100,000 target: Need 0 more Tier 1 positions
@@ -131,16 +136,17 @@ GAP CLOSURE PATH:
   Capital required for 0 new positions: $0 (0 × $10K)
 
 ACCOUNT-LEVEL GAP BREAKDOWN:
-  ✅ Account A (232)                          Target $  17,211 | Actual $  20,154 | Gap $  -2,943 (-17.1%)
-  ✅ Account B (275)                          Target $  11,146 | Actual $  13,052 | Gap $  -1,906 (-17.1%)
-  ✅ Account C (634)                          Target $  11,360 | Actual $  13,302 | Gap $  -1,942 (-17.1%)
-  ✅ Fidelity (Rahul)                         Target $  21,292 | Actual $  24,933 | Gap $  -3,641 (-17.1%)
-  ✅ Fidelity (Rajul — Rollover IRA)          Target $   5,470 | Actual $   6,405 | Gap $    -935 (-17.1%)
-  ✅ Fidelity (Rajul — Roth IRA)              Target $   1,672 | Actual $   1,958 | Gap $    -286 (-17.1%)
+  ✅ Account A (232)                          Target $  17,211 | Actual $  19,672 | Gap $  -2,461 (-14.3%)
+  ✅ Account B (275)                          Target $  11,146 | Actual $  12,740 | Gap $  -1,594 (-14.3%)
+  ✅ Account C (634)                          Target $  11,360 | Actual $  12,984 | Gap $  -1,624 (-14.3%)
+  ✅ Fidelity (Rahul — Roth IRA Minor)        Target $       0 | Actual $       0 | Gap $       0 (  0.0%)
+  ✅ Fidelity (Rahul)                         Target $  21,292 | Actual $  24,337 | Gap $  -3,045 (-14.3%)
+  ✅ Fidelity (Rajul — Rollover IRA)          Target $   5,470 | Actual $   6,252 | Gap $    -782 (-14.3%)
+  ✅ Fidelity (Rajul — Roth IRA)              Target $   1,672 | Actual $   1,911 | Gap $    -239 (-14.3%)
   ⚠️ Fidelity 401K (Rahul)                    Target $   8,208 | Actual $       0 | Gap $   8,208 (100.0%)
-  ✅ Robinhood (Individual)                   Target $     555 | Actual $     650 | Gap $     -95 (-17.1%)
-  ✅ Robinhood (Traditional IRA)              Target $   9,395 | Actual $  11,002 | Gap $  -1,607 (-17.1%)
-  ✅ Vanguard (Rahul)                         Target $  13,687 | Actual $  16,028 | Gap $  -2,341 (-17.1%)
+  ✅ Robinhood (Individual)                   Target $     555 | Actual $     634 | Gap $     -79 (-14.2%)
+  ✅ Robinhood (Traditional IRA)              Target $   9,395 | Actual $  10,739 | Gap $  -1,344 (-14.3%)
+  ✅ Vanguard (Rahul)                         Target $  13,687 | Actual $  15,644 | Gap $  -1,957 (-14.3%)
 
 RISK GUARDRAILS:
 ├─ Margin floor (Account A only): 50% utilization
@@ -159,9 +165,9 @@ Framework: $100,000/month net = $1.2M/year target (at 60% close costs)
 Regime: BULL (applies 100% of base)
 Adjusted Target: $250,000 gross / $100,000 net
 
-YTD Performance: $452,333 net (8 months)
-Monthly average: $56,542
-Annualized pace: $678,500 ⚠️ BELOW TARGET
+YTD Performance: $210,630 net (8 months)
+Monthly average: $26,329
+Annualized pace: $315,945 ⚠️ BELOW TARGET
 
 Account Targets (Regime-Adjusted):
 ------------------------------------------------------------------------------------------------------------------------
@@ -183,18 +189,18 @@ SECTION 1: 3-MONTH ROLLING PACE & MONTHLY TARGET TRACKING (Primary: Biweekly Foc
 
 PACE CHECK — 3-MONTH ROLLING WINDOW (Biweekly Priority)
 
-Current Month-to-Date P&L:      $26,812 (August 1-14)
-Daily average this month:        $1,915/day (trending)
+Current Month-to-Date P&L:      $43,585 (August 1-14)
+Daily average this month:        $3,113/day (trending)
 Days remaining in month:         17
-Projected month-end P&L:         $59,369
-Monthly target:                  $122,700
-Variance to target:              $-63,331 (-51.6%)
-Status:                          ⚠️ BELOW TARGET
+Projected month-end P&L:         $96,510
+Monthly target:                  $100,000
+Variance to target:              $-3,490 (-3.5%)
+Status:                          ✅ ON TARGET
 
 3-MONTH ROLLING PACE (Biweekly horizon):
-  YTD average:                    $56,542/month
-  Required to sustain annually:   $122,700/month ($1.2M+/year)
-  Current trajectory:             ↘ BELOW PACE
+  YTD average:                    $26,329/month
+  Required to sustain annually:   $100,000/month ($1.2M+/year)
+  Current trajectory:             → STABLE
 
 NOTE: YTD detail variance analysis moved to MONTHLY report (consolidated for clarity)
       Biweekly focus: Rolling 3-month trend vs month-to-date pace
@@ -205,21 +211,21 @@ SECTION 2: THREE-MONTH CONVICTION TREND ANALYSIS
 
 CONVICTION DISTRIBUTION (current, live):
 
-  HIGH (≥8):       18%  (17 positions)
-  MODERATE (6-8):  65%  (60 positions)
+  HIGH (≥8):       17%  (16 positions)
+  MODERATE (6-8):  66%  (61 positions)
   LOW (<6):        16%  (15 positions)
   Portfolio avg:  6.9/10
   (Month-over-month conviction history needs a tracking store — not fabricated.)
 
 Top HIGH-conviction positions (current):
   MU       Conviction: 8.8/10
-  DVN      Conviction: 8.5/10
   AMKR     Conviction: 8.4/10
   NFLX     Conviction: 8.3/10
   APP      Conviction: 8.3/10
+  ISRG     Conviction: 8.3/10
 
 Framework Health:
-  ✅ 17 positions in HIGH tier (target: ≥30%)
+  ✅ 16 positions in HIGH tier (target: ≥30%)
   ✅ Conviction converging toward 7.0 target
   ✅ No forced exits (framework working)
 
@@ -229,14 +235,14 @@ SECTION 3: THREE-MONTH TIER DISTRIBUTION EVOLUTION + GAP CLOSURE TRACKING
 
 TIER CONTRIBUTION TO TARGET (current, live):
 
-  Tier 1 (Conv ≥8): 17 positions → $64,600/month
-  Tier 2 (Conv 6-8): 60 positions → $60,000/month
+  Tier 1 (Conv ≥8): 16 positions → $60,800/month
+  Tier 2 (Conv 6-8): 61 positions → $61,000/month
   Tier 3 (Conv <6): 15 positions → $-7,500 drag
   (Prior-month tier history needs a tracking store — not fabricated.)
 
 PORTFOLIO TOTAL CONTRIBUTION TO $90K TARGET:
-  Current: $117,100/month (117% of target)
-  Gap: $-17,100 → 0 more Tier 1 needed OR scale/trim Tier 3
+  Current: $114,300/month (114% of target)
+  Gap: $-14,300 → 0 more Tier 1 needed OR scale/trim Tier 3
 
 FRAMEWORK VERDICT: Portfolio quality concentrating in Tier 1 as designed.
 Weekly tier monitoring catching opportunities earlier. Framework gap-closure path clear.
@@ -253,23 +259,24 @@ LENS 1 — PREMIUM INCOME (cash flow)  =  what you COLLECT selling options  [the
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Account                                  01         02         03         04         05         06         07         08          YTD
 -------------------------------------------------------------------------------------------------------------------------------------
-Account A (232)                      45,402     10,781     96,241     94,510    -18,837    -15,311        552          0      213,338
-Account B (275)                      18,121       -713      4,785      9,665      6,551      4,493          0          0       42,902
-Account C (634)                      10,989      3,313      2,971      2,940      1,339      4,338      2,252          0       28,142
-Fidelity (Rahul)                     16,643        620     11,401     21,397     11,903      2,495       -357          0       64,102
-Fidelity (Rajul — Roth IRA)              47        228         87      2,498        162      3,731          0          0        6,753
-Fidelity (Rajul — Rollover IRA)           0      3,379        100     10,911     -2,725        134       -451          0       11,348
-Robinhood (Individual)                2,429        254          0          0         91       -729          0          0        2,045
-Robinhood (Traditional IRA)          14,524      2,528      8,963     10,336      2,763        998        688        527       41,327
-Vanguard (Rahul)                      7,897        778      7,598      4,532      2,408      6,150      1,365     11,273       42,001
+Account A (232)                      10,255     12,483     23,800     20,880     -1,244     -2,884     20,362     27,916      111,568
+Account B (275)                          31      3,322      1,546      4,894      9,709      3,948        575        385       24,410
+Account C (634)                          31        934        449      1,959      4,435      1,321      2,286      4,524       15,939
+Fidelity (Rahul)                         17      1,824      1,231      5,580      4,947     10,629      5,151      2,860       32,239
+Fidelity (Rajul — Rollover IRA)           0          0          0        944        932          0        667      3,045        5,588
+Fidelity (Rajul — Roth IRA)               0          0          0         95        189      1,028      1,326        136        2,774
+Robinhood (Individual)                    0        107          0          0        205         -9          0          0          303
+Robinhood (Traditional IRA)               0        518        816      6,275      2,879      2,087        517      4,719       17,811
 -------------------------------------------------------------------------------------------------------------------------------------
-TOTAL                               116,052     21,168    132,146    156,789      3,655      6,299      4,049     11,800      451,958
+TOTAL                                10,334     19,188     27,842     40,627     22,052     16,120     30,884     43,585      210,632
 
-  Gross SOLD (STO)                  181,739     68,408    199,758    324,125    349,672    243,331     26,826     26,812    1,420,671
-  Net KEPT                          116,052     21,168    132,146    156,789      3,655      6,299      4,049     11,800      451,958
-  Buyback DRAG (rolling)             65,687     47,240     67,612    167,336    346,017    237,032     22,777     15,012      968,713
+  Gross SOLD (STO, opened this month)    181,739     68,408    199,758    324,125    349,672    243,331    135,826    150,304    1,653,163
+  Net REALIZED (FIFO, closed this month)     10,334     19,188     27,842     40,627     22,052     16,120     30,884     43,585      210,632
 
-Net = STO/STC credits − BTC/BTO debits. High DRAG months = heavy rolling (premium given back).
+Net REALIZED = FIFO-matched close gain/loss, attributed to the month a position CLOSED
+(assignment counts as a close). Gross SOLD = premium collected on positions OPENED that
+month — a different basis, so Gross minus Net is not a meaningful 'drag' figure; a position
+opened this month may not close for months. See scripts/realized_pnl.py for the full method.
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market)  ≈  Empower 'portfolio value change'
@@ -281,8 +288,10 @@ LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market)  ≈  Empower 'portfolio value c
   quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are
   stale). Transactions give income; marks give value — you need both, from different exports.
 
-  → Use EMPOWER for the authoritative total value. It reconciled to income at the YTD level
-    (~$435K ≈ $438K), which validates the numbers.
+  → Use EMPOWER for the authoritative total value. (A prior version of this note claimed a
+    specific $435K/$438K reconciliation — that was against LENS 1's OLD same-month cash-flow
+    total, not the FIFO-realized figure above; re-verify against Empower with today's numbers
+    rather than trusting that stale comparison.)
   → To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).
 
 WHY THEY DIVERGE MONTH-TO-MONTH:
@@ -307,17 +316,17 @@ SECTION 6: SECTOR CONCENTRATION (current, live)
 
 Sector                       % of notional  Avg Conv        Signal
 ------------------------------------------------------------------
-Technology                           36.3%      6.98       NEUTRAL
-Industrials                          23.5%      7.12       NEUTRAL
-Communication Services               11.2%      7.54    ATTRACTION
-Financial Services                    7.4%      5.75       NEUTRAL
-Healthcare                            6.4%      5.85       NEUTRAL
-Consumer Cyclical                     6.3%      6.28       NEUTRAL
+Technology                           36.4%       7.0       NEUTRAL
+Industrials                          23.5%      7.09       NEUTRAL
+Communication Services               11.2%      7.62    ATTRACTION
+Financial Services                    7.4%      5.73       NEUTRAL
+Healthcare                            6.3%      6.04       NEUTRAL
+Consumer Cyclical                     6.3%       6.3       NEUTRAL
 Brand-Quality (Non-AI)                3.9%      7.05       NEUTRAL
 Defense                               2.2%       6.7     EXTENSION
 Basic Materials                       1.2%      8.05     EXTENSION
-Energy                                0.8%      6.48       NEUTRAL
-Utilities                             0.6%      7.45    ATTRACTION
+Energy                                0.8%      6.38       NEUTRAL
+Utilities                             0.6%      6.85    ATTRACTION
 Consumer Defensive                    0.2%       6.7       NEUTRAL
 
 Month-by-month rotation history is not tracked yet — omitted rather than fabricated.
@@ -329,14 +338,14 @@ SECTION 7: PREMIUM vs MONTHLY TARGET
 Monthly net target (base): $100,000
 Month             Actual     vs Target
 --------------------------------------
-2026-01          116,052        16,052
-2026-02           21,168       -78,832
-2026-03          132,146        32,146
-2026-04          156,789        56,789
-2026-05            3,655       -96,345
-2026-06            6,299       -93,701
-2026-07            4,049       -95,951
-2026-08           11,800       -88,200
+2026-01           10,334       -89,666
+2026-02           19,188       -80,812
+2026-03           27,842       -72,158
+2026-04           40,627       -59,373
+2026-05           22,052       -77,948
+2026-06           16,120       -83,880
+2026-07           30,884       -69,116
+2026-08           43,585       -56,415
 
 Per-driver attribution (regime/thesis/timing) requires trade-level tagging not
 yet captured — omitted rather than estimated.

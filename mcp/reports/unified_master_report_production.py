@@ -39,78 +39,17 @@ except ImportError as e:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# CONFIGURATION — ALL ACCOUNTS WITH BALANCES & MONTHLY TARGETS
-# Balances refreshed 2026-07-31 from that month's exports where a cash/MM
-# line is present in the file (Fidelity, Vanguard). Schwab exports here are
-# POSITIONS ONLY (no cash/margin balance line), so summing them ~doubles the
-# true net-liq for margin/short-option-heavy books — Account A/B/C and both
-# Robinhood balances are left at their last manually-confirmed figures and
-# are NOT independently verified by this month's data. Re-confirm from each
-# broker's account-summary screen (not the positions export) if updating.
-#
-# monthly_target = round(weighted_basis / total_weighted_basis * 100,000) —
-# the $100K/month base pool is split across the 9 OPTIONS-TRADING accounts
-# only. The Fidelity 401K is a passive, options-free account (per persona:
-# "passive accounts... excluded from these caps") and gets monthly_target=0,
-# never billed against the premium-income target.
-#
-# Account A is the ONLY margin-enabled account. Confirmed by the trader
-# (2026-08) that its real, lockable margin buying power is $700,000 — not
-# its $403,000 cash/net-liq balance. monthly_target below is weighted
-# against that $700K capacity (not the $403K balance) so the target
-# reflects what the account can actually support; every other account's
-# target shifted down slightly as a result, since it's one shared pool.
-# `balance` itself is left at the true $403,000 net-liq figure — do not
-# use it as the target-weighting basis for Account A, only monthly_target
-# already reflects the $700K adjustment.
+# CONFIGURATION — moved to accounts_config.py so scripts/realized_pnl.py
+# (the FIFO-based P&L engine) can import these targets without creating a
+# circular import with this module. Re-imported here under the same names
+# so every existing reference below (and in other files that import them
+# from this module) keeps working unchanged.
 # ═══════════════════════════════════════════════════════════════════
-ACCOUNTS_CONFIG = {
-    'Account A (232)': {'balance': 403000, 'margin': True, 'monthly_target': 28615},  # weighted on $700K margin capacity, not the $403K balance shown here
-    'Account B (275)': {'balance': 261000, 'margin': False, 'monthly_target': 10669},
-    'Account C (634)': {'balance': 266000, 'margin': False, 'monthly_target': 10874},
-    'Fidelity (Rahul)': {'balance': 498560, 'margin': False, 'monthly_target': 20380},
-    'Fidelity (Rajul — Roth IRA)': {'balance': 39158, 'margin': False, 'monthly_target': 1601},
-    'Fidelity (Rajul — Rollover IRA)': {'balance': 128081, 'margin': False, 'monthly_target': 5236},
-    'Vanguard (Rahul)': {'balance': 320492, 'margin': False, 'monthly_target': 13101},
-    'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'monthly_target': 531},
-    'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'monthly_target': 8993},
-    'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'monthly_target': 0},
-    # The 5th Fidelity account (custodial "ROTH IRA for Minor", 258240575) —
-    # previously untracked entirely (see scripts/update_snapshot.py's
-    # _FIDELITY_ACCOUNT_LABELS). Confirmed real, had genuine 2026 option
-    # activity, wound down / transferred out ~March-May 2026, now ~$3 cash —
-    # monthly_target=0 like the 401K since there's no capital left to trade,
-    # not because it can't do options.
-    'Fidelity (Rahul — Roth IRA Minor)': {'balance': 3, 'margin': False, 'monthly_target': 0},
-}
-
-TOTAL_PORTFOLIO_BALANCE = sum(acc['balance'] for acc in ACCOUNTS_CONFIG.values())
-
-# ═══════════════════════════════════════════════════════════════════
-# PRODUCTION FRAMEWORK — 60% CLOSE COST RATIO TARGETS
-# ═══════════════════════════════════════════════════════════════════
-CLOSE_COST_RATIO = 0.60
-MONTHLY_TARGET_NET_BASE = 100000
-MONTHLY_TARGET_GROSS_BASE = int(MONTHLY_TARGET_NET_BASE / (1 - CLOSE_COST_RATIO))  # $250K gross
-
-REGIME_ADJUSTMENTS = {
-    'BULL': 1.00,
-    'CAUTIOUS_BULL': 0.90,
-    'SIDEWAYS': 0.85,
-    'BEAR': 0.70,
-}
-
-ACCOUNT_TARGETS = {
-    'Account A (232)': {'gross': 46500, 'net': 18600},
-    'Account B (275)': {'gross': 30250, 'net': 12100},
-    'Account C (634)': {'gross': 30750, 'net': 12300},
-    'Fidelity (Rahul)': {'gross': 57750, 'net': 23100},
-    'Fidelity (Rajul — Roth IRA)': {'gross': 5750, 'net': 2300},
-    'Fidelity (Rajul — Rollover IRA)': {'gross': 15000, 'net': 6000},
-    'Vanguard (Rahul)': {'gross': 37250, 'net': 14900},
-    'Robinhood (Individual)': {'gross': 1500, 'net': 600},
-    'Robinhood (Traditional IRA)': {'gross': 25500, 'net': 10200},
-}
+from accounts_config import (
+    ACCOUNTS_CONFIG, TOTAL_PORTFOLIO_BALANCE, CLOSE_COST_RATIO,
+    MONTHLY_TARGET_NET_BASE, MONTHLY_TARGET_GROSS_BASE, REGIME_ADJUSTMENTS,
+    ACCOUNT_TARGETS,
+)
 
 
 class UnifiedReportProduction:
@@ -1337,7 +1276,7 @@ class UnifiedReportProduction:
 
         mtd_premium = self.snapshot.get('month_to_date_premium', 0)
         ytd_net = self.snapshot.get('ytd_net_options_income', 0)
-        monthly_target = 122700  # Standard monthly target
+        monthly_target = MONTHLY_TARGET_NET_BASE  # $100K/month base = $1.2M/year — was a stale hardcoded $122,700
         days_in_month = (date(today.year, today.month % 12 + 1, 1) - date(today.year, today.month, 1)).days
         days_elapsed = today.day
         days_remaining = days_in_month - days_elapsed
@@ -1514,7 +1453,7 @@ class UnifiedReportProduction:
         output.extend(self._format_section_header(1, "MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS"))
 
         mtd_premium = self.snapshot.get('month_to_date_premium', 0)
-        monthly_target = 122700
+        monthly_target = MONTHLY_TARGET_NET_BASE  # $100K/month base = $1.2M/year — was a stale hardcoded $122,700
         variance = mtd_premium - monthly_target
         variance_pct = (variance / monthly_target) * 100 if monthly_target > 0 else 0
         ytd_net = self.snapshot.get('ytd_net_options_income', 0)
@@ -1547,35 +1486,45 @@ class UnifiedReportProduction:
         output.append(f"Confidence:                              ✅ LIVE DATA (updating monthly)")
         output.append("")
 
-        # SECTION 2: ACCOUNT PERFORMANCE BY ACCOUNT (ALL 8)
-        output.extend(self._format_section_header(2, "MONTHLY PERFORMANCE BY ACCOUNT (ALL 8)"))
+        # SECTION 2: ACCOUNT PERFORMANCE BY ACCOUNT (ALL accounts in ACCOUNTS_CONFIG)
+        output.extend(self._format_section_header(2, f"MONTHLY PERFORMANCE BY ACCOUNT (ALL {len(ACCOUNTS_CONFIG)})"))
 
-        monthly_target = 122700
-        mtd_premium = self.snapshot.get('month_to_date_premium', mtd_premium)
-
-        # Allocate premium proportionally by account balance
-        total_balance = TOTAL_PORTFOLIO_BALANCE
+        # Real per-account REALIZED premium (FIFO-matched, from
+        # scripts/realized_pnl.py via update_snapshot.py's
+        # per_account_realized) — replaces the old approach of splitting the
+        # portfolio-wide MTD total proportionally by account BALANCE, which
+        # attributed premium to accounts whether or not they actually
+        # generated it that month.
+        per_acct_realized = self.snapshot.get('per_account_realized', {})
         for account_name, config in ACCOUNTS_CONFIG.items():
             balance = config['balance']
-            account_pct = balance / total_balance
-            acct_target = int(monthly_target * account_pct)
-            acct_actual = int(mtd_premium * account_pct)
+            acct_data = per_acct_realized.get(account_name)
+            acct_target = int((acct_data['annual_target'] / 12)) if acct_data and acct_data.get('annual_target') else 0
+            acct_actual = int(acct_data['mtd_realized']) if acct_data else 0
+            acct_ytd = int(acct_data['ytd_realized']) if acct_data else 0
             acct_variance = acct_actual - acct_target
             acct_variance_pct = (acct_variance / acct_target * 100) if acct_target > 0 else 0
 
             output.append(f"{account_name}")
             output.append("")
-            output.append(f"├─ Balance: ${balance:,} ({account_pct*100:.1f}% of portfolio)")
+            output.append(f"├─ Balance: ${balance:,} ({balance/TOTAL_PORTFOLIO_BALANCE*100:.1f}% of portfolio)")
             output.append(f"├─ Target (monthly): ${acct_target:,}")
-            output.append(f"├─ Actual (YTD-allocated): ${acct_actual:,}")
-            output.append(f"├─ Variance: ${acct_variance:,} ({acct_variance_pct:+.1f}%)")
+            output.append(f"├─ Actual (MTD, realized/FIFO): ${acct_actual:,}")
+            output.append(f"├─ Actual (YTD, realized/FIFO): ${acct_ytd:,}")
+            output.append(f"├─ Variance (MTD): ${acct_variance:,} ({acct_variance_pct:+.1f}%)")
+            if acct_data is None:
+                output.append("├─ (No option-level realized data for this account — see realized_pnl.py's")
+                output.append("│   module docstring for why, e.g. Vanguard's option-side data is untracked.)")
 
             # Show position count
             acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
             output.append(f"├─ Open positions: {len(acct_positions)}")
 
             # Status
-            status = "✅ ON TARGET" if abs(acct_variance_pct) < 5 else ("⚠️ BELOW" if acct_variance < 0 else "✅ ABOVE")
+            if acct_target > 0:
+                status = "✅ ON TARGET" if abs(acct_variance_pct) < 5 else ("⚠️ BELOW" if acct_variance < 0 else "✅ ABOVE")
+            else:
+                status = "— (no target)"
             output.append(f"└─ Status: {status}")
             output.append("")
 

@@ -873,12 +873,37 @@ def build_snapshot() -> dict:
 
     metrics = compute_metrics(txns, equity_symbols)
 
+    # ytd_net_premium/mtd_premium above are a same-month cash-flow sum (all
+    # Sell-to-Open credits minus all Buy-to-Close debits in the window) — NOT
+    # FIFO-matched to the close month. That methodology was deliberately
+    # superseded this session by scripts/realized_pnl.py's per-contract FIFO
+    # engine (attributes gain/loss to the CLOSE month, treats assignment as a
+    # closing event, fixes same-day open/close ordering, etc.) — see that
+    # module's docstring for the full rationale. Overriding here rather than
+    # rewriting compute_metrics() itself: capture_rate/profit_factor/
+    # cc_all_time/cc_last_90d (covered-call cost-basis recovery tracking,
+    # a separate feature from the $1.2M objective) still use the cash-flow
+    # figures above and are unaffected by this override. Lazy import (not at
+    # module top) because realized_pnl.py itself imports FROM this module —
+    # a top-level import here would be circular.
+    from realized_pnl import get_realized_summary, _TARGET_LABEL_ALIASES
+    realized = get_realized_summary()
+    metrics["ytd_net_premium"] = realized["portfolio_ytd_realized"]
+    metrics["mtd_premium"] = realized["portfolio_mtd_realized"]
+    # realized_pnl.py's own account labels (e.g. "Robinhood Individual (9079)")
+    # differ from ACCOUNTS_CONFIG's (e.g. "Robinhood (Individual)") — translate
+    # here, once, so every consumer of per_account_realized below can do a
+    # plain ACCOUNTS_CONFIG-keyed lookup without knowing about this alias.
+    realized_per_account = {
+        _TARGET_LABEL_ALIASES.get(label, label): v
+        for label, v in realized["per_account"].items()
+    }
+
     assigned_book = sum(p["market_value"] for p in equity_positions)
     print(f"  Assigned equity book : ${assigned_book:,.0f}")
-    print(f"  YTD net premium      : ${metrics['ytd_net_premium']:,.0f} "
-          f"(credits ${metrics['ytd_credits']:,.0f} / debits ${metrics['ytd_debits']:,.0f})")
+    print(f"  YTD net premium (FIFO-realized, from realized_pnl.py): ${metrics['ytd_net_premium']:,.0f}")
     print(f"  YTD capture rate     : {metrics['ytd_capture_rate']}%")
-    print(f"  MTD premium          : ${metrics['mtd_premium']:,.0f}")
+    print(f"  MTD premium (FIFO-realized): ${metrics['mtd_premium']:,.0f}")
 
     cc_all_time = metrics.get("cc_all_time", {})
     cc_last_90d = metrics.get("cc_last_90d", {})
@@ -911,6 +936,18 @@ def build_snapshot() -> dict:
     print(f"  Open short puts      : {len(open_puts_list)}")
 
     today = date.today()
+    # Real per-account realized figures (FIFO-matched) for the master report's
+    # by-account section — replaces the old approach of just splitting the
+    # portfolio-wide total proportionally by balance, which attributed premium
+    # to accounts that didn't actually generate it.
+    per_account_realized = {
+        label: {
+            "ytd_realized": int(v["ytd_realized"]),
+            "mtd_realized": int(v["mtd_realized"]),
+            "annual_target": v["annual_target"],
+        }
+        for label, v in realized_per_account.items()
+    }
     return {
         "last_updated": today.isoformat(),
         "generated_by": "scripts/update_snapshot.py — do not edit manually",
@@ -923,6 +960,10 @@ def build_snapshot() -> dict:
         "month_to_date_equity_change": 0,
         "assigned_positions": assigned_list,
         "open_puts": open_puts_list,
+        "per_account_realized": per_account_realized,
+        "portfolio_target_covered": int(realized["portfolio_target_covered"]),
+        "portfolio_unmatched_amount": int(realized["portfolio_unmatched_amount"]),
+        "portfolio_unmatched_count": int(realized["portfolio_unmatched_count"]),
     }
 
 

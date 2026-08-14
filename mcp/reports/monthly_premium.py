@@ -16,7 +16,11 @@ from __future__ import annotations
 import glob
 import os
 import re
+import sys
 import pandas as pd
+
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(_ROOT, "scripts"))
 
 DATA_DIR = "/home/rahulvadera/projects/theta-lab/data/positions"
 
@@ -117,6 +121,20 @@ def _parse(fmt: str, path: str, acct_map: dict | None, mode: str = "net") -> dic
 
 
 def compute_monthly_premium(mode: str = "net") -> dict[str, pd.Series]:
+    if mode == "net":
+        # FIFO-realized, attributed to the CLOSE month — from
+        # scripts/realized_pnl.py, the corrected engine that replaced this
+        # module's own same-month cash-flow sum (which booked premium the
+        # month it was SOLD rather than the month a position actually
+        # closed, and didn't recognize assignment as a closing event at
+        # all — see realized_pnl.py's docstring for the full rationale).
+        from realized_pnl import get_realized_monthly_by_account
+        monthly = get_realized_monthly_by_account()
+        return {label: pd.Series(m).sort_index() for label, m in monthly.items() if m}
+
+    # "gross" mode (opening SELLS only) is a plain same-month cash-flow
+    # filter, not a P&L computation — no FIFO matching needed, so the
+    # original per-broker parsing is still correct here.
     result: dict[str, pd.Series] = {}
     for default_name, pat, fmt, acct_map in SOURCES:
         path = _latest(pat)
@@ -214,16 +232,22 @@ def render_trend_block(width: int = 120) -> list[str]:
             lines.append("-" * len(hdr))
         lines.append(f"{acct:<32}" + "".join(f"{net_tbl.loc[acct, m]:>11,.0f}" for m in months)
                      + f"{net_tbl.loc[acct, 'YTD']:>13,.0f}")
-    # Gross sold vs net kept vs buyback drag (monthly totals)
+    # Gross SOLD (this month's opens) vs Net REALIZED (this month's closes,
+    # FIFO-matched) — these are on DIFFERENT bases (open-month vs close-month),
+    # so their difference is NOT a "buyback drag" figure and isn't shown as
+    # one; a prior version of this line subtracted the two directly, which
+    # only made sense when both sides were same-month cash-flow sums.
     if gross_tbl is not None and "TOTAL" in gross_tbl.index:
-        lines += ["", f"{'  Gross SOLD (STO)':<32}" + "".join(f"{gross_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
+        lines += ["", f"{'  Gross SOLD (STO, opened this month)':<32}"
+                  + "".join(f"{gross_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
                   + f"{gross_tbl.loc['TOTAL', 'YTD']:>13,.0f}"]
-        lines.append(f"{'  Net KEPT':<32}" + "".join(f"{net_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
+        lines.append(f"{'  Net REALIZED (FIFO, closed this month)':<32}"
+                     + "".join(f"{net_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
                      + f"{net_tbl.loc['TOTAL', 'YTD']:>13,.0f}")
-        drag = [gross_tbl.loc['TOTAL', m] - net_tbl.loc['TOTAL', m] for m in months]
-        lines.append(f"{'  Buyback DRAG (rolling)':<32}" + "".join(f"{d:>11,.0f}" for d in drag)
-                     + f"{sum(drag):>13,.0f}")
-    lines += ["", "Net = STO/STC credits − BTC/BTO debits. High DRAG months = heavy rolling (premium given back).", ""]
+    lines += ["", "Net REALIZED = FIFO-matched close gain/loss, attributed to the month a position CLOSED",
+              "(assignment counts as a close). Gross SOLD = premium collected on positions OPENED that",
+              "month — a different basis, so Gross minus Net is not a meaningful 'drag' figure; a position",
+              "opened this month may not close for months. See scripts/realized_pnl.py for the full method.", ""]
 
     # ── LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market) ≈ Empower "portfolio value change" ──
     lines += ["─" * width,
@@ -237,8 +261,10 @@ def render_trend_block(width: int = 120) -> list[str]:
         "  quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are",
         "  stale). Transactions give income; marks give value — you need both, from different exports.",
         "",
-        "  → Use EMPOWER for the authoritative total value. It reconciled to income at the YTD level",
-        "    (~$435K ≈ $438K), which validates the numbers.",
+        "  → Use EMPOWER for the authoritative total value. (A prior version of this note claimed a",
+        "    specific $435K/$438K reconciliation — that was against LENS 1's OLD same-month cash-flow",
+        "    total, not the FIFO-realized figure above; re-verify against Empower with today's numbers",
+        "    rather than trusting that stale comparison.)",
         "  → To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).",
         "",
               "WHY THEY DIVERGE MONTH-TO-MONTH:",

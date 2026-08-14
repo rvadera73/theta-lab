@@ -81,7 +81,10 @@ from update_snapshot import (
 )
 from report_utils import option_market_price
 from yahoo_price_fetcher import fetch_prices
-from unified_master_report_production import ACCOUNTS_CONFIG, MONTHLY_TARGET_NET_BASE
+# From accounts_config directly (NOT unified_master_report_production) — that
+# module imports this one's get_realized_summary() as its single source of
+# truth for realized P&L, so importing back from it here would be circular.
+from accounts_config import ACCOUNTS_CONFIG, MONTHLY_TARGET_NET_BASE
 
 # ACCOUNTS_CONFIG's Robinhood labels differ from this module's (which include
 # the account-number suffix used elsewhere in this session's work) — map
@@ -587,7 +590,13 @@ def _print_account(acct, equity_prices):
     return opt_ytd, eq_ytd, opt_unrealized, eq_unrealized
 
 
-def main():
+def _build_accounts():
+    """Parse every broker's transactions and FIFO-match option + equity
+    events, with no live-price fetch and no printing. Shared by main()'s
+    full report and by get_realized_summary() — the structured, no-print
+    entry point other modules (update_snapshot.py, monthly_premium.py, the
+    unified master report) should import instead of recomputing their own,
+    inevitably-diverging version of "realized P&L"."""
     accounts = []
 
     for label, path in find_schwab_transactions().items():
@@ -606,6 +615,90 @@ def main():
     for label, path in find_robinhood_transactions().items():
         opt_ev, eq_ev = robinhood_events(path)
         accounts.append(_gather("ROBINHOOD", label, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_robinhood_key))
+
+    return accounts
+
+
+def get_realized_summary():
+    """Structured, no-print summary of realized OPTION-level P&L — per
+    account and portfolio-wide — the single source of truth for the $1.2M
+    objective. No live-price fetch (only needs transaction history), so this
+    is cheap enough to call from update_snapshot.py on every run rather than
+    letting that script keep its own, separately-drifting cash-flow-sum
+    version of "realized premium."
+
+    Returns:
+      {
+        "as_of": "YYYY-MM-DD",
+        "per_account": {label: {"ytd_realized", "mtd_realized",
+                                 "annual_target", "unmatched_amount",
+                                 "unmatched_count"}},
+        "portfolio_ytd_realized": float,
+        "portfolio_mtd_realized": float,
+        "portfolio_target_covered": float,  # sum of accounts WITH a target (excludes Vanguard's option side)
+        "objective_annual": 1_200_000,
+        "portfolio_unmatched_amount": float,
+        "portfolio_unmatched_count": int,
+      }
+    """
+    accounts = _build_accounts()
+    opt_accounts = [a for a in accounts if a["has_opt"]]
+    today = date.today()
+    this_month = today.strftime("%Y-%m")
+    this_year = str(today.year)
+
+    per_account = {}
+    portfolio_ytd = portfolio_mtd = portfolio_target = 0.0
+    portfolio_unmatched_amt = 0.0
+    portfolio_unmatched_count = 0
+
+    for acct in opt_accounts:
+        ytd = sum(v for m, v in acct["opt_monthly"].items() if m.startswith(this_year))
+        mtd = acct["opt_monthly"].get(this_month, 0.0)
+        target = _annual_target(acct["label"])
+        per_account[acct["label"]] = {
+            "ytd_realized": ytd,
+            "mtd_realized": mtd,
+            "annual_target": target,
+            "unmatched_amount": acct["opt_unmatched_amt"],
+            "unmatched_count": acct["opt_unmatched"],
+        }
+        portfolio_ytd += ytd
+        portfolio_mtd += mtd
+        if target:
+            portfolio_target += target
+        portfolio_unmatched_amt += acct["opt_unmatched_amt"]
+        portfolio_unmatched_count += acct["opt_unmatched"]
+
+    return {
+        "as_of": today.isoformat(),
+        "per_account": per_account,
+        "portfolio_ytd_realized": portfolio_ytd,
+        "portfolio_mtd_realized": portfolio_mtd,
+        "portfolio_target_covered": portfolio_target,
+        "objective_annual": 1_200_000,
+        "portfolio_unmatched_amount": portfolio_unmatched_amt,
+        "portfolio_unmatched_count": portfolio_unmatched_count,
+    }
+
+
+def get_realized_monthly_by_account():
+    """Per-account, month-by-month FIFO-REALIZED option P&L (not a same-month
+    cash-flow sum) — {account_label: {month_str: amount}}, with labels
+    translated to ACCOUNTS_CONFIG's naming via _TARGET_LABEL_ALIASES. Used by
+    monthly_premium.py so its month-by-month table matches the corrected
+    $1.2M-objective numbers instead of recomputing its own (superseded)
+    same-month cash-flow sum — see this module's docstring for why that
+    methodology was replaced."""
+    accounts = _build_accounts()
+    return {
+        _TARGET_LABEL_ALIASES.get(a["label"], a["label"]): dict(a["opt_monthly"])
+        for a in accounts if a["has_opt"]
+    }
+
+
+def main():
+    accounts = _build_accounts()
 
     # Batch-fetch equity prices ONCE across every account's distinct tickers —
     # yahoo_price_fetcher has no persistent cache of its own (unlike
