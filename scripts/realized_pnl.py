@@ -24,11 +24,21 @@ Reuses the file-finders and low-level helpers from update_snapshot.py rather
 than duplicating them — this is a read-only reporting layer on top of that
 data, not a replacement for it.
 
-Known limitation: Vanguard's OPTION-side Symbol field is blank on most rows
-after the first leg of a contract (confirmed by direct file inspection this
-session), so Vanguard is excluded from OPTION-level FIFO matching — including
-it would risk silently wrong contract pairings. Vanguard's EQUITY-side Symbol
-field is a different, reliably-populated field and IS included.
+Known limitation: Vanguard's OPTION-side Symbol field (and its free-text
+Investment Name fallback) is blank on most option rows — not just "later
+legs" of a contract, confirmed by direct inspection to include many first
+legs too — so there is often no recoverable ticker/strike/expiry at all for
+a given row. Vanguard is excluded from OPTION-level FIFO matching entirely;
+no amount of matching cleverness fixes a value that isn't in the file.
+Vanguard's EQUITY-side Symbol field is a different, reliably-populated
+column and IS included.
+
+Unrealized P&L (still-open option lots, marked to current market price via
+mcp/reports/report_utils.py::option_market_price — already-proven code,
+reused rather than rebuilt) is included for Schwab/Fidelity/Robinhood, the
+same three brokers included in realized option-level P&L. This is what
+makes the "$1.2M objective" figure reflect premium already banked in the
+market's eyes, not just premium banked in a closed trade.
 
 Robinhood: no assignment mechanism was found in this data at all — expect
 near-zero equity-level activity there; this is an accurate reflection of the
@@ -39,16 +49,22 @@ import os
 import sys
 import csv
 import re
+import time
 from collections import defaultdict, deque
 from datetime import date
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(_ROOT, "scripts"))
+sys.path.insert(0, os.path.join(_ROOT, "mcp"))
+sys.path.insert(0, os.path.join(_ROOT, "mcp", "reports"))
 
 from update_snapshot import (
     find_schwab_transactions, find_fidelity_transactions,
     find_vanguard_transactions, find_robinhood_transactions,
     _clean, _parse_amount, _parse_date, _FIDELITY_ACCOUNT_LABELS,
+    _parse_option_symbol, _FIDELITY_POS_SYMBOL,
 )
+from report_utils import option_market_price
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +80,10 @@ from update_snapshot import (
 def fifo_realize(events):
     """events: list of (date, key, side, qty, amount) — side 'open'/'close'.
     Returns (monthly_realized: dict[str, float], monthly_closed_count: dict[str, int],
-    unmatched_qty: float, still_open_qty: float)."""
+    unmatched_qty: float, open_lots: list[(key, remaining_qty, credit_per_unit)]).
+    open_lots is the detail behind what used to be a bare "still_open_qty" count —
+    needed to compute unrealized P&L (current price vs. the credit already banked
+    on each specific still-open contract), not just know how many are open."""
     events = sorted(events, key=lambda e: e[0])
     queues = defaultdict(deque)  # key -> deque of [remaining_qty, per_unit_amount]
     monthly = defaultdict(float)
@@ -95,8 +114,79 @@ def fifo_realize(events):
             if remaining > 1e-9:
                 unmatched_qty += remaining
 
-    still_open_qty = sum(lot[0] for q in queues.values() for lot in q)
-    return monthly, monthly_n, unmatched_qty, still_open_qty
+    open_lots = [(key, lot[0], lot[1]) for key, q in queues.items() for lot in q]
+    return monthly, monthly_n, unmatched_qty, open_lots
+
+
+# ---------------------------------------------------------------------------
+# Unrealized P&L for still-open option lots — marks each to its current
+# market price via report_utils.option_market_price (proven, already used
+# elsewhere in this codebase; not rebuilt here). Per-broker functions turn a
+# FIFO key back into (underlying, expiry_iso, strike, option_type).
+# ---------------------------------------------------------------------------
+
+def _parse_schwab_key(key):
+    parsed = _parse_option_symbol(key)
+    if not parsed:
+        return None
+    return parsed["underlying"], parsed["expiry"], parsed["strike"], parsed["option_type"]
+
+
+def _parse_fidelity_key(key):
+    m = _FIDELITY_POS_SYMBOL.match(key)
+    if not m:
+        return None
+    expiry = date(2000 + int(m.group(2)), int(m.group(3)), int(m.group(4))).isoformat()
+    return m.group(1), expiry, float(m.group(6)), ("CALL" if m.group(5) == "C" else "PUT")
+
+
+def _parse_robinhood_key(key):
+    # Built by robinhood_events() as "TICKER MM/DD/YYYY TYPE STRIKE" — this
+    # module controls the format, so a plain split is enough, no regex needed.
+    parts = key.split()
+    if len(parts) != 4:
+        return None
+    ticker, date_str, opt_type, strike_str = parts
+    try:
+        m, d, y = date_str.split("/")
+        expiry = date(int(y), int(m), int(d)).isoformat()
+        return ticker, expiry, float(strike_str), opt_type
+    except (ValueError, IndexError):
+        return None
+
+
+def compute_unrealized(open_lots, parse_key_fn):
+    """open_lots: list[(key, qty, credit_per_unit)] from fifo_realize's 4th
+    return value. Returns (total_unrealized, priced_lot_count, failed_lot_count).
+    Failed lots (no exact strike match, fetch error, unparseable key) are
+    counted, not silently treated as zero — a data gap here should be visible,
+    not quietly understate the objective figure."""
+    total = 0.0
+    priced = failed = 0
+    seen_chains = set()
+    for key, qty, credit_per_unit in open_lots:
+        parsed = parse_key_fn(key)
+        if not parsed:
+            failed += 1
+            continue
+        underlying, expiry, strike, opt_type = parsed
+        chain_key = (underlying, expiry)
+        if chain_key not in seen_chains:
+            seen_chains.add(chain_key)
+            time.sleep(0.3)  # only throttle on a genuinely new (underlying, expiry) chain fetch
+        current = option_market_price(underlying, expiry, strike, opt_type)
+        if current is None:
+            failed += 1
+            continue
+        # option_market_price returns a PER-SHARE price; credit_per_unit is
+        # already a full per-CONTRACT dollar amount (the raw source Amount
+        # divided by contract qty) — multiply by the standard 100 multiplier
+        # before comparing, same convention already used by every other
+        # caller of this function (see report_utils.py's reconstruct_open_option_legs,
+        # which does `(mark or 0.0) * 100 * contracts`).
+        total += (credit_per_unit - current * 100) * qty
+        priced += 1
+    return total, priced, failed
 
 
 def _qty(row, col, default=1.0):
@@ -246,10 +336,10 @@ def robinhood_events(path):
 # Report
 # ---------------------------------------------------------------------------
 
-def _print_account(label, option_events, equity_events, note=""):
+def _print_account(label, option_events, equity_events, note="", parse_key_fn=None):
     print(f"\n{label}{('  — ' + note) if note else ''}")
-    opt_monthly, opt_n, opt_unmatched, opt_open = fifo_realize(option_events) if option_events is not None else ({}, {}, 0, 0)
-    eq_monthly, eq_n, eq_unmatched, eq_open = fifo_realize(equity_events) if equity_events is not None else ({}, {}, 0, 0)
+    opt_monthly, opt_n, opt_unmatched, opt_open = fifo_realize(option_events) if option_events is not None else ({}, {}, 0, [])
+    eq_monthly, eq_n, eq_unmatched, eq_open = fifo_realize(equity_events) if equity_events is not None else ({}, {}, 0, [])
 
     months = sorted(set(opt_monthly) | set(eq_monthly))
     months = [m for m in months if m.startswith("2026")]
@@ -261,33 +351,44 @@ def _print_account(label, option_events, equity_events, note=""):
         eq_ytd += e
         print(f"  {m:8}{o:>14,.2f}{e:>14,.2f}{o + e:>14,.2f}")
     print(f"  {'YTD':8}{opt_ytd:>14,.2f}{eq_ytd:>14,.2f}{opt_ytd + eq_ytd:>14,.2f}")
+
+    opt_unrealized = 0.0
     if option_events is not None:
-        print(f"  option: unmatched qty {opt_unmatched:.0f}, still-open qty {opt_open:.0f}")
+        opt_open_qty = sum(lot[1] for lot in opt_open)
+        print(f"  option: unmatched qty {opt_unmatched:.0f}, still-open qty {opt_open_qty:.0f}")
+        if parse_key_fn and opt_open:
+            opt_unrealized, priced, failed = compute_unrealized(opt_open, parse_key_fn)
+            print(f"  option unrealized (still-open, marked to market): ${opt_unrealized:,.2f} "
+                  f"({priced} priced, {failed} could not be priced)")
+            print(f"  option TOTAL toward objective (realized + unrealized): ${opt_ytd + opt_unrealized:,.2f}")
     if equity_events is not None:
-        print(f"  equity: unmatched qty {eq_unmatched:.0f}, still-open qty {eq_open:.0f}")
-    return opt_ytd, eq_ytd
+        eq_open_qty = sum(lot[1] for lot in eq_open)
+        print(f"  equity: unmatched qty {eq_unmatched:.0f}, still-open qty {eq_open_qty:.0f}")
+    return opt_ytd, eq_ytd, opt_unrealized
 
 
 def main():
-    grand_opt = grand_eq = 0.0
+    grand_opt = grand_eq = grand_unrealized = 0.0
 
     print("=" * 78)
     print("SCHWAB")
     print("=" * 78)
     for label, path in find_schwab_transactions().items():
         opt_ev, eq_ev = schwab_events(path)
-        o, e = _print_account(label, opt_ev, eq_ev, os.path.basename(path))
+        o, e, u = _print_account(label, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_schwab_key)
         grand_opt += o
         grand_eq += e
+        grand_unrealized += u
 
     print("\n" + "=" * 78)
     print("FIDELITY")
     print("=" * 78)
     for person, path in find_fidelity_transactions().items():
         for acct, (opt_ev, eq_ev) in fidelity_events(path).items():
-            o, e = _print_account(acct, opt_ev, eq_ev, os.path.basename(path))
+            o, e, u = _print_account(acct, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_fidelity_key)
             grand_opt += o
             grand_eq += e
+            grand_unrealized += u
 
     print("\n" + "=" * 78)
     print("VANGUARD — option-level excluded (unreliable contract identity in this")
@@ -296,7 +397,7 @@ def main():
     vanguard_file = find_vanguard_transactions()
     if vanguard_file:
         eq_ev = vanguard_equity_events(vanguard_file)
-        o, e = _print_account("Vanguard (Rahul)", None, eq_ev, os.path.basename(vanguard_file))
+        o, e, u = _print_account("Vanguard (Rahul)", None, eq_ev, os.path.basename(vanguard_file))
         grand_opt += o  # o is 0.0 here since option_events is None
         grand_eq += e
 
@@ -305,19 +406,23 @@ def main():
     print("=" * 78)
     for label, path in find_robinhood_transactions().items():
         opt_ev, eq_ev = robinhood_events(path)
-        o, e = _print_account(label, opt_ev, eq_ev, os.path.basename(path))
+        o, e, u = _print_account(label, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_robinhood_key)
         grand_opt += o
         grand_eq += e
+        grand_unrealized += u
 
     print("\n" + "=" * 78)
     print("GRAND TOTAL — ALL ACCOUNTS")
     print("=" * 78)
-    print(f"  Option-level total (tracks the $1.2M objective): ${grand_opt:,.2f}")
-    print(f"  Equity-level total (supplementary):               ${grand_eq:,.2f}")
-    print(f"  Combined:                                         ${grand_opt + grand_eq:,.2f}")
-    print("\n  Note: Vanguard option-level and any account's pre-file-history")
-    print("  positions are excluded/undercounted where flagged above — this total")
-    print("  is a floor, not a guaranteed-complete figure.")
+    print(f"  Realized option-level:                              ${grand_opt:,.2f}")
+    print(f"  Unrealized option-level (still-open, marked to market): ${grand_unrealized:,.2f}")
+    print(f"  TOTAL PROGRESS TOWARD $1.2M OBJECTIVE (realized + unrealized): ${grand_opt + grand_unrealized:,.2f}")
+    print(f"\n  Equity-level total (supplementary, NOT part of the objective): ${grand_eq:,.2f}")
+    print(f"  Combined realized (option + equity):                ${grand_opt + grand_eq:,.2f}")
+    print("\n  Note: Vanguard option-level, any account's pre-file-history positions,")
+    print("  and any option that couldn't be priced (see 'could not be priced' counts")
+    print("  above) are excluded/undercounted — this total is a floor, not a")
+    print("  guaranteed-complete figure.")
 
 
 if __name__ == "__main__":
