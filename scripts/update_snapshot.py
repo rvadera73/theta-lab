@@ -3,17 +3,26 @@ Auto-generate portfolio_snapshot.yaml from:
   - Schwab positions CSV  (holdings, open options)  — data/statements/
   - Schwab per-account Transactions CSVs (232/275/634)  — data/positions/
   - Fidelity per-person Accounts_History CSVs (Rahul/Rajul)  — data/positions/
-  - Robinhood activity CSVs  (UUID-named files)  — data/statements/
+  - Robinhood activity CSVs (Individual + Traditional IRA)  — data/positions/
 
 Vanguard is NOT included — no transaction-level Vanguard export exists yet
 (only position snapshots), so Vanguard premium doesn't feed this snapshot.
 Known, accepted gap — do not attempt to infer it from position deltas.
 
+Robinhood uses whatever full-history export is currently canonical in
+data/positions/ (robinhood_rahul_individual.csv / robinhood_rahul_traditional.csv
+— same files the main unified report already loads), even if it isn't freshly
+re-exported this cycle. Stale-but-full beats missing entirely; re-export when
+a current one is available (a partial/YTD-only export will silently produce
+wrong open positions elsewhere in the pipeline — see prefer_full_over_ytd in
+data/account_files.yaml — so don't drop in a YTD file just to "have something newer").
+
 Weekly workflow:
   1. Export positions from Schwab (Account A) → drop in data/statements/
   2. Export per-account transactions from Schwab (232/275/634) → data/positions/
   3. Export Accounts_History from Fidelity (Rahul + Rajul) → data/positions/
-  4. Download Robinhood activity CSV → drop in data/statements/  (optional, extends MTD)
+  4. Export Robinhood activity (full history, not YTD) → data/positions/  (optional
+     — reuses the last good file if skipped)
   5. python3 scripts/update_snapshot.py
   6. Set month_to_date_equity_change manually
   7. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
@@ -77,25 +86,27 @@ def find_fidelity_transactions() -> dict[str, str]:
     return found
 
 
-_RH_UUID_PAT = re.compile(
-    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.csv",
-    re.IGNORECASE,
-)
-
-def find_robinhood_csvs() -> list[str]:
-    """Find Robinhood activity CSVs (UUID-named files). Returns list sorted by size ascending
-    so the smaller Individual file comes before the larger IRA file."""
-    candidates = glob.glob(os.path.join(DATA_DIR, "*.csv"))
-    result = [f for f in candidates if _RH_UUID_PAT.match(os.path.basename(f))]
-    return sorted(result, key=os.path.getsize)
+_ROBINHOOD_FILES = {
+    "Robinhood Individual (9079)": "robinhood_rahul_individual.csv",
+    "Robinhood IRA (3600)": "robinhood_rahul_traditional.csv",
+}
 
 
-def _robinhood_account_label(filepath: str, all_rh_files: list[str]) -> str:
-    """Assign account label by relative file size: smallest = Individual (9079), largest = IRA (3600)."""
-    sorted_files = sorted(all_rh_files, key=os.path.getsize)
-    if len(sorted_files) >= 2:
-        return "Robinhood Individual (9079)" if filepath == sorted_files[0] else "Robinhood IRA (3600)"
-    return "Robinhood IRA (3600)"
+def find_robinhood_transactions() -> dict[str, str]:
+    """Canonical per-account Robinhood activity CSVs in data/positions/ (the same
+    files the main unified report already loads via open_positions_loader_v2.py).
+    Previously this script instead globbed UUID-named files in data/statements/
+    and guessed Individual-vs-IRA by relative file size — those files were stuck
+    at a 2026-05-03 export while the canonical ones here had already been
+    refreshed to 2026-07-31, so premium/YTD figures were needlessly ~3 months
+    staler than the data on hand. Filename-based labeling replaces the size
+    heuristic entirely."""
+    found = {}
+    for label, filename in _ROBINHOOD_FILES.items():
+        path = os.path.join(POSITIONS_DIR, filename)
+        if os.path.exists(path):
+            found[label] = path
+    return found
 
 
 def parse_robinhood_transactions(filepath: str, account_label: str) -> list[dict]:
@@ -506,9 +517,7 @@ def build_snapshot() -> dict:
         txns.extend(fid_txns)
 
     # Add ALL transactions from each Robinhood CSV as the canonical Robinhood source
-    rh_files = find_robinhood_csvs()
-    for rh_file in rh_files:
-        acct_label = _robinhood_account_label(rh_file, rh_files)
+    for acct_label, rh_file in find_robinhood_transactions().items():
         rh_txns = parse_robinhood_transactions(rh_file, account_label=acct_label)
         print(f"  Robinhood CSV ({acct_label}) — {os.path.basename(rh_file)}: {len(rh_txns)} option trades")
         txns.extend(rh_txns)
