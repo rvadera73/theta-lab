@@ -683,6 +683,7 @@ class OpenPositionsLoaderV2:
         position_groups = all_options.groupby(['account_name', 'ticker', 'contract_id'])
 
         open_positions_list = []
+        orphaned_closes = []  # net_qty != 0 but no opening leg in this file — likely a partial/YTD export
         for (account, ticker, symbol), group in position_groups:
             # Calculate net quantity
             net_qty = 0
@@ -748,6 +749,19 @@ class OpenPositionsLoaderV2:
             # Only include if:
             # 1. Net quantity is non-zero (position is open)
             # 2. Has at least one opening transaction (not just orphaned closes)
+            if net_qty != 0 and not has_opening:
+                # A close-side-only balance with no opening leg in this file means the
+                # export's date range doesn't cover this position's open — classic
+                # symptom of a YTD/partial export (see prefer_full_over_ytd in
+                # data/account_files.yaml). Previously this was dropped with zero
+                # signal; now it's surfaced so a bad Robinhood/Fidelity export doesn't
+                # silently produce an incomplete report.
+                orphaned_closes.append({
+                    'account_name': account, 'ticker': ticker, 'contract_id': symbol,
+                    'account_type': account_type, 'net_quantity': abs(net_qty),
+                    'transaction_count': len(group),
+                })
+                continue
             if net_qty != 0 and has_opening:
                 # Parse strike and option type from any row in the group
                 first_row = group.iloc[0]
@@ -772,6 +786,21 @@ class OpenPositionsLoaderV2:
             print(f"✓ Open positions by account type:")
             for acct_type, count in self.open_positions['account_type'].value_counts().items():
                 print(f"    {acct_type}: {count}")
+
+        if orphaned_closes:
+            by_type = defaultdict(int)
+            for oc in orphaned_closes:
+                by_type[oc['account_type']] += 1
+            print(f"\n⚠️  {len(orphaned_closes)} position(s) EXCLUDED — close-side activity with no "
+                  f"opening leg in the file(s) provided (likely a partial/YTD export, not a full "
+                  f"transaction history — see 'prefer_full_over_ytd' in data/account_files.yaml):")
+            for acct_type, count in by_type.items():
+                print(f"    {acct_type}: {count} — re-export a FULL history file for this account")
+            for oc in orphaned_closes[:10]:
+                print(f"      {oc['account_name']} / {oc['ticker']} / {oc['contract_id']} "
+                      f"(net qty {oc['net_quantity']}, {oc['transaction_count']} txns in file)")
+            if len(orphaned_closes) > 10:
+                print(f"      ... and {len(orphaned_closes) - 10} more")
 
     def _fetch_prices(self):
         """Fetch live prices for all tickers in open positions"""
