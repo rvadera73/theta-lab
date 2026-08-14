@@ -33,12 +33,27 @@ no amount of matching cleverness fixes a value that isn't in the file.
 Vanguard's EQUITY-side Symbol field is a different, reliably-populated
 column and IS included.
 
+Unrealized P&L is MARK-TO-MARKET throughout (current price vs. cost/credit
+basis) — a deliberate choice, not "assume every open position eventually
+realizes 100% of its premium." That optimistic alternative was considered
+and rejected: this account's own realized history already includes hundreds
+of early Buy-to-Close events, so "everything runs to expiration/assignment"
+is not how this trader actually operates, and would overstate the true
+picture. Mark-to-market is also what a brokerage's own unrealized-P&L
+display shows, so it's the like-for-like comparison. The intended use of
+the resulting deviation (large mark-to-market unrealized loss/gain on a
+specific position) is diagnostic — a signal to check whether a strategy or
+roll decision on that name is working, not a prediction of the final outcome.
+
 Unrealized P&L (still-open option lots, marked to current market price via
 mcp/reports/report_utils.py::option_market_price — already-proven code,
 reused rather than rebuilt) is included for Schwab/Fidelity/Robinhood, the
-same three brokers included in realized option-level P&L. This is what
-makes the "$1.2M objective" figure reflect premium already banked in the
-market's eyes, not just premium banked in a closed trade.
+same three brokers included in realized option-level P&L. Equity-level
+unrealized (still-open share lots, marked to current price via
+scripts/yahoo_price_fetcher.py — the same module the main unified report
+already depends on) uses the identical mark-to-market approach, batched
+once across every account's distinct tickers rather than fetched per
+account.
 
 Robinhood: no assignment mechanism was found in this data at all — expect
 near-zero equity-level activity there; this is an accurate reflection of the
@@ -65,6 +80,7 @@ from update_snapshot import (
     _parse_option_symbol, _FIDELITY_POS_SYMBOL,
 )
 from report_utils import option_market_price
+from yahoo_price_fetcher import fetch_prices
 
 
 # ---------------------------------------------------------------------------
@@ -185,6 +201,30 @@ def compute_unrealized(open_lots, parse_key_fn):
         # caller of this function (see report_utils.py's reconstruct_open_option_legs,
         # which does `(mark or 0.0) * 100 * contracts`).
         total += (credit_per_unit - current * 100) * qty
+        priced += 1
+    return total, priced, failed
+
+
+def compute_equity_unrealized(open_lots, price_dict):
+    """open_lots: list[(ticker, qty, cost_per_share)] from fifo_realize's 4th
+    return value on an equity event stream. price_dict: pre-fetched
+    {ticker: current_price} — batched once across every account by the
+    caller (main()), not fetched here, since the same ticker can appear in
+    multiple accounts and yahoo_price_fetcher.fetch_prices() has no
+    persistent cache of its own (unlike option_market_price, which does).
+    Mark-to-market: unrealized = (current_price - cost_per_share) * shares —
+    the opposite sign relationship from options, since equity cost is a
+    debit (negative in the raw data) and this is a LONG position, not short."""
+    total = 0.0
+    priced = failed = 0
+    for ticker, qty, cost_per_share in open_lots:
+        current = price_dict.get(ticker)
+        if not current:
+            failed += 1
+            continue
+        # cost_per_share is negative (it's a debit/cost in the raw signed
+        # data), so current + cost_per_share = current - abs(cost) = gain.
+        total += (current + cost_per_share) * qty
         priced += 1
     return total, priced, failed
 
@@ -336,11 +376,22 @@ def robinhood_events(path):
 # Report
 # ---------------------------------------------------------------------------
 
-def _print_account(label, option_events, equity_events, note="", parse_key_fn=None):
-    print(f"\n{label}{('  — ' + note) if note else ''}")
+def _gather(broker, label, option_events, equity_events, note="", parse_key_fn=None):
+    """Run FIFO once per account and stash everything needed to print +
+    compute unrealized later, without recomputing or re-fetching."""
     opt_monthly, opt_n, opt_unmatched, opt_open = fifo_realize(option_events) if option_events is not None else ({}, {}, 0, [])
     eq_monthly, eq_n, eq_unmatched, eq_open = fifo_realize(equity_events) if equity_events is not None else ({}, {}, 0, [])
+    return {
+        "broker": broker, "label": label, "note": note, "parse_key_fn": parse_key_fn,
+        "opt_monthly": opt_monthly, "opt_unmatched": opt_unmatched, "opt_open": opt_open,
+        "eq_monthly": eq_monthly, "eq_unmatched": eq_unmatched, "eq_open": eq_open,
+        "has_opt": option_events is not None, "has_eq": equity_events is not None,
+    }
 
+
+def _print_account(acct, equity_prices):
+    print(f"\n{acct['label']}{('  — ' + acct['note']) if acct['note'] else ''}")
+    opt_monthly, eq_monthly = acct["opt_monthly"], acct["eq_monthly"]
     months = sorted(set(opt_monthly) | set(eq_monthly))
     months = [m for m in months if m.startswith("2026")]
     opt_ytd = eq_ytd = 0.0
@@ -352,77 +403,89 @@ def _print_account(label, option_events, equity_events, note="", parse_key_fn=No
         print(f"  {m:8}{o:>14,.2f}{e:>14,.2f}{o + e:>14,.2f}")
     print(f"  {'YTD':8}{opt_ytd:>14,.2f}{eq_ytd:>14,.2f}{opt_ytd + eq_ytd:>14,.2f}")
 
-    opt_unrealized = 0.0
-    if option_events is not None:
+    opt_unrealized = eq_unrealized = 0.0
+    if acct["has_opt"]:
+        opt_open = acct["opt_open"]
         opt_open_qty = sum(lot[1] for lot in opt_open)
-        print(f"  option: unmatched qty {opt_unmatched:.0f}, still-open qty {opt_open_qty:.0f}")
-        if parse_key_fn and opt_open:
-            opt_unrealized, priced, failed = compute_unrealized(opt_open, parse_key_fn)
-            print(f"  option unrealized (still-open, marked to market): ${opt_unrealized:,.2f} "
+        print(f"  option: unmatched qty {acct['opt_unmatched']:.0f}, still-open qty {opt_open_qty:.0f}")
+        if acct["parse_key_fn"] and opt_open:
+            opt_unrealized, priced, failed = compute_unrealized(opt_open, acct["parse_key_fn"])
+            print(f"  option unrealized (mark-to-market, still-open): ${opt_unrealized:,.2f} "
                   f"({priced} priced, {failed} could not be priced)")
             print(f"  option TOTAL toward objective (realized + unrealized): ${opt_ytd + opt_unrealized:,.2f}")
-    if equity_events is not None:
+    if acct["has_eq"]:
+        eq_open = acct["eq_open"]
         eq_open_qty = sum(lot[1] for lot in eq_open)
-        print(f"  equity: unmatched qty {eq_unmatched:.0f}, still-open qty {eq_open_qty:.0f}")
-    return opt_ytd, eq_ytd, opt_unrealized
+        print(f"  equity: unmatched qty {acct['eq_unmatched']:.0f}, still-open qty {eq_open_qty:.0f}")
+        if eq_open:
+            eq_unrealized, priced, failed = compute_equity_unrealized(eq_open, equity_prices)
+            print(f"  equity unrealized (mark-to-market, still-open): ${eq_unrealized:,.2f} "
+                  f"({priced} priced, {failed} could not be priced)")
+            print(f"  equity TOTAL (realized + unrealized): ${eq_ytd + eq_unrealized:,.2f}")
+    return opt_ytd, eq_ytd, opt_unrealized, eq_unrealized
 
 
 def main():
-    grand_opt = grand_eq = grand_unrealized = 0.0
+    accounts = []
 
-    print("=" * 78)
-    print("SCHWAB")
-    print("=" * 78)
     for label, path in find_schwab_transactions().items():
         opt_ev, eq_ev = schwab_events(path)
-        o, e, u = _print_account(label, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_schwab_key)
-        grand_opt += o
-        grand_eq += e
-        grand_unrealized += u
+        accounts.append(_gather("SCHWAB", label, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_schwab_key))
 
-    print("\n" + "=" * 78)
-    print("FIDELITY")
-    print("=" * 78)
     for person, path in find_fidelity_transactions().items():
         for acct, (opt_ev, eq_ev) in fidelity_events(path).items():
-            o, e, u = _print_account(acct, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_fidelity_key)
-            grand_opt += o
-            grand_eq += e
-            grand_unrealized += u
+            accounts.append(_gather("FIDELITY", acct, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_fidelity_key))
 
-    print("\n" + "=" * 78)
-    print("VANGUARD — option-level excluded (unreliable contract identity in this")
-    print("export — see module docstring); equity-level included.")
-    print("=" * 78)
     vanguard_file = find_vanguard_transactions()
     if vanguard_file:
         eq_ev = vanguard_equity_events(vanguard_file)
-        o, e, u = _print_account("Vanguard (Rahul)", None, eq_ev, os.path.basename(vanguard_file))
-        grand_opt += o  # o is 0.0 here since option_events is None
-        grand_eq += e
+        accounts.append(_gather("VANGUARD", "Vanguard (Rahul)", None, eq_ev, os.path.basename(vanguard_file)))
 
-    print("\n" + "=" * 78)
-    print("ROBINHOOD")
-    print("=" * 78)
     for label, path in find_robinhood_transactions().items():
         opt_ev, eq_ev = robinhood_events(path)
-        o, e, u = _print_account(label, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_robinhood_key)
+        accounts.append(_gather("ROBINHOOD", label, opt_ev, eq_ev, os.path.basename(path), parse_key_fn=_parse_robinhood_key))
+
+    # Batch-fetch equity prices ONCE across every account's distinct tickers —
+    # yahoo_price_fetcher has no persistent cache of its own (unlike
+    # option_market_price), and the same ticker can easily appear in several
+    # accounts (e.g. a name wheeled across both Schwab and Fidelity).
+    all_equity_tickers = sorted({
+        ticker for acct in accounts for ticker, qty, _ in acct["eq_open"] if qty > 0
+    })
+    equity_prices = fetch_prices(all_equity_tickers) if all_equity_tickers else {}
+
+    grand_opt = grand_eq = grand_opt_unrealized = grand_eq_unrealized = 0.0
+    current_broker = None
+    for acct in accounts:
+        broker = acct["broker"]
+        if broker != current_broker:
+            print("\n" + "=" * 78)
+            print(broker + (" — option-level excluded (unreliable contract identity in this "
+                             "export — see module docstring); equity-level included."
+                             if broker == "VANGUARD" else ""))
+            print("=" * 78)
+            current_broker = broker
+        o, e, ou, eu = _print_account(acct, equity_prices)
         grand_opt += o
         grand_eq += e
-        grand_unrealized += u
+        grand_opt_unrealized += ou
+        grand_eq_unrealized += eu
 
     print("\n" + "=" * 78)
     print("GRAND TOTAL — ALL ACCOUNTS")
     print("=" * 78)
-    print(f"  Realized option-level:                              ${grand_opt:,.2f}")
-    print(f"  Unrealized option-level (still-open, marked to market): ${grand_unrealized:,.2f}")
-    print(f"  TOTAL PROGRESS TOWARD $1.2M OBJECTIVE (realized + unrealized): ${grand_opt + grand_unrealized:,.2f}")
-    print(f"\n  Equity-level total (supplementary, NOT part of the objective): ${grand_eq:,.2f}")
-    print(f"  Combined realized (option + equity):                ${grand_opt + grand_eq:,.2f}")
+    print(f"  Realized option-level:                                  ${grand_opt:,.2f}")
+    print(f"  Unrealized option-level (mark-to-market, still-open):   ${grand_opt_unrealized:,.2f}")
+    print(f"  TOTAL PROGRESS TOWARD $1.2M OBJECTIVE (realized + unrealized): ${grand_opt + grand_opt_unrealized:,.2f}")
+    print(f"\n  Realized equity-level (supplementary):                  ${grand_eq:,.2f}")
+    print(f"  Unrealized equity-level (mark-to-market, still-open):   ${grand_eq_unrealized:,.2f}")
+    print(f"  Equity TOTAL (supplementary, NOT part of the objective): ${grand_eq + grand_eq_unrealized:,.2f}")
     print("\n  Note: Vanguard option-level, any account's pre-file-history positions,")
-    print("  and any option that couldn't be priced (see 'could not be priced' counts")
-    print("  above) are excluded/undercounted — this total is a floor, not a")
-    print("  guaranteed-complete figure.")
+    print("  and any position that couldn't be priced (see 'could not be priced' counts")
+    print("  above) are excluded/undercounted — every total here is a floor, not a")
+    print("  guaranteed-complete figure. Mark-to-market unrealized reflects current")
+    print("  risk, not a prediction — a large unrealized swing on one name is a")
+    print("  prompt to review that specific position/roll, not a locked-in outcome.")
 
 
 if __name__ == "__main__":
