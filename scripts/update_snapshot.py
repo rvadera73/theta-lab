@@ -467,13 +467,19 @@ def parse_schwab_transactions(filepath: str, account_label: str) -> list[dict]:
 # Symbol looks like " -OKLO270319P40" (ticker + YYMMDD + P/C + strike).
 # ---------------------------------------------------------------------------
 
-# Only accounts tracked in ACCOUNTS_CONFIG (unified_master_report_production.py) — a
-# custodial "ROTH IRA for Minor" (225798148's sibling, 258240575) also appears in the
-# Rahul file but isn't a tracked account, so it's deliberately excluded, not guessed at.
+# The Rahul file's custodial "ROTH IRA for Minor" (258240575) was previously
+# excluded here as untracked/unconfirmed — confirmed by the trader to be a
+# real 5th Fidelity account (the roster has 5, not 4: Rahul, Rajul x2, the
+# 401K, and this one), with genuine 2026 option activity (SMCI/FMC/LAC
+# closes) that was silently missing from every realized-P&L total until now.
+# It appears to have been wound down (transferred out) around March-May 2026
+# — now sits at ~$3 cash — so its forward-looking target should be ~$0, but
+# its YTD-to-date realized activity is real and should count.
 _FIDELITY_ACCOUNT_LABELS = {
     "225798148": "Fidelity (Rahul)",
     "263508923": "Fidelity (Rajul — Rollover IRA)",
     "233461172": "Fidelity (Rajul — Roth IRA)",
+    "258240575": "Fidelity (Rahul — Roth IRA Minor)",
 }
 
 _FIDELITY_OPEN = re.compile(r"^YOU SOLD OPENING TRANSACTION\s+(PUT|CALL)\s*\((\w+)\)", re.IGNORECASE)

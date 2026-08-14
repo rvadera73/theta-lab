@@ -65,6 +65,13 @@ ACCOUNTS_CONFIG = {
     'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'monthly_target': 605},
     'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'monthly_target': 10236},
     'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'monthly_target': 0},
+    # The 5th Fidelity account (custodial "ROTH IRA for Minor", 258240575) —
+    # previously untracked entirely (see scripts/update_snapshot.py's
+    # _FIDELITY_ACCOUNT_LABELS). Confirmed real, had genuine 2026 option
+    # activity, wound down / transferred out ~March-May 2026, now ~$3 cash —
+    # monthly_target=0 like the 401K since there's no capital left to trade,
+    # not because it can't do options.
+    'Fidelity (Rahul — Roth IRA Minor)': {'balance': 3, 'margin': False, 'monthly_target': 0},
 }
 
 TOTAL_PORTFOLIO_BALANCE = sum(acc['balance'] for acc in ACCOUNTS_CONFIG.values())
