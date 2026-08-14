@@ -19,7 +19,7 @@ sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp/reports')
 from config import UNIVERSE, Tier, PERMANENT_EXITS
 from iv_rank import batch_iv_rank
 
-SRC = '/home/rahulvadera/projects/theta-lab/data/positions/arch/Portfolio-1 2026-06-26 (1).xlsx'
+SRC = '/home/rahulvadera/projects/theta-lab/data/portfolio/Portfolio-1 2026-08-14.xlsx'
 
 TIER_MAP = {}
 for tier, names in UNIVERSE.items():
