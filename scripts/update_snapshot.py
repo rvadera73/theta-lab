@@ -480,6 +480,14 @@ _FIDELITY_ACCOUNT_LABELS = {
     "263508923": "Fidelity (Rajul — Rollover IRA)",
     "233461172": "Fidelity (Rajul — Roth IRA)",
     "258240575": "Fidelity (Rahul — Roth IRA Minor)",
+    # The 401K's account number in this file is "3741R" (non-numeric), not the
+    # numeric ID pattern the other Fidelity accounts use — was silently
+    # excluded by the same "if not acct: continue" filter as every other gap
+    # in this dict. Currently only Contributions/Dividend/Exchanges/Realized
+    # Gain/Loss rows on mutual funds (no option activity), so this closes the
+    # gap without moving any $1.2M-relevant number — the account's target is
+    # already $0 in ACCOUNTS_CONFIG regardless.
+    "3741R": "Fidelity 401K (Rahul)",
 }
 
 _FIDELITY_OPEN = re.compile(r"^YOU SOLD OPENING TRANSACTION\s+(PUT|CALL)\s*\((\w+)\)", re.IGNORECASE)

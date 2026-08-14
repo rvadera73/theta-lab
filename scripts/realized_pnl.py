@@ -111,15 +111,35 @@ def _annual_target(label):
 def fifo_realize(events):
     """events: list of (date, key, side, qty, amount) — side 'open'/'close'.
     Returns (monthly_realized: dict[str, float], monthly_closed_count: dict[str, int],
-    unmatched_qty: float, open_lots: list[(key, remaining_qty, credit_per_unit)]).
+    unmatched_qty: float, open_lots: list[(key, remaining_qty, credit_per_unit)],
+    unmatched_amount: float).
     open_lots is the detail behind what used to be a bare "still_open_qty" count —
     needed to compute unrealized P&L (current price vs. the credit already banked
-    on each specific still-open contract), not just know how many are open."""
-    events = sorted(events, key=lambda e: e[0])
+    on each specific still-open contract), not just know how many are open.
+    unmatched_amount is the DOLLAR value of the unmatched portion of close events
+    (e.g. a Sell with no corresponding Buy on file, such as Robinhood shares
+    received via ACATI account transfer, which carries no cost-basis field at
+    all) — a bare quantity count hides that this can represent real six-figure
+    proceeds with literally no P&L attribution possible from this data; the
+    dollar figure makes that impossible to miss."""
+    # Sort by date, then opens before closes on the SAME date — source files
+    # carry no intraday timestamp, only a date, and same-day open+close pairs
+    # for the identical contract are common (a same-day round trip). Without
+    # this tie-break, Python's stable sort falls back to each file's raw row
+    # order, which has no relationship to real execution sequence: empirically
+    # confirmed this let a same-day STO+BTC pair (GEV 850C, Account A,
+    # 06/25/2026 — true net gain $86.15) sit as "still open" with the FULL
+    # $25,938.81 credit, because the close row happened to appear before the
+    # open row in the source file and found nothing queued to match against.
+    # Opens-first is the conservative default: it correctly nets same-day
+    # round trips (the dominant real case here) without affecting cross-day
+    # matches, which this tie-break never touches.
+    events = sorted(events, key=lambda e: (e[0], 0 if e[2] == "open" else 1))
     queues = defaultdict(deque)  # key -> deque of [remaining_qty, per_unit_amount]
     monthly = defaultdict(float)
     monthly_n = defaultdict(int)
     unmatched_qty = 0.0
+    unmatched_amount = 0.0
 
     for d, key, side, qty, amount in events:
         if qty <= 0:
@@ -144,9 +164,10 @@ def fifo_realize(events):
                 monthly_n[month] += 1
             if remaining > 1e-9:
                 unmatched_qty += remaining
+                unmatched_amount += remaining * per_unit
 
     open_lots = [(key, lot[0], lot[1]) for key, q in queues.items() for lot in q]
-    return monthly, monthly_n, unmatched_qty, open_lots
+    return monthly, monthly_n, unmatched_qty, open_lots, unmatched_amount
 
 
 # ---------------------------------------------------------------------------
@@ -172,12 +193,15 @@ def _parse_fidelity_key(key):
 
 
 def _parse_robinhood_key(key):
-    # Built by robinhood_events() as "TICKER MM/DD/YYYY TYPE STRIKE" — this
+    # Built by robinhood_events() as "TICKER MM/DD/YYYY TYPE STRIKE SIDE_TAG"
+    # (SIDE_TAG = SHORT/LONG, distinguishing STO/BTC from BTO/STC contracts on
+    # the same underlying+expiry+strike+type so they never cross-match) — this
     # module controls the format, so a plain split is enough, no regex needed.
+    # Only the first 4 fields matter for pricing; the tag is FIFO-matching-only.
     parts = key.split()
-    if len(parts) != 4:
+    if len(parts) not in (4, 5):
         return None
-    ticker, date_str, opt_type, strike_str = parts
+    ticker, date_str, opt_type, strike_str = parts[:4]
     try:
         m, d, y = date_str.split("/")
         expiry = date(int(y), int(m), int(d)).isoformat()
@@ -312,9 +336,24 @@ def fidelity_events(path):
             opt_events.append((d, symbol, "close", qty, amount))
         elif desc.startswith("ASSIGNED AS OF"):
             opt_events.append((d, symbol, "close", qty, 0.0))
-        elif desc.startswith("YOU BOUGHT ASSIGNED PUTS"):
+        # Substring match (not startswith) for the two assignment-equity rows —
+        # confirmed by direct inspection that some carry extra text before the
+        # marker (e.g. "YOU SOLD EX-DIV DATE 03/13/26 RECORD DATE 03/13/26
+        # ASSIGNED CALLS as of 2026-03-12 ALBEMARLE...") that broke the exact
+        # prefix match, silently dropping a real $9,500 equity close.
+        elif desc.startswith("YOU BOUGHT") and "ASSIGNED PUTS" in desc:
             eq_events.append((d, symbol, "open", qty, amount))
-        elif desc.startswith("YOU SOLD ASSIGNED CALLS"):
+        elif desc.startswith("YOU SOLD") and "ASSIGNED CALLS" in desc:
+            eq_events.append((d, symbol, "close", qty, amount))
+        # Generic plain equity trades (no option involved at all) — e.g.
+        # "YOU SOLD FMC CORP COM NEW (FMC)" — previously unhandled entirely,
+        # silently dropping real equity activity with zero trace (confirmed:
+        # $2,681.94 FMC, $1,119.97 FMC, $402.50 MIMEDX, $231.78 MEREO, plus
+        # smaller mutual-fund sells). Checked last so it never shadows the
+        # more specific option/assignment patterns above.
+        elif desc.startswith("YOU BOUGHT"):
+            eq_events.append((d, symbol, "open", qty, amount))
+        elif desc.startswith("YOU SOLD"):
             eq_events.append((d, symbol, "close", qty, amount))
     return by_account
 
@@ -372,13 +411,20 @@ def robinhood_events(path):
             raw_amount = (row.get("Amount") or "").strip().replace("(", "-").replace(")", "")
             amount = _parse_amount(raw_amount)
 
-            if trans_code in ("STO", "BTC"):
+            if trans_code in ("STO", "BTC", "BTO", "STC"):
                 desc = (row.get("Description") or "").strip().replace("\n", " ")
                 m = _RH_DESC.match(desc)
                 if not m:
                     continue
-                key = f"{m.group(1).upper()} {m.group(2)} {m.group(3).upper()} {m.group(4)}"
-                option_events.append((d, key, "open" if trans_code == "STO" else "close", qty, amount))
+                # Tag short (STO/BTC) vs long (BTO/STC) separately in the key —
+                # they're economically different positions on the same contract
+                # (this trader is short-premium by default, but a handful of
+                # real long round trips exist too) and must never cross-match:
+                # an STO-opened short lot must only close against BTC, never STC.
+                side_tag = "SHORT" if trans_code in ("STO", "BTC") else "LONG"
+                key = f"{m.group(1).upper()} {m.group(2)} {m.group(3).upper()} {m.group(4)} {side_tag}"
+                is_open = trans_code in ("STO", "BTO")
+                option_events.append((d, key, "open" if is_open else "close", qty, amount))
             elif trans_code in ("Buy", "Sell"):
                 instrument = (row.get("Instrument") or "").strip()
                 if not instrument:
@@ -394,12 +440,16 @@ def robinhood_events(path):
 def _gather(broker, label, option_events, equity_events, note="", parse_key_fn=None):
     """Run FIFO once per account and stash everything needed to print +
     compute unrealized later, without recomputing or re-fetching."""
-    opt_monthly, opt_n, opt_unmatched, opt_open = fifo_realize(option_events) if option_events is not None else ({}, {}, 0, [])
-    eq_monthly, eq_n, eq_unmatched, eq_open = fifo_realize(equity_events) if equity_events is not None else ({}, {}, 0, [])
+    opt_monthly, opt_n, opt_unmatched, opt_open, opt_unmatched_amt = (
+        fifo_realize(option_events) if option_events is not None else ({}, {}, 0, [], 0.0))
+    eq_monthly, eq_n, eq_unmatched, eq_open, eq_unmatched_amt = (
+        fifo_realize(equity_events) if equity_events is not None else ({}, {}, 0, [], 0.0))
     return {
         "broker": broker, "label": label, "note": note, "parse_key_fn": parse_key_fn,
         "opt_monthly": opt_monthly, "opt_unmatched": opt_unmatched, "opt_open": opt_open,
+        "opt_unmatched_amt": opt_unmatched_amt,
         "eq_monthly": eq_monthly, "eq_unmatched": eq_unmatched, "eq_open": eq_open,
+        "eq_unmatched_amt": eq_unmatched_amt,
         "has_opt": option_events is not None, "has_eq": equity_events is not None,
     }
 
@@ -415,7 +465,13 @@ def _print_realized_progress(accounts):
     confusing, misleadingly pessimistic headline)."""
     opt_accounts = [a for a in accounts if a["has_opt"]]
     all_months = sorted({m for a in opt_accounts for m in a["opt_monthly"] if m.startswith("2026")})
-    months_elapsed = len(all_months)
+    # True calendar months elapsed this year — NOT len(all_months). That would
+    # count only months with a recorded realized close anywhere in the
+    # portfolio, so a single quiet month with zero closes (not zero activity,
+    # just zero closes) would silently vanish from the denominator and
+    # inflate every account's "pace" projection with no diagnostic to catch
+    # it. Calendar time is the actual thing "pace toward year-end" needs.
+    months_elapsed = date.today().month
 
     print("=" * 90)
     print("REALIZED PROGRESS TOWARD $1.2M OBJECTIVE (option-level, cumulative by month)")
@@ -423,6 +479,8 @@ def _print_realized_progress(accounts):
 
     portfolio_cumulative_by_month = defaultdict(float)
     grand_realized = grand_target = grand_open_credit = 0.0
+    grand_unmatched_amt = 0.0
+    grand_unmatched_count = 0
 
     for acct in opt_accounts:
         target = _annual_target(acct["label"])
@@ -435,32 +493,37 @@ def _print_realized_progress(accounts):
             portfolio_cumulative_by_month[m] += v
             print(f"  {m:8}{v:>14,.2f}{cum:>16,.2f}")
         grand_realized += cum
+        grand_unmatched_amt += acct["opt_unmatched_amt"]
+        grand_unmatched_count += acct["opt_unmatched"]
 
-        # Gross premium already collected on still-open positions — this is
-        # real cash sitting in the account right now (you were paid the full
-        # credit the moment you sold), distinct from both realized (only
-        # counts CLOSED trades) and mark-to-market unrealized (nets off the
-        # current cost to buy back). Answers "how much have I actually
-        # generated, whether or not it's closed yet" — the ceiling if every
-        # open position eventually decays to zero/gets assigned with no
-        # early buyback; the mark-to-market section shows how much of that
-        # ceiling is currently at risk of giving some back.
-        open_credit = sum(credit * qty for _, qty, credit in acct["opt_open"])
-        grand_open_credit += open_credit
-        gross = cum + open_credit
-        print(f"  + gross premium still open (not yet closed, but already collected): ${open_credit:,.2f}")
-        print(f"  = TOTAL PREMIUM GENERATED YTD (closed + still-open): ${gross:,.2f}")
-
+        # THE headline number for this account — one bolded figure, not two
+        # competing ones. Everything else below is subordinate detail.
         if target:
             grand_target += target
             pace = (cum / months_elapsed * 12) if months_elapsed else 0.0
             pct = cum / target * 100
-            gross_pct = gross / target * 100
-            print(f"  YTD REALIZED: ${cum:,.2f} = {pct:.0f}% of ${target:,} target | pace: ${pace:,.0f}/yr")
-            print(f"  YTD GROSS (incl. still-open): ${gross:,.2f} = {gross_pct:.0f}% of ${target:,} target")
-            print(f"  (Gross is the ceiling, not a guarantee — some open positions will get bought back")
-            print(f"   early rather than run to expiration/assignment; see the risk diagnostic below for")
-            print(f"   how much of this open credit is currently at risk of being partly given back.)")
+            print(f"  >>> YTD REALIZED: ${cum:,.2f} = {pct:.0f}% of ${target:,} target | pace: ${pace:,.0f}/yr <<<")
+        else:
+            print(f"  >>> YTD REALIZED: ${cum:,.2f} <<<")
+
+        # Data-completeness caveat lives directly under the headline, not
+        # buried in a separate section — a reader skimming just this number
+        # should not be able to miss that some closes aren't reflected in it.
+        if acct["opt_unmatched"] > 0:
+            print(f"      ({acct['opt_unmatched']:.0f} closes couldn't be matched to an open in this file "
+                  f"(open predates this file's history window) — their net cash flow of "
+                  f"${acct['opt_unmatched_amt']:,.2f} is NOT included in the realized figure above; the true "
+                  f"YTD number could be higher or lower once those missing opens are accounted for.)")
+
+        # Gross premium (realized + full credit on still-open lots, as if
+        # every open position runs to expiration/assignment with no early
+        # buyback) — a subordinate reference line, NOT a second percentage.
+        # It's a ceiling, not a competing answer to "am I on track."
+        open_credit = sum(credit * qty for _, qty, credit in acct["opt_open"])
+        grand_open_credit += open_credit
+        print(f"      (For reference: +${open_credit:,.2f} gross premium still sitting in open positions "
+              f"= ${cum + open_credit:,.2f} total collected if everything runs its course — "
+              f"see the risk diagnostic below for how much of that is currently at risk.)")
 
     print("\n" + "-" * 90)
     print("PORTFOLIO — cumulative realized option P&L by month, all accounts")
@@ -471,16 +534,20 @@ def _print_realized_progress(accounts):
         print(f"  {m:8}{portfolio_cumulative_by_month[m]:>14,.2f}{cum:>16,.2f}")
     pace = (cum / months_elapsed * 12) if months_elapsed else 0.0
     vanguard_target = ACCOUNTS_CONFIG.get("Vanguard (Rahul)", {}).get("monthly_target", 0) * 12
-    gross_portfolio = cum + grand_open_credit
-    print(f"\n  YTD REALIZED: ${cum:,.2f} = {cum / 1_200_000 * 100:.1f}% of the $1.2M objective")
-    print(f"  + gross premium still open across all accounts (not yet closed): ${grand_open_credit:,.2f}")
-    print(f"  = TOTAL PREMIUM GENERATED YTD (closed + still-open): ${gross_portfolio:,.2f} "
-          f"= {gross_portfolio / 1_200_000 * 100:.1f}% of the $1.2M objective")
-    print(f"  Sum of per-account annual targets shown above: ${grand_target:,.0f}")
-    print(f"  (Short of $1.2M by ~${vanguard_target:,} — Vanguard's own target, excluded")
-    print("   from option-level tracking entirely per the data-quality issue above,")
-    print("   not a missing account.)")
-    print(f"  Pace if this rate continues through the year: ${pace:,.0f}")
+
+    print(f"\n  >>> YTD REALIZED: ${cum:,.2f} = {cum / 1_200_000 * 100:.1f}% of the $1.2M objective <<<")
+    if grand_unmatched_count > 0:
+        print(f"      ({grand_unmatched_count:.0f} closes across all accounts couldn't be matched to an open "
+              f"in their file (opens predate each file's history window) — their combined net cash flow of "
+              f"${grand_unmatched_amt:,.2f} is NOT included above; the true YTD figure could be higher or")
+        print(f"       lower once those missing opens are accounted for.)")
+    print(f"      (Vanguard's ~${vanguard_target:,}/yr target is NOT included above — its option data")
+    print("       can't be tracked at all, not a missing account. True objective coverage is")
+    print(f"       ${grand_target:,.0f} of the $1.2M target, {grand_target/1_200_000*100:.0f}%.)")
+    print(f"      (For reference: +${grand_open_credit:,.2f} gross premium still open across all accounts "
+          f"= ${cum + grand_open_credit:,.2f} total if everything runs its course — see the risk diagnostic")
+    print("       below for how much of that is currently at risk of being partly given back.)")
+    print(f"      Pace if this rate continues through the year: ${pace:,.0f}")
     print("=" * 90)
 
 
