@@ -422,7 +422,7 @@ def _print_realized_progress(accounts):
     print("=" * 90)
 
     portfolio_cumulative_by_month = defaultdict(float)
-    grand_realized = grand_target = 0.0
+    grand_realized = grand_target = grand_open_credit = 0.0
 
     for acct in opt_accounts:
         target = _annual_target(acct["label"])
@@ -435,12 +435,32 @@ def _print_realized_progress(accounts):
             portfolio_cumulative_by_month[m] += v
             print(f"  {m:8}{v:>14,.2f}{cum:>16,.2f}")
         grand_realized += cum
+
+        # Gross premium already collected on still-open positions — this is
+        # real cash sitting in the account right now (you were paid the full
+        # credit the moment you sold), distinct from both realized (only
+        # counts CLOSED trades) and mark-to-market unrealized (nets off the
+        # current cost to buy back). Answers "how much have I actually
+        # generated, whether or not it's closed yet" — the ceiling if every
+        # open position eventually decays to zero/gets assigned with no
+        # early buyback; the mark-to-market section shows how much of that
+        # ceiling is currently at risk of giving some back.
+        open_credit = sum(credit * qty for _, qty, credit in acct["opt_open"])
+        grand_open_credit += open_credit
+        gross = cum + open_credit
+        print(f"  + gross premium still open (not yet closed, but already collected): ${open_credit:,.2f}")
+        print(f"  = TOTAL PREMIUM GENERATED YTD (closed + still-open): ${gross:,.2f}")
+
         if target:
             grand_target += target
             pace = (cum / months_elapsed * 12) if months_elapsed else 0.0
             pct = cum / target * 100
-            print(f"  YTD: ${cum:,.2f} = {pct:.0f}% of ${target:,} annual target | "
-                  f"pace if this rate continues: ${pace:,.0f}/yr")
+            gross_pct = gross / target * 100
+            print(f"  YTD REALIZED: ${cum:,.2f} = {pct:.0f}% of ${target:,} target | pace: ${pace:,.0f}/yr")
+            print(f"  YTD GROSS (incl. still-open): ${gross:,.2f} = {gross_pct:.0f}% of ${target:,} target")
+            print(f"  (Gross is the ceiling, not a guarantee — some open positions will get bought back")
+            print(f"   early rather than run to expiration/assignment; see the risk diagnostic below for")
+            print(f"   how much of this open credit is currently at risk of being partly given back.)")
 
     print("\n" + "-" * 90)
     print("PORTFOLIO — cumulative realized option P&L by month, all accounts")
@@ -451,7 +471,11 @@ def _print_realized_progress(accounts):
         print(f"  {m:8}{portfolio_cumulative_by_month[m]:>14,.2f}{cum:>16,.2f}")
     pace = (cum / months_elapsed * 12) if months_elapsed else 0.0
     vanguard_target = ACCOUNTS_CONFIG.get("Vanguard (Rahul)", {}).get("monthly_target", 0) * 12
+    gross_portfolio = cum + grand_open_credit
     print(f"\n  YTD REALIZED: ${cum:,.2f} = {cum / 1_200_000 * 100:.1f}% of the $1.2M objective")
+    print(f"  + gross premium still open across all accounts (not yet closed): ${grand_open_credit:,.2f}")
+    print(f"  = TOTAL PREMIUM GENERATED YTD (closed + still-open): ${gross_portfolio:,.2f} "
+          f"= {gross_portfolio / 1_200_000 * 100:.1f}% of the $1.2M objective")
     print(f"  Sum of per-account annual targets shown above: ${grand_target:,.0f}")
     print(f"  (Short of $1.2M by ~${vanguard_target:,} — Vanguard's own target, excluded")
     print("   from option-level tracking entirely per the data-quality issue above,")
