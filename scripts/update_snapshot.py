@@ -62,6 +62,23 @@ _SCHWAB_TXN_PATTERNS = {
     "Account C (634)": "Designated_Bene_Individual_XXX634_Transactions_*.csv",
 }
 
+_SCHWAB_POSITION_FILES = {
+    "Account A (232)": "schwab_rahul_individual.csv",
+    "Account B (275)": "schwab_pinky_ira.csv",
+    "Account C (634)": "schwab_designated-bene.csv",
+}
+
+
+def find_schwab_positions() -> dict[str, str]:
+    """Canonical per-account Schwab position-snapshot CSVs in data/positions/
+    (the same files the main unified report already loads)."""
+    found = {}
+    for label, filename in _SCHWAB_POSITION_FILES.items():
+        path = os.path.join(POSITIONS_DIR, filename)
+        if os.path.exists(path):
+            found[label] = path
+    return found
+
 
 def find_schwab_transactions() -> dict[str, str]:
     """Newest per-account Schwab Transactions CSV, keyed by canonical account label."""
@@ -77,6 +94,23 @@ _FIDELITY_HISTORY_PATTERNS = {
     "rahul": "Accounts_History_fidelity_Rahul.csv",
     "rajul": "Accounts_History_fidelity_Rajul.csv",
 }
+
+_FIDELITY_POSITION_FILES = {
+    "rahul": "fidelity_rahul.csv",
+    "rajul": "fidelity_rajul.csv",
+}
+
+
+def find_fidelity_positions() -> dict[str, str]:
+    """Canonical per-person Fidelity position-snapshot CSV (the same files the
+    main unified report already loads) — a different file/format than the
+    Accounts_History transaction files above."""
+    found = {}
+    for person, filename in _FIDELITY_POSITION_FILES.items():
+        path = os.path.join(POSITIONS_DIR, filename)
+        if os.path.exists(path):
+            found[person] = path
+    return found
 
 
 def find_fidelity_transactions() -> dict[str, str]:
@@ -186,6 +220,83 @@ def parse_robinhood_transactions(filepath: str, account_label: str) -> list[dict
     return rows
 
 
+def parse_robinhood_positions(filepath: str, account_label: str) -> tuple[list[dict], list[dict]]:
+    """Robinhood has no position-snapshot export — net the SAME full-history file
+    parse_robinhood_transactions() reads into current open positions instead.
+    Reliable here specifically because this file is confirmed full history back
+    to account inception (verified earlier this session), unlike a partial/YTD
+    export where this kind of netting silently produces wrong results (see the
+    orphaned-closes warning in open_positions_loader_v2.py)."""
+    contracts = defaultdict(lambda: {"short": 0.0, "long": 0.0})
+    stock_shares = defaultdict(float)
+
+    with open(filepath, newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            trans_code = (row.get("Trans Code") or "").strip()
+            try:
+                qty = float(_clean(row.get("Quantity") or "0") or "0")
+            except ValueError:
+                continue
+
+            if trans_code in ("STO", "BTC", "BTO", "STC"):
+                desc = (row.get("Description") or "").strip().replace("\n", " ")
+                m = re.match(r"^(\w+)\s+(\d{1,2}/\d{1,2}/\d{4})\s+(Put|Call)\s+\$([\d.]+)", desc, re.IGNORECASE)
+                if not m:
+                    continue
+                expiry = _parse_date(m.group(2))
+                if not expiry:
+                    continue
+                key = (m.group(1).upper(), expiry.isoformat(), float(m.group(4)),
+                       "CALL" if m.group(3).upper() == "CALL" else "PUT")
+                if trans_code == "STO":
+                    contracts[key]["short"] += qty
+                elif trans_code == "BTC":
+                    contracts[key]["short"] -= qty
+                elif trans_code == "BTO":
+                    contracts[key]["long"] += qty
+                elif trans_code == "STC":
+                    contracts[key]["long"] -= qty
+            elif trans_code in ("Buy", "Sell"):
+                instrument = (row.get("Instrument") or "").strip()
+                if not instrument:
+                    continue
+                stock_shares[instrument] += qty if trans_code == "Buy" else -qty
+
+    options = []
+    for (underlying, expiry, strike, opt_type), qtys in contracts.items():
+        if qtys["short"] > 0.5:  # only short options feed open_puts, matching every other source
+            options.append({
+                "underlying": underlying,
+                "expiry": expiry,
+                "strike": strike,
+                "option_type": opt_type,
+                "account": account_label,
+                "contracts": int(round(qtys["short"])),
+            })
+
+    equity = []
+    net_shares = {t: s for t, s in stock_shares.items() if s > 0.5}
+    if net_shares:
+        # Only place a live price fetch enters this script — scoped to just the
+        # handful of tickers with a real net Robinhood equity position, not the
+        # whole book. A transaction log has no current-price field to read.
+        from yahoo_price_fetcher import fetch_prices
+        prices = fetch_prices(list(net_shares.keys()))
+        for ticker, shares in net_shares.items():
+            price = prices.get(ticker, 0.0)
+            equity.append({
+                "account": account_label,
+                "symbol": ticker,
+                "shares": int(shares),
+                "cost_basis_per_share": 0.0,  # not derivable from a transaction log without full lot tracking
+                "current_price": price,
+                "market_value": round(shares * price, 0),
+                "unrealized_loss": 0.0,
+            })
+    return equity, options
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -242,9 +353,14 @@ def _extract_account_from_header(line: str) -> str:
     return f"Schwab Individual{suffix}"
 
 
-def parse_positions(filepath: str) -> tuple[list[dict], list[dict]]:
+def parse_positions(filepath: str, account_label: str | None = None) -> tuple[list[dict], list[dict]]:
+    """account_label overrides the free-text-derived label from the file's own
+    header line — needed when calling this on one of the three known canonical
+    per-account files, since _extract_account_from_header's text matching
+    doesn't reliably distinguish "Designated Bene Individual" from a plain
+    "Individual" account (both contain "individual")."""
     equity, options = [], []
-    current_account = "Schwab"
+    current_account = account_label or "Schwab"
 
     with open(filepath, newline="", encoding="utf-8-sig") as f:
         lines = f.readlines()
@@ -253,7 +369,8 @@ def parse_positions(filepath: str) -> tuple[list[dict], list[dict]]:
     while i < len(lines):
         line = lines[i]
         if "positions for account" in line.lower():
-            current_account = _extract_account_from_header(line)
+            if not account_label:
+                current_account = _extract_account_from_header(line)
             i += 1
             continue
 
@@ -407,6 +524,69 @@ def parse_fidelity_transactions(filepath: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Fidelity Portfolio_Positions CSV parser (current holdings snapshot — a
+# DIFFERENT file/format than Accounts_History above). Same column shape as
+# the transaction file's option Symbol: " -GEV270319P700" (ticker, YYMMDD,
+# P/C, strike). Confirmed by direct read of fidelity_rahul.csv: negative
+# Quantity = short. Returns the same (equity, options) shape as
+# parse_positions() so both feed build_snapshot() identically.
+# ---------------------------------------------------------------------------
+
+_FIDELITY_POS_SYMBOL = re.compile(r"^\s*-?([A-Z]+)(\d{2})(\d{2})(\d{2})([PC])([\d.]+)$")
+
+
+def parse_fidelity_positions(filepath: str) -> tuple[list[dict], list[dict]]:
+    equity, options = [], []
+    with open(filepath, newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Note: this file's header is "Account number" (lowercase n) — the
+            # Accounts_History transaction file uses "Account Number" (capital N).
+            acct_num = _clean(row.get("Account number") or "")
+            account_label = _FIDELITY_ACCOUNT_LABELS.get(acct_num)
+            if not account_label:
+                continue
+
+            symbol = (row.get("Symbol") or "").strip()
+            try:
+                qty = float(_clean(row.get("Quantity") or "0") or "0")
+            except ValueError:
+                continue
+            mkt_val = _parse_amount(row.get("Current value") or "0")
+
+            sym_match = _FIDELITY_POS_SYMBOL.match(symbol)
+            if sym_match:
+                if qty >= 0:
+                    continue  # only short options feed open_puts, matching every other source
+                expiry = date(2000 + int(sym_match.group(2)), int(sym_match.group(3)), int(sym_match.group(4)))
+                options.append({
+                    "underlying": sym_match.group(1),
+                    "expiry": expiry.isoformat(),
+                    "strike": float(sym_match.group(6)),
+                    "option_type": "CALL" if sym_match.group(5) == "C" else "PUT",
+                    "account": account_label,
+                    "contracts": int(abs(qty)),
+                })
+            elif qty > 0 and not symbol.endswith("**"):
+                # "Type" is "Cash" on every row in this account regardless of content
+                # (confirmed against real data — equity, options, and the actual money
+                # market fund all show Type=Cash) — not a usable equity/cash signal.
+                # Fidelity's core cash-sweep funds (FDRXX**, SPAXX**) are the only
+                # exclusion actually needed, identified by their trailing "**".
+                cost_per_share = _parse_amount(row.get("Average cost basis") or "0")
+                equity.append({
+                    "account": account_label,
+                    "symbol": symbol,
+                    "shares": int(qty),
+                    "cost_basis_per_share": round(cost_per_share, 2),
+                    "current_price": _parse_amount(row.get("Last price") or "0"),
+                    "market_value": round(mkt_val, 0),
+                    "unrealized_loss": round(abs(min(0, mkt_val - cost_per_share * qty)), 0),
+                })
+    return equity, options
+
+
+# ---------------------------------------------------------------------------
 # Vanguard transaction history parser.
 # The Vanguard export (vanguard_rahul.csv) is actually THREE concatenated
 # sections, each with its own header line: (1) a small current-holdings
@@ -467,6 +647,60 @@ def parse_vanguard_transactions(filepath: str, account_label: str) -> list[dict]
             "_desc": (row.get("Investment Name") or row.get("Transaction Description") or "").strip(),
         })
     return rows
+
+
+# ---------------------------------------------------------------------------
+# Vanguard position-snapshot parser — section 1 of the same file (see module
+# docstring). Header: Account Number, Investment Name, Symbol, Shares,
+# Share Price, Total Value. Symbol here has spaces: "ABNB 270319 C 140.00"
+# (unlike section 2's sometimes-blank Symbol). Negative Shares = short. No
+# cost-basis field in this section — cost_basis_per_share left at 0.0, which
+# only affects the (currently unused-for-Vanguard) assigned_positions display,
+# not open_puts.
+# ---------------------------------------------------------------------------
+
+_VANGUARD_POS_SYMBOL = re.compile(r"^([A-Z]+)\s+(\d{2})(\d{2})(\d{2})\s+([PC])\s+([\d.]+)$")
+
+
+def parse_vanguard_positions(filepath: str, account_label: str) -> tuple[list[dict], list[dict]]:
+    equity, options = [], []
+    with open(filepath, newline="", encoding="utf-8-sig") as f:
+        lines = f.readlines()
+
+    end = next((i for i, l in enumerate(lines) if not l.strip()), len(lines))
+    reader = csv.DictReader(lines[:end])
+    for row in reader:
+        symbol = (row.get("Symbol") or "").strip()
+        try:
+            shares = float(_clean(row.get("Shares") or "0") or "0")
+        except ValueError:
+            continue
+        mkt_val = _parse_amount(row.get("Total Value") or "0")
+
+        sym_match = _VANGUARD_POS_SYMBOL.match(symbol)
+        if sym_match:
+            if shares >= 0:
+                continue  # short-only, matching every other source
+            expiry = date(2000 + int(sym_match.group(2)), int(sym_match.group(3)), int(sym_match.group(4)))
+            options.append({
+                "underlying": sym_match.group(1),
+                "expiry": expiry.isoformat(),
+                "strike": float(sym_match.group(6)),
+                "option_type": "CALL" if sym_match.group(5) == "C" else "PUT",
+                "account": account_label,
+                "contracts": int(abs(shares)),
+            })
+        elif shares > 0:
+            equity.append({
+                "account": account_label,
+                "symbol": symbol,
+                "shares": int(shares),
+                "cost_basis_per_share": 0.0,
+                "current_price": _parse_amount(row.get("Share Price") or "0"),
+                "market_value": round(mkt_val, 0),
+                "unrealized_loss": 0.0,
+            })
+    return equity, options
 
 
 # ---------------------------------------------------------------------------
@@ -551,20 +785,10 @@ def compute_metrics(txns: list[dict], equity_symbols: list[str]) -> dict:
 # ---------------------------------------------------------------------------
 
 def build_snapshot() -> dict:
-    # Use latest Schwab positions export (Individual-Positions*.csv format)
-    # Note: "Portfolio_Positions*.csv" files are typically from Fidelity, not Schwab
-    # NOTE: this is a SEPARATE, pre-existing staleness gap from the Empower removal
-    # below — data/statements/ hasn't had a fresh Individual-Positions*.csv in months,
-    # so assigned_equity_book_value/open_puts may still be stale even after this fix.
-    pos_file = find_latest("Individual-Positions*.csv")
+    schwab_pos_files = find_schwab_positions()
     schwab_txn_files = find_schwab_transactions()
     fidelity_txn_files = find_fidelity_transactions()
 
-    if not pos_file:
-        print("ERROR: No Schwab positions CSV found.")
-        print("Export from Schwab Account A: Accounts → Positions → Export to CSV")
-        print("Expected filename pattern: Individual-Positions*.csv")
-        sys.exit(1)
     if not schwab_txn_files:
         print("ERROR: No Schwab per-account Transactions CSVs found in data/positions/.")
         print("Export from each Schwab account: Accounts → Transactions → Export to CSV")
@@ -574,11 +798,35 @@ def build_snapshot() -> dict:
         print("Export from Fidelity: Accounts → Activity & Orders → Export → Accounts_History")
         sys.exit(1)
 
-    print(f"  Positions  : {os.path.basename(pos_file)}")
+    # Equity holdings + open short puts, from every account's own position
+    # snapshot (or, for Robinhood, netted from its full transaction history —
+    # see parse_robinhood_positions). Each account contributes independently;
+    # a missing single source doesn't block the others.
+    equity_positions, short_options = [], []
+    for label, path in schwab_pos_files.items():
+        eq, opt = parse_positions(path, account_label=label)
+        equity_positions += eq
+        short_options += opt
+        print(f"  Schwab positions ({label}) — {os.path.basename(path)}: {len(eq)} equity, {len(opt)} short options")
+    for person, pos_path in find_fidelity_positions().items():
+        eq, opt = parse_fidelity_positions(pos_path)
+        equity_positions += eq
+        short_options += opt
+        print(f"  Fidelity positions ({person}) — {os.path.basename(pos_path)}: {len(eq)} equity, {len(opt)} short options")
+    vanguard_pos_file = find_vanguard_transactions()  # same file, position section
+    if vanguard_pos_file:
+        eq, opt = parse_vanguard_positions(vanguard_pos_file, "Vanguard (Rahul)")
+        equity_positions += eq
+        short_options += opt
+        print(f"  Vanguard positions — {os.path.basename(vanguard_pos_file)}: {len(eq)} equity, {len(opt)} short options")
+    for acct_label, rh_file in find_robinhood_transactions().items():
+        eq, opt = parse_robinhood_positions(rh_file, acct_label)
+        equity_positions += eq
+        short_options += opt
+        print(f"  Robinhood positions ({acct_label}, netted) — {os.path.basename(rh_file)}: {len(eq)} equity, {len(opt)} short options")
 
-    equity_positions, short_options = parse_positions(pos_file)
     equity_symbols = [p["symbol"] for p in equity_positions]
-    print(f"  Equity: {len(equity_positions)} positions | Options: {len(short_options)} short contracts")
+    print(f"  Total equity: {len(equity_positions)} positions | Total short options: {len(short_options)} contracts")
 
     txns = []
     for label, path in schwab_txn_files.items():
