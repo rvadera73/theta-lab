@@ -127,6 +127,12 @@ class UnifiedReportProduction:
 
         # Get IV rank for top tickers
         self.iv_ranks = batch_iv_rank(self.position_summary.head(25).index.tolist())
+        # A failed/incomplete fetch can leave iv_rank explicitly None rather than
+        # absent — normalize here once instead of guarding every .get('iv_rank', 0)
+        # call site downstream (comparisons/formatting against None crash otherwise).
+        for _iv_data in self.iv_ranks.values():
+            if _iv_data.get("iv_rank") is None:
+                _iv_data["iv_rank"] = 0
 
         # Get sector analysis
         self.sector_summary, self.sector_analysis_output, self.sector_rotation_output = batch_get_sector_analysis(
