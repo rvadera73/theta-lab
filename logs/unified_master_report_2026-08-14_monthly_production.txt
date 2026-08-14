@@ -14,10 +14,10 @@ SECTION 0: ACCOUNT HEALTH, FRAMEWORK STATUS & GAP ANALYSIS
 
 CONSOLIDATED PORTFOLIO SNAPSHOT:
 ├─ Total Portfolio Balance:      $2,341,491
-├─ Total notional exposure:      $   5,997,684
-├─ Total option requirement:     $   2,057,016
-├─ Positions with short puts:    87
-├─ Positions with short calls:   29
+├─ Total notional exposure:      $   6,449,782
+├─ Total option requirement:     $   2,469,454
+├─ Positions with short puts:    88
+├─ Positions with short calls:   30
 ├─ YTD Net Premium:              $     451,431  (live from transactions)
 ├─ Month-to-Date Premium:        $      11,273
 └─ Snapshot currency:            2026-08-14
@@ -73,28 +73,28 @@ PER-ACCOUNT BREAKDOWN:
 ------------------------------------------------------------------------------------------------------------------------
 Account                                Balance      %       Notional      Opt Req       Type          Status
 ------------------------------------------------------------------------------------------------------------------------
-Account A (232)                $       403,000  17.2% $    4,046,220 $    728,320     Margin        ✅ MARGIN
+Account A (232)                $       403,000  17.2% $    4,049,586 $    728,925     Margin        ✅ MARGIN
   ├─ 139 option positions | Monthly target: $18,750 | Equity: ADBE 300sh, AXON 200sh, XYZ 200sh, COIN 100sh, ETSY 100sh +10 more
-Account B (275)                $       261,000  11.1% $      367,636 $    288,750   Cash-Sec            ✅ OK
+Account B (275)                $       261,000  11.1% $      367,811 $    288,750   Cash-Sec            ✅ OK
   ├─ 22 option positions | Monthly target: $12,144 | Equity: FMC 100sh, CRM 100sh
-Account C (634)                $       266,000  11.4% $      354,346 $    214,400   Cash-Sec            ✅ OK
+Account C (634)                $       266,000  11.4% $      355,757 $    214,400   Cash-Sec            ✅ OK
   ├─ 24 option positions | Monthly target: $12,377 | Equity: ABNB 100sh, INMD 100sh, NKE 100sh, NIO 200sh, TWLO 524sh
-Fidelity (Rahul)               $       498,560  21.3% $      693,158 $    616,002   Cash-Sec            ✅ OK
+Fidelity (Rahul)               $       498,560  21.3% $      693,736 $    616,632   Cash-Sec            ✅ OK
   ├─ 43 option positions | Monthly target: $23,196 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, NIO 800sh, CRM 200sh
-Fidelity (Rajul — Roth IRA)    $        39,158   1.7% $       53,788 $     48,394   Cash-Sec            ✅ OK
+Fidelity (Rajul — Roth IRA)    $        39,158   1.7% $       53,809 $     48,526   Cash-Sec            ✅ OK
   ├─ 8 option positions | Monthly target: $1,822 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
-Fidelity (Rajul — Rollover IRA) $       128,081   5.5% $      182,487 $    161,150   Cash-Sec            ✅ OK
+Fidelity (Rajul — Rollover IRA) $       128,081   5.5% $      182,647 $    161,150   Cash-Sec            ✅ OK
   ├─ 13 option positions | Monthly target: $5,959
-Vanguard (Rahul)               $       320,492  13.7% $            0 $          0   Cash-Sec            ✅ OK
-  └─ No open positions | Monthly target: $14,912
-Robinhood (Individual)         $        13,000   0.6% $       20,311 $          0   Cash-Sec            ✅ OK
+Vanguard (Rahul)               $       320,492  13.7% $      446,022 $    411,072   Cash-Sec            ✅ OK
+  ├─ 25 option positions | Monthly target: $14,912
+Robinhood (Individual)         $        13,000   0.6% $       20,359 $          0   Cash-Sec            ✅ OK
   ├─ 4 option positions | Monthly target: $605
-Robinhood (Traditional IRA)    $       220,000   9.4% $      279,738 $          0   Cash-Sec            ✅ OK
+Robinhood (Traditional IRA)    $       220,000   9.4% $      280,056 $          0   Cash-Sec            ✅ OK
   ├─ 17 option positions | Monthly target: $10,236
 Fidelity 401K (Rahul)          $       192,200   8.2% $            0 $          0   Cash-Sec            ✅ OK
   └─ No open positions | Monthly target: $0
 ------------------------------------------------------------------------------------------------------------------------
-TOTAL                          $     2,341,491 100.0% $    5,997,684 $  2,057,016
+TOTAL                          $     2,341,491 100.0% $    6,449,782 $  2,469,454
 
 DEFINITIONS:
   • Notional = Stock price × contracts × 100 (underlying value of options position)
@@ -113,34 +113,34 @@ FRAMEWORK OVERVIEW:
 
 PERFORMANCE VS TARGET (YTD CUMULATIVE):
   Target (8 months):     $800,000
-  Actual YTD:                 $405,996
-  Gap to close:               $394,004 (49.3%)
-  Monthly average (YTD):      $50,750
+  Actual YTD:                 $409,806
+  Gap to close:               $390,194 (48.8%)
+  Monthly average (YTD):      $51,226
   Monthly average needed:     $100,000
-  Monthly gap:                $-9,700
+  Monthly gap:                $-13,300
 
 POSITION TIER DISTRIBUTION → GAP CLOSURE:
-  Tier 1 (14 positions): $ 53,200/month (  53% of $100,000 target)
-  Tier 2 (63 positions): $ 63,000/month (  63% of target)
-  Tier 3 (13 positions): $ -6,500/month (  -6% drag)
-  Current total: 90 positions = $109,700/month (110% of target)
+  Tier 1 (16 positions): $ 60,800/month (  61% of $100,000 target)
+  Tier 2 (60 positions): $ 60,000/month (  60% of target)
+  Tier 3 (15 positions): $ -7,500/month (  -8% drag)
+  Current total: 91 positions = $113,300/month (113% of target)
 
 GAP CLOSURE PATH:
   To hit $100,000 target: Need 0 more Tier 1 positions
-  Alternative: Scale existing OR exit 5 worst Tier 3 positions
+  Alternative: Scale existing OR exit 6 worst Tier 3 positions
   Capital required for 0 new positions: $0 (0 × $10K)
 
 ACCOUNT-LEVEL GAP BREAKDOWN:
-  ✅ Account A (232)                          Target $  17,211 | Actual $  18,880 | Gap $  -1,669 ( -9.7%)
-  ✅ Account B (275)                          Target $  11,146 | Actual $  12,227 | Gap $  -1,081 ( -9.7%)
-  ✅ Account C (634)                          Target $  11,360 | Actual $  12,462 | Gap $  -1,102 ( -9.7%)
-  ✅ Fidelity (Rahul)                         Target $  21,292 | Actual $  23,357 | Gap $  -2,065 ( -9.7%)
-  ✅ Fidelity (Rajul — Rollover IRA)          Target $   5,470 | Actual $   6,000 | Gap $    -530 ( -9.7%)
-  ✅ Fidelity (Rajul — Roth IRA)              Target $   1,672 | Actual $   1,834 | Gap $    -162 ( -9.7%)
+  ✅ Account A (232)                          Target $  17,211 | Actual $  19,500 | Gap $  -2,289 (-13.3%)
+  ✅ Account B (275)                          Target $  11,146 | Actual $  12,629 | Gap $  -1,483 (-13.3%)
+  ✅ Account C (634)                          Target $  11,360 | Actual $  12,871 | Gap $  -1,511 (-13.3%)
+  ✅ Fidelity (Rahul)                         Target $  21,292 | Actual $  24,124 | Gap $  -2,832 (-13.3%)
+  ✅ Fidelity (Rajul — Rollover IRA)          Target $   5,470 | Actual $   6,197 | Gap $    -727 (-13.3%)
+  ✅ Fidelity (Rajul — Roth IRA)              Target $   1,672 | Actual $   1,894 | Gap $    -222 (-13.3%)
   ⚠️ Fidelity 401K (Rahul)                    Target $   8,208 | Actual $       0 | Gap $   8,208 (100.0%)
-  ✅ Robinhood (Individual)                   Target $     555 | Actual $     609 | Gap $     -54 ( -9.7%)
-  ✅ Robinhood (Traditional IRA)              Target $   9,395 | Actual $  10,307 | Gap $    -912 ( -9.7%)
-  ⚠️ Vanguard (Rahul)                         Target $  13,687 | Actual $       0 | Gap $  13,687 (100.0%)
+  ✅ Robinhood (Individual)                   Target $     555 | Actual $     629 | Gap $     -74 (-13.3%)
+  ✅ Robinhood (Traditional IRA)              Target $   9,395 | Actual $  10,645 | Gap $  -1,250 (-13.3%)
+  ✅ Vanguard (Rahul)                         Target $  13,687 | Actual $  15,507 | Gap $  -1,820 (-13.3%)
 
 RISK GUARDRAILS:
 ├─ Margin floor (Account A only): 50% utilization
@@ -159,9 +159,9 @@ Framework: $100,000/month net = $1.2M/year target (at 60% close costs)
 Regime: BULL (applies 100% of base)
 Adjusted Target: $250,000 gross / $100,000 net
 
-YTD Performance: $405,996 net (8 months)
-Monthly average: $50,750
-Annualized pace: $608,994 ⚠️ BELOW TARGET
+YTD Performance: $409,806 net (8 months)
+Monthly average: $51,226
+Annualized pace: $614,709 ⚠️ BELOW TARGET
 
 Account Targets (Regime-Adjusted):
 ------------------------------------------------------------------------------------------------------------------------
@@ -184,17 +184,17 @@ SECTION 1: MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS
 PERFORMANCE HEADLINE
 
 Target:              $122,700
-Actual (YTD):        $405,996 (8 months)
+Actual (YTD):        $409,806 (8 months)
 Variance:            $-122,700
 % Variance:          -100.0%
 Status:              ⚠️ BELOW TARGET
 
 YTD CUMULATIVE:
 
-YTD Actual (2026 Jan-Aug): $405,996 (8 months)
+YTD Actual (2026 Jan-Aug): $409,806 (8 months)
 YTD Target (8 months):               $981,600 (8 × $122,700)
-YTD Variance:                            $-575,604
-YTD % Variance:                          -58.6%
+YTD Variance:                            $-571,794
+YTD % Variance:                          -58.3%
 Remaining months:                        4 (as of August)
 Remaining target (est):                  $490,800 (4 × $122,700)
 Pace required to recover:                $122,700/month (baseline)
@@ -264,7 +264,7 @@ Vanguard (Rahul)
 ├─ Target (monthly): $16,794
 ├─ Actual (YTD-allocated): $0
 ├─ Variance: $-16,794 (-100.0%)
-├─ Open positions: 0
+├─ Open positions: 25
 └─ Status: ⚠️ BELOW
 
 Robinhood (Individual)
@@ -320,42 +320,42 @@ SECTION 4: MOAT RECALIBRATION & TIER ASSIGNMENTS
 
 TIER 1 — STRONG MOAT (Conviction ≥7, 30+ day history, positive P&L)
 
-MU (Moat Score: 8.8/10, Position Value: $192,680)
+MU (Moat Score: 8.8/10, Position Value: $191,660)
 ├─ Conviction: 8.8 (YELLOW heat)
-├─ Current: $963.40 | Contracts: 2 | 52-Week: $113.46 - $1255.00
-├─ Technical: RSI 55.7, Position 74% of range
+├─ Current: $958.30 | Contracts: 2 | 52-Week: $113.46 - $1255.00
+├─ Technical: RSI 55.3, Position 74% of range
 └─ Moat verdict: STRONG (Approaching extremes)
 
-DVN (Moat Score: 8.5/10, Position Value: $9,046)
+DVN (Moat Score: 8.5/10, Position Value: $9,062)
 ├─ Conviction: 8.5 (GREEN heat)
-├─ Current: $45.23 | Contracts: 2 | 52-Week: $31.47 - $52.71
-├─ Technical: RSI 58.7, Position 65% of range
+├─ Current: $45.31 | Contracts: 2 | 52-Week: $31.47 - $52.71
+├─ Technical: RSI 59.0, Position 65% of range
 └─ Moat verdict: STRONG (Neutral positioning)
 
-AMKR (Moat Score: 8.4/10, Position Value: $29,155)
+AMKR (Moat Score: 8.4/10, Position Value: $28,948)
 ├─ Conviction: 8.4 (GREEN heat)
-├─ Current: $58.31 | Contracts: 5 | 52-Week: $22.74 - $96.68
-├─ Technical: RSI 47.1, Position 48% of range
+├─ Current: $57.90 | Contracts: 5 | 52-Week: $22.74 - $96.68
+├─ Technical: RSI 46.6, Position 48% of range
 └─ Moat verdict: STRONG (Neutral positioning)
 
-NFLX (Moat Score: 8.3/10, Position Value: $132,787)
+NFLX (Moat Score: 8.3/10, Position Value: $133,042)
 ├─ Conviction: 8.3 (YELLOW heat)
-├─ Current: $78.11 | Contracts: 17 | 52-Week: $65.08 - $126.71
-├─ Technical: RSI 72.7, Position 21% of range
+├─ Current: $78.26 | Contracts: 17 | 52-Week: $65.08 - $126.71
+├─ Technical: RSI 73.3, Position 21% of range
 └─ Moat verdict: STRONG (Approaching extremes)
 
-APP (Moat Score: 8.3/10, Position Value: $128,179)
+APP (Moat Score: 8.3/10, Position Value: $160,377)
 ├─ Conviction: 8.3 (GREEN heat)
-├─ Current: $320.45 | Contracts: 4 | 52-Week: $303.17 - $745.61
-├─ Technical: RSI 28.6, Position 4% of range
+├─ Current: $320.75 | Contracts: 5 | 52-Week: $303.17 - $745.61
+├─ Technical: RSI 28.7, Position 4% of range
 └─ Moat verdict: STRONG (Oversold / Attractive)
 
 TIER 1 SUMMARY: 5 positions, quality improving
 
 TIER 2 — MODERATE MOAT (Conviction 5-7)
-  META: 7.8/10 (YELLOW) | Value $237,088 — Approaching extremes
-  GEV: 7.8/10 (YELLOW) | Value $318,264 — Approaching extremes
-  PLTR: 7.8/10 (RED) | Value $17,709 — Overbought / Extended
+  META: 7.8/10 (YELLOW) | Value $237,720 — Approaching extremes
+  PLTR: 7.8/10 (RED) | Value $17,741 — Overbought / Extended
+  QUBT: 7.8/10 (YELLOW) | Value $893 — Approaching extremes
 
 TIER 3 & EXITED:
   RIOT: 5.9/10 (GREEN) — Watch for exit
