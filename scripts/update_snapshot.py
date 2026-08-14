@@ -1,16 +1,22 @@
 """
 Auto-generate portfolio_snapshot.yaml from:
-  - Schwab positions CSV  (holdings, open options)
-  - Empower unified transactions CSV  (all accounts, all brokerages)
-  - Robinhood activity CSVs  (UUID-named files, supplements Empower for newer trades)
+  - Schwab positions CSV  (holdings, open options)  — data/statements/
+  - Schwab per-account Transactions CSVs (232/275/634)  — data/positions/
+  - Fidelity per-person Accounts_History CSVs (Rahul/Rajul)  — data/positions/
+  - Robinhood activity CSVs  (UUID-named files)  — data/statements/
+
+Vanguard is NOT included — no transaction-level Vanguard export exists yet
+(only position snapshots), so Vanguard premium doesn't feed this snapshot.
+Known, accepted gap — do not attempt to infer it from position deltas.
 
 Weekly workflow:
-  1. Export positions from Schwab → drop in data/statements/
-  2. Export transactions from Empower → drop in data/statements/
-  3. Download Robinhood activity CSV → drop in data/statements/  (optional, extends MTD)
-  4. python3 scripts/update_snapshot.py
-  5. Set month_to_date_equity_change manually
-  6. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
+  1. Export positions from Schwab (Account A) → drop in data/statements/
+  2. Export per-account transactions from Schwab (232/275/634) → data/positions/
+  3. Export Accounts_History from Fidelity (Rahul + Rajul) → data/positions/
+  4. Download Robinhood activity CSV → drop in data/statements/  (optional, extends MTD)
+  5. python3 scripts/update_snapshot.py
+  6. Set month_to_date_equity_change manually
+  7. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
 """
 
 import os
@@ -24,6 +30,7 @@ from collections import defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT, "data", "statements")
+POSITIONS_DIR = os.path.join(ROOT, "data", "positions")
 SNAPSHOT_PATH = os.path.join(ROOT, "data", "portfolio_snapshot.yaml")
 
 
@@ -36,15 +43,38 @@ def find_latest(pattern: str) -> str | None:
     return max(files, key=os.path.getmtime) if files else None
 
 
-def find_empower_transactions() -> str | None:
-    """Find the Empower unified transactions export (date-range named file)."""
-    candidates = glob.glob(os.path.join(DATA_DIR, "*.csv"))
-    for f in sorted(candidates, key=os.path.getmtime, reverse=True):
-        name = os.path.basename(f)
-        # Empower files look like "2026-01-01 thru 2026-04-25 transactions.csv"
-        if re.search(r"\d{4}-\d{2}-\d{2}.*thru.*\d{4}-\d{2}-\d{2}", name, re.IGNORECASE):
-            return f
-    return None
+_SCHWAB_TXN_PATTERNS = {
+    "Account A (232)": "Individual_XXX232_Transactions_*.csv",
+    "Account B (275)": "Contributory_XXX275_Transactions_*.csv",
+    "Account C (634)": "Designated_Bene_Individual_XXX634_Transactions_*.csv",
+}
+
+
+def find_schwab_transactions() -> dict[str, str]:
+    """Newest per-account Schwab Transactions CSV, keyed by canonical account label."""
+    found = {}
+    for label, pattern in _SCHWAB_TXN_PATTERNS.items():
+        files = glob.glob(os.path.join(POSITIONS_DIR, pattern))
+        if files:
+            found[label] = max(files, key=os.path.getmtime)
+    return found
+
+
+_FIDELITY_HISTORY_PATTERNS = {
+    "rahul": "Accounts_History_fidelity_Rahul.csv",
+    "rajul": "Accounts_History_fidelity_Rajul.csv",
+}
+
+
+def find_fidelity_transactions() -> dict[str, str]:
+    """Newest Fidelity Accounts_History CSV per person (each splits into sub-accounts
+    internally by Account Number — see _FIDELITY_ACCOUNT_LABELS)."""
+    found = {}
+    for person, pattern in _FIDELITY_HISTORY_PATTERNS.items():
+        files = glob.glob(os.path.join(POSITIONS_DIR, pattern))
+        if files:
+            found[person] = max(files, key=os.path.getmtime)
+    return found
 
 
 _RH_UUID_PAT = re.compile(
@@ -172,35 +202,6 @@ def _parse_option_symbol(sym: str) -> dict | None:
     }
 
 
-def _normalize_account(raw: str) -> str:
-    """Normalize Empower account names to short labels."""
-    r = raw.strip()
-    m = re.search(r"ending in\s*(\d+)", r, re.IGNORECASE)
-    suffix = f" ({m.group(1)})" if m else ""
-
-    if re.search(r"robinhood.*ira", r, re.IGNORECASE):
-        return f"Robinhood IRA{suffix}"
-    if re.search(r"robinhood", r, re.IGNORECASE):
-        return f"Robinhood{suffix}"
-    if re.search(r"roth.*minor", r, re.IGNORECASE):
-        return f"Roth IRA Minor{suffix}"
-    if re.search(r"roth", r, re.IGNORECASE):
-        return f"Roth IRA{suffix}"
-    if re.search(r"rollover", r, re.IGNORECASE):
-        return f"Rollover IRA{suffix}"
-    if re.search(r"contributory", r, re.IGNORECASE):
-        return f"Schwab IRA{suffix}"
-    if re.search(r"traditional.*ira|ira.*brokerage", r, re.IGNORECASE):
-        return f"Traditional IRA{suffix}"
-    if re.search(r"precise software|8014", r, re.IGNORECASE):
-        return f"Individual 401k{suffix}"
-    if re.search(r"global stock|health sciences|new era|small cap", r, re.IGNORECASE):
-        return f"Vanguard Fund{suffix}"
-    if re.search(r"individual", r, re.IGNORECASE):
-        return f"Schwab Individual{suffix}"
-    return f"Other{suffix}"
-
-
 # ---------------------------------------------------------------------------
 # Schwab positions CSV parser
 # ---------------------------------------------------------------------------
@@ -275,103 +276,116 @@ def parse_positions(filepath: str) -> tuple[list[dict], list[dict]]:
 
 
 # ---------------------------------------------------------------------------
-# Empower unified transactions parser
-# Handles all brokerage description formats in one pass
-# Columns: Date, Account, Description, Category, Tags, Amount
+# Schwab per-account Transactions CSV parser
+# Columns: Date, Action, Symbol, Description, Quantity, Price, Fees & Comm, Amount
+# Symbol is already in the "AXON 08/21/2026 500.00 P" format _parse_option_symbol handles.
 # ---------------------------------------------------------------------------
 
-# Action detection patterns (order matters — most specific first)
-_IS_OPTION = re.compile(r"\bput\b|\bcall\b", re.IGNORECASE)
-_STO_SIGNALS = re.compile(
-    r"to\s+open|sold.*opening|sell.*open|you\s+sold\s+opening", re.IGNORECASE
-)
-_BTC_SIGNALS = re.compile(
-    r"to\s+close|bought.*closing|buy.*close|you\s+bought\s+closing", re.IGNORECASE
-)
-_EXPIRED = re.compile(r"expir", re.IGNORECASE)
-
-# Symbol extraction — try to pull ticker from various description styles
-_SYM_PATTERNS = [
-    re.compile(r"^(?:put|call)\s+(\w+)\s", re.IGNORECASE),                         # "Put AXON ..."
-    re.compile(r"^(?:buy|sell)[\s\d.]+(\w+)\s+(?:put|call)", re.IGNORECASE),        # "Buy 1.0 AXON Put..."
-    re.compile(r"\((\w{1,5})\)\s+\w", re.IGNORECASE),                               # "Put (AXON) ..."
-    re.compile(r"^(?:put|call)\s+(\w[\w\s]+?)\$", re.IGNORECASE),                   # "Put Taiwan Semi$280"
-]
-
-# Option type
-_IS_CALL = re.compile(r"\bcall\b", re.IGNORECASE)
+_SCHWAB_TXN_ACTIONS = {"Sell to Open", "Buy to Close", "Expired"}
 
 
-def _extract_underlying(desc: str) -> str | None:
-    for pat in _SYM_PATTERNS:
-        m = pat.search(desc)
-        if m:
-            sym = m.group(1).strip().upper()
-            if len(sym) <= 5 and sym.isalpha():
-                return sym
-    return None
-
-
-def parse_empower_transactions(filepath: str) -> list[dict]:
-    """
-    Parse Empower unified export into normalized option transaction rows.
-    Returns list of dicts with: Date, Action, underlying, opt_type, Amount, account
-    Only option trades (Puts/Calls) are returned — equity and fund rows are skipped.
-    Robinhood account rows are EXCLUDED here — they are sourced directly from the
-    Robinhood activity CSVs to ensure completeness.
-    """
+def parse_schwab_transactions(filepath: str, account_label: str) -> list[dict]:
+    """Parse one Schwab per-account Transactions CSV into the shared option-txn shape."""
     rows = []
     with open(filepath, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            desc = row.get("Description", "").strip()
-            cat = row.get("Category", "").strip()
-            amount = _parse_amount(row.get("Amount", "0"))
-            txn_date = _parse_date(row.get("Date", ""))
-            account_raw = row.get("Account", "")
-            account = _normalize_account(account_raw)
-
+            action = _clean(row.get("Action", ""))
+            if action not in _SCHWAB_TXN_ACTIONS:
+                continue
+            parsed_sym = _parse_option_symbol(_clean(row.get("Symbol", "")))
+            if not parsed_sym:
+                continue
+            txn_date = _parse_date(_clean(row.get("Date", "")))
             if not txn_date:
                 continue
-            if cat not in ("Securities Trades", "Investment Income"):
-                continue
-            if not _IS_OPTION.search(desc):
-                continue
-            # Skip Robinhood accounts — sourced from Robinhood CSV files directly
-            if re.search(r"robinhood", account_raw, re.IGNORECASE):
-                continue
-
-            # Determine action
-            if _EXPIRED.search(desc):
-                action = "Expired"
-            elif _STO_SIGNALS.search(desc) or (amount > 0 and not _BTC_SIGNALS.search(desc)):
-                action = "Sell to Open"
-            else:
-                action = "Buy to Close"
-
-            # Infer from amount sign as fallback
-            if action == "Sell to Open" and amount < 0:
-                action = "Buy to Close"
-            if action == "Buy to Close" and amount > 0:
-                action = "Sell to Open"
-
-            underlying = _extract_underlying(desc)
-            opt_type = "C" if _IS_CALL.search(desc) else "P"
 
             rows.append({
                 "Date": txn_date.isoformat(),
                 "Action": action,
-                "underlying": underlying,
-                "opt_type": opt_type,
-                "Amount": amount,
-                "account": account,
-                "_desc": desc,
+                "underlying": parsed_sym["underlying"],
+                "opt_type": "C" if parsed_sym["option_type"] == "CALL" else "P",
+                "Amount": _parse_amount(row.get("Amount", "0")),
+                "account": account_label,
+                "_desc": row.get("Description", "").strip(),
             })
     return rows
 
 
 # ---------------------------------------------------------------------------
-# Metrics from Empower transactions
+# Fidelity Accounts_History CSV parser (one file per person, splits into
+# sub-accounts by Account Number — see _FIDELITY_ACCOUNT_LABELS).
+# Columns: Run Date, Account, Account Number, Action, Symbol, Description,
+#          Type, Price ($), Quantity, Commission ($), Fees ($),
+#          Accrued Interest ($), Amount ($), Settlement Date
+# Symbol looks like " -OKLO270319P40" (ticker + YYMMDD + P/C + strike).
+# ---------------------------------------------------------------------------
+
+# Only accounts tracked in ACCOUNTS_CONFIG (unified_master_report_production.py) — a
+# custodial "ROTH IRA for Minor" (225798148's sibling, 258240575) also appears in the
+# Rahul file but isn't a tracked account, so it's deliberately excluded, not guessed at.
+_FIDELITY_ACCOUNT_LABELS = {
+    "225798148": "Fidelity (Rahul)",
+    "263508923": "Fidelity (Rajul — Rollover IRA)",
+    "233461172": "Fidelity (Rajul — Roth IRA)",
+}
+
+_FIDELITY_OPEN = re.compile(r"^YOU SOLD OPENING TRANSACTION\s+(PUT|CALL)\s*\((\w+)\)", re.IGNORECASE)
+_FIDELITY_CLOSE = re.compile(r"^YOU BOUGHT CLOSING TRANSACTION\s+(PUT|CALL)\s*\((\w+)\)", re.IGNORECASE)
+
+
+def parse_fidelity_transactions(filepath: str) -> list[dict]:
+    """Parse one Fidelity Accounts_History CSV into the shared option-txn shape.
+    Note: no confirmed 'option expired' row pattern was found in sampled Fidelity
+    data (only an equity-delisting 'EXPIRED POSITION' row, unrelated to options) —
+    expired Fidelity options are not captured here. Known, disclosed gap."""
+    rows = []
+    with open(filepath, newline="", encoding="utf-8-sig") as f:
+        # File has leading blank line(s) before the real header — DictReader needs
+        # the reader positioned at the header row itself.
+        lines = [l for l in f if l.strip()]
+    reader = csv.DictReader(lines)
+    for row in reader:
+        acct_num = _clean(row.get("Account Number") or "")
+        account_label = _FIDELITY_ACCOUNT_LABELS.get(acct_num)
+        if not account_label:
+            continue
+
+        desc = (row.get("Action") or "").strip()  # full free-text description lives in Action
+        m_open = _FIDELITY_OPEN.match(desc)
+        m_close = _FIDELITY_CLOSE.match(desc)
+        if m_open:
+            action, opt_match = "Sell to Open", m_open
+        elif m_close:
+            action, opt_match = "Buy to Close", m_close
+        else:
+            continue
+
+        txn_date = _parse_date(_clean(row.get("Run Date") or ""))
+        if not txn_date:
+            continue
+
+        underlying = opt_match.group(2).upper()
+        opt_type = "C" if opt_match.group(1).upper() == "CALL" else "P"
+        # Symbol column would be a more reliable strike/expiry source than free text,
+        # but compute_metrics only needs underlying/opt_type/Amount/Action, not
+        # strike/expiry, so a Symbol-parse miss here isn't fatal — underlying/opt_type
+        # from the Action prefix above are used regardless.
+
+        rows.append({
+            "Date": txn_date.isoformat(),
+            "Action": action,
+            "underlying": underlying,
+            "opt_type": opt_type,
+            "Amount": _parse_amount(row.get("Amount ($)") or "0"),
+            "account": account_label,
+            "_desc": desc,
+        })
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Metrics from Schwab + Fidelity + Robinhood transactions
 # ---------------------------------------------------------------------------
 
 def compute_metrics(txns: list[dict], equity_symbols: list[str]) -> dict:
@@ -454,28 +468,42 @@ def compute_metrics(txns: list[dict], equity_symbols: list[str]) -> dict:
 def build_snapshot() -> dict:
     # Use latest Schwab positions export (Individual-Positions*.csv format)
     # Note: "Portfolio_Positions*.csv" files are typically from Fidelity, not Schwab
+    # NOTE: this is a SEPARATE, pre-existing staleness gap from the Empower removal
+    # below — data/statements/ hasn't had a fresh Individual-Positions*.csv in months,
+    # so assigned_equity_book_value/open_puts may still be stale even after this fix.
     pos_file = find_latest("Individual-Positions*.csv")
-    txn_file = find_empower_transactions()
+    schwab_txn_files = find_schwab_transactions()
+    fidelity_txn_files = find_fidelity_transactions()
 
     if not pos_file:
         print("ERROR: No Schwab positions CSV found.")
         print("Export from Schwab Account A: Accounts → Positions → Export to CSV")
         print("Expected filename pattern: Individual-Positions*.csv")
         sys.exit(1)
-    if not txn_file:
-        print("ERROR: No Empower transactions CSV found.")
-        print("Export: Empower → Transactions → date range → Export")
+    if not schwab_txn_files:
+        print("ERROR: No Schwab per-account Transactions CSVs found in data/positions/.")
+        print("Export from each Schwab account: Accounts → Transactions → Export to CSV")
+        sys.exit(1)
+    if not fidelity_txn_files:
+        print("ERROR: No Fidelity Accounts_History CSVs found in data/positions/.")
+        print("Export from Fidelity: Accounts → Activity & Orders → Export → Accounts_History")
         sys.exit(1)
 
     print(f"  Positions  : {os.path.basename(pos_file)}")
-    print(f"  Transactions: {os.path.basename(txn_file)}")
 
     equity_positions, short_options = parse_positions(pos_file)
     equity_symbols = [p["symbol"] for p in equity_positions]
     print(f"  Equity: {len(equity_positions)} positions | Options: {len(short_options)} short contracts")
 
-    txns = parse_empower_transactions(txn_file)
-    print(f"  Empower option transactions (non-Robinhood): {len(txns)}")
+    txns = []
+    for label, path in schwab_txn_files.items():
+        schwab_txns = parse_schwab_transactions(path, label)
+        print(f"  Schwab txns ({label}) — {os.path.basename(path)}: {len(schwab_txns)} option trades")
+        txns.extend(schwab_txns)
+    for person, path in fidelity_txn_files.items():
+        fid_txns = parse_fidelity_transactions(path)
+        print(f"  Fidelity txns ({person}) — {os.path.basename(path)}: {len(fid_txns)} option trades")
+        txns.extend(fid_txns)
 
     # Add ALL transactions from each Robinhood CSV as the canonical Robinhood source
     rh_files = find_robinhood_csvs()
@@ -546,7 +574,7 @@ def main():
 
     with open(SNAPSHOT_PATH, "w") as f:
         f.write("# Auto-generated by scripts/update_snapshot.py — do not edit manually\n")
-        f.write("# Sources: Schwab positions CSV + Empower unified transactions CSV + Robinhood activity CSV\n")
+        f.write("# Sources: Schwab positions+transactions CSVs + Fidelity Accounts_History CSVs + Robinhood activity CSV\n")
         f.write("# Only 'month_to_date_equity_change' requires manual input\n\n")
         yaml.dump(snapshot, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
