@@ -283,6 +283,10 @@ class OpenPositionsLoaderV2:
                     df = pd.read_csv(filepath, on_bad_lines='skip', engine='python')
                     df['account_name'] = account_name
                     df['account_type'] = 'Vanguard'
+                    df['source'] = 'position_file'  # Vanguard is a holdings snapshot, not a
+                    # transaction log (unlike Robinhood) — without this tag, option rows have
+                    # no recognizable buy/sell action keyword, has_opening never gets set, and
+                    # every Vanguard option position is silently excluded from open positions.
                     dfs.append(df)
                     print(f"✓ Loaded {account_name}: {len(df)} rows from {Path(filepath).name}")
                 except Exception as e:
