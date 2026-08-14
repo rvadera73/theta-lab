@@ -313,9 +313,16 @@ def _parse_amount(val: str) -> float:
 
 
 def _parse_date(val: str) -> date | None:
+    val = val.strip()
+    # Schwab assignment rows use a compound "MM/DD/YYYY as of MM/DD/YYYY" date —
+    # the first date is the actual trade date, the "as of" date is when the
+    # broker processed it. Strip the suffix so these rows don't silently fail
+    # to parse (they'd otherwise be invisible to any FIFO/date-based logic).
+    if " as of " in val.lower():
+        val = re.split(r"\s+as of\s+", val, flags=re.IGNORECASE)[0].strip()
     for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
         try:
-            return datetime.strptime(val.strip(), fmt).date()
+            return datetime.strptime(val, fmt).date()
         except ValueError:
             continue
     return None
