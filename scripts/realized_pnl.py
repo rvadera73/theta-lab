@@ -81,6 +81,21 @@ from update_snapshot import (
 )
 from report_utils import option_market_price
 from yahoo_price_fetcher import fetch_prices
+from unified_master_report_production import ACCOUNTS_CONFIG, MONTHLY_TARGET_NET_BASE
+
+# ACCOUNTS_CONFIG's Robinhood labels differ from this module's (which include
+# the account-number suffix used elsewhere in this session's work) — map
+# rather than duplicate the target data under a second set of keys.
+_TARGET_LABEL_ALIASES = {
+    "Robinhood Individual (9079)": "Robinhood (Individual)",
+    "Robinhood IRA (3600)": "Robinhood (Traditional IRA)",
+}
+
+
+def _annual_target(label):
+    key = _TARGET_LABEL_ALIASES.get(label, label)
+    cfg = ACCOUNTS_CONFIG.get(key)
+    return cfg["monthly_target"] * 12 if cfg else None
 
 
 # ---------------------------------------------------------------------------
@@ -389,6 +404,62 @@ def _gather(broker, label, option_events, equity_events, note="", parse_key_fn=N
     }
 
 
+def _print_realized_progress(accounts):
+    """The PRIMARY progress-toward-$1.2M view: realized option P&L only —
+    clean, bankable, matches what the brokerage itself reports — shown
+    monthly and cumulative, per account against that account's own share of
+    the objective, then portfolio-wide against the full $1.2M. Mark-to-market
+    unrealized is deliberately NOT part of this section (see main() — it's a
+    separate risk diagnostic, not a progress number, per trader decision:
+    blending a volatile mark-to-market swing into "am I on track" produced a
+    confusing, misleadingly pessimistic headline)."""
+    opt_accounts = [a for a in accounts if a["has_opt"]]
+    all_months = sorted({m for a in opt_accounts for m in a["opt_monthly"] if m.startswith("2026")})
+    months_elapsed = len(all_months)
+
+    print("=" * 90)
+    print("REALIZED PROGRESS TOWARD $1.2M OBJECTIVE (option-level, cumulative by month)")
+    print("=" * 90)
+
+    portfolio_cumulative_by_month = defaultdict(float)
+    grand_realized = grand_target = 0.0
+
+    for acct in opt_accounts:
+        target = _annual_target(acct["label"])
+        print(f"\n{acct['label']}" + (f"  (annual target: ${target:,})" if target else "  (no target on file)"))
+        print(f"  {'Month':8}{'Realized':>14}{'Cumulative':>16}")
+        cum = 0.0
+        for m in all_months:
+            v = acct["opt_monthly"].get(m, 0.0)
+            cum += v
+            portfolio_cumulative_by_month[m] += v
+            print(f"  {m:8}{v:>14,.2f}{cum:>16,.2f}")
+        grand_realized += cum
+        if target:
+            grand_target += target
+            pace = (cum / months_elapsed * 12) if months_elapsed else 0.0
+            pct = cum / target * 100
+            print(f"  YTD: ${cum:,.2f} = {pct:.0f}% of ${target:,} annual target | "
+                  f"pace if this rate continues: ${pace:,.0f}/yr")
+
+    print("\n" + "-" * 90)
+    print("PORTFOLIO — cumulative realized option P&L by month, all accounts")
+    print("-" * 90)
+    cum = 0.0
+    for m in all_months:
+        cum += portfolio_cumulative_by_month[m]
+        print(f"  {m:8}{portfolio_cumulative_by_month[m]:>14,.2f}{cum:>16,.2f}")
+    pace = (cum / months_elapsed * 12) if months_elapsed else 0.0
+    vanguard_target = ACCOUNTS_CONFIG.get("Vanguard (Rahul)", {}).get("monthly_target", 0) * 12
+    print(f"\n  YTD REALIZED: ${cum:,.2f} = {cum / 1_200_000 * 100:.1f}% of the $1.2M objective")
+    print(f"  Sum of per-account annual targets shown above: ${grand_target:,.0f}")
+    print(f"  (Short of $1.2M by ~${vanguard_target:,} — Vanguard's own target, excluded")
+    print("   from option-level tracking entirely per the data-quality issue above,")
+    print("   not a missing account.)")
+    print(f"  Pace if this rate continues through the year: ${pace:,.0f}")
+    print("=" * 90)
+
+
 def _print_account(acct, equity_prices):
     print(f"\n{acct['label']}{('  — ' + acct['note']) if acct['note'] else ''}")
     opt_monthly, eq_monthly = acct["opt_monthly"], acct["eq_monthly"]
@@ -410,18 +481,18 @@ def _print_account(acct, equity_prices):
         print(f"  option: unmatched qty {acct['opt_unmatched']:.0f}, still-open qty {opt_open_qty:.0f}")
         if acct["parse_key_fn"] and opt_open:
             opt_unrealized, priced, failed = compute_unrealized(opt_open, acct["parse_key_fn"])
-            print(f"  option unrealized (mark-to-market, still-open): ${opt_unrealized:,.2f} "
+            print(f"  option unrealized (mark-to-market, still-open — risk diagnostic, "
+                  f"NOT counted toward the objective): ${opt_unrealized:,.2f} "
                   f"({priced} priced, {failed} could not be priced)")
-            print(f"  option TOTAL toward objective (realized + unrealized): ${opt_ytd + opt_unrealized:,.2f}")
     if acct["has_eq"]:
         eq_open = acct["eq_open"]
         eq_open_qty = sum(lot[1] for lot in eq_open)
         print(f"  equity: unmatched qty {acct['eq_unmatched']:.0f}, still-open qty {eq_open_qty:.0f}")
         if eq_open:
             eq_unrealized, priced, failed = compute_equity_unrealized(eq_open, equity_prices)
-            print(f"  equity unrealized (mark-to-market, still-open): ${eq_unrealized:,.2f} "
+            print(f"  equity unrealized (mark-to-market, still-open — supplementary, "
+                  f"not part of the objective): ${eq_unrealized:,.2f} "
                   f"({priced} priced, {failed} could not be priced)")
-            print(f"  equity TOTAL (realized + unrealized): ${eq_ytd + eq_unrealized:,.2f}")
     return opt_ytd, eq_ytd, opt_unrealized, eq_unrealized
 
 
@@ -454,6 +525,18 @@ def main():
     })
     equity_prices = fetch_prices(all_equity_tickers) if all_equity_tickers else {}
 
+    # PRIMARY: realized-only progress toward the $1.2M objective, monthly and
+    # cumulative, per account against its real allocated target and
+    # portfolio-wide. This is the number to actually track "am I on pace."
+    _print_realized_progress(accounts)
+
+    print("\n\n" + "=" * 78)
+    print("DETAIL + MARK-TO-MARKET RISK DIAGNOSTIC (per account)")
+    print("Not a progress number — a still-open position's current market value")
+    print("is a snapshot, not an outcome. Use large swings here to decide whether")
+    print("a specific position/roll needs attention, not to judge overall pace.")
+    print("=" * 78)
+
     grand_opt = grand_eq = grand_opt_unrealized = grand_eq_unrealized = 0.0
     current_broker = None
     for acct in accounts:
@@ -472,20 +555,19 @@ def main():
         grand_eq_unrealized += eu
 
     print("\n" + "=" * 78)
-    print("GRAND TOTAL — ALL ACCOUNTS")
+    print("GRAND TOTAL — MARK-TO-MARKET RISK SUMMARY (diagnostic, not a progress figure)")
     print("=" * 78)
-    print(f"  Realized option-level:                                  ${grand_opt:,.2f}")
-    print(f"  Unrealized option-level (mark-to-market, still-open):   ${grand_opt_unrealized:,.2f}")
-    print(f"  TOTAL PROGRESS TOWARD $1.2M OBJECTIVE (realized + unrealized): ${grand_opt + grand_opt_unrealized:,.2f}")
-    print(f"\n  Realized equity-level (supplementary):                  ${grand_eq:,.2f}")
-    print(f"  Unrealized equity-level (mark-to-market, still-open):   ${grand_eq_unrealized:,.2f}")
-    print(f"  Equity TOTAL (supplementary, NOT part of the objective): ${grand_eq + grand_eq_unrealized:,.2f}")
+    print(f"  Realized option-level (already counted in the PROGRESS section above): ${grand_opt:,.2f}")
+    print(f"  Unrealized option-level, mark-to-market on still-open positions:       ${grand_opt_unrealized:,.2f}")
+    print(f"  Realized equity-level (supplementary, not part of the objective):      ${grand_eq:,.2f}")
+    print(f"  Unrealized equity-level, mark-to-market on still-open shares:          ${grand_eq_unrealized:,.2f}")
     print("\n  Note: Vanguard option-level, any account's pre-file-history positions,")
     print("  and any position that couldn't be priced (see 'could not be priced' counts")
     print("  above) are excluded/undercounted — every total here is a floor, not a")
     print("  guaranteed-complete figure. Mark-to-market unrealized reflects current")
     print("  risk, not a prediction — a large unrealized swing on one name is a")
-    print("  prompt to review that specific position/roll, not a locked-in outcome.")
+    print("  prompt to review that specific position/roll, not a locked-in outcome,")
+    print("  and it is NOT added to the realized progress figure above.")
 
 
 if __name__ == "__main__":
