@@ -249,6 +249,97 @@ def _map_breeze_equity_to_positions(raw_holdings: list[dict], india_cfg: dict) -
     return positions
 
 
+def _build_new_entry_actions(india_cfg: dict, regime_data: dict) -> list[dict]:
+    """New-entry candidates as actionable items, same shape as the existing-
+    position actions in `all_actions` so they compete in the same Top-5 sort
+    instead of only ever being about what's already held. Added 2026-08-15 —
+    the report previously never suggested anything new, which directly
+    conflicted with the trader's stated goal of staying fully invested.
+
+    Two sources, deliberately not deduped against each other (different
+    purposes): (1) the curated data/india_config.yaml watchlist — thesis-
+    driven names with a planned entry zone, checked via the SAME
+    check_watchlist() the evening-report script already uses; (2) the
+    broader indian-stock-list.xlsx market-watch scan (52-week-range + RSI)
+    via scripts/india_stock_list_review.py — catches genuinely oversold
+    names outside the small curated list (e.g. ITC, found 2026-08-15: 2% of
+    52-week range, RSI 38, not on the YAML watchlist at all).
+    """
+    actions = []
+    new_entries_allowed = regime_data.get("new_entries_allowed", True)
+
+    def _base_action(symbol, price, reason, entry_detail):
+        return {
+            "priority": 2, "label": "NEW ENTRY", "symbol": symbol,
+            "reason": reason, "shares": 0, "current_price": price or 0.0,
+            "combined_pnl": 0, "premium_received": 0, "cost_to_close": 0,
+            "profit_signal": {"signal": False}, "loss_flag": {"flag": False},
+            "roll_signal": {"signal": False}, "legs": [],
+            "permanent_exit": False, "exit_trigger": None, "is_core": False,
+            "conviction_metrics": None, "is_new_entry": True,
+            "entry_detail": entry_detail,
+        }
+
+    # Source 1: curated YAML watchlist, entry-zone check
+    try:
+        from routines.india_us_evening_report import check_watchlist
+        for w in check_watchlist(india_cfg.get("watchlist", []), new_entries_allowed):
+            if not w.get("actionable"):
+                continue
+            actions.append(_base_action(
+                w["symbol"], w.get("current"),
+                f"{w['status']} — {w.get('thesis', '')}",
+                f"Entry zone ₹{w['entry_zone_low']:,}-₹{w['entry_zone_high']:,} | "
+                f"Strategy: {w.get('strategy', '')} | Source: curated watchlist (india_config.yaml)",
+            ))
+    except Exception as e:
+        print(f"  Warning: curated watchlist check failed: {e}")
+
+    # Source 2: broader market-watch scan (indian-stock-list.xlsx)
+    try:
+        import pandas as pd
+        scripts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "scripts")
+        sys.path.insert(0, scripts_dir)
+        from india_stock_list_review import find_latest_stock_list, load_watchlist, scan_technicals
+        from india_statement_parser import parse_equity_positions
+        from report_utils import _INDIA_SYMBOL_MAP
+
+        # Exclude names already held — this source is specifically "genuinely
+        # new names," not "add more to an existing position" (that's a
+        # different decision with different sizing implications; conflating
+        # the two under one "NEW ENTRY" label would mislabel an add-more
+        # signal like POWERGRID, an existing holding, as a fresh entry).
+        yahoo_to_icici = {v.replace(".NS", ""): k for k, v in _INDIA_SYMBOL_MAP.items()}
+        held_codes = set(parse_equity_positions().keys())
+
+        def _is_held(scrip):
+            if scrip in held_codes:
+                return True
+            icici_code = yahoo_to_icici.get(scrip)
+            return icici_code in held_codes if icici_code else False
+
+        src = find_latest_stock_list()
+        wl = load_watchlist(src)
+        tech = scan_technicals(wl["Scrip Name"].tolist())
+        merged = wl.merge(tech, left_on="Scrip Name", right_on="scrip", how="left")
+        already_flagged = {a["symbol"] for a in actions}
+        for _, row in merged.iterrows():
+            pos_range, rsi = row.get("pos_in_range"), row.get("rsi")
+            if pos_range is None or pd.isna(pos_range) or rsi is None or pd.isna(rsi):
+                continue
+            if row["Scrip Name"] in already_flagged or _is_held(row["Scrip Name"]):
+                continue
+            if pos_range < 20 and rsi < 40 and new_entries_allowed:
+                actions.append(_base_action(
+                    row["Scrip Name"], row.get("price"),
+                    f"Near 52w low ({pos_range:.0f}% range) AND oversold (RSI {rsi:.0f})",
+                    f"Sector: {row.get('sector')} | Source: stock-list scan ({os.path.basename(src)})",
+                ))
+    except Exception as e:
+        print(f"  Warning: stock-list scan check failed: {e}")
+
+    return actions
+
 
 async def generate_india_weekly_report(
     api_key: str,
@@ -383,6 +474,10 @@ async def generate_india_weekly_report(
             "conviction_metrics": getattr(pos, "_conviction_metrics", None),
         })
 
+    # New-entry candidates compete in the same Top-5 as existing-position
+    # management — see _build_new_entry_actions' docstring for why.
+    all_actions.extend(_build_new_entry_actions(india_cfg, regime_data))
+
     # Sort by priority then largest absolute P&L
     all_actions.sort(key=lambda x: (x["priority"], -abs(x["combined_pnl"])))
     top5 = all_actions[:5]
@@ -404,6 +499,15 @@ async def generate_india_weekly_report(
                 f"{lg.option_type} ₹{lg.strike:,.0f} {lg.expiry} ({_dte_label(lg.dte)})"
                 for lg in act["legs"]
             ) or "equity only"
+
+            if act.get("is_new_entry"):
+                lines += [
+                    f"### #{i} {act['label']} — {sym}",
+                    f"**Price:** ₹{price:,.2f} | **Status:** not yet held | **Reason:** {act['reason']}",
+                    f"🌱 **NEW ENTRY CANDIDATE** — {act.get('entry_detail', '')}",
+                ]
+                lines.append("")
+                continue
 
             lines += [
                 f"### #{i} {act['label']} — {sym}",

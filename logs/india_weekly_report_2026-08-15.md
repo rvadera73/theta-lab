@@ -1,6 +1,6 @@
 # THETA-LAB India Weekly Action Report
 **Week of:** August 15 – August 19, 2026
-**Generated:** 2026-08-15 08:34
+**Generated:** 2026-08-15 08:53
 **Regime:** TRANSITIONING | New entries: YES
 **Profit-take target:** 40-50% of max premium
 
@@ -33,15 +33,13 @@ _No Breeze credentials — loading positions from local statement files._
 ✅ **Profit target hit:** CLOSE — at profit target
 🔄 **Roll needed:** PUT 23800.0 exp 2026-09-01 (17 DTE), PUT 23200.0 exp 2026-08-25 (10 DTE), PUT 23250.0 exp 2026-08-25 (10 DTE), PUT 23600.0 exp 2026-08-25 (10 DTE) — ROLL — within 21 DTE
 
-### #4 WEAK — IDECEL
-**Price:** ₹14.11 | **Net P&L:** -₹35 | **Reason:** analyst: hold; target -16% below current price &nbsp;|&nbsp; Approaching extremes (RSI 71, 87% of 52w range)
-**Legs:** equity only
-⚠️ **WEAK** — conviction 3.9/10, RSI 71, 87% of 52w range
+### #4 NEW ENTRY — KAYNES
+**Price:** ₹3,660.20 | **Status:** not yet held | **Reason:** BELOW ZONE — cheaper than planned — India EMS boom, AI hardware supply chain, defence electronics
+🌱 **NEW ENTRY CANDIDATE** — Entry zone ₹3,800-₹4,000 | Strategy: 2 tranches — buy 10 shares now near 4000, add 10 on dip to 3800 | Source: curated watchlist (india_config.yaml)
 
-### #5 EXTENDED — PARDEF
-**Price:** ₹1,377.50 | **Net P&L:** +₹100,164 | **Reason:** earnings +42% YoY (strong); revenue +37% YoY (strong); analyst: underperform; target -40% below current price &nbsp;|&nbsp; Overbought / Extended (RSI 73, 92% of 52w range)
-**Legs:** equity only
-⚠️ **EXTENDED** — conviction 4.1/10, RSI 73, 92% of 52w range
+### #5 NEW ENTRY — ITC
+**Price:** ₹278.20 | **Status:** not yet held | **Reason:** Near 52w low (2% range) AND oversold (RSI 38)
+🌱 **NEW ENTRY CANDIDATE** — Sector: Consumer Defensive | Source: stock-list scan (indian-stock-list.xlsx)
 
 ## 🚨 EXIT TRIGGERS (Phased Plan)
 
