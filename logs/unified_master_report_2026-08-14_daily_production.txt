@@ -206,7 +206,7 @@ HIGH (Tier 1: 8-10) CONVICTION — 16 positions | Total contribution: $60,800/mo
       └─ Puts only: 6 contracts ($    35,394)
   🟡 NFLX   | $  78.16 | Value: $    132872 | Conv:  8.3/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
       └─ Stagger: 11 puts ($    85,976) + 6 calls ($    46,896)
-  🟢 APP    | $ 315.44 | Value: $    157720 | Conv:  8.3/10 | Contribution: $ 3,800/mo (3.8%) | Oversold / Attractive
+  🟢 APP    | $ 315.44 | Value: $    157720 | Conv:  8.3/10 | Contribution: $ 3,800/mo (3.8%) | Dropped -24% in 7 days — verify thesis before treating as an entry
       └─ Stagger: 4 puts ($   126,176) + 1 calls ($    31,544)
   🟡 ISRG   | $ 394.51 | Value: $    157804 | Conv:  8.3/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
       └─ Stagger: 3 puts ($   118,353) + 1 calls ($    39,451)
@@ -216,7 +216,7 @@ HIGH (Tier 1: 8-10) CONVICTION — 16 positions | Total contribution: $60,800/mo
       └─ Puts only: 3 contracts ($   127,905)
   🟢 DVN    | $  45.85 | Value: $      9170 | Conv:  8.2/10 | Contribution: $ 3,800/mo (3.8%) | Neutral positioning
       └─ Puts only: 2 contracts ($     9,170)
-  🔴 ALB    | $ 136.15 | Value: $     54460 | Conv:  8.1/10 | Contribution: $ 3,800/mo (3.8%) | Overbought / Extended
+  🔴 ALB    | $ 136.15 | Value: $     54460 | Conv:  8.1/10 | Contribution: $ 3,800/mo (3.8%) | Spiked 15% in 7 days — too much too fast
       └─ Puts only: 4 contracts ($    54,460)
   🔴 MSFT   | $ 495.40 | Value: $    148620 | Conv:  8.1/10 | Contribution: $ 3,800/mo (3.8%) | Overbought / Extended
       └─ Stagger: 2 puts ($    99,080) + 1 calls ($    49,540)
@@ -224,7 +224,7 @@ HIGH (Tier 1: 8-10) CONVICTION — 16 positions | Total contribution: $60,800/mo
       └─ Stagger: 7 puts ($   225,127) + 1 calls ($    32,161)
   🟡 ANET   | $ 198.82 | Value: $    119292 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
       └─ Stagger: 3 puts ($    59,646) + 3 calls ($    59,646)
-  🔴 MP     | $  58.74 | Value: $     23496 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Overbought / Extended
+  🔴 MP     | $  58.74 | Value: $     23496 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Spiked 23% in 7 days — too much too fast
       └─ Puts only: 4 contracts ($    23,496)
   🟡 APH    | $ 167.11 | Value: $     50133 | Conv:  8.0/10 | Contribution: $ 3,800/mo (3.8%) | Approaching extremes
       └─ Puts only: 3 contracts ($    50,133)
@@ -257,15 +257,15 @@ MODERATE (Tier 2: 6-8) CONVICTION — 61 positions | Total contribution: $61,000
       └─ Puts only: 1 contracts ($    22,556)
   🟢 CRM    | $ 196.21 | Value: $    156968 | Conv:  7.6/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
       └─ Stagger: 1 puts ($    19,621) + 7 calls ($   137,347)
-  🟡 CRCL   | $  71.60 | Value: $     28640 | Conv:  7.6/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+  🔴 CRCL   | $  71.60 | Value: $     28640 | Conv:  7.6/10 | Contribution: $ 1,000/mo (1.0%) | Spiked 13% in 7 days — too much too fast
       └─ Stagger: 2 puts ($    14,320) + 2 calls ($    14,320)
   🟡 UBER   | $  75.95 | Value: $     30380 | Conv:  7.6/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
       └─ Puts only: 4 contracts ($    30,380)
   🟡 GOOGL  | $ 345.90 | Value: $    103770 | Conv:  7.6/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
       └─ Puts only: 3 contracts ($   103,770)
-  🟡 CRWV   | $ 105.26 | Value: $     10526 | Conv:  7.6/10 | Contribution: $ 1,000/mo (1.0%) | Approaching extremes
+  🔴 CRWV   | $ 105.26 | Value: $     10526 | Conv:  7.6/10 | Contribution: $ 1,000/mo (1.0%) | Spiked 17% in 7 days — too much too fast
       └─ Puts only: 1 contracts ($    10,526)
-  🟢 IONQ   | $  46.26 | Value: $     27756 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Neutral positioning
+  🔴 IONQ   | $  46.26 | Value: $     27756 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Spiked 16% in 7 days — too much too fast
       └─ Stagger: 4 puts ($    18,504) + 2 calls ($     9,252)
   🟢 OKLO   | $  44.38 | Value: $      8876 | Conv:  7.5/10 | Contribution: $ 1,000/mo (1.0%) | Oversold / Attractive
       └─ Puts only: 2 contracts ($     8,876)
@@ -282,7 +282,9 @@ LOW (Tier 3: <6) CONVICTION — 15 positions | Total contribution: $-7,500/month
       └─ Stagger: 3 puts ($    44,229) + 7 calls ($   103,201)
   🟡 TCOM   | $  44.98 | Value: $     17992 | Conv:  5.8/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
       └─ Puts only: 4 contracts ($    17,992)
-  🔴 NBIS   | $ 277.68 | Value: $     27768 | Conv:  5.8/10 | Contribution: $  -500/mo (0.0%) | Overbought / Extended
+  🟡 WIT    | $   1.94 | Value: $       388 | Conv:  5.8/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
+      └─ Puts only: 2 contracts ($       388)
+  🔴 NBIS   | $ 277.68 | Value: $     27768 | Conv:  5.8/10 | Contribution: $  -500/mo (0.0%) | Spiked 27% in 7 days — too much too fast
       └─ Puts only: 1 contracts ($    27,768)
   🟢 CMG    | $  33.50 | Value: $      6700 | Conv:  5.7/10 | Contribution: $  -500/mo (0.0%) | Neutral positioning
       └─ Puts only: 2 contracts ($     6,700)
@@ -290,9 +292,7 @@ LOW (Tier 3: <6) CONVICTION — 15 positions | Total contribution: $-7,500/month
       └─ Stagger: 5 puts ($    74,235) + 8 calls ($   118,776)
   🟢 CIFR   | $  17.85 | Value: $     10713 | Conv:  5.6/10 | Contribution: $  -500/mo (0.0%) | Neutral positioning
       └─ Puts only: 6 contracts ($    10,713)
-  🟡 WIT    | $   1.94 | Value: $       388 | Conv:  5.5/10 | Contribution: $  -500/mo (0.0%) | Approaching extremes
-      └─ Puts only: 2 contracts ($       388)
-  🔴 ABNB   | $ 184.06 | Value: $     92030 | Conv:  5.3/10 | Contribution: $  -500/mo (0.0%) | Overbought / Extended
+  🔴 ABNB   | $ 184.06 | Value: $     92030 | Conv:  5.3/10 | Contribution: $  -500/mo (0.0%) | Spiked 21% in 7 days — too much too fast
       └─ Stagger: 2 puts ($    36,812) + 3 calls ($    55,218)
   🟢 BRKB   | $   0.00 | Value: $         0 | Conv:  5.3/10 | Contribution: $  -500/mo (0.0%) | Neutral positioning
       └─ Puts only: 1 contracts ($         0)
@@ -313,9 +313,9 @@ LOW (Tier 3: <6) CONVICTION — 15 positions | Total contribution: $-7,500/month
 SECTION 3: POSITION HEAT DISTRIBUTION
 ========================================================================================================================
 
-🟢 GREEN (Attractive/Oversold):   37 positions ( 40.2%)
-🟡 YELLOW (Neutral):              40 positions ( 43.5%)
-🔴 RED (Extended/Overbought):    15 positions ( 16.3%)
+🟢 GREEN (Attractive/Oversold):   36 positions ( 39.1%)
+🟡 YELLOW (Neutral):              33 positions ( 35.9%)
+🔴 RED (Extended/Overbought):    23 positions ( 25.0%)
 
 ========================================================================================================================
 SECTION 4: MARKET REGIME & SIGNALS
@@ -325,7 +325,7 @@ Current Regime: BULL
 Note: Regime auto-detected from data. No caution flags active.
 
 VIX: 14.2 — VIX 14.2 sustained < 20
-S&P 500: 7786 (50d MA: 7518, 200d MA: 7064)
+S&P 500: 7786 (50d MA: 7512, 200d MA: 7075)
   Above 50d MA: True | Above 200d MA: True
 
 ========================================================================================================================
@@ -334,21 +334,21 @@ SECTOR ANALYSIS & ROTATION FRAMEWORK
 
 SECTOR SNAPSHOT — Conviction & Valuation Positioning:
 
-Sector                     Positions   Avg Conv   Avg RSI   52W %ile                                   Signal
+Sector                     Positions   Avg Conv   Avg RSI   52W %ile   Avg IVR                                   Signal
 ------------------------------------------------------------------------------------------------------------------------
-Technology                       105        7.0      64.0       56.4                                🟡 NEUTRAL
-Healthcare                        15       6.04      51.9       46.4                                🟡 NEUTRAL
-Consumer Cyclical                 30        6.3      64.5       54.8                                🟡 NEUTRAL
-Industrials                       42       7.09      61.6       50.9                                🟡 NEUTRAL
-Energy                             6       6.38      63.4       57.1                                🟡 NEUTRAL
-Consumer Defensive                 1        6.7      63.4       49.9                                🟡 NEUTRAL
-Utilities                          4       6.85      47.6       11.3                                    🟢 BUY
-Communication Services            28       7.62      49.1       24.2                                    🟢 BUY
-Defense                            3        6.7      71.5       47.7                                 🔴 REDUCE
-Brand-Quality (Non-AI)            21       7.05      55.2       41.3                                🟡 NEUTRAL
-Basic Materials                    8       8.05      77.2       38.4                                 🔴 REDUCE
-Financial Services                33       5.73      49.6       31.0                                🟡 NEUTRAL
-Unknown                            1        5.3      50.0       50.0                                🟡 NEUTRAL
+Technology                       105        7.0      64.0       56.4        67                                🟡 NEUTRAL
+Healthcare                        15       6.04      51.9       46.4        43                                🟡 NEUTRAL
+Consumer Cyclical                 30        6.3      64.5       54.8        59                                🟡 NEUTRAL
+Industrials                       42       7.09      61.6       50.9        57                                🟡 NEUTRAL
+Energy                             6       6.38      63.4       57.1        37                                🟡 NEUTRAL
+Consumer Defensive                 1        6.7      63.4       49.9        31                                🟡 NEUTRAL
+Utilities                          4       6.85      47.6       11.3        37                 🟡 BUY stock/THIN premium
+Communication Services            28       7.62      49.1       24.3        69                     🟢 BUY (rich premium)
+Defense                            3        6.7      71.5       47.7        52                                 🔴 REDUCE
+Brand-Quality (Non-AI)            21       7.05      55.3       41.3        45                                🟡 NEUTRAL
+Basic Materials                    8       8.05      77.2       38.4        23                                 🔴 REDUCE
+Financial Services                33       5.73      49.6       31.0        42                                🟡 NEUTRAL
+Unknown                            1        5.3      50.0       50.0         0                                🟡 NEUTRAL
 
 
 DETAILED SECTOR BREAKDOWN:
@@ -358,6 +358,7 @@ TECHNOLOGY
 ├─ Positions: 105 | Total notional: $2,344,963
 ├─ Avg conviction: 7.0/10 | Avg RSI: 64.0
 ├─ Position in 52W range: 56.4% (0=low, 100=high)
+├─ Avg IV rank: 67/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -366,22 +367,23 @@ TECHNOLOGY
    └─ LOW (<6):        18 positions
 
    Heat Distribution:
-   ├─ 🟢 GREEN:    51 positions (attractive/oversold)
-   ├─ 🟡 YELLOW:   38 positions (neutral/approaching extremes)
-   └─ 🔴 RED:      16 positions (extended/overbought)
+   ├─ 🟢 GREEN:    46 positions (attractive/oversold)
+   ├─ 🟡 YELLOW:   31 positions (neutral/approaching extremes)
+   └─ 🔴 RED:      28 positions (extended/overbought)
 
    Top Positions in Technology:
    ├─ MU       $      97,166 | Conv   8.8/10 | Heat YELLOW
    ├─ MU       $      97,166 | Conv   8.8/10 | Heat YELLOW
-   ├─ LITE     $      92,614 | Conv   7.2/10 | Heat YELLOW
-   ├─ LITE     $      92,614 | Conv   7.2/10 | Heat YELLOW
-   ├─ LITE     $      92,614 | Conv   7.2/10 | Heat YELLOW
+   ├─ LITE     $      92,614 | Conv   7.2/10 | Heat RED
+   ├─ LITE     $      92,614 | Conv   7.2/10 | Heat RED
+   ├─ LITE     $      92,614 | Conv   7.2/10 | Heat RED
 
 
 HEALTHCARE
 ├─ Positions: 15 | Total notional: $408,419
 ├─ Avg conviction: 6.04/10 | Avg RSI: 51.9
 ├─ Position in 52W range: 46.4% (0=low, 100=high)
+├─ Avg IV rank: 43/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -406,6 +408,7 @@ CONSUMER CYCLICAL
 ├─ Positions: 30 | Total notional: $405,395
 ├─ Avg conviction: 6.3/10 | Avg RSI: 64.5
 ├─ Position in 52W range: 54.8% (0=low, 100=high)
+├─ Avg IV rank: 59/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -415,8 +418,8 @@ CONSUMER CYCLICAL
 
    Heat Distribution:
    ├─ 🟢 GREEN:     7 positions (attractive/oversold)
-   ├─ 🟡 YELLOW:   15 positions (neutral/approaching extremes)
-   └─ 🔴 RED:       8 positions (extended/overbought)
+   ├─ 🟡 YELLOW:   13 positions (neutral/approaching extremes)
+   └─ 🔴 RED:      10 positions (extended/overbought)
 
    Top Positions in Consumer Cyclical:
    ├─ TSLA     $      34,227 | Conv   7.8/10 | Heat YELLOW
@@ -430,6 +433,7 @@ INDUSTRIALS
 ├─ Positions: 42 | Total notional: $1,515,192
 ├─ Avg conviction: 7.09/10 | Avg RSI: 61.6
 ├─ Position in 52W range: 50.9% (0=low, 100=high)
+├─ Avg IV rank: 57/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -439,8 +443,8 @@ INDUSTRIALS
 
    Heat Distribution:
    ├─ 🟢 GREEN:    31 positions (attractive/oversold)
-   ├─ 🟡 YELLOW:   11 positions (neutral/approaching extremes)
-   └─ 🔴 RED:       0 positions (extended/overbought)
+   ├─ 🟡 YELLOW:    5 positions (neutral/approaching extremes)
+   └─ 🔴 RED:       6 positions (extended/overbought)
 
    Top Positions in Industrials:
    ├─ AXON     $     122,566 | Conv   6.4/10 | Heat GREEN
@@ -454,6 +458,7 @@ ENERGY
 ├─ Positions: 6 | Total notional: $54,502
 ├─ Avg conviction: 6.38/10 | Avg RSI: 63.4
 ├─ Position in 52W range: 57.1% (0=low, 100=high)
+├─ Avg IV rank: 37/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -478,6 +483,7 @@ CONSUMER DEFENSIVE
 ├─ Positions: 1 | Total notional: $11,527
 ├─ Avg conviction: 6.7/10 | Avg RSI: 63.4
 ├─ Position in 52W range: 49.9% (0=low, 100=high)
+├─ Avg IV rank: 31/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -498,7 +504,8 @@ UTILITIES
 ├─ Positions: 4 | Total notional: $38,502
 ├─ Avg conviction: 6.85/10 | Avg RSI: 47.6
 ├─ Position in 52W range: 11.3% (0=low, 100=high)
-├─ 🟢 BUY — Oversold / attractively valued
+├─ Avg IV rank: 37/100 (≥40 = rich premium)
+├─ 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 37 < 40) — not attractive for CSPs/CCs
 
    Conviction Distribution:
    ├─ HIGH (8-10):      0 positions
@@ -520,8 +527,9 @@ UTILITIES
 COMMUNICATION SERVICES
 ├─ Positions: 28 | Total notional: $720,709
 ├─ Avg conviction: 7.62/10 | Avg RSI: 49.1
-├─ Position in 52W range: 24.2% (0=low, 100=high)
-├─ 🟢 BUY — Oversold / attractively valued
+├─ Position in 52W range: 24.3% (0=low, 100=high)
+├─ Avg IV rank: 69/100 (≥40 = rich premium)
+├─ 🟢 BUY — Oversold + rich premium (avg IVR 69, good for selling)
 
    Conviction Distribution:
    ├─ HIGH (8-10):     11 positions
@@ -545,6 +553,7 @@ DEFENSE
 ├─ Positions: 3 | Total notional: $140,341
 ├─ Avg conviction: 6.7/10 | Avg RSI: 71.5
 ├─ Position in 52W range: 47.7% (0=low, 100=high)
+├─ Avg IV rank: 52/100 (≥40 = rich premium)
 ├─ 🔴 REDUCE — Overbought / extended
 
    Conviction Distribution:
@@ -565,8 +574,9 @@ DEFENSE
 
 BRAND-QUALITY (NON-AI)
 ├─ Positions: 21 | Total notional: $252,923
-├─ Avg conviction: 7.05/10 | Avg RSI: 55.2
+├─ Avg conviction: 7.05/10 | Avg RSI: 55.3
 ├─ Position in 52W range: 41.3% (0=low, 100=high)
+├─ Avg IV rank: 45/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -591,6 +601,7 @@ BASIC MATERIALS
 ├─ Positions: 8 | Total notional: $77,956
 ├─ Avg conviction: 8.05/10 | Avg RSI: 77.2
 ├─ Position in 52W range: 38.4% (0=low, 100=high)
+├─ Avg IV rank: 23/100 (≥40 = rich premium)
 ├─ 🔴 REDUCE — Overbought / extended
 
    Conviction Distribution:
@@ -615,6 +626,7 @@ FINANCIAL SERVICES
 ├─ Positions: 33 | Total notional: $477,462
 ├─ Avg conviction: 5.73/10 | Avg RSI: 49.6
 ├─ Position in 52W range: 31.0% (0=low, 100=high)
+├─ Avg IV rank: 42/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -624,8 +636,8 @@ FINANCIAL SERVICES
 
    Heat Distribution:
    ├─ 🟢 GREEN:    19 positions (attractive/oversold)
-   ├─ 🟡 YELLOW:    6 positions (neutral/approaching extremes)
-   └─ 🔴 RED:       8 positions (extended/overbought)
+   ├─ 🟡 YELLOW:    2 positions (neutral/approaching extremes)
+   └─ 🔴 RED:      12 positions (extended/overbought)
 
    Top Positions in Financial Services:
    ├─ MA       $      56,929 | Conv   6.6/10 | Heat YELLOW
@@ -639,6 +651,7 @@ UNKNOWN
 ├─ Positions: 1 | Total notional: $0
 ├─ Avg conviction: 5.3/10 | Avg RSI: 50.0
 ├─ Position in 52W range: 50.0% (0=low, 100=high)
+├─ Avg IV rank: 0/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -661,10 +674,10 @@ SECTOR ROTATION FRAMEWORK
 ========================================================================================================================
 
 PRIORITY 1: BUY SIGNALS (Attractive pricing + conviction)
-  ✓ Communication Services: Conv 7.6/10, RSI 49.1, 52W %ile 24.2
-    🟢 BUY — Oversold / attractively valued
+  ✓ Communication Services: Conv 7.6/10, RSI 49.1, 52W %ile 24.3
+    🟢 BUY — Oversold + rich premium (avg IVR 69, good for selling)
   ✓ Utilities: Conv 6.8/10, RSI 47.6, 52W %ile 11.3
-    🟢 BUY — Oversold / attractively valued
+    🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 37 < 40) — not attractive for CSPs/CCs
 
 PRIORITY 2: HOLD SIGNALS (Conviction intact but extended)
   (None currently)
@@ -680,7 +693,7 @@ PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)
     🟡 MONITOR — Neutral positioning
   ◇ Consumer Cyclical: Conv 6.3/10, RSI 64.5, 52W %ile 54.8
     🟡 MONITOR — Neutral positioning
-  ◇ Brand-Quality (Non-AI): Conv 7.0/10, RSI 55.2, 52W %ile 41.3
+  ◇ Brand-Quality (Non-AI): Conv 7.0/10, RSI 55.3, 52W %ile 41.3
     🟡 MONITOR — Neutral positioning
   ◇ Industrials: Conv 7.1/10, RSI 61.6, 52W %ile 50.9
     🟡 MONITOR — Neutral positioning
@@ -717,44 +730,44 @@ SECTION 6: POSITION HEAT MATRIX & PRIORITY ACTION
 ========================================================================================================================
 
 
-🔴 CRITICAL — ACTION REQUIRED (16 positions)
+🔴 CRITICAL — ACTION REQUIRED (24 positions)
 ------------------------------------------------------------------------------------------------------------------------
-   1. MSFT     | $  495.40 |  3 contracts | Value: $    148620 | Conv:  8.1/10 | RSI:  84.8 | Overbought / Extended
-   2. EXPE     | $  332.69 |  3 contracts | Value: $     99807 | Conv:  6.7/10 | RSI:  76.3 | Overbought / Extended
-   3. PYPL     | $   61.66 | 15 contracts | Value: $     92490 | Conv:  3.2/10 | RSI:  76.2 | Overbought / Extended
-   4. ABNB     | $  184.06 |  5 contracts | Value: $     92030 | Conv:  5.3/10 | RSI:  82.5 | Overbought / Extended
-   5. PANW     | $  384.27 |  2 contracts | Value: $     76854 | Conv:  6.0/10 | RSI:  78.8 | Overbought / Extended
-   6. ZS       | $  183.60 |  4 contracts | Value: $     73440 | Conv:  7.3/10 | RSI:  79.4 | Overbought / Extended
-   7. JPM      | $  362.84 |  2 contracts | Value: $     72568 | Conv:  6.5/10 | RSI:  57.8 | Overbought / Extended
-   8. CRWD     | $  216.95 |  3 contracts | Value: $     65085 | Conv:  6.2/10 | RSI:  75.1 | Overbought / Extended
-   9. ALB      | $  136.15 |  4 contracts | Value: $     54460 | Conv:  8.1/10 | RSI:  77.8 | Overbought / Extended
-  10. XYZ      | $   82.88 |  6 contracts | Value: $     49728 | Conv:  4.1/10 | RSI:  54.2 | Approaching extremes
-  ... and 6 more RED/low conviction positions
+   1. LITE     | $  926.14 |  3 contracts | Value: $    277842 | Conv:  7.2/10 | RSI:  64.5 | Spiked 12% in 7 days — too much too fast
+   2. MSFT     | $  495.40 |  3 contracts | Value: $    148620 | Conv:  8.1/10 | RSI:  84.8 | Overbought / Extended
+   3. EXPE     | $  332.69 |  3 contracts | Value: $     99807 | Conv:  6.7/10 | RSI:  76.3 | Overbought / Extended
+   4. TWLO     | $  238.20 |  4 contracts | Value: $     95280 | Conv:  6.6/10 | RSI:  70.7 | Spiked 23% in 7 days — too much too fast
+   5. PYPL     | $   61.66 | 15 contracts | Value: $     92490 | Conv:  3.2/10 | RSI:  76.2 | Overbought / Extended
+   6. ABNB     | $  184.06 |  5 contracts | Value: $     92030 | Conv:  5.3/10 | RSI:  82.5 | Spiked 21% in 7 days — too much too fast
+   7. PANW     | $  384.27 |  2 contracts | Value: $     76854 | Conv:  6.0/10 | RSI:  78.8 | Overbought / Extended
+   8. ZS       | $  183.60 |  4 contracts | Value: $     73440 | Conv:  7.3/10 | RSI:  79.4 | Spiked 14% in 7 days — too much too fast
+   9. JPM      | $  362.84 |  2 contracts | Value: $     72568 | Conv:  6.5/10 | RSI:  57.8 | Overbought / Extended
+  10. SPCX     | $  140.00 |  5 contracts | Value: $     70000 | Conv:  7.2/10 | RSI:  63.3 | Spiked 29% in 7 days — too much too fast
+  ... and 14 more RED/low conviction positions
 
-🟡 MONITOR — WATCH FOR CHANGES (39 positions)
+🟡 MONITOR — WATCH FOR CHANGES (32 positions)
 ------------------------------------------------------------------------------------------------------------------------
    1. GEV      | $ 1063.25 |  3 contracts | Value: $    318975 | Conv:  7.8/10 | RSI:  60.6
-   2. LITE     | $  926.14 |  3 contracts | Value: $    277842 | Conv:  7.2/10 | RSI:  64.5
-   3. META     | $  589.85 |  4 contracts | Value: $    235940 | Conv:  7.8/10 | RSI:  48.8
-   4. MU       | $  971.66 |  2 contracts | Value: $    194332 | Conv:  8.8/10 | RSI:  56.4
-   5. ISRG     | $  394.51 |  4 contracts | Value: $    157804 | Conv:  8.3/10 | RSI:  71.9
-   6. OKTA     | $  147.43 | 10 contracts | Value: $    147430 | Conv:  5.8/10 | RSI:  61.4
-   7. NFLX     | $   78.16 | 17 contracts | Value: $    132872 | Conv:  8.3/10 | RSI:  72.9
-   8. TSM      | $  426.35 |  3 contracts | Value: $    127905 | Conv:  8.2/10 | RSI:  64.5
-  ... and 31 more YELLOW positions
+   2. META     | $  589.85 |  4 contracts | Value: $    235940 | Conv:  7.8/10 | RSI:  48.8
+   3. MU       | $  971.66 |  2 contracts | Value: $    194332 | Conv:  8.8/10 | RSI:  56.4
+   4. ISRG     | $  394.51 |  4 contracts | Value: $    157804 | Conv:  8.3/10 | RSI:  71.9
+   5. OKTA     | $  147.43 | 10 contracts | Value: $    147430 | Conv:  5.8/10 | RSI:  61.4
+   6. NFLX     | $   78.16 | 17 contracts | Value: $    132872 | Conv:  8.3/10 | RSI:  72.9
+   7. TSM      | $  426.35 |  3 contracts | Value: $    127905 | Conv:  8.2/10 | RSI:  64.5
+   8. ANET     | $  198.82 |  6 contracts | Value: $    119292 | Conv:  8.0/10 | RSI:  64.9
+  ... and 24 more YELLOW positions
 
-🟢 HEALTHY — LET RUN (37 positions)
+🟢 HEALTHY — LET RUN (36 positions)
 ------------------------------------------------------------------------------------------------------------------------
-  37 positions are attractively priced (oversold/neutral)
+  36 positions are attractively priced (oversold/neutral)
   Most oversold candidates (lowest RSI):
     • APP      RSI  26.9 | Conv 8.3/10
     • RBLX     RSI  29.9 | Conv 7.0/10
     • COIN     RSI  34.9 | Conv 5.6/10
 
 PORTFOLIO HEAT ALLOCATION:
-  🔴 CRITICAL:  15.3% ($     984,648)
-  🟡 MONITOR:   45.8% ($   2,951,136)
-  🟢 HEALTHY:   39.0% ($   2,512,108)
+  🔴 CRITICAL:  23.3% ($   1,500,582)
+  🟡 MONITOR:   38.2% ($   2,462,958)
+  🟢 HEALTHY:   38.5% ($   2,484,352)
 
 ========================================================================================================================
 SECTION 6.5: CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS
@@ -767,7 +780,7 @@ Summary: ✅ BULL regime stable. All indicators healthy. Proceed with normal siz
 Indicator Status:
 ------------------------------------------------------------------------------------------------------------------------
   ✅ BREADTH              | Value: 65.38461538461539 | Status: GREEN      | Threshold: 60% (caution), 50% (alert)
-  🔴 AD_RATIO             | Value: 0.5151515151515151 | Status: RED        | Threshold: 1.0 (caution), 0.8 (alert)
+  🔴 AD_RATIO             | Value: 0.5625          | Status: RED        | Threshold: 1.0 (caution), 0.8 (alert)
   ✅ VIX_TERM             | Value: CONTANGO        | Status: GREEN      | Threshold: Contango (normal) → Flat (caution) → Backwardation (alert)
   ✅ HYOAS                | Value: 380 bps         | Status: GREEN      | Threshold: 400 (caution), 450 (alert)
   ✅ PCR                  | Value: 0.75            | Status: GREEN      | Threshold: 1.0 (caution), 1.2 (alert)
@@ -775,10 +788,18 @@ Indicator Status:
 
 Crash Probability Forecast (Probabilistic):
 ------------------------------------------------------------------------------------------------------------------------
-  🟡 30-day crash probability:   21.0%  |  Action: 🟢 NORMAL: Proceed with standard sizing
-  🟡 60-day crash probability:   36.0%
-  🟡 90-day crash probability:   51.0%
+  🟡 30-day crash probability:   29.9%  |  Action: 🟢 NORMAL: Proceed with standard sizing
+  🟠 60-day crash probability:   50.8%
+  🟠 90-day crash probability:   71.8%
   📌 Primary risk factor: AD_RATIO critical
+
+Sector Sensitivity to Primary Risk Driver (AD_RATIO):
+------------------------------------------------------------------------------------------------------------------------
+  🔴 HIGH exposure: Technology, Consumer Cyclical, Communication Services, Basic Materials
+  🟢 LOW exposure:  Utilities, Healthcare, Consumer Defensive, Energy, Defense
+  (New entries in HIGH-exposure sectors compound the exact risk this driver is
+   flagging, even if the individual name looks statistically oversold — see the
+   opportunity list in Section 7 for a per-name check against this.)
 
 Recommended Actions:
 ------------------------------------------------------------------------------------------------------------------------
@@ -793,47 +814,47 @@ SECTION 7: ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT
 
 EXECUTION SEQUENCE (Do in this order):
 
-1️⃣  CLOSE NOW 🔴 (15 positions)
+1️⃣  CLOSE NOW 🔴 (23 positions)
    └─ Why: Extended/overbought + structural risk. Act before deterioration.
-   └─ Gap Impact: Closing 15 RED positions saves ~$7,500/month drag
-       Moves gap from $-14,300 to $-21,800 (-7.5% improvement)
+   └─ Gap Impact: Closing 23 RED positions saves ~$11,500/month drag
+       Moves gap from $-14,300 to $-25,800 (-11.5% improvement)
+       • LITE     | Contracts:  3 | Notional: $   277,842 | Spiked 12% in 7 days — too much too fast
        • MSFT     | Contracts:  3 | Notional: $   148,620 | Overbought / Extended
        • EXPE     | Contracts:  3 | Notional: $    99,807 | Overbought / Extended
+       • TWLO     | Contracts:  4 | Notional: $    95,280 | Spiked 23% in 7 days — too much too fast
        • PYPL     | Contracts: 15 | Notional: $    92,490 | Overbought / Extended
-       • ABNB     | Contracts:  5 | Notional: $    92,030 | Overbought / Extended
-       • PANW     | Contracts:  2 | Notional: $    76,854 | Overbought / Extended
-       • ... and 10 more RED positions
+       • ... and 18 more RED positions
 
 2️⃣  MONITOR FOR ROLLS 🟡 (1 positions at risk)
    └─ Why: Approaching strike or extremes. Roll if thesis intact, close if thesis broken.
    └─ Gap Impact: Preserve existing $1,000/month contribution from MODERATE conviction positions
        • XYZ      | Contracts:  6 | Conv: 4.1/10 | Approaching extremes
 
-3️⃣  LET RUN — NOTHING NEEDED 🟢 (37 positions)
+3️⃣  LET RUN — NOTHING NEEDED 🟢 (36 positions)
    └─ Why: Attractive pricing (oversold) + adequate conviction. No action required.
-   └─ Gap Impact: 37 healthy positions contribute $37,000/month baseline (expected)
-       ✅ 37 positions: Continue monitoring weekly
+   └─ Gap Impact: 36 healthy positions contribute $36,000/month baseline (expected)
+       ✅ 36 positions: Continue monitoring weekly
 
 4️⃣  OPPORTUNITY — HIGH CONVICTION ENTRIES 🟢 (6 names)
    └─ Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.
    └─ Gap Impact: Adding 6 Tier 1 entries = $22,800/month
        Closes gap from $-14,300 to $-37,100 (22.8% closure)
-       • AMKR     Conv 8.4/10 | RSI  48.0 | Value $    35,394
-       • APP      Conv 8.3/10 | RSI  26.9 | Value $   157,720
+       • AMKR     Conv 8.4/10 | RSI  48.0 | Value $    35,394  ⚠️ Technology is HIGH-exposure to today's primary risk driver — adding here compounds it
+       • APP      Conv 8.3/10 | RSI  26.9 | Value $   157,720  ⚠️ Communication Services is HIGH-exposure to today's primary risk driver — adding here compounds it
        • VRT      Conv 8.3/10 | RSI  52.0 | Value $   117,536
        • DVN      Conv 8.2/10 | RSI  60.6 | Value $     9,170
-       • ALAB     Conv 8.0/10 | RSI  58.2 | Value $   257,288
+       • ALAB     Conv 8.0/10 | RSI  58.2 | Value $   257,288  ⚠️ Technology is HIGH-exposure to today's primary risk driver — adding here compounds it
 
 PORTFOLIO STATUS & GAP TRAJECTORY:
   ✅ Total positions scanned: 92
-  🔴 Critical actions: 15 closes + 1 monitors
-  🟡 Yellow cautions: 39
-  🟢 Green healthy: 37
+  🔴 Critical actions: 23 closes + 1 monitors
+  🟡 Yellow cautions: 32
+  🟢 Green healthy: 36
   📊 Market regime: BULL
 
 GAP CLOSURE SUMMARY:
   Current gap: $-14,300 (-14.3% below target)
-  After closes: $-21,800 (saves ~-7.5%)
+  After closes: $-25,800 (saves ~-11.5%)
   After new Tier 1 entries: $-37,100 (22.8% to gap closure)
   Path to target: Execute closes → add HIGH conviction Tier 1 → scale over 2-3 weeks
 

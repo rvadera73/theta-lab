@@ -372,7 +372,7 @@ APP (Moat Score: 8.3/10, Position Value: $157,720)
 ├─ Conviction: 8.3 (GREEN heat)
 ├─ Current: $315.44 | Contracts: 5 | 52-Week: $303.17 - $745.61
 ├─ Technical: RSI 26.9, Position 3% of range
-└─ Moat verdict: STRONG (Oversold / Attractive)
+└─ Moat verdict: STRONG (Dropped -24% in 7 days — verify thesis before treating as an entry)
 
 ISRG (Moat Score: 8.3/10, Position Value: $157,804)
 ├─ Conviction: 8.3 (YELLOW heat)

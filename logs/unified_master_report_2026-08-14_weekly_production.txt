@@ -190,8 +190,8 @@ SECTION 1: WEEKLY MARKET REGIME FORECAST
 
 Current signals:
 ├─ VIX: 14.2 (VIX 14.2 sustained < 20)
-├─ S&P 500 50-MA: +268
-└─ S&P 500 200-MA: +722
+├─ S&P 500 50-MA: +274
+└─ S&P 500 200-MA: +711
 
 **Probability of regime shift this week:** 15% | **Probability of staying BULL:** 85% ✅
 
@@ -211,15 +211,15 @@ Priority 2 — Monitor LOW Conviction positions for exit:
 ├─ 15 positions with Conv <6/10 identified
 ├─ Drag impact: $7,500/month drag (-7.5% of target)
 ├─ Action: Close worst RED positions to eliminate drag
-├─ NBIS: Conv 5.8 | Drag $500/mo | Value $27,768 | RSI 67.2 (CONCERN: Overbought / Extended)
-├─ ABNB: Conv 5.3 | Drag $500/mo | Value $92,030 | RSI 82.5 (CONCERN: Overbought / Extended)
+├─ NBIS: Conv 5.8 | Drag $500/mo | Value $27,768 | RSI 67.2 (CONCERN: Spiked 27% in 7 days — too much too fast)
+├─ ABNB: Conv 5.3 | Drag $500/mo | Value $92,030 | RSI 82.5 (CONCERN: Spiked 21% in 7 days — too much too fast)
 ├─ PYPL: Conv 3.2 | Drag $500/mo | Value $92,490 | RSI 76.2 (CONCERN: Overbought / Extended)
 
 Priority 3 — IV Rank Entry Gate Check:
-├─ Tier 1 entry candidates (IVR ≥40): 17 names
-├─ Potential contribution: $64,600/month if all deployed
-├─ Capital required: $170,000 (17 × $10K per position)
-├─ Gap closure from new entries: 65% of $$14300 gap
+├─ Tier 1 entry candidates (IVR ≥40): 55 names
+├─ Potential contribution: $209,000/month if all deployed
+├─ Capital required: $550,000 (55 × $10K per position)
+├─ Gap closure from new entries: 209% of $$14300 gap
 ├─ ADBE: IVR 91.3 | $264.02 | Contributes $3,800/mo if added
 ├─ AXON: IVR 90.5 | $612.83 | Contributes $3,800/mo if added
 ├─ BE: IVR 70.0 | $229.94 | Contributes $3,800/mo if added
@@ -365,8 +365,8 @@ Margin guardrails:
 - Emergency fund: Intact and separate ✅
 
 Position concentration:
-- GREEN heat: 37 positions (acceptable risk)
-- RED heat: 15 positions (monitor actively)
+- GREEN heat: 36 positions (acceptable risk)
+- RED heat: 23 positions (monitor actively)
 - No structural breaches detected ✅
 
 ========================================================================================================================
@@ -399,11 +399,11 @@ SECTION 10: FRAMEWORK STATUS & AUTOMATION
 Daily Conviction Tracking:     ✅ Real-time, 16 HIGH identified
 Earnings Date Monitoring:      ✅ Integrated in technical analysis
 Momentum Trend Tracking:       ✅ RSI, MACD, Bollinger Bands (all active)
-Multi-Trigger Exit Logic:      ✅ 15 RED detected, monitoring
+Multi-Trigger Exit Logic:      ✅ 23 RED detected, monitoring
 Greeks Guardrails:             ✅ All in range, portfolio balanced
 Regime Detection:              ✅ BULL confirmed
 Win Rate Tracking:             ✅ Conviction-based entry filtration
-IV Rank Entry Gate:            ✅ 17 names qualified (IVR ≥40)
+IV Rank Entry Gate:            ✅ 55 names qualified (IVR ≥40)
 Sharpe Ratio (7-day rolling):  ✅ 1.7+ target maintained
 
 Automation notes:

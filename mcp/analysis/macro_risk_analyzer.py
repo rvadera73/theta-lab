@@ -334,6 +334,7 @@ class MacroRiskAnalyzer:
         if hyoas:
             signals["hyoas"] = {
                 "value": f"{hyoas:.0f} bps",
+                "raw_value": hyoas,
                 "status": "RED" if hyoas > self.thresholds["hyoas_red"]
                          else "YELLOW" if hyoas > self.thresholds["hyoas_yellow"]
                          else "GREEN",
@@ -348,6 +349,7 @@ class MacroRiskAnalyzer:
         pcr = self.get_put_call_ratio()
         signals["pcr"] = {
             "value": f"{pcr:.2f}",
+            "raw_value": pcr,
             "status": "RED" if pcr > self.thresholds["pcr_red"]
                      else "YELLOW" if pcr > self.thresholds["pcr_yellow"]
                      else "GREEN",
@@ -363,6 +365,7 @@ class MacroRiskAnalyzer:
         if yield_curve is not None:
             signals["yield_curve"] = {
                 "value": f"{yield_curve:.2f}%",
+                "raw_value": yield_curve,
                 "status": "RED" if yield_curve < self.thresholds["yield_curve_red"]
                          else "YELLOW" if yield_curve < self.thresholds["yield_curve_yellow"]
                          else "GREEN",
@@ -394,7 +397,59 @@ class MacroRiskAnalyzer:
             "summary": self._get_risk_summary(risk_level, stage, signals),
             "actions": self._get_actions(risk_level, stage),
             "crash_probability": crash_prob,
-            "playbook": self._get_rotation_playbook(stage, crash_prob)
+            "playbook": self._get_rotation_playbook(stage, crash_prob),
+            "sector_sensitivity": self.get_sector_crash_sensitivity(crash_prob.get("primary_risk", "")),
+        }
+
+    # Which sectors historically take the brunt of a given risk factor's
+    # unwind — deliberately NOT one static list for every scenario, since
+    # breadth-narrowing (momentum/leadership unwind) and credit-spread-widening
+    # (risk-off, leverage-sensitive) hit different parts of the book. Per-name
+    # heat/conviction scoring never sees any of this (see enhanced_metrics.py) —
+    # this is what lets the report say "which sector is most exposed given
+    # TODAY's specific risk driver" instead of a single always-the-same list.
+    SECTOR_SENSITIVITY_MAP = {
+        "ad_ratio": {  # narrow breadth / momentum-leadership unwind
+            "high": ["Technology", "Consumer Cyclical", "Communication Services", "Basic Materials"],
+            "low": ["Utilities", "Healthcare", "Consumer Defensive", "Energy", "Defense"],
+        },
+        "breadth": {  # same failure mode as ad_ratio — narrow participation
+            "high": ["Technology", "Consumer Cyclical", "Communication Services", "Basic Materials"],
+            "low": ["Utilities", "Healthcare", "Consumer Defensive", "Energy", "Defense"],
+        },
+        "hyoas": {  # credit-spread widening — leverage/cyclical-sensitive names
+            "high": ["Financial Services", "Industrials", "Basic Materials"],
+            "low": ["Utilities", "Consumer Defensive", "Healthcare"],
+        },
+        "pcr": {  # elevated hedging demand — broad risk-off, high-beta hit hardest
+            "high": ["Technology", "Consumer Cyclical", "Communication Services"],
+            "low": ["Utilities", "Consumer Defensive", "Healthcare"],
+        },
+        "yield_curve": {  # inversion — financials margin compression + long-duration growth revaluation
+            "high": ["Financial Services", "Technology"],
+            "low": ["Utilities", "Energy", "Consumer Defensive"],
+        },
+        "vix_term": {  # backwardation — imminent-stress read, broad but momentum-heavy first
+            "high": ["Technology", "Consumer Cyclical", "Communication Services", "Basic Materials"],
+            "low": ["Utilities", "Consumer Defensive", "Healthcare"],
+        },
+    }
+
+    def get_sector_crash_sensitivity(self, primary_risk: str) -> Dict:
+        """Map the crash forecast's primary_risk string (e.g. "AD_RATIO critical")
+        back to which sectors are historically most/least exposed to THAT
+        specific risk factor's unwind. Returns {} if primary_risk is
+        "Market neutral" (nothing flagged) or doesn't match a known indicator."""
+        if not primary_risk or primary_risk == "Market neutral":
+            return {}
+        indicator = primary_risk.split()[0].lower()
+        mapping = self.SECTOR_SENSITIVITY_MAP.get(indicator)
+        if not mapping:
+            return {}
+        return {
+            "driver": indicator.upper(),
+            "high_sensitivity_sectors": mapping["high"],
+            "low_sensitivity_sectors": mapping["low"],
         }
 
     def _get_risk_summary(self, risk_level: str, stage: int, signals: Dict) -> str:
@@ -434,6 +489,63 @@ class MacroRiskAnalyzer:
                 "Prepare for potential Stage 3 (emergency)"
             ]
 
+    # Per-indicator (yellow_threshold, red_threshold, higher_is_worse) — needed to
+    # compute a continuous severity instead of a binary RED/YELLOW/GREEN bucket.
+    # Must mirror self.thresholds' pairing exactly (kept separate because
+    # self.thresholds uses flat keys like "ad_ratio_yellow", not grouped tuples).
+    _SEVERITY_SPEC = {
+        "breadth":      ("breadth_yellow", "breadth_red", False),      # lower = worse
+        "ad_ratio":     ("ad_ratio_yellow", "ad_ratio_red", False),    # lower = worse
+        "hyoas":        ("hyoas_yellow", "hyoas_red", True),           # higher = worse
+        "pcr":          ("pcr_yellow", "pcr_red", True),                # higher = worse
+        "yield_curve":  ("yield_curve_yellow", "yield_curve_red", False),  # lower = worse
+    }
+
+    def _indicator_severity(self, indicator: str, value) -> float:
+        """Continuous 0.0 (fully green) to 2.0 (twice as deep past the red
+        threshold as the red threshold itself is past yellow) severity score.
+
+        Replaces flat RED=1/YELLOW=1 counting, which couldn't tell a reading
+        that just barely crossed the red threshold from one deep inside it —
+        empirically confirmed on 2026-08-14: AD_RATIO moved from 0.79 to 0.515
+        (both below the 0.8 red threshold) across same-day report reruns, and
+        the old formula produced an IDENTICAL 51.0% 90-day crash probability
+        both times because it only counted "1 red signal" either way.
+
+        vix_term is excluded (categorical CONTANGO/FLAT/BACKWARDATION, no
+        numeric threshold to score a continuous distance against) — it still
+        contributes via the old red/yellow COUNT path in calculate_crash_probability,
+        just not through this continuous severity path.
+        """
+        spec = self._SEVERITY_SPEC.get(indicator)
+        if spec is None or value is None or not isinstance(value, (int, float)):
+            return 0.0
+        yellow_t, red_t, higher_is_worse = spec
+        yellow_t, red_t = self.thresholds[yellow_t], self.thresholds[red_t]
+        gap = abs(red_t - yellow_t)
+        if gap == 0:
+            return 0.0
+        # Past the red threshold, severity ramps to its 2.0 cap over TWICE the
+        # yellow->red gap (not once) — a narrow-gap indicator like ad_ratio
+        # (yellow 1.0, red 0.8, gap 0.2) would otherwise saturate at 2.0 the
+        # moment it hit 0.6, which is well within its normal daily noise range
+        # (observed 0.51-0.79 across same-day reruns on 2026-08-14) and made
+        # "barely red" and "deeply red" look almost identical again — exactly
+        # the blindness this was meant to fix.
+        past_red_scale = 2.0 * gap
+        if higher_is_worse:
+            if value <= yellow_t:
+                return 0.0
+            if value <= red_t:
+                return max(0.0, min(1.0, (value - yellow_t) / gap))
+            return 1.0 + max(0.0, min(1.0, (value - red_t) / past_red_scale))
+        else:
+            if value >= yellow_t:
+                return 0.0
+            if value >= red_t:
+                return max(0.0, min(1.0, (yellow_t - value) / gap))
+            return 1.0 + max(0.0, min(1.0, (red_t - value) / past_red_scale))
+
     def calculate_crash_probability(self, signals: Dict) -> Dict:
         """
         Calculate probabilistic crash forecast for 30/60/90-day windows
@@ -453,38 +565,58 @@ class MacroRiskAnalyzer:
         base_prob_60d = 11.0
         base_prob_90d = 16.0
 
-        # Count red and yellow signals
+        # Count red and yellow signals (still used for vix_term, which has no
+        # numeric severity, and as the basis for primary-risk-factor selection)
         red_count = sum(1 for v in signals.values() if isinstance(v, dict) and v.get('status') == 'RED')
         yellow_count = sum(1 for v in signals.values() if isinstance(v, dict) and v.get('status') == 'YELLOW')
 
-        # Signal multipliers (based on historical predictive power)
-        # Red signals are 4x more predictive than yellow
-        red_multiplier = 4.0
-        yellow_multiplier = 1.5
+        # Continuous severity sum across all scoreable indicators — this is
+        # what actually drives the probability now, not the red/yellow counts
+        # above. A reading that's barely past its threshold contributes near
+        # 0; one deep in the red zone contributes up to 2.0. vix_term (no
+        # numeric threshold) falls back to a flat 1.0/0.4 RED/YELLOW severity
+        # so it still counts, just without magnitude sensitivity.
+        severity_sum = 0.0
+        for indicator, details in signals.items():
+            if not isinstance(details, dict):
+                continue
+            if indicator in self._SEVERITY_SPEC:
+                severity_sum += self._indicator_severity(indicator, details.get('raw_value', details.get('value')))
+            elif details.get('status') == 'RED':
+                severity_sum += 1.0
+            elif details.get('status') == 'YELLOW':
+                severity_sum += 0.4
 
-        # Adjust probabilities based on signal severity
-        prob_30d = base_prob_30d + (red_count * 15) + (yellow_count * 5)
-        prob_60d = base_prob_60d + (red_count * 25) + (yellow_count * 8)
-        prob_90d = base_prob_90d + (red_count * 35) + (yellow_count * 12)
+        # Adjust probabilities based on continuous severity (replaces the old
+        # flat red_count*15/yellow_count*5-style bumps — same rough scale at
+        # severity=1.0 (a reading exactly at its red threshold) as the old
+        # red_count=1 case, but now scales smoothly past that point instead of
+        # staying frozen for any reading beyond the threshold.
+        prob_30d = base_prob_30d + severity_sum * 15
+        prob_60d = base_prob_60d + severity_sum * 25
+        prob_90d = base_prob_90d + severity_sum * 35
 
         # Cap at 95% (never 100% certain)
         prob_30d = min(prob_30d, 95.0)
         prob_60d = min(prob_60d, 95.0)
         prob_90d = min(prob_90d, 95.0)
 
-        # Identify primary risk factor
+        # Identify primary risk factor — now picks the indicator with the
+        # HIGHEST severity (not just "first RED found in dict order"), so it
+        # actually reflects which signal is doing the most damage.
         primary_risk = "Market neutral"
-        if red_count > 0:
-            # Find which indicator is red
-            for indicator, details in signals.items():
-                if isinstance(details, dict) and details.get('status') == 'RED':
-                    primary_risk = f"{indicator.upper()} critical"
-                    break
-        elif yellow_count > 0:
-            for indicator, details in signals.items():
-                if isinstance(details, dict) and details.get('status') == 'YELLOW':
-                    primary_risk = f"{indicator.upper()} elevated"
-                    break
+        worst_indicator, worst_severity = None, 0.0
+        for indicator, details in signals.items():
+            if not isinstance(details, dict):
+                continue
+            sev = (self._indicator_severity(indicator, details.get('raw_value', details.get('value')))
+                   if indicator in self._SEVERITY_SPEC
+                   else (1.0 if details.get('status') == 'RED' else 0.4 if details.get('status') == 'YELLOW' else 0.0))
+            if sev > worst_severity:
+                worst_severity, worst_indicator = sev, indicator
+        if worst_indicator:
+            status = signals[worst_indicator].get('status')
+            primary_risk = f"{worst_indicator.upper()} critical" if status == 'RED' else f"{worst_indicator.upper()} elevated"
 
         # Determine action based on 30-day probability
         if prob_30d >= 70:

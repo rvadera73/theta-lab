@@ -81,8 +81,12 @@ class UnifiedReportProduction:
             self.position_summary.index.tolist(), self.prices, option_types=option_types
         )
 
-        # Get IV rank for top tickers
-        self.iv_ranks = batch_iv_rank(self.position_summary.head(25).index.tolist())
+        # Get IV rank for ALL tickers, not just the top 25 — sector-level IV
+        # rank averaging (see sector_analysis.py) needs full coverage to be a
+        # fair sector average rather than whatever happened to be in the 25
+        # largest positions; the entry-candidate scan below still only surfaces
+        # the top 25 by position size, unaffected by this widening.
+        self.iv_ranks = batch_iv_rank(self.position_summary.index.tolist())
         # A failed/incomplete fetch can leave iv_rank explicitly None rather than
         # absent — normalize here once instead of guarding every .get('iv_rank', 0)
         # call site downstream (comparisons/formatting against None crash otherwise).
@@ -90,9 +94,13 @@ class UnifiedReportProduction:
             if _iv_data.get("iv_rank") is None:
                 _iv_data["iv_rank"] = 0
 
-        # Get sector analysis
-        self.sector_summary, self.sector_analysis_output, self.sector_rotation_output = batch_get_sector_analysis(
-            self.open_positions, self.metrics, self.prices
+        # Get sector analysis — iv_ranks passed through so the sector signal
+        # can distinguish "cheap stock" from "cheap stock AND rich premium"
+        # (a sector like Utilities/Energy can be statistically oversold on
+        # price while carrying structurally low IV, which matters for a
+        # premium-selling strategy but was previously invisible in the signal).
+        self.sector_summary, self.sector_analysis_output, self.sector_rotation_output, self.ticker_sector_map = batch_get_sector_analysis(
+            self.open_positions, self.metrics, self.prices, self.iv_ranks
         )
 
     def _load_portfolio_snapshot(self) -> dict:
@@ -720,6 +728,7 @@ class UnifiedReportProduction:
             "spx_200ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma200', 6831),
         }
 
+        risk_analysis = {}  # default so Section 7 below can safely reference it even if this fails
         try:
             risk_analysis = analyze_macro_risk(macro_risk_data)
 
@@ -755,6 +764,23 @@ class UnifiedReportProduction:
                 output.append(f"  {emoji_60d} 60-day crash probability:  {prob_60d:>5.1f}%")
                 output.append(f"  {emoji_90d} 90-day crash probability:  {prob_90d:>5.1f}%")
                 output.append(f"  📌 Primary risk factor: {crash_prob.get('primary_risk', 'None')}")
+                output.append("")
+
+            # Sector crash-sensitivity — WHICH sectors are most exposed to
+            # today's specific primary risk driver, not a generic list. The
+            # per-name heat/conviction scoring (enhanced_metrics.py) and this
+            # macro layer never talked to each other before this — this is
+            # the connection, surfaced here and cross-checked against the
+            # opportunity list in Section 7 below.
+            sensitivity = risk_analysis.get('sector_sensitivity') or {}
+            if sensitivity:
+                output.append(f"Sector Sensitivity to Primary Risk Driver ({sensitivity['driver']}):")
+                output.append("-" * 120)
+                output.append(f"  🔴 HIGH exposure: {', '.join(sensitivity['high_sensitivity_sectors'])}")
+                output.append(f"  🟢 LOW exposure:  {', '.join(sensitivity['low_sensitivity_sectors'])}")
+                output.append("  (New entries in HIGH-exposure sectors compound the exact risk this driver is")
+                output.append("   flagging, even if the individual name looks statistically oversold — see the")
+                output.append("   opportunity list in Section 7 for a per-name check against this.)")
                 output.append("")
 
             # Display actions
@@ -848,8 +874,23 @@ class UnifiedReportProduction:
             output.append("   └─ Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.")
             output.append(f"   └─ Gap Impact: Adding {len(high_conviction_GREEN)} Tier 1 entries = ${new_entry_contribution:,}/month")
             output.append(f"       Closes gap from ${gap_data['monthly_gap']:,} to ${gap_after_new_entries:,} ({new_entry_impact_pct:.1f}% closure)")
+            # Cross-check each candidate's sector against the sector-sensitivity
+            # map from Section 6.5 — a name can look individually oversold/
+            # high-conviction while sitting in the exact sector the macro
+            # layer just flagged as most exposed to today's primary risk
+            # driver, which previously went uncaught (per-name and macro
+            # scoring never talked to each other before this).
+            high_sensitivity_sectors = set((risk_analysis.get('sector_sensitivity') or {}).get('high_sensitivity_sectors', []))
+            flagged = 0
             for pos in sorted(high_conviction_GREEN, key=lambda x: x['conv'], reverse=True)[:5]:
-                output.append(f"       • {pos['ticker']:8} Conv {pos['conv']:.1f}/10 | RSI {pos['rsi']:>5.1f} | Value ${pos['notional']:>10,.0f}")
+                sector = self.ticker_sector_map.get(pos['ticker'])
+                warn = ""
+                if sector and sector in high_sensitivity_sectors:
+                    warn = f"  ⚠️ {sector} is HIGH-exposure to today's primary risk driver — adding here compounds it"
+                    flagged += 1
+                output.append(f"       • {pos['ticker']:8} Conv {pos['conv']:.1f}/10 | RSI {pos['rsi']:>5.1f} | Value ${pos['notional']:>10,.0f}{warn}")
+            if high_sensitivity_sectors and flagged == 0:
+                output.append("       (None of these sit in a sector flagged HIGH-exposure to today's primary risk driver.)")
             output.append("")
 
         output.append("PORTFOLIO STATUS & GAP TRAJECTORY:")

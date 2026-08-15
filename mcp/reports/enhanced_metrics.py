@@ -205,6 +205,21 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
         macd_data = TechnicalIndicators.macd(closes)
         bb_data = TechnicalIndicators.bollinger_bands(closes)
 
+        # 7-day rate-of-change — a recency/speed measure RSI(14) and the
+        # 52-week-range position both miss. RSI is a smoothed 14-day
+        # oscillator: a stock that ground higher over two months and one
+        # that spiked in the last week can both read RSI 80. 52-week-range
+        # position is even longer-horizon. Neither can tell "sustainably
+        # extended" from "just spiked" — this can.
+        roc_7d = None
+        if len(closes) >= 8:
+            try:
+                prior = float(closes.iloc[-8])
+                if prior:
+                    roc_7d = float((closes.iloc[-1] / prior - 1) * 100)
+            except (ZeroDivisionError, IndexError):
+                roc_7d = None
+
         # Determine conviction score (0-10). Fundamentals are weighted as the
         # PRIMARY signal (larger swing) with technicals SUPPLEMENTAL — matching
         # the trading persona's stated philosophy ("fundamentals + macro instinct
@@ -328,10 +343,26 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
         conviction = 5.0 + 5.0 * (raw_score / MAX_RAW_SCORE)
         conviction = max(1, min(10, conviction))  # safety net only — should rarely bind now
 
-        # Determine heat status (RED/YELLOW/GREEN)
-        if rsi > 75 or position_in_range > 90:
+        # Determine heat status (RED/YELLOW/GREEN). The two recency checks
+        # run FIRST — a stock that just spiked/dropped hard in the last week
+        # (roc_7d) or last 20 sessions (Bollinger %B, computed above but
+        # previously never used) deserves flagging even when RSI(14)/52-week
+        # positioning haven't caught up to it yet.
+        if roc_7d is not None and roc_7d > 12:
+            heat_status = "RED"
+            heat_reason = f"Spiked {roc_7d:.0f}% in 7 days — too much too fast"
+        elif bb_data['pct_b'] > 1.0:
+            heat_status = "RED"
+            heat_reason = "Trading above upper Bollinger Band — short-term extended"
+        elif rsi > 75 or position_in_range > 90:
             heat_status = "RED"
             heat_reason = "Overbought / Extended"
+        elif roc_7d is not None and roc_7d < -12:
+            heat_status = "GREEN"
+            heat_reason = f"Dropped {roc_7d:.0f}% in 7 days — verify thesis before treating as an entry"
+        elif bb_data['pct_b'] < 0.0:
+            heat_status = "GREEN"
+            heat_reason = "Trading below lower Bollinger Band — short-term oversold"
         elif rsi < 25 or position_in_range < 10:
             heat_status = "GREEN"
             heat_reason = "Oversold / Attractive"
@@ -350,6 +381,7 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
             "macd": round(macd_data['macd'], 4),
             "macd_histogram": round(macd_data['histogram'], 4),
             "bb_position": round(bb_data['pct_b'], 2),
+            "roc_7d": round(roc_7d, 1) if roc_7d is not None else None,
             "position_in_52w_range": round(position_in_range, 1),
             "week_52_high": round(week_52_high, 2) if week_52_high else None,
             "week_52_low": round(week_52_low, 2) if week_52_low else None,
@@ -371,6 +403,7 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
             "macd": 0.0,
             "macd_histogram": 0.0,
             "bb_position": 0.5,
+            "roc_7d": None,
             "position_in_52w_range": 50.0,
             "week_52_high": None,
             "week_52_low": None,

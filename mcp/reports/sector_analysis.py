@@ -62,7 +62,7 @@ class SectorAnalyzer:
         'ANET': 'Brand-Quality (Non-AI)',
     }
 
-    def __init__(self, open_positions: pd.DataFrame, metrics: Dict, prices: Dict):
+    def __init__(self, open_positions: pd.DataFrame, metrics: Dict, prices: Dict, iv_ranks: Dict = None):
         """
         Initialize with positions data and metrics
 
@@ -70,10 +70,14 @@ class SectorAnalyzer:
             open_positions: DataFrame with ticker, net_quantity columns
             metrics: Dict[ticker] -> metrics dict with conviction, heat_status, rsi, position_in_52w_range
             prices: Dict[ticker] -> current price
+            iv_ranks: Dict[ticker] -> {iv_rank, iv_pct, ...} from analysis.iv_rank.batch_iv_rank.
+                Optional — omit (or pass {}) to keep the sector signal price-only,
+                same as before this was added.
         """
         self.open_positions = open_positions
         self.metrics = metrics
         self.prices = prices
+        self.iv_ranks = iv_ranks or {}
         self.sector_map = {}
         self.sector_data = {}
         self._fetch_sector_data()
@@ -120,6 +124,7 @@ class SectorAnalyzer:
             'heat_statuses': [],
             'rsi_values': [],
             'position_ranges': [],
+            'iv_ranks': [],
         })
 
         # Group positions by sector
@@ -138,6 +143,9 @@ class SectorAnalyzer:
             sector_analysis[sector]['heat_statuses'].append(metrics.get('heat_status', 'YELLOW'))
             sector_analysis[sector]['rsi_values'].append(metrics.get('rsi', 50.0))
             sector_analysis[sector]['position_ranges'].append(metrics.get('position_in_52w_range', 50.0))
+            iv_rank = self.iv_ranks.get(ticker, {}).get('iv_rank')
+            if iv_rank is not None:
+                sector_analysis[sector]['iv_ranks'].append(iv_rank)
 
         # Calculate sector-level metrics
         sector_summary = {}
@@ -172,6 +180,18 @@ class SectorAnalyzer:
             avg_conv = np.mean(convictions)
             avg_rsi = np.mean(rsi_values)
             avg_position_range = np.mean(position_ranges)
+            iv_ranks = data['iv_ranks']
+            avg_iv_rank = float(np.mean(iv_ranks)) if iv_ranks else None
+            # IVR >= 40 is this codebase's own established "worth selling
+            # premium here" threshold (see analysis/iv_rank.py's entry_signal).
+            # Below that, options are cheap regardless of how the stock itself
+            # is priced — a sector can be statistically oversold on PRICE
+            # (Utilities, Energy) while being a poor premium-selling sector
+            # because its options are structurally low-IV. This was previously
+            # invisible: "BUY" meant "cheap stock," not "cheap stock AND rich
+            # premium," which is what actually matters for a premium-selling
+            # strategy.
+            premium_rich = avg_iv_rank is not None and avg_iv_rank >= 40
 
             # Discriminating bands. Sector AVERAGES rarely hit conjunctive extremes,
             # so overbought/oversold (OR conditions) drive the color; conviction guards it.
@@ -182,10 +202,20 @@ class SectorAnalyzer:
                 signal = "🔴 REDUCE — Overbought / extended"
                 signal_type = "EXTENSION"
             elif avg_rsi <= 40 or avg_position_range <= 25:
-                signal = "🟢 BUY — Oversold / attractively valued"
+                if avg_iv_rank is None:
+                    signal = "🟢 BUY — Oversold / attractively valued (IV rank unavailable — premium richness unknown)"
+                elif premium_rich:
+                    signal = f"🟢 BUY — Oversold + rich premium (avg IVR {avg_iv_rank:.0f}, good for selling)"
+                else:
+                    signal = f"🟡 BUY (stock only) — Oversold but THIN premium (avg IVR {avg_iv_rank:.0f} < 40) — not attractive for CSPs/CCs"
                 signal_type = "ATTRACTION"
             elif avg_conv >= 7.5 and avg_position_range < 50:
-                signal = "🟢 BUY — High conviction"
+                if avg_iv_rank is None:
+                    signal = "🟢 BUY — High conviction (IV rank unavailable — premium richness unknown)"
+                elif premium_rich:
+                    signal = f"🟢 BUY — High conviction + rich premium (avg IVR {avg_iv_rank:.0f})"
+                else:
+                    signal = f"🟡 BUY (stock only) — High conviction but THIN premium (avg IVR {avg_iv_rank:.0f} < 40)"
                 signal_type = "ATTRACTION"
             else:
                 signal = "🟡 MONITOR — Neutral positioning"
@@ -203,6 +233,7 @@ class SectorAnalyzer:
                 'heat_dist': dict(heat_dist),
                 'avg_rsi': round(avg_rsi, 1),
                 'avg_position_in_52w_range': round(avg_position_range, 1),
+                'avg_iv_rank': round(avg_iv_rank, 1) if avg_iv_rank is not None else None,
                 'top_positions': top_positions,
                 'signal': signal,
                 'signal_type': signal_type,
@@ -228,7 +259,7 @@ class SectorAnalyzer:
         # Summary table
         output.append("SECTOR SNAPSHOT — Conviction & Valuation Positioning:")
         output.append("")
-        output.append(f"{'Sector':<25} {'Positions':>10} {'Avg Conv':>10} {'Avg RSI':>9} {'52W %ile':>10} {'Signal':>40}")
+        output.append(f"{'Sector':<25} {'Positions':>10} {'Avg Conv':>10} {'Avg RSI':>9} {'52W %ile':>10} {'Avg IVR':>9} {'Signal':>40}")
         output.append("-" * 120)
 
         for sector in ordered_sectors:
@@ -236,11 +267,21 @@ class SectorAnalyzer:
             conv = data['avg_conviction']
             rsi = data['avg_rsi']
             range_pct = data['avg_position_in_52w_range']
+            ivr = data.get('avg_iv_rank')
+            ivr_str = f"{ivr:.0f}" if ivr is not None else "n/a"
             signal_type = data['signal_type']
 
-            # Shorten signal for display
+            # Shorten signal for display — BUY splits on premium richness
+            # (avg IV rank >= 40) so a cheap-but-thin-premium sector like
+            # Utilities/Energy doesn't read identically to a cheap-and-rich
+            # one; PRICE_ONLY (no IV data) is called out rather than guessed.
             if signal_type == "ATTRACTION":
-                signal_short = "🟢 BUY"
+                if ivr is None:
+                    signal_short = "🟢 BUY (price only)"
+                elif ivr >= 40:
+                    signal_short = "🟢 BUY (rich premium)"
+                else:
+                    signal_short = "🟡 BUY stock/THIN premium"
             elif signal_type == "EXTENSION":
                 signal_short = "🔴 REDUCE"
             elif signal_type == "MIXED":
@@ -250,7 +291,7 @@ class SectorAnalyzer:
             else:
                 signal_short = "🟡 NEUTRAL"
 
-            output.append(f"{sector:<25} {data['position_count']:>10} {conv:>10} {rsi:>9.1f} {range_pct:>10.1f} {signal_short:>40}")
+            output.append(f"{sector:<25} {data['position_count']:>10} {conv:>10} {rsi:>9.1f} {range_pct:>10.1f} {ivr_str:>9} {signal_short:>40}")
 
         output.append("")
         output.append("")
@@ -262,10 +303,12 @@ class SectorAnalyzer:
         for sector in ordered_sectors:
             data = sector_summary[sector]
 
+            ivr = data.get('avg_iv_rank')
             output.append(f"\n{sector.upper()}")
             output.append(f"├─ Positions: {data['position_count']} | Total notional: ${data['total_notional']:,.0f}")
             output.append(f"├─ Avg conviction: {data['avg_conviction']}/10 | Avg RSI: {data['avg_rsi']:.1f}")
             output.append(f"├─ Position in 52W range: {data['avg_position_in_52w_range']:.1f}% (0=low, 100=high)")
+            output.append(f"├─ Avg IV rank: {ivr:.0f}/100 (≥40 = rich premium)" if ivr is not None else "├─ Avg IV rank: n/a")
             output.append(f"├─ {data['signal']}")
             output.append("")
 
@@ -361,16 +404,21 @@ class SectorAnalyzer:
         return output
 
 
-def batch_get_sector_analysis(open_positions: pd.DataFrame, metrics: Dict, prices: Dict) -> Tuple[Dict, List[str], List[str]]:
+def batch_get_sector_analysis(open_positions: pd.DataFrame, metrics: Dict, prices: Dict, iv_ranks: Dict = None) -> Tuple[Dict, List[str], List[str], Dict[str, str]]:
     """
     Generate sector analysis for unified reports
 
+    Args:
+        iv_ranks: optional Dict[ticker] -> {iv_rank, ...} from analysis.iv_rank.batch_iv_rank,
+            used to split BUY signals into rich-premium vs thin-premium. Omit to
+            keep the prior price-only signal behavior.
+
     Returns:
-        (sector_summary, sector_analysis_section, sector_rotation_section)
+        (sector_summary, sector_analysis_section, sector_rotation_section, ticker_to_sector_map)
     """
-    analyzer = SectorAnalyzer(open_positions, metrics, prices)
+    analyzer = SectorAnalyzer(open_positions, metrics, prices, iv_ranks)
     sector_summary = analyzer.get_sector_breakdown()
     analysis_section = analyzer.generate_sector_analysis_report(sector_summary)
     rotation_section = analyzer.get_sector_rotation_insights(sector_summary)
 
-    return sector_summary, analysis_section, rotation_section
+    return sector_summary, analysis_section, rotation_section, analyzer.sector_map

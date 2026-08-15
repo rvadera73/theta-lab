@@ -44,7 +44,7 @@ def main():
 
     # Analyze by sector
     print("Analyzing sectors...")
-    sector_summary, analysis_section, rotation_section = batch_get_sector_analysis(
+    sector_summary, analysis_section, rotation_section, _ticker_sector_map = batch_get_sector_analysis(
         open_positions, metrics, prices
     )
     print(f"  ✓ Analyzed {len(sector_summary)} sectors")
