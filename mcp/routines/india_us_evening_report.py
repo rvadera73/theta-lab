@@ -101,6 +101,7 @@ SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "HERHON": ("Hero MotoCorp",  "HEROMOTOCO.NS"),
     "HINAER": ("HAL",            "HAL.NS"),
     "IDECEL": ("Vodafone Idea",  "IDEA.NS"),
+    "LEMTRE": ("Lemon Tree Hotels", "LEMONTREE.NS"),
     "LIC":    ("LIC",            "LICI.NS"),
     "LUPIN":  ("Lupin",          "LUPIN.NS"),
     "MAZDOC": ("Mazagon Dock",   "MAZDOCK.NS"),

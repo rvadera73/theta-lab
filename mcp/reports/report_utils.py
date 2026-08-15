@@ -65,6 +65,7 @@ _INDIA_SYMBOL_MAP = {
     "HERHON": "HEROMOTOCO.NS",
     "HINAER": "HAL.NS",
     "IDECEL": "IDEA.NS",
+    "LEMTRE": "LEMONTREE.NS",
     "LIC": "LICI.NS",
     "LUPIN": "LUPIN.NS",
     "MAZDOC": "MAZDOCK.NS",
