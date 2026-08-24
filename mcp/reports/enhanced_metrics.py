@@ -186,6 +186,8 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
             (target_mean / current_price - 1) * 100
             if target_mean and current_price else None
         )
+        if target_upside_pct is not None and pd.isna(target_upside_pct):
+            target_upside_pct = None
 
         # Calculate position in 52-week range (0-100)
         position_in_range = 50.0
@@ -235,8 +237,21 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
         # "watch, not confirmed" YELLOW. Neither signal replaces the other.
         ma50 = float(closes.tail(50).mean()) if len(closes) >= 50 else None
         ma200 = float(closes.tail(200).mean()) if len(closes) >= 200 else None
+        # A window of enough LENGTH can still average out to NaN (gappy/holiday-
+        # misaligned history, seen on some NSE tickers via this same India report
+        # run) -- `float(nan)` doesn't raise, so an `is not None` check alone lets
+        # NaN silently leak into every downstream f-string as the literal text
+        # "nan%". Sanitize once here rather than re-guard every check below.
+        if ma50 is not None and pd.isna(ma50):
+            ma50 = None
+        if ma200 is not None and pd.isna(ma200):
+            ma200 = None
         pct_above_50ma = (current_price / ma50 - 1) * 100 if ma50 else None
         pct_above_200ma = (current_price / ma200 - 1) * 100 if ma200 else None
+        if pct_above_50ma is not None and pd.isna(pct_above_50ma):
+            pct_above_50ma = None
+        if pct_above_200ma is not None and pd.isna(pct_above_200ma):
+            pct_above_200ma = None
         # >10% above/below the 200-day average as the structural-confirmation
         # threshold -- calibrated directly against the 2026-08-24 check: it
         # cleanly separates ABNB(+39%)/EXPE(+33%)/ELF(+42%) (confirmed
