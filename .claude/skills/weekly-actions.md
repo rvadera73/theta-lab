@@ -18,6 +18,11 @@ Generates weekly report with:
 - Heat protocol (which positions threatened)
 - Risk utilization check
 - Stress test scenarios
+- **AI Capex Risk Tracker** (Section 6.6) — Technology concentration and the
+  named high-risk/quality-AI/avoid-list buckets' live $ exposure vs. the
+  90-day Circular Financing Playbook's 30/70 target, flagged if drift
+  exceeds 10pp. Scriptable tracking only; the Tier 1/2 credit/IPO check runs
+  separately via `/ai-capex-risk-review`.
 - Next week focus
 
 Saves to: `logs/enhanced_weekly_report_{YYYY-MM-DD}.txt`

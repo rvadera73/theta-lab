@@ -21,6 +21,13 @@ Generates monthly report with:
 - **Positions outside universe** (thesis broken, should be closed)
 - **Tier 3 → Tier 2 graduation candidates** (conviction ≥7)
 - Greeks trends (current state + targets)
+- **AI Capex Risk Tracker** (Section 6.6) — Technology concentration vs. the
+  S&P 500's own 41.2% top-10 reference, and live notional in the named
+  high-risk/quality-AI/avoid-list buckets vs. the 90-day Circular Financing
+  Playbook's 30/70 target. This is the scriptable half only — the
+  qualitative Tier 1/2 credit/IPO check that decides the dial state still
+  needs `/ai-capex-risk-review`, since that requires live web research this
+  unattended monthly run can't do.
 - Next month strategy
 
 Saves to: `logs/enhanced_monthly_report_{YYYY-MM-DD}.txt`
