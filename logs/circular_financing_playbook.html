@@ -1,0 +1,413 @@
+<title>Circular Financing Playbook</title>
+<style>
+  :root{
+    --bg:#F1F2EF; --surface:#FFFFFF; --surface-2:#E7E9E5;
+    --ink:#1B1F1E; --ink-muted:#565D5A; --ink-faint:#8A918D;
+    --border:#D7DAD5;
+    --accent:#3B6E68; --accent-strong:#24504B; --accent-wash:#E3ECEA;
+    --good:#3C7A4E; --good-wash:#E5F0E7;
+    --warn:#A9791F; --warn-wash:#F5ECD9;
+    --bad:#A23E3E; --bad-wash:#F5E2E1;
+    --p1:#5B6FA8; --p1-wash:#E7EAF5;
+    --p2:#A2456B; --p2-wash:#F5E4EC;
+    --font-display:'Fraunces',Georgia,'Iowan Old Style',serif;
+    --font-body:'Source Sans 3',-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14181A; --surface:#1B2021; --surface-2:#242B2C;
+      --ink:#E9EBE7; --ink-muted:#A7ADA9; --ink-faint:#767D79;
+      --border:#2E3536;
+      --accent:#7BBDB4; --accent-strong:#9ED4CC; --accent-wash:#1F2C2A;
+      --good:#6FBE84; --good-wash:#1D2B22;
+      --warn:#E0AC53; --warn-wash:#2E2718;
+      --bad:#E27E7E; --bad-wash:#2E1F1F;
+      --p1:#8C9CD6; --p1-wash:#232840;
+      --p2:#D687A3; --p2-wash:#332028;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14181A; --surface:#1B2021; --surface-2:#242B2C;
+    --ink:#E9EBE7; --ink-muted:#A7ADA9; --ink-faint:#767D79;
+    --border:#2E3536;
+    --accent:#7BBDB4; --accent-strong:#9ED4CC; --accent-wash:#1F2C2A;
+    --good:#6FBE84; --good-wash:#1D2B22;
+    --warn:#E0AC53; --warn-wash:#2E2718;
+    --bad:#E27E7E; --bad-wash:#2E1F1F;
+    --p1:#8C9CD6; --p1-wash:#232840;
+    --p2:#D687A3; --p2-wash:#332028;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;}
+  .page{max-width:960px;margin:0 auto;padding:0 24px 96px;}
+  ::selection{background:var(--accent-wash);}
+
+  .cover{padding:56px 0 32px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:14px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent-strong);}
+  h1{font-family:var(--font-display);font-weight:600;font-size:clamp(2.1rem,4.4vw,3rem);line-height:1.08;margin:0;text-wrap:balance;color:var(--ink);}
+  .cover-sub{font-size:1.08rem;color:var(--ink-muted);max-width:66ch;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .tag{font-family:var(--font-mono);font-size:12px;letter-spacing:0.04em;padding:4px 10px;border-radius:3px;background:var(--surface-2);color:var(--ink-muted);border:1px solid var(--border);}
+  .tag.p1{background:var(--p1-wash);color:var(--p1);border-color:transparent;}
+  .tag.p2{background:var(--p2-wash);color:var(--p2);border-color:transparent;}
+  .meta-line{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-faint);margin-top:4px;}
+
+  section{padding:44px 0;border-bottom:1px solid var(--border);}
+  section:last-of-type{border-bottom:none;}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px;}
+  .sec-num{font-family:var(--font-mono);font-size:13px;color:var(--accent);letter-spacing:0.05em;}
+  h2{font-family:var(--font-display);font-weight:600;font-size:1.5rem;margin:0;text-wrap:balance;}
+  .sec-dek{color:var(--ink-muted);max-width:70ch;margin:6px 0 28px;}
+  h3{font-family:var(--font-display);font-weight:600;font-size:1.08rem;margin:0 0 10px;}
+  p{margin:0 0 14px;max-width:72ch;}
+  .note{font-size:0.92rem;color:var(--ink-muted);}
+  .callout-fix{margin:0 0 24px;padding:16px 20px;border-radius:6px;background:var(--warn-wash);border:1px solid var(--border);font-size:0.94rem;}
+  .callout-fix b{color:var(--warn);}
+
+  .ledger{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .ledger-row{display:grid;grid-template-columns:88px 1fr;gap:18px;background:var(--surface);padding:16px 18px;}
+  .ledger-date{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-faint);padding-top:2px;}
+  .ledger-fact{font-weight:600;margin-bottom:4px;}
+  .ledger-why{color:var(--ink-muted);font-size:0.95rem;}
+  .ledger-src{font-family:var(--font-mono);font-size:11.5px;color:var(--accent);margin-top:6px;display:inline-block;}
+  @media (max-width:600px){.ledger-row{grid-template-columns:1fr;gap:4px;}}
+
+  .ladder{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;}
+  .rung{display:grid;grid-template-columns:150px 1fr 84px;align-items:center;gap:16px;padding:14px 18px;border-radius:6px;border:1px solid var(--border);background:var(--surface);}
+  .rung-label{font-weight:600;font-size:0.95rem;}
+  .rung-phase{display:inline-block;font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.05em;text-transform:uppercase;padding:2px 7px;border-radius:3px;margin-top:4px;}
+  .rung-phase.p1{background:var(--p1-wash);color:var(--p1);}
+  .rung-phase.p2{background:var(--p2-wash);color:var(--p2);}
+  .rung-desc{color:var(--ink-muted);font-size:0.9rem;}
+  .rung-prob{font-family:var(--font-mono);font-size:1.15rem;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;}
+  .rung.l0{border-left:4px solid var(--good);} .rung.l0 .rung-prob{color:var(--good);}
+  .rung.l1{border-left:4px solid var(--p1);} .rung.l1 .rung-prob{color:var(--p1);}
+  .rung.l2{border-left:4px solid var(--p2);} .rung.l2 .rung-prob{color:var(--p2);}
+  .rung.l3{border-left:4px solid var(--bad);background:var(--bad-wash);} .rung.l3 .rung-prob{color:var(--bad);}
+  @media (max-width:600px){.rung{grid-template-columns:1fr;text-align:left;gap:4px;} .rung-prob{text-align:left;}}
+
+  .axis-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;}
+  .axis-card{flex:1 1 240px;border:1px solid var(--border);border-radius:6px;padding:16px 18px;background:var(--surface);}
+  .axis-card .rung-prob{font-size:1.4rem;}
+  .axis-title{font-weight:600;margin-bottom:4px;}
+  .axis-desc{color:var(--ink-muted);font-size:0.88rem;}
+
+  .reality-check{margin-top:22px;padding:18px 20px;border-radius:6px;background:var(--accent-wash);border:1px solid var(--border);}
+  .reality-check .kicker{font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-strong);margin-bottom:6px;display:block;}
+
+  .loop{display:flex;flex-direction:column;gap:0;margin:24px 0;}
+  .loop-step{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:18px 20px;}
+  .loop-step.p1{border-left:4px solid var(--p1);} .loop-step.p2{border-left:4px solid var(--p2);}
+  .loop-step .step-tag{font-family:var(--font-mono);font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;display:block;}
+  .loop-step.p1 .step-tag{color:var(--p1);} .loop-step.p2 .step-tag{color:var(--p2);}
+  .loop-step p{margin:0;font-size:0.94rem;color:var(--ink-muted);max-width:none;}
+  .loop-step b{color:var(--ink);}
+  .loop-arrow{text-align:center;font-family:var(--font-mono);color:var(--ink-faint);font-size:1.1rem;padding:6px 0;}
+  .loop-back{margin-top:4px;padding:14px 18px;border-radius:6px;background:var(--bad-wash);border:1px solid var(--border);font-size:0.92rem;color:var(--ink-muted);}
+  .loop-back b{color:var(--bad);}
+
+  .lag-callout{display:flex;gap:18px;flex-wrap:wrap;margin:20px 0;}
+  .lag-card{flex:1 1 260px;border:1px solid var(--border);border-radius:6px;padding:18px 20px;background:var(--surface);text-align:center;}
+  .lag-card .yr{font-family:var(--font-display);font-size:1.8rem;font-weight:600;color:var(--accent-strong);}
+  .lag-card .lbl{font-size:0.85rem;color:var(--ink-muted);margin-top:4px;}
+
+  .trigger{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:20px 22px;margin-bottom:14px;}
+  .trigger.t1{border-left:4px solid var(--p1);} .trigger.t2{border-left:4px solid var(--p2);}
+  .trigger.t3{border-left:4px solid var(--bad);background:var(--bad-wash);}
+  .trigger-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .trigger-head b{font-family:var(--font-display);font-size:1.05rem;}
+  .trigger ul{margin:0;padding-left:20px;} .trigger li{margin-bottom:6px;color:var(--ink-muted);font-size:0.93rem;}
+  .trigger .action{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:0.93rem;}
+  .trigger .action b{color:var(--ink);}
+
+  .tier{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:22px 24px;margin-bottom:16px;}
+  .tier-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .tier-chip{font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 9px;border-radius:3px;background:var(--surface-2);color:var(--ink-muted);}
+  .tier ul{margin:0;padding-left:20px;} .tier li{margin-bottom:8px;color:var(--ink-muted);} .tier li b{color:var(--ink);font-weight:600;}
+
+  .standdown{margin:20px 0;padding:18px 20px;border-radius:6px;background:var(--good-wash);border:1px solid var(--border);}
+  .standdown .kicker{font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--good);margin-bottom:6px;display:block;}
+
+  .sector-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+  .sector-card{border-radius:6px;padding:16px 18px;border:1px solid var(--border);}
+  .sector-card.avoid{background:var(--bad-wash);} .sector-card.favor{background:var(--good-wash);}
+  .sector-card h4{margin:0 0 8px;font-family:var(--font-mono);font-size:12px;letter-spacing:0.06em;text-transform:uppercase;}
+  .sector-card.avoid h4{color:var(--bad);} .sector-card.favor h4{color:var(--good);}
+  .sector-card ul{margin:0;padding-left:18px;font-size:0.92rem;} .sector-card li{margin-bottom:4px;}
+  @media (max-width:600px){.sector-grid{grid-template-columns:1fr;}}
+
+  .bucket-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;}
+  .bucket{border-radius:8px;padding:22px 24px;border:1px solid var(--border);background:var(--surface);}
+  .bucket.hi{border-top:4px solid var(--p2);}
+  .bucket.qual{border-top:4px solid var(--accent);}
+  .bucket .pct{font-family:var(--font-display);font-size:2.4rem;font-weight:600;line-height:1;}
+  .bucket.hi .pct{color:var(--p2);} .bucket.qual .pct{color:var(--accent-strong);}
+  .bucket .amt{font-family:var(--font-mono);font-size:0.95rem;color:var(--ink-muted);margin:4px 0 14px;}
+  .bucket dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:0.9rem;}
+  .bucket dt{color:var(--ink-faint);font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;padding-top:2px;}
+  .bucket dd{margin:0;color:var(--ink);font-weight:600;}
+  @media (max-width:640px){.bucket-pair{grid-template-columns:1fr;}}
+
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:20px;}
+  table{border-collapse:collapse;width:100%;min-width:720px;font-size:0.9rem;}
+  thead th{text-align:left;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-faint);background:var(--surface-2);padding:10px 14px;border-bottom:1px solid var(--border);}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--ink-muted);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--surface-2);}
+  .tk{font-family:var(--font-mono);font-weight:600;color:var(--ink);}
+  .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--ink);}
+  .sleeve-pill{font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+  .sleeve-pill.hi{background:var(--p2-wash);color:var(--p2);}
+  .sleeve-pill.qual{background:var(--accent-wash);color:var(--accent-strong);}
+  .sleeve-pill.def{background:var(--good-wash);color:var(--good);}
+
+  .dial{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:18px 20px;margin-bottom:14px;display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center;}
+  .dial.now{border-left:4px solid var(--accent);}
+  .dial.soon{border-left:4px solid var(--p1);}
+  .dial.delayed{border-left:4px solid var(--good);}
+  .dial.worse{border-left:4px solid var(--bad);background:var(--bad-wash);}
+  .dial-label{font-weight:600;font-size:0.95rem;}
+  .dial-split{font-family:var(--font-mono);font-size:1.3rem;font-weight:600;}
+  .dial-body{color:var(--ink-muted);font-size:0.9rem;}
+  @media (max-width:600px){.dial{grid-template-columns:1fr;}}
+
+  footer{padding:36px 0 0;font-size:0.88rem;color:var(--ink-faint);}
+  footer .cav{margin-bottom:6px;}
+</style>
+
+<div class="page">
+
+  <div class="cover">
+    <span class="eyebrow">Working Risk Memo — US Options Book</span>
+    <h1>Circular Financing Playbook</h1>
+    <p class="cover-sub">A two-phase stress scenario for the AI capex complex, and the resulting $700K / 90-day capital deployment plan — 30% high-risk / 70% quality, short-put only, adjusted live against Phase 1 confirmation.</p>
+    <div class="tag-row">
+      <span class="tag p1">PHASE 1 — 2000-style, valuation-led</span>
+      <span class="tag p2">PHASE 2 — 2007-style, credit-led, gated</span>
+      <span class="tag">SHORT PUTS ONLY — no long options, no calls</span>
+    </div>
+    <div class="meta-line">Compiled 2026-08-24 · Rev. 3 — adds the $700K capital deployment plan; removes every long-option and short-call reference</div>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">—</span><h2>Two corrections carried through this revision</h2></div>
+    <div class="callout-fix"><b>No long options, ever.</b> Earlier drafts of this memo suggested long put debit spreads on ORCL/CRWV. That's not how this book trades — every structure below is short-premium only. ORCL is dropped from the plan entirely (too binary/already-moved to touch in either direction), not just re-structured.</div>
+    <div class="callout-fix"><b>No calls, in a BULL regime.</b> Short call credit spreads were suggested as the "hedge" substitute — also wrong. This book's own data shows stagger call legs have underperformed put legs, and a persistent bull regime structurally punishes being short calls (the trend grinds through strikes). Every position in this plan, aggressive or defensive, is a <b>cash-secured short put</b>. Risk management happens entirely through name selection, delta, size, and DTE — not through an offsetting structure.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Validated evidence ledger</h2></div>
+    <p class="sec-dek">Every line was checked against a live source this session.</p>
+    <div class="ledger">
+      <div class="ledger-row"><div class="ledger-date">2026-08-24</div><div>
+        <div class="ledger-fact">7-signal macro model reads GREEN — only breadth (53.8%) is flagged</div>
+        <div class="ledger-why">SPX 7,654 above both 50-day (7,546) and 200-day (7,100) MA; VIX 15.8. Real credit spreads 270bps (the model's own FRED key was dead). Computed 90-day crash probability: 37.5%, not 50%.</div>
+        <span class="ledger-src">theta-lab macro_risk_analyzer, live pull</span>
+      </div></div>
+      <div class="ledger-row"><div class="ledger-date">Jul 9</div><div>
+        <div class="ledger-fact">S&amp;P downgraded Oracle to BBB-, naming OpenAI concentration directly</div>
+        <div class="ledger-why">$638B RPO backlog, ~54% traces to the single OpenAI contract. Oracle already down sharply — Phase 1 has partly already started here.</div>
+        <span class="ledger-src">Investing.com, Yahoo Finance</span>
+      </div></div>
+      <div class="ledger-row"><div class="ledger-date">2026</div><div>
+        <div class="ledger-fact">Hyperscaler FCF swings from +$180B to -$144B in three years</div>
+        <div class="ledger-why">Alphabet's FCF went negative for the first time since its 2004 IPO; Meta's FCF collapsed to $784M, buybacks stopped.</div>
+        <span class="ledger-src">FactSet, CNBC</span>
+      </div></div>
+      <div class="ledger-row"><div class="ledger-date">Jan / May</div><div>
+        <div class="ledger-fact">US senators pushed FSOC to probe an "AI debt bubble"; FSB flagged private-credit vulnerabilities</div>
+        <div class="ledger-why">AI-linked private-credit loans went from near-zero to $200B+, moved off bank balance sheets via SRTs — the exact mechanism Phase 2 would run through.</div>
+        <span class="ledger-src">Senate Banking Committee, FSB report</span>
+      </div></div>
+      <div class="ledger-row"><div class="ledger-date">Aug 21</div><div>
+        <div class="ledger-fact">Anthropic accelerated its IPO: October 2026 Nasdaq listing, investor talk of $2T</div>
+        <div class="ledger-why">Anthropic's own filing references $965B; $2T is investor expectation. Lands inside the current window — a real, dated price-discovery test. OpenAI's IPO, by contrast, slipped to 2027 at $852B-$1T, not $2T, not this year.</div>
+        <span class="ledger-src">PYMNTS, Dataconomy, Zacks</span>
+      </div></div>
+      <div class="ledger-row"><div class="ledger-date">—</div><div>
+        <div class="ledger-fact">Your own book mirrors the index concentration problem: Technology is 35.4% of positions, 35.7% of notional</div>
+        <div class="ledger-why">105 of 297 positions, $2,262,808 of $6,328,765 notional. TSM and PLTR are already Tier-1/held positions — not gaps. ASML is genuinely absent. SK Hynix has no US-listed options market and isn't practically accessible.</div>
+        <span class="ledger-src">unified_master_report, 2026-08-22, full 297-position pull</span>
+      </div></div>
+      <div class="ledger-row"><div class="ledger-date">—</div><div>
+        <div class="ledger-fact">YTD premium $210,632 against an $800K 8-month target — 26% of the pace needed for $1.2M/yr</div>
+        <div class="ledger-why">Annualizing to ~$316K. This is why the answer to "am I over-concentrated in AI" isn't "exit AI" — it's "differentiate within AI between quality moats and circular-financing names," since AI/Technology is where the richest premium already lives.</div>
+        <span class="ledger-src">unified_master_report Section 0</span>
+      </div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>The domino loop — why the order is 2000, then 2007</h2></div>
+    <p class="sec-dek">One structural fragility, two possible entry doors, in a specific mechanical order.</p>
+    <p>The credit/leverage layer is built <b>on top of</b> today's elevated equity valuations — so the valuation layer has to crack first before the credit layer can feel it.</p>
+    <div class="loop">
+      <div class="loop-step p1"><span class="step-tag">Phase 1 · Ignition</span><p><b>A valuation/sentiment crack in the narrow, richly-valued leadership.</b> Trigger candidates: the Anthropic IPO pricing weak, or a hyperscaler capex-guidance disappointment in Q3 earnings.</p></div>
+      <div class="loop-arrow">↓</div>
+      <div class="loop-step p2"><span class="step-tag">Phase 2 · Credit exposure</span><p><b>Falling equity values impair the collateral behind circular-financing debt.</b> CoreWeave/NBIS-type leverage gets marked down; private-credit funds face NAV markdowns and redemption requests.</p></div>
+      <div class="loop-arrow">↓</div>
+      <div class="loop-step p2"><span class="step-tag">Phase 2 · Contagion</span><p><b>Funds gate redemptions or fire-sell the loans</b> — the actual 2007 pattern, named directly by FSOC/FSB.</p></div>
+      <div class="loop-back"><b>Loops back:</b> fire-sale prices make the next round of capex funding costlier, cutting the growth assumptions behind Nvidia's "cheap" forward multiple — compressing valuations further and reopening Phase 1.</div>
+    </div>
+    <h3>The 2006→2008 precedent sets the timing lag</h3>
+    <div class="lag-callout">
+      <div class="lag-card"><div class="yr">2006</div><div class="lbl">Valuation excess peaks</div></div>
+      <div class="lag-card"><div class="yr">+12–18mo</div><div class="lbl">Lag before credit contagion</div></div>
+      <div class="lag-card"><div class="yr">2007–08</div><div class="lbl">Credit/shadow-banking unwind</div></div>
+    </div>
+    <p class="note">Phase 2 is not a 90-day risk even if Phase 1 fires — the entire basis for gating Phase-2-style caution below rather than treating it as concurrent.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Probability ladder</h2></div>
+    <div class="ladder">
+      <div class="rung l0"><div><div class="rung-label">Level 0 — Quiet</div></div><div class="rung-desc">No AI-chain-specific event; market grinds per baseline</div><div class="rung-prob">35–40%</div></div>
+      <div class="rung l1"><div><div class="rung-label">Level 1 — Contained shock</div><span class="rung-phase p1">Phase 1 · 90-day</span></div><div class="rung-desc">Anthropic IPO or hyperscaler capex guidance triggers a sector-contained selloff — already happened once, Jul 28</div><div class="rung-prob">60–65%</div></div>
+      <div class="rung l2"><div><div class="rung-label">Level 2 — Real credit crack</div><span class="rung-phase p2">Phase 2 · conditional, lagged</span></div><div class="rung-desc">Requires Level 1 first, plausibly quarters later</div><div class="rung-prob">12–15%</div></div>
+      <div class="rung l3"><div><div class="rung-label">Level 3 — Systemic contagion</div><span class="rung-phase p2">Phase 2 · conditional, lagged</span></div><div class="rung-desc">Spreads beyond the AI complex</div><div class="rung-prob">3–5%</div></div>
+    </div>
+    <div class="reality-check"><span class="kicker">Reality check</span>Even compounding Level 2/3, a broad S&amp;P -30% move in 90 days lands around <b>5–8%</b>, not 50%. What's real is Phase 1 at 60-65% — concentrated and named, not a broad crash.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>Leading indicators &amp; the Phase 1 → Phase 2 gate</h2></div>
+    <div class="trigger t1"><div class="trigger-head"><b>Tier 1 — Phase 1 detector</b></div>
+      <ul><li>Oracle/CoreWeave credit spreads widen</li><li>Anthropic IPO shows pricing weakness or gets delayed</li><li>NBIS/CRWV underperform NVDA/semis by a widening margin</li><li>Breadth slides toward 50%</li><li>VIX term structure flips to backwardation</li></ul>
+      <div class="action">Fires → shift toward the "Tier 1 fired" allocation dial in Section 08.</div>
+    </div>
+    <div class="trigger t2"><div class="trigger-head"><b>Tier 2 — Phase 2 gate opens</b></div>
+      <ul><li>A key node crosses from investment-grade into junk</li><li>A private-credit fund gates redemptions or marks down loan NAVs</li><li>Only possible after Tier 1 — expect a gap of quarters, not weeks</li></ul>
+      <div class="action">Fires → full stand-down from AI-linked premium selling (Section 08 "Tier 2" dial).</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>Portfolio high-risk cluster</h2></div>
+    <p class="sec-dek">Real, currently open positions — split by failure mode.</p>
+    <div class="sector-grid">
+      <div class="sector-card avoid"><h4>Same profile as CoreWeave — avoid new premium</h4>
+        <ul><li><b>NBIS</b> — neg fwd earnings, P/S 42.3, D/E 99</li><li><b>CRWV</b> (held) — D/E 1,027, down -18% in 7 days</li></ul></div>
+      <div class="sector-card avoid"><h4>No valuation floor if sentiment cracks</h4>
+        <ul><li><b>RKLB</b> — fwd PE 1,365x</li><li><b>OKLO</b> — fwd PE 6,102x, pre-revenue</li><li><b>SPCX</b> — P/S 77.2</li></ul></div>
+      <div class="sector-card favor"><h4>Real business, expensive entry — good short-put candidates</h4>
+        <ul><li><b>ALAB</b> — D/E of 3, rev +104%; urgent roll was live Aug 22</li><li><b>LITE</b> — Nvidia-backed $2B capacity investment, real shipped revenue</li></ul></div>
+      <div class="sector-card favor"><h4>Comparatively lower risk despite the sector tag</h4>
+        <ul><li><b>AMKR</b> — PE 21.5, P/S 1.6</li><li><b>APH</b> — PE 38.9, most diversified of the group</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>Fundamentals check — TSM, MU, PLTR, ASML</h2></div>
+    <p class="sec-dek">TSM and PLTR are already held, not gaps. ASML is a real addition candidate. SK Hynix has no accessible US options market.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Ticker</th><th>Status</th><th>PE / Fwd PE</th><th>D/E</th><th>Analyst upside</th><th>Read</th></tr></thead>
+      <tbody>
+        <tr><td class="tk">TSM</td><td>Held — Tier 1, $125,685</td><td class="num">30.6 / 18.8</td><td class="num">16.5</td><td class="num">+35%, strong_buy</td><td>Real moat, low leverage. Room to size up, not down.</td></tr>
+        <tr><td class="tk">MU</td><td>Held — Tier 1, $193,356</td><td class="num">20.6 / 5.9</td><td class="num">6.3</td><td class="num">+66%, strong_buy</td><td>Cheap, low leverage. Keep the CXMT-competition caveat.</td></tr>
+        <tr><td class="tk">PLTR</td><td>Held — small, $17,994</td><td class="num">150.3 / 76.0</td><td class="num">2.1</td><td class="num">+9%, buy</td><td>Low debt but almost no margin of safety. Don't scale up.</td></tr>
+        <tr><td class="tk">ASML</td><td>Not held</td><td class="num">58.7 / 28.8</td><td class="num">9.1</td><td class="num">+26%, strong_buy</td><td>Real EUV monopoly, but 80.3% of 52w range — moderate delta only.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><h2>Sector policy</h2></div>
+    <div class="sector-grid">
+      <div class="sector-card avoid"><h4>No new premium here</h4>
+        <ul><li>Oracle, CoreWeave, NBIS, hyperscalers with collapsing FCF</li><li>Private-credit/alternative-asset managers with data-center debt</li></ul></div>
+      <div class="sector-card favor"><h4>Core income, unchanged</h4>
+        <ul><li>Healthcare, Consumer Defensive, Utilities, Defense</li><li>Confirmed low-sensitivity to the model's breadth-unwind mapping</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">08</span><h2>90-day capital deployment plan — $700,000</h2></div>
+    <p class="sec-dek">30% high-risk / 70% quality, short puts only. Risk and premium are matched by delta, not by name-picking within a bucket: high-risk targets ~30Δ for ~30% annualized premium yield; quality targets ~15-20Δ for ~10-15% annualized yield, longer-dated.</p>
+
+    <div class="bucket-pair">
+      <div class="bucket hi">
+        <div class="pct">30%</div>
+        <div class="amt">$210,000 collateral</div>
+        <dl>
+          <dt>Target delta</dt><dd>~30Δ (≈30% assignment odds)</dd>
+          <dt>Target yield</dt><dd>~30% annualized</dd>
+          <dt>DTE</dt><dd>45–75 days — shorter, faster reassessment</dd>
+          <dt>Names</dt><dd>ALAB, LITE, MU (moderate), PLTR (hold, don't scale)</dd>
+        </dl>
+      </div>
+      <div class="bucket qual">
+        <div class="pct">70%</div>
+        <div class="amt">$490,000 collateral</div>
+        <dl>
+          <dt>Target delta</dt><dd>~15–20Δ (≈15-20% assignment odds)</dd>
+          <dt>Target yield</dt><dd>~10–15% annualized</dd>
+          <dt>DTE</dt><dd>90–180 days — long-dated, let theta work</dd>
+          <dt>Names</dt><dd>TSM, ASML, APH, existing Healthcare/Staples/Utilities/Defense core</dd>
+        </dl>
+      </div>
+    </div>
+
+    <p class="note">Blended, this targets roughly $124K/year run-rate on the $700K (~17.75% blended annualized) — about <b>$31,000 expected over the 90-day window</b> if both buckets hold their target yield. That's a meaningful contribution toward the $1.2M objective, not the whole gap — one overlay inside the larger book.</p>
+
+    <h3>Bucket composition</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Bucket</th><th>Ticker</th><th>Target $</th><th>Δ</th><th>DTE</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sleeve-pill hi">High-risk</span></td><td class="tk">ALAB</td><td class="num">$70,000</td><td class="num">30Δ</td><td class="num">45–75d</td><td>Clean balance sheet, real growth — multiple-compression risk only</td></tr>
+        <tr><td><span class="sleeve-pill hi">High-risk</span></td><td class="tk">LITE</td><td class="num">$70,000</td><td class="num">30Δ</td><td class="num">45–75d</td><td>Nvidia-backed capacity, real shipped revenue</td></tr>
+        <tr><td><span class="sleeve-pill hi">High-risk</span></td><td class="tk">MU</td><td class="num">$50,000</td><td class="num">25Δ</td><td class="num">45–60d</td><td>Sized down and delta trimmed for the CXMT caveat specifically</td></tr>
+        <tr><td><span class="sleeve-pill hi">High-risk</span></td><td class="tk">PLTR</td><td class="num">$20,000</td><td class="num">15Δ</td><td class="num">30–45d</td><td>Maintain existing size only — thin margin of safety, conservative delta despite the bucket</td></tr>
+        <tr><td><span class="sleeve-pill qual">Quality</span></td><td class="tk">TSM</td><td class="num">$150,000</td><td class="num">18Δ</td><td class="num">90–150d</td><td>Scale up from current $125,685 — best risk-adjusted name in the whole book</td></tr>
+        <tr><td><span class="sleeve-pill qual">Quality</span></td><td class="tk">ASML</td><td class="num">$80,000</td><td class="num">15Δ</td><td class="num">120–180d</td><td>New position — real moat, but extended (80.3% of range), conservative delta</td></tr>
+        <tr><td><span class="sleeve-pill qual">Quality</span></td><td class="tk">APH</td><td class="num">$50,000</td><td class="num">20Δ</td><td class="num">90–120d</td><td>Most diversified name in the cluster, lowest AI-narrative dependency</td></tr>
+        <tr><td><span class="sleeve-pill def">Quality</span></td><td class="tk">Existing defensive core</td><td class="num">$210,000</td><td class="num">15–20Δ</td><td class="num">90–150d</td><td>Continue the Healthcare/Staples/Utilities/Defense income engine at current scale</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Model allocation across accounts</h3>
+    <p class="note">Proportional to current account balance among the 9 active trading accounts (401K excluded — passive per standing policy). Flag before execution: Account A's live margin utilization and Fidelity Rajul Roth's/Robinhood Individual's small size need a fresh check — both may be better served skipping this overlay and letting the larger accounts carry it.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Account</th><th>Balance</th><th>Weight</th><th>Target $</th></tr></thead>
+      <tbody>
+        <tr><td>Fidelity (Rahul)</td><td class="num">$498,560</td><td class="num">23.2%</td><td class="num">$162,400</td></tr>
+        <tr><td>Account A (232, margin)</td><td class="num">$403,000</td><td class="num">18.8%</td><td class="num">$131,250 — verify margin headroom first</td></tr>
+        <tr><td>Vanguard (Rahul)</td><td class="num">$320,492</td><td class="num">14.9%</td><td class="num">$104,350</td></tr>
+        <tr><td>Account C (634)</td><td class="num">$266,000</td><td class="num">12.4%</td><td class="num">$86,600</td></tr>
+        <tr><td>Account B (275)</td><td class="num">$261,000</td><td class="num">12.1%</td><td class="num">$85,000</td></tr>
+        <tr><td>Robinhood (Traditional IRA)</td><td class="num">$220,000</td><td class="num">10.2%</td><td class="num">$71,700</td></tr>
+        <tr><td>Fidelity (Rajul — Rollover IRA)</td><td class="num">$128,081</td><td class="num">6.0%</td><td class="num">$41,700</td></tr>
+        <tr><td>Fidelity (Rajul — Roth IRA)</td><td class="num">$39,158</td><td class="num">1.8%</td><td class="num">$12,750 — likely too small, consider skipping</td></tr>
+        <tr><td>Robinhood (Individual)</td><td class="num">$13,000</td><td class="num">0.6%</td><td class="num">$4,200 — too small, skip</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>The dial — how the split moves with the evidence</h3>
+    <div class="dial now"><div><div class="dial-label">Base case — now</div><div class="dial-split">30 / 70</div></div><div class="dial-body">No tier fired. Deploy as specified above.</div></div>
+    <div class="dial soon"><div><div class="dial-label">Tier 1 fires (soon)</div><div class="dial-split">15 / 85</div></div><div class="dial-body">Anthropic IPO stumbles, breadth breaks 50%, or credit spreads widen. Cut high-risk deltas to ~20Δ, quality to ~10Δ. Stop new MU entries until clarity returns. Shorten high-risk DTE further for faster reassessment.</div></div>
+    <div class="dial delayed"><div><div class="dial-label">Trigger delayed / stand-down holds</div><div class="dial-split">35–40 / 60–65</div></div><div class="dial-body">Anthropic IPO clears, Q3 earnings pass without a capex-guidance cut, spreads stay near 270bps through ~December. Modestly increase high-risk weight — still capped well below 50%, since Phase 2 remains a background, longer-dated risk.</div></div>
+    <div class="dial worse"><div><div class="dial-label">Tier 2 fires (leverage/indicators worsen)</div><div class="dial-split">0 / 100</div></div><div class="dial-body">A node crosses into junk, or a private-credit fund gates redemptions. Full stand-down from every AI-linked name — including TSM/ASML/MU in the quality bucket, not just the high-risk one. Redeploy entirely to the non-AI defensive core.</div></div>
+
+    <h3>90-day tracking — fill in at each review</h3>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Review date</th><th>Tier status</th><th>Actual split</th><th>Target split</th><th>Deviation</th><th>Premium collected</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td class="num">2026-09-07</td><td>—</td><td>—</td><td class="num">30/70</td><td>—</td><td class="num">—</td><td>—</td></tr>
+        <tr><td class="num">2026-09-21</td><td>—</td><td>—</td><td class="num">30/70</td><td>—</td><td class="num">—</td><td>—</td></tr>
+        <tr><td class="num">2026-10-05</td><td>—</td><td>—</td><td class="num">30/70</td><td>—</td><td class="num">—</td><td>—</td></tr>
+        <tr><td class="num">2026-10-19 (post-Anthropic IPO)</td><td>—</td><td>—</td><td class="num">30/70</td><td>—</td><td class="num">—</td><td>—</td></tr>
+        <tr><td class="num">2026-11-02</td><td>—</td><td>—</td><td class="num">30/70</td><td>—</td><td class="num">—</td><td>—</td></tr>
+        <tr><td class="num">2026-11-16 (post-Q3 earnings)</td><td>—</td><td>—</td><td class="num">30/70</td><td>—</td><td class="num">—</td><td>—</td></tr>
+        <tr><td class="num">2026-11-23 — 90-day mark</td><td>—</td><td>—</td><td class="num">30/70</td><td>—</td><td class="num">—</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Flag a deviation whenever the actual split drifts more than ~5-10 percentage points from target without a tier change justifying it — that's drift, not a decision, and it's exactly what this table exists to catch before it compounds.</p>
+  </section>
+
+  <footer>
+    <div class="cav">Known gaps: no confirmed USD/CNY transmission channel. CoreWeave and private-credit-manager liquidity not yet verified. Per-account margin headroom (especially Account A) needs a live check before executing the deployment table above.</div>
+    <div class="cav">This is a working risk memo, not executed positions — every structure needs a live strike/IV check before sizing.</div>
+  </footer>
+
+</div>
