@@ -245,6 +245,28 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
         structurally_extended = pct_above_200ma is not None and pct_above_200ma > 10
         structurally_weak = pct_above_200ma is not None and pct_above_200ma < -10
 
+        # Fundamentals confirmation — added 2026-08-24, same session as the
+        # 50/200MA fix above, prompted by a direct question: "these look
+        # undervalued on growth/revenue, why close them?" Deliberately uses
+        # analyst target_upside_pct/rating, NOT a computed PEG ratio (PE /
+        # earnings-growth%). PEG was tried informally this session on several
+        # names (Sobha, EXPE here) and kept producing nonsense-cheap readings
+        # (EXPE's PEG came out to 0.11) driven entirely by a single quarter's
+        # extreme reported earnings-growth% off a low prior-period base — not
+        # real, sustainable cheapness. Analyst upside is itself imperfect
+        # (targets can be stale) but it's a forward-looking, market-vetted
+        # consensus number already used elsewhere in this scoring function,
+        # rather than a ratio this session has now seen distort three
+        # separate times. This gate can only pull a technical RED/GREEN back
+        # toward YELLOW — it never overrides the 50/200MA confirmation above,
+        # it only asks "do fundamentals still support this extension/
+        # weakness, or has the market moved past what growth justifies."
+        fundamentally_supports_extension = target_upside_pct is not None and target_upside_pct > 10
+        fundamentally_confirms_weakness = (
+            (target_upside_pct is not None and target_upside_pct < -10)
+            or analyst_rating in ("sell", "strong_sell", "underperform")
+        )
+
         # Determine conviction score (0-10). Fundamentals are weighted as the
         # PRIMARY signal (larger swing) with technicals SUPPLEMENTAL — matching
         # the trading persona's stated philosophy ("fundamentals + macro instinct
@@ -375,43 +397,63 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
         # positioning haven't caught up to it yet.
         vs200_s = f"{pct_above_200ma:+.0f}%" if pct_above_200ma is not None else "n/a (< 200d history)"
 
+        upside_s = f"{target_upside_pct:+.0f}%" if target_upside_pct is not None else "n/a"
+
         if roc_7d is not None and roc_7d > 12:
-            if structurally_extended:
+            if structurally_extended and not fundamentally_supports_extension:
                 heat_status = "RED"
                 heat_reason = f"Spiked {roc_7d:.0f}% in 7 days AND {pct_above_200ma:.0f}% above its 200-day average — genuinely extended, not just a pop"
+            elif structurally_extended:
+                heat_status = "YELLOW"
+                heat_reason = f"Spiked {roc_7d:.0f}% in 7 days, {pct_above_200ma:.0f}% above its 200-day average, but analyst upside still {upside_s} — may be fundamentally supported, watch rather than force a close"
             else:
                 heat_status = "YELLOW"
                 heat_reason = f"Spiked {roc_7d:.0f}% in 7 days but only {vs200_s} vs its 200-day average — short-term move, not structurally extended"
         elif bb_data['pct_b'] > 1.0:
-            if structurally_extended:
+            if structurally_extended and not fundamentally_supports_extension:
                 heat_status = "RED"
                 heat_reason = f"Above upper Bollinger Band AND {pct_above_200ma:.0f}% above its 200-day average — confirmed extension"
+            elif structurally_extended:
+                heat_status = "YELLOW"
+                heat_reason = f"Above upper Bollinger Band and {pct_above_200ma:.0f}% above its 200-day average, but analyst upside still {upside_s} — may be fundamentally supported"
             else:
                 heat_status = "YELLOW"
                 heat_reason = f"Above upper Bollinger Band, but {vs200_s} vs its 200-day average — short-term only, not confirmed"
         elif rsi > 75 or position_in_range > 90:
-            if structurally_extended:
+            if structurally_extended and not fundamentally_supports_extension:
                 heat_status = "RED"
-                heat_reason = "Overbought / Extended — confirmed by RSI/range AND 200-day trend positioning"
+                heat_reason = f"Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only {upside_s}"
+            elif structurally_extended:
+                heat_status = "YELLOW"
+                heat_reason = f"Technically extended ({vs200_s} vs 200-day average), but analyst upside still {upside_s} — may be fundamentally supported, watch rather than force a close"
             else:
                 heat_status = "YELLOW"
                 heat_reason = f"RSI/range reads overbought, but {vs200_s} vs its 200-day average — watch, don't force a close"
         elif roc_7d is not None and roc_7d < -12:
-            if structurally_weak:
+            if structurally_weak and fundamentally_confirms_weakness:
+                heat_status = "RED"
+                heat_reason = f"Dropped {roc_7d:.0f}% in 7 days, {pct_above_200ma:.0f}% below its 200-day average, AND analyst upside only {upside_s} — thesis may be broken, not a dip"
+            elif structurally_weak:
                 heat_status = "GREEN"
                 heat_reason = f"Dropped {roc_7d:.0f}% in 7 days AND {pct_above_200ma:.0f}% below its 200-day average — genuinely beaten down"
             else:
                 heat_status = "YELLOW"
                 heat_reason = f"Dropped {roc_7d:.0f}% in 7 days but only {vs200_s} vs its 200-day average — pullback within trend, verify thesis before treating as an entry"
         elif bb_data['pct_b'] < 0.0:
-            if structurally_weak:
+            if structurally_weak and fundamentally_confirms_weakness:
+                heat_status = "RED"
+                heat_reason = f"Below lower Bollinger Band, {pct_above_200ma:.0f}% below its 200-day average, AND analyst upside only {upside_s} — verify thesis before averaging down"
+            elif structurally_weak:
                 heat_status = "GREEN"
                 heat_reason = f"Below lower Bollinger Band AND {pct_above_200ma:.0f}% below its 200-day average — genuinely oversold"
             else:
                 heat_status = "YELLOW"
                 heat_reason = f"Below lower Bollinger Band, but {vs200_s} vs its 200-day average — short-term only, not confirmed"
         elif rsi < 25 or position_in_range < 10:
-            if structurally_weak:
+            if structurally_weak and fundamentally_confirms_weakness:
+                heat_status = "RED"
+                heat_reason = f"Oversold on RSI/range, but {vs200_s} vs 200-day average AND analyst upside only {upside_s} — this may be the DRREDDY pattern (cheap-looking, thesis actually broken), not a bargain"
+            elif structurally_weak:
                 heat_status = "GREEN"
                 heat_reason = "Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning"
             else:
