@@ -220,6 +220,31 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
             except (ZeroDivisionError, IndexError):
                 roc_7d = None
 
+        # 50/200-day trend positioning — added 2026-08-24 after a real, data-
+        # confirmed failure: COIN and ALB were both flagged RED ("spiked in 7
+        # days") purely on roc_7d/RSI, but a direct check found COIN -9.3% and
+        # ALB -8.9% BELOW their own 200-day average (COIN at 15.6% of its
+        # 52-week range, near the LOW, not the high). Both were short-term
+        # bounces inside a longer consolidation/downtrend, not blow-off tops —
+        # RSI(14) and a 1-week return can't see that, only trend positioning
+        # can. ABNB/EXPE/ELF, by contrast, were genuinely extended on BOTH the
+        # short-term AND 50/200-day view in the same check. The fix: RSI/ROC/
+        # Bollinger stay the trigger (they catch real short-term moves that
+        # 50/200MA is too slow to see), but 50/200MA positioning now GATES
+        # whether that trigger earns a hard RED/GREEN or gets downgraded to a
+        # "watch, not confirmed" YELLOW. Neither signal replaces the other.
+        ma50 = float(closes.tail(50).mean()) if len(closes) >= 50 else None
+        ma200 = float(closes.tail(200).mean()) if len(closes) >= 200 else None
+        pct_above_50ma = (current_price / ma50 - 1) * 100 if ma50 else None
+        pct_above_200ma = (current_price / ma200 - 1) * 100 if ma200 else None
+        # >10% above/below the 200-day average as the structural-confirmation
+        # threshold -- calibrated directly against the 2026-08-24 check: it
+        # cleanly separates ABNB(+39%)/EXPE(+33%)/ELF(+42%) (confirmed
+        # extended) from COIN(-9%)/ALB(-9%)/CRCL(+3%) (not extended) and DIS
+        # (+6%, the one genuine borderline case, correctly left unconfirmed).
+        structurally_extended = pct_above_200ma is not None and pct_above_200ma > 10
+        structurally_weak = pct_above_200ma is not None and pct_above_200ma < -10
+
         # Determine conviction score (0-10). Fundamentals are weighted as the
         # PRIMARY signal (larger swing) with technicals SUPPLEMENTAL — matching
         # the trading persona's stated philosophy ("fundamentals + macro instinct
@@ -348,24 +373,50 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
         # (roc_7d) or last 20 sessions (Bollinger %B, computed above but
         # previously never used) deserves flagging even when RSI(14)/52-week
         # positioning haven't caught up to it yet.
+        vs200_s = f"{pct_above_200ma:+.0f}%" if pct_above_200ma is not None else "n/a (< 200d history)"
+
         if roc_7d is not None and roc_7d > 12:
-            heat_status = "RED"
-            heat_reason = f"Spiked {roc_7d:.0f}% in 7 days — too much too fast"
+            if structurally_extended:
+                heat_status = "RED"
+                heat_reason = f"Spiked {roc_7d:.0f}% in 7 days AND {pct_above_200ma:.0f}% above its 200-day average — genuinely extended, not just a pop"
+            else:
+                heat_status = "YELLOW"
+                heat_reason = f"Spiked {roc_7d:.0f}% in 7 days but only {vs200_s} vs its 200-day average — short-term move, not structurally extended"
         elif bb_data['pct_b'] > 1.0:
-            heat_status = "RED"
-            heat_reason = "Trading above upper Bollinger Band — short-term extended"
+            if structurally_extended:
+                heat_status = "RED"
+                heat_reason = f"Above upper Bollinger Band AND {pct_above_200ma:.0f}% above its 200-day average — confirmed extension"
+            else:
+                heat_status = "YELLOW"
+                heat_reason = f"Above upper Bollinger Band, but {vs200_s} vs its 200-day average — short-term only, not confirmed"
         elif rsi > 75 or position_in_range > 90:
-            heat_status = "RED"
-            heat_reason = "Overbought / Extended"
+            if structurally_extended:
+                heat_status = "RED"
+                heat_reason = "Overbought / Extended — confirmed by RSI/range AND 200-day trend positioning"
+            else:
+                heat_status = "YELLOW"
+                heat_reason = f"RSI/range reads overbought, but {vs200_s} vs its 200-day average — watch, don't force a close"
         elif roc_7d is not None and roc_7d < -12:
-            heat_status = "GREEN"
-            heat_reason = f"Dropped {roc_7d:.0f}% in 7 days — verify thesis before treating as an entry"
+            if structurally_weak:
+                heat_status = "GREEN"
+                heat_reason = f"Dropped {roc_7d:.0f}% in 7 days AND {pct_above_200ma:.0f}% below its 200-day average — genuinely beaten down"
+            else:
+                heat_status = "YELLOW"
+                heat_reason = f"Dropped {roc_7d:.0f}% in 7 days but only {vs200_s} vs its 200-day average — pullback within trend, verify thesis before treating as an entry"
         elif bb_data['pct_b'] < 0.0:
-            heat_status = "GREEN"
-            heat_reason = "Trading below lower Bollinger Band — short-term oversold"
+            if structurally_weak:
+                heat_status = "GREEN"
+                heat_reason = f"Below lower Bollinger Band AND {pct_above_200ma:.0f}% below its 200-day average — genuinely oversold"
+            else:
+                heat_status = "YELLOW"
+                heat_reason = f"Below lower Bollinger Band, but {vs200_s} vs its 200-day average — short-term only, not confirmed"
         elif rsi < 25 or position_in_range < 10:
-            heat_status = "GREEN"
-            heat_reason = "Oversold / Attractive"
+            if structurally_weak:
+                heat_status = "GREEN"
+                heat_reason = "Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning"
+            else:
+                heat_status = "YELLOW"
+                heat_reason = f"RSI/range reads oversold, but {vs200_s} vs its 200-day average — verify before treating as attractive"
         elif 30 < rsi < 70 and 30 < position_in_range < 70:
             heat_status = "GREEN"
             heat_reason = "Neutral positioning"
@@ -382,6 +433,8 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
             "macd_histogram": round(macd_data['histogram'], 4),
             "bb_position": round(bb_data['pct_b'], 2),
             "roc_7d": round(roc_7d, 1) if roc_7d is not None else None,
+            "pct_above_50ma": round(pct_above_50ma, 1) if pct_above_50ma is not None else None,
+            "pct_above_200ma": round(pct_above_200ma, 1) if pct_above_200ma is not None else None,
             "position_in_52w_range": round(position_in_range, 1),
             "week_52_high": round(week_52_high, 2) if week_52_high else None,
             "week_52_low": round(week_52_low, 2) if week_52_low else None,
