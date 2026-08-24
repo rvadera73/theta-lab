@@ -42,26 +42,47 @@ core_portfolio:
               # offset. See its live verdict in the report, not this list.
 
 # Watchlist — target entry zones. Not yet purchased.
+#
+# KAYNES removed 2026-08-24 — validated via web research, not a rumor: Q1
+# FY27 consolidated net profit -24.4% YoY, execution delays on the Sanand
+# OSAT plant and Tamil Nadu PCB ramp-ups, persistent negative cash flow, a
+# cut to smart-meter/semiconductor-packaging growth targets, and management
+# withdrew specific FY27 revenue guidance (replaced with vague "twice
+# industry rate" language). A real thesis break, not a temporary dip.
 watchlist:
-  - symbol: KAYNES
-    name: Kaynes Technology
-    sector: Electronics EMS / AI Hardware Supply Chain
-    thesis: India EMS boom, AI hardware supply chain, defence electronics
-    entry_zone_low: 3800
-    entry_zone_high: 4000
-    current_price: 4044
-    strategy: "2 tranches — buy 10 shares now near 4000, add 10 on dip to 3800"
-    max_position: 20  # shares
-
   - symbol: SOLARINDS
     name: Solar Industries
     sector: Defense / Explosives / Ammunition
     thesis: India defense indigenisation, ammunition demand surge
-    entry_zone_low: 14000
-    entry_zone_high: 14500
-    current_price: 15439
-    strategy: "Wait for pullback to 50 MA zone. Buy 5 shares."
+    # Re-anchored 2026-08-24: the STRATEGY (wait for the 50-day MA) is
+    # unchanged from when this was first set, but the MA itself has moved a
+    # lot as the stock ran (roughly 14,000 -> 18,567 over the last several
+    # months) — the old 14,000-14,500 zone is now ~38% below spot and would
+    # never realistically trigger. Fundamentals still support paying up
+    # somewhat: revenue growth +70%, earnings growth +93%, analyst mean
+    # target 21,521 (ABOVE current price, unlike PAYTM below) — this is a
+    # real uptrend with a live 50-MA discipline, not a chase.
+    entry_zone_low: 18000
+    entry_zone_high: 18600
+    current_price: 19925
+    strategy: "Wait for pullback to the 50-day MA zone (re-anchored 2026-08-24 at ~18,000-18,600, was 14,000-14,500). Buy 5 shares."
     max_position: 10  # shares
+
+  - symbol: PAYTM
+    name: One97 Communications (Paytm)
+    sector: Technology / Fintech Software
+    thesis: >
+      Strong fundamentals (revenue growth +27.7%, earnings growth +79.9%),
+      but added 2026-08-24 at an extended entry point — 97.5% of 52-week
+      range, RSI 74.7, trailing PE 161. Even the analyst mean target
+      (1,558) sits BELOW the current price (1,632) — the near-term
+      technical/analyst case argues for waiting, not buying now, despite
+      the genuinely strong underlying growth.
+    entry_zone_low: 1400
+    entry_zone_high: 1550
+    current_price: 1632
+    strategy: "Wait for pullback toward the analyst mean target / 50-day MA zone (50-MA currently 1,335, 200-MA 1,218) — do not chase at the 52-week high."
+    max_position: 15  # shares
 
   - symbol: GVTD
     icici_symbol: "GE VERNOVA T&D"
