@@ -77,12 +77,83 @@ watchlist:
       range, RSI 74.7, trailing PE 161. Even the analyst mean target
       (1,558) sits BELOW the current price (1,632) — the near-term
       technical/analyst case argues for waiting, not buying now, despite
-      the genuinely strong underlying growth.
+      the genuinely strong underlying growth. Part of the Rs 5L / 6-month
+      accumulation_plan_2026_h2 below (15% / Rs 75,000) — this is the one
+      name in that plan that should NOT be bought on a fixed schedule.
     entry_zone_low: 1400
     entry_zone_high: 1550
     current_price: 1632
     strategy: "Wait for pullback toward the analyst mean target / 50-day MA zone (50-MA currently 1,335, 200-MA 1,218) — do not chase at the 52-week high."
     max_position: 15  # shares
+
+  - symbol: SOBHA
+    name: Sobha Limited
+    sector: Real Estate
+    thesis: >
+      Added 2026-08-24 as part of the accumulation_plan_2026_h2 below (20% /
+      Rs 1,00,000). Oversold entry — 24.3% of 52-week range, RSI 31.2, below
+      both 50-MA (1,394) and 200-MA (1,419). HONEST FLAG: the cheap PEG (0.22)
+      that makes this look statistically undervalued is driven by a 274% YoY
+      earnings-growth figure that is almost certainly a base-effect
+      distortion (a weak prior-year quarter), not confirmed durable growth —
+      sized down accordingly. Note: this is Sobha Limited (SOBHA.NS), the
+      India-listed subsidiary — NOT Sobha Realty, the separate Dubai-based
+      private parent. No Dubai exposure via this ticker.
+    entry_zone_low: 1150
+    entry_zone_high: 1350
+    current_price: 1289
+    strategy: "Oversold technical entry confirmed — buy first tranche now, verify next quarter's earnings print before increasing size given the base-effect concern above."
+    max_position: 40  # shares
+
+  - symbol: PFC
+    name: Power Finance Corporation
+    sector: Financial Services (Power Sector Lending)
+    thesis: >
+      Added 2026-08-24, already in zone. RSI 8 — genuinely extreme, confirmed
+      via research to be a broad sector/market re-rating (PFC got expensive
+      in the 2023-24 bull run and has round-tripped as valuations
+      normalized), not a company-specific problem. PE 4.6 (cheap), dividend
+      yield 4.3%, analyst target 493.93 (strong_buy, ~36% upside from 364).
+    entry_zone_low: 340
+    entry_zone_high: 380
+    current_price: 364
+    strategy: "Already in zone — enter first tranche now (small size), add on further weakness toward 335 (52w low)."
+    max_position: 100  # shares
+
+  - symbol: ITC
+    name: ITC Limited
+    sector: Consumer Defensive (Tobacco/FMCG/Hotels/Paper)
+    thesis: >
+      Added 2026-08-24, already in zone. Near 52w low (2% range), RSI 22 —
+      but HONEST FLAG: revenue growth -11.1% and earnings growth -16% YoY,
+      genuinely declining, not just cheap. Diversified blue-chip with a
+      5.94% dividend yield and analyst target 327 (buy, ~21% upside) softens
+      the concern, but this is not a clean "oversold + growing" story like
+      PFC/ICRA — verify the segment-level cause of the decline before sizing
+      up, not just the technical reading. Part of the Rs 5L / 6-month
+      accumulation_plan_2026_h2 below (40% / Rs 2,00,000) — the best
+      risk-adjusted entry of that group as of 2026-08-24 (cheapest PE,
+      most oversold, highest dividend yield). Buy on schedule.
+    entry_zone_low: 260
+    entry_zone_high: 280
+    current_price: 270
+    strategy: "Already in zone, but size smaller than PFC/ICRA given the real (not just technical) growth concern — small first tranche only."
+    max_position: 100  # shares
+
+  - symbol: ICRA
+    name: ICRA Limited
+    sector: Financial Services (Credit Ratings)
+    thesis: >
+      Added 2026-08-24, already in zone. Down ~22.5% YoY on a sector-wide
+      re-rating (confirmed via research, not company-specific) — earnings
+      growth actually +32.3% YoY, a real oversold-while-still-growing
+      profile. Analyst target 6,362.50 (strong_buy, ~28% upside from
+      4,967), still paying a dividend.
+    entry_zone_low: 4700
+    entry_zone_high: 5100
+    current_price: 4967
+    strategy: "Already in zone — the strongest fundamentals-vs-price gap of the three new candidates. Enter first tranche now."
+    max_position: 12  # shares (high price stock)
 
   - symbol: GVTD
     icici_symbol: "GE VERNOVA T&D"
@@ -104,6 +175,43 @@ watchlist:
     current_price: 33550
     strategy: "Wait for 20%+ correction. At 52W high, don't chase."
     max_position: 3  # shares (high price stock)
+
+# ============================================================
+# ACCUMULATION PLAN — 2026 H2 (added 2026-08-24)
+# ============================================================
+# User goal: deploy Rs 5,00,000 across these 4 names on a regular basis over
+# the next 6 months. Split is valuation/timing-weighted (per each name's
+# entry point as of 2026-08-24), not an even 25% each — see pacing notes.
+# First checkpoint: review actual deployment + each name's move vs. this
+# plan on or after 2026-11-24 (3 months in).
+#
+# GVTD note: GVTD stays in the watchlist above with its old entry zone, but
+# a 2026-08-24 valuation screen (PE 82.3, PEG 3.33) shows it does NOT clear
+# the "very undervalued" bar set this session. Left un-actioned rather than
+# deleted — revisit at the 3-month review; likely candidate for removal.
+accumulation_plan_2026_h2:
+  total_budget_inr: 500000
+  horizon_months: 6
+  review_date: "2026-11-24"
+  allocations:
+    - symbol: ITC
+      pct: 40
+      amount_inr: 200000
+      pacing: "Buy on schedule now — PE 17.0, RSI 21.8, at 52w low, 5.94% dividend yield. Best risk-adjusted entry of the four as of 2026-08-24."
+    - symbol: LEMTRE
+      name: Lemon Tree Hotels
+      yf_ticker: LEMONTREE.NS
+      pct: 25
+      amount_inr: 125000
+      pacing: "Already held (not a new watchlist entry). Averaging into an existing oversold position — 10.5% of 52w range, RSI 26.9, PE 36.5."
+    - symbol: SOBHA
+      pct: 20
+      amount_inr: 100000
+      pacing: "Oversold entry (24.3% of 52w range, RSI 31.2) but sized down — see the base-effect caveat on its watchlist entry above. Verify next quarter's earnings before increasing size."
+    - symbol: PAYTM
+      pct: 15
+      amount_inr: 75000
+      pacing: "HOLD BACK — do not average on a fixed schedule. Price 1,623.50 is 96.2% of 52w range, RSI 75 (overbought), PE 160.4, above both the 1,400-1,550 entry zone and the analyst mean target (1,558). Deploy only on a pullback into that zone."
 
 # EXIT / REDUCE — data-driven portfolio cleanup
 # Phase 1 = act immediately / on bounce. Phase 2 = set limit orders.
