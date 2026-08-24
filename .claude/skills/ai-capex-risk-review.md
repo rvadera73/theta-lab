@@ -50,11 +50,30 @@ fired 0/100) and republishes the artifact reflecting that.
    - NBIS/CRWV relative performance vs. NVDA/broader semis
    - Breadth level (from the macro model) vs. the 50% alert line
 
-4. **Re-check the two Tier-2 gate conditions** (WebSearch): any AI-chain name
-   crossing into junk credit rating, or a private-credit fund (Blackstone,
-   Blue Owl, Apollo, Ares) gating redemptions or marking down data-center
-   loan NAVs. If either fires, the dial goes straight to 0/100 regardless of
-   what Tier 1 shows.
+4. **Re-check the two Tier-2 gate conditions** (WebSearch): CoreWeave (already
+   Ba3/junk) taking a further downgrade, breaching a covenant, or failing a
+   refinancing, or a private-credit fund (Blackstone, Blue Owl, Apollo, Ares)
+   gating redemptions or marking down data-center loan NAVs. If either
+   fires, the dial goes straight to 0/100 regardless of what Tier 1 shows.
+
+4b. **Re-check the Tier CR portfolio-wide credit exit gate** (WebSearch).
+   This is independent of the Phase 1/2 dial and can fire on any of the 92
+   held tickers, not just the AI-adjacent ones. The trigger is an ACTUAL
+   rating-agency action (a downgrade or a formal negative-outlook
+   placement) — NOT a thematic warning or watch-list mention. Confirmed
+   example of the distinction (2026-08-24): Moody's named Microsoft,
+   Amazon, Alphabet, Meta, Oracle, and CoreWeave as credit-quality "under
+   threat," but Moody's itself said the first four are unlikely under
+   imminent downgrade threat, and only Oracle has an actual rating action.
+   That commentary was NOT this gate firing. Actively check every review:
+   the Moody's six, the neocloud cluster (NBIS, HUT, RIOT), and AVGO. For
+   the rest of the book, no dedicated ratings feed exists — treat a sharp
+   conviction/analyst-rating drop on any position as a cue to check for a
+   credit angle specifically, rather than assuming routine drag. If this
+   gate fires on ANY ticker: stop new premium there immediately, close or
+   don't-renew existing short puts rather than holding to expiry, and if
+   equity is held via assignment, reassess the thesis against the
+   downgrade's specific rationale.
 
 5. **Re-verify fundamentals drift** on the eight named tickers (ALAB, LITE,
    MU, PLTR, TSM, ASML, APH, plus the avoid-list names NBIS/CRWV/RKLB/OKLO/SPCX)
