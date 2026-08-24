@@ -43,24 +43,25 @@ class MacroRiskAnalyzer:
             "yield_curve_yellow": 0.1, # 10Y - 2Y spread
             "yield_curve_red": -0.05,  # Inverted
         }
-        # FRED API Key (public demo key - can be replaced with private key)
-        self.fred_api_key = "e3b12ba0b1b73f9b62c5e7c8a4d9f1e2"
-
     def fetch_fred_data(self, series_id: str) -> float:
-        """Fetch latest data point from FRED API"""
+        """Fetch latest data point from FRED's public CSV feed (no API key needed).
+
+        The FRED api.stlouisfed.org/fred/series/observations endpoint requires a
+        registered key; the key previously hardcoded here was never registered and
+        returned HTTP 400 on every call, silently falling back to the "normal"
+        defaults below on every report run (confirmed 2026-08-24 -- credit-spread
+        and yield-curve signals were reading as fallback constants, not live data).
+        fredgraph.csv is public and needs no key, at the cost of only returning a
+        recent window (a few years) rather than full history -- fine here since we
+        only need the latest observation.
+        """
         try:
-            url = "https://api.stlouisfed.org/fred/series/observations"
-            params = {
-                "series_id": series_id,
-                "limit": 1,
-                "sort_order": "desc",
-                "api_key": self.fred_api_key
-            }
-            response = requests.get(url, params=params, timeout=5)
+            url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+            response = requests.get(url, timeout=10)
             if response.status_code == 200:
-                data = response.json()
-                if data.get("observations"):
-                    value = data["observations"][0].get("value")
+                lines = [ln for ln in response.text.strip().splitlines() if ln]
+                for line in reversed(lines[1:]):  # skip header, walk back from latest
+                    _, value = line.split(",")
                     if value and value != ".":
                         return float(value)
         except Exception as e:
@@ -69,9 +70,9 @@ class MacroRiskAnalyzer:
 
     def get_hyoas(self) -> float:
         """Get High Yield OAS spread (basis points) from FRED"""
-        # BAMLH0A0HYM2 = ICE BofA US High Yield OAS
+        # BAMLH0A0HYM2 = ICE BofA US High Yield OAS, reported in percent (e.g. 2.70 = 270bps)
         hyoas = self.fetch_fred_data("BAMLH0A0HYM2")
-        return hyoas if hyoas else 380  # Default to normal if unavailable
+        return hyoas * 100 if hyoas is not None else 380  # Default to normal if unavailable
 
     def get_yield_curve(self) -> float:
         """Get Yield Curve (10Y - 2Y Treasury spread) from FRED"""

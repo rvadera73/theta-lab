@@ -802,6 +802,60 @@ class UnifiedReportProduction:
             output.append(f"⚠️ Macro risk analysis unavailable: {e}")
             output.append("")
 
+        # SECTION 6.6: AI CAPEX RISK TRACKER — the scriptable half of the
+        # Circular Financing Playbook (logs/circular_financing_playbook.html).
+        # The qualitative Tier 1/2 check (Oracle/CoreWeave credit news,
+        # Anthropic IPO status, private-credit gating) needs live web
+        # research judgment and can't run in this unattended report — that
+        # stays on /ai-capex-risk-review. This section tracks what IS
+        # computable from live prices/fundamentals on every scheduled run:
+        # Technology concentration and the named high-risk/quality-AI/avoid
+        # buckets' actual dollar exposure vs. the 90-day plan's 30/70 target.
+        output.extend(self._format_section_header("6.6", "AI CAPEX RISK TRACKER — CIRCULAR FINANCING PLAYBOOK"))
+        output.append("")
+        try:
+            all_positions = critical + monitor + healthy
+            notional_by_ticker: dict = {}
+            for p in all_positions:
+                notional_by_ticker[p['ticker']] = notional_by_ticker.get(p['ticker'], 0) + p.get('notional', 0)
+
+            total_book_notional = sum(s['total_notional'] for s in self.sector_summary.values())
+            tech = self.sector_summary.get('Technology', {})
+            tech_notional = tech.get('total_notional', 0)
+            tech_pct = (tech_notional / total_book_notional * 100) if total_book_notional else 0
+
+            output.append(f"Technology concentration: {tech_pct:.1f}% of notional ({tech.get('position_count', 0)} positions, ${tech_notional:,.0f})")
+            output.append("  Reference: top-10 S&P 500 concentration is 41.2%, a record — this line tracks")
+            output.append("  your own book against that same structural risk, not just the index's.")
+            output.append("")
+
+            HIGH_RISK_BUCKET = ["ALAB", "LITE", "MU", "PLTR"]
+            QUALITY_AI_BUCKET = ["TSM", "ASML", "APH"]
+            AVOID_LIST = ["NBIS", "CRWV", "RKLB", "OKLO", "SPCX", "HUT", "RIOT", "ORCL"]
+
+            hi_total = sum(notional_by_ticker.get(t, 0) for t in HIGH_RISK_BUCKET)
+            qual_total = sum(notional_by_ticker.get(t, 0) for t in QUALITY_AI_BUCKET)
+            avoid_total = sum(notional_by_ticker.get(t, 0) for t in AVOID_LIST)
+            bucket_total = hi_total + qual_total
+            hi_pct = (hi_total / bucket_total * 100) if bucket_total else 0
+
+            output.append("90-day capital plan tracking (target 30% high-risk / 70% quality, $700K base):")
+            output.append(f"  High-risk ({'/'.join(HIGH_RISK_BUCKET)}): ${hi_total:,.0f} live — {hi_pct:.0f}% of tracked pair vs. 30% target")
+            output.append(f"  Quality-AI ({'/'.join(QUALITY_AI_BUCKET)}): ${qual_total:,.0f} live")
+            if abs(hi_pct - 30) > 10 and bucket_total > 0:
+                output.append(f"  ⚠️ Drift >10pp from the 30/70 target — check whether a tier fired to justify it before rebalancing.")
+            held_avoid = [t for t in AVOID_LIST if notional_by_ticker.get(t)]
+            if held_avoid:
+                output.append(f"  ⚠️ Avoid-list exposure still open: ${avoid_total:,.0f} across {', '.join(held_avoid)}")
+            output.append("")
+            output.append("Qualitative Tier 1/2 check (credit news, IPO status, private-credit gating) is")
+            output.append("NOT computed here — run /ai-capex-risk-review for the live dial state. This")
+            output.append("section tracks only the scriptable half.")
+            output.append("")
+        except Exception as e:
+            output.append(f"⚠️ AI capex risk tracker unavailable: {e}")
+            output.append("")
+
         # SECTION 7: ACTION FRAMEWORK WITH GAP CLOSURE IMPACT
         output.extend(self._format_section_header(7, "ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT"))
         output.append("")
