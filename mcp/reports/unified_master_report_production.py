@@ -852,6 +852,66 @@ class UnifiedReportProduction:
             output.append("NOT computed here — run /ai-capex-risk-review for the live dial state. This")
             output.append("section tracks only the scriptable half.")
             output.append("")
+
+            # Tier CR staleness — the actual rating-action check needs live web
+            # research (/ai-capex-risk-review) and can't run here, but we CAN
+            # surface how overdue it is and what it last found, read from the
+            # state file that skill writes to, so the need is never silently
+            # forgotten between manual reviews.
+            output.append("TIER CR — PORTFOLIO-WIDE CREDIT EXIT GATE:")
+            output.append("-" * 120)
+            cr_state: dict = {}
+            try:
+                with open("/home/rahulvadera/projects/theta-lab/data/tier_cr_state.yaml") as f:
+                    cr_state = yaml.safe_load(f) or {}
+                last_check = date.fromisoformat(cr_state["last_check_date"])
+                days_stale = (date.today() - last_check).days
+                staleness_flag = "⚠️ " if days_stale > 14 else "✅ "
+                output.append(f"{staleness_flag}Last check: {cr_state['last_check_date']} ({days_stale} days ago)")
+                output.append(f"  Gate fired: {'🔴 YES' if cr_state.get('gate_fired') else 'No'}")
+                output.append(f"  Last outcome: {cr_state.get('last_outcome', 'n/a').strip()}")
+                if days_stale > 14:
+                    output.append("  ⚠️ Over 14 days since the last real rating-action check — run /ai-capex-risk-review.")
+            except Exception as e:
+                output.append(f"  ⚠️ No Tier CR check on record ({e}) — run /ai-capex-risk-review to establish a baseline.")
+            output.append("")
+
+            # Scriptable early-warning PROXY only — NOT a rating-action detector.
+            # Flags a tracked name whose price is diverging sharply from the
+            # broad market, the same pattern (NBIS/CRWV vs NVDA/SMH) that first
+            # surfaced real credit-swap-cost stress manually this session. A
+            # flag here means "check this name for credit news," not "this
+            # name was downgraded."
+            try:
+                import yfinance as _yf
+                tracked = cr_state.get("tracked_names", [])
+            except Exception:
+                tracked = []
+            if tracked:
+                try:
+                    spx_hist = _yf.Ticker("^GSPC").history(period="1mo")["Close"]
+                    spx_7d = (spx_hist.iloc[-1] / spx_hist.iloc[-8] - 1) * 100 if len(spx_hist) >= 8 else None
+                    flagged = []
+                    for t in tracked:
+                        try:
+                            h = _yf.Ticker(t).history(period="1mo")["Close"]
+                            if len(h) < 8:
+                                continue
+                            r7 = (h.iloc[-1] / h.iloc[-8] - 1) * 100
+                            if spx_7d is not None and (r7 - spx_7d) < -10:
+                                flagged.append((t, r7))
+                        except Exception:
+                            continue
+                    if flagged:
+                        output.append("⚠️ Underperformance proxy — check these for credit news specifically:")
+                        for t, r7 in sorted(flagged, key=lambda x: x[1]):
+                            output.append(f"    {t}: {r7:+.1f}% (7d) vs SPX {spx_7d:+.1f}% — >10pp gap")
+                    else:
+                        output.append("Underperformance proxy: no tracked name diverging >10pp from SPX over 7 days.")
+                    output.append("")
+                except Exception as e:
+                    output.append(f"  ⚠️ Underperformance proxy unavailable: {e}")
+                    output.append("")
         except Exception as e:
             output.append(f"⚠️ AI capex risk tracker unavailable: {e}")
             output.append("")

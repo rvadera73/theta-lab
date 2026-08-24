@@ -86,6 +86,19 @@ fired 0/100) and republishes the artifact reflecting that.
    delayed-favorable / Tier 2 fired. State the reasoning plainly — which
    specific indicator(s) drove the call.
 
+6b. **Write the result to `data/tier_cr_state.yaml`** regardless of outcome —
+   `last_check_date` (today), `last_outcome` (one paragraph: what was
+   checked, what was and wasn't found, explicitly noting if a thematic
+   warning was correctly NOT treated as a firing), `gate_fired` (true only
+   on an actual confirmed rating action), and `tracked_names` (add any new
+   name surfaced this run, e.g. Broadcom was added 2026-08-24). Every
+   scheduled daily/weekly/monthly report reads this file in Section 6.6 to
+   show staleness (flags itself if >14 days since the last check) and runs
+   its own scriptable underperformance proxy (any tracked name diverging
+   >10pp from SPX over 7 days) as an automated early-warning layer between
+   manual reviews — that proxy is NOT a rating-action detector, just a cue
+   to check a specific name sooner.
+
 7. **Update `logs/circular_financing_playbook.html`**: append a new evidence
    ledger row for anything materially new, update the probability ladder if
    the evidence has shifted, fill in the next open row of the Section 08

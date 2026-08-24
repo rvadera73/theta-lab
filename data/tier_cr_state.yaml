@@ -1,0 +1,35 @@
+# Tier CR (portfolio-wide credit exit gate) check state.
+#
+# Updated by /ai-capex-risk-review after each manual run — that skill does
+# the actual web-research check for real rating-agency actions (downgrades,
+# negative-outlook placements), since that can't run unattended in a cron
+# job. This file is the handoff: unified_master_report_production.py
+# (Section 6.6) reads it on every scheduled daily/weekly/monthly run to
+# show how stale the last check is and what it found, so the need for a
+# fresh check is never silently forgotten between reviews.
+#
+# gate_fired stays false until an ACTUAL rating action is confirmed on a
+# tracked name -- a thematic warning or watch-list mention (e.g. Moody's
+# "under threat" commentary) does not set this to true.
+
+last_check_date: "2026-08-24"
+last_outcome: >
+  No actual rating action found on any tracked name beyond Oracle's Jul 9
+  S&P downgrade (BBB to BBB-, already priced into the avoid-list). Moody's
+  Jul 24 naming of Microsoft/Amazon/Alphabet/Meta as credit-quality "under
+  threat" is commentary, not an action -- Moody's itself says their
+  investment-grade ratings are unlikely under imminent threat. CoreWeave
+  remains Ba3 (junk, unchanged) with distressed CDS pricing (~855bps).
+  Gate not fired.
+gate_fired: false
+tracked_names:
+  - MSFT
+  - AMZN
+  - GOOGL
+  - META
+  - ORCL
+  - CRWV
+  - NBIS
+  - HUT
+  - RIOT
+  - AVGO
