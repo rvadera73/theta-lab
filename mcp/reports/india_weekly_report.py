@@ -52,7 +52,15 @@ def _backfill_equity_prices(positions: list) -> None:
         if pos.symbol in _INDEX_TICKERS or pos.shares <= 0:
             continue
         live = _live_price(pos.symbol, india=True)
-        if live:
+        # `if live:` alone lets a NaN close price through: NaN is truthy in a
+        # bool() check (only 0.0/None/False are falsy), so an illiquid/gappy
+        # NSE ticker whose most recent Yahoo row is NaN would overwrite a
+        # perfectly good avg-cost fallback with NaN -- confirmed live
+        # 2026-08-24 on POWGRI/ADAPOR, which then propagated into stock_pnl
+        # (current_price - cost_basis) * shares, showing as "Price: nan" and
+        # "Net P&L: -nan" in the rendered report. `live > 0` is False for
+        # both NaN and 0.0, so this guards both failure modes in one check.
+        if live and live > 0:
             pos.current_price = live
 
 
