@@ -1,4 +1,11 @@
-# Quarterly Portfolio Direction — Q3 2026 (Aug–Oct)
+# Quarterly Portfolio Direction — US Accounts — Q3 2026 (Aug–Oct)
+
+**Scope: US accounts only** (Account A/B/C, Fidelity x3, Vanguard, Robinhood x2) — the
+$1.2M objective, US regime/crash-probability model, and US options-selling strategy
+(CSP/covered call/strangle). India (ICICI Direct) is tracked as a fully separate portfolio
+with its own market, regime, objective, and strategy shape — see the companion document
+`logs/quarterly_portfolio_direction_india_2026-Q3.md`. The two are not blended anywhere in
+this document; a candidate or action appearing here is a US-account decision only.
 
 **Generated:** 2026-08-22. Data currency: live regime/crash/sector figures as of today;
 P&L figures reflect the most recent brokerage exports (dated 2026-08-14 — re-run
@@ -9,9 +16,8 @@ This is the first of what should become a standing quarterly artifact — a forw
 3-month direction, not a backward-looking report. Sources: `mcp/analysis/macro_risk_analyzer.py`
 (crash probability + sector sensitivity), `mcp/reports/sector_analysis.py` (current exposure),
 `scripts/realized_pnl.py` (P&L vs the $1.2M objective), `scripts/strategy_attribution.py`
-(YTD strategy performance), `scripts/portfolio1_monthly_review.py` +
-`scripts/india_stock_list_review.py` (candidate pipeline), plus external research on
-institutional multi-strategy risk practices (sources at bottom).
+(YTD strategy performance), `scripts/portfolio1_monthly_review.py` (US candidate pipeline),
+plus external research on institutional multi-strategy risk practices (sources at bottom).
 
 ---
 
@@ -150,9 +156,8 @@ VIX crossing 25 or 30) rather than deciding in the moment.
 - No new Technology exposure anywhere in the portfolio — it's already 36% of the book and
   the most crash-sensitive sector; adding here compounds a known concentration, not a fresh
   decision.
-- Deploy fresh capital into the verified candidates already screened: **BROS** (US,
-  ~13-22% annualized depending on strike, genuinely oversold), **ITC** and **POWERGRID**
-  (India, both real oversold+not-fully-priced signals).
+- Deploy fresh capital into the verified US candidate already screened: **BROS**
+  (~13-22% annualized depending on strike, genuinely oversold).
 - Decide on the tail-hedge allocation (§4) — even a small position now costs little given
   where VIX/crash-probability sit, and is far cheaper to put on calm than after a breadth
   breakdown starts.
@@ -164,8 +169,8 @@ VIX crossing 25 or 30) rather than deciding in the moment.
 - If Account A capacity is fixed, resume strangle deployment on the proven winners
   (AXON/ADBE/COIN/GEV-style names), sized against the 1%-of-book discipline from §4 rather
   than by feel.
-- Re-run `scripts/portfolio1_monthly_review.py` and the India scanner fresh — this quarter's
-  candidates (BROS, ITC) will have moved; don't act on stale screens into month 2.
+- Re-run `scripts/portfolio1_monthly_review.py` fresh — this quarter's candidate (BROS)
+  will have moved; don't act on a stale screen into month 2.
 - Re-check Financial Services' new REDUCE signal — if it persists two checks running, treat
   it the way Basic Materials/Energy are already being treated.
 
