@@ -44,6 +44,54 @@ _INDEX_TICKERS = {
     "MIDCPNIFTY": "NIFTY_MIDCAP_100.NS",
 }
 
+# Strangle-alternative suggestion, added 2026-08-25 per direct request to
+# surface this whenever an index position is coming up on rollover, not just
+# as a one-off manual analysis. Deliberately index-only (see _INDEX_TICKERS
+# above) -- individual stock option chains in India are thinner, event-driven,
+# and physically settled, so far-OTM legs needed for a strangle often lack
+# real liquidity there; the index is the only part of the book where this
+# structure is reliably executable. Computed once per report run and cached,
+# since multiple index positions can be near rollover in the same run.
+_VIX_PERCENTILE_CACHE: dict = {}
+
+def _india_vix_percentile_note() -> str:
+    """Live India VIX vs. its own 5yr distribution, with an explicit caution
+    at low percentiles -- confirmed this session that selling a NEW 2-leg
+    strangle when VIX is already unusually cheap carries real mean-reversion
+    risk: a plain move back to the MEDIAN (not a spike) can erase two weeks
+    of theta on a strangle with zero price move against you, since a 2-leg
+    position is more vega-sensitive than the single-leg puts this book
+    normally runs. Returns a cached, one-line note; never raises -- a live
+    data failure just omits the suggestion rather than breaking the report.
+    """
+    if "note" in _VIX_PERCENTILE_CACHE:
+        return _VIX_PERCENTILE_CACHE["note"]
+    try:
+        import yfinance as _yf
+        import numpy as _np
+        hist = _yf.Ticker("^INDIAVIX").history(period="5y")["Close"]
+        current = float(hist.iloc[-1])
+        pct = float((hist < current).mean() * 100)
+        if pct < 25:
+            note = (f"India VIX {current:.1f} sits at the {pct:.0f}th percentile of its own 5yr range -- "
+                    "unusually cheap. A NEW 30-delta strangle here carries real mean-reversion risk "
+                    "(a plain move back to median vol, not a spike, can erase early theta with zero "
+                    "price move against you) -- consider a normal single-leg roll instead, or wait for "
+                    "a modest vol uptick before adding a fresh strangle.")
+        elif pct < 50:
+            note = (f"India VIX {current:.1f} sits at the {pct:.0f}th percentile of its own 5yr range -- "
+                    "still on the cheap side. A strangle roll is more defensible than at the extreme "
+                    "lows, but size conservatively.")
+        else:
+            note = (f"India VIX {current:.1f} sits at the {pct:.0f}th percentile of its own 5yr range -- "
+                    "a reasonable entry for a fresh 30-delta strangle roll instead of a same-structure "
+                    "single-leg roll, if you want the richer combined premium. Verify live strikes/"
+                    "liquidity before executing.")
+    except Exception:
+        note = ""
+    _VIX_PERCENTILE_CACHE["note"] = note
+    return note
+
 
 def _backfill_equity_prices(positions: list) -> None:
     """Statement-fallback positions carry avg cost as current_price; overwrite
@@ -564,6 +612,13 @@ async def generate_india_weekly_report(
                 lines.append(
                     f"🔄 **Roll needed:** {', '.join(rs['legs'])} — {rs['recommendation']}"
                 )
+                # Strangle-alternative suggestion -- index-only (see
+                # _INDEX_TICKERS), surfaced whenever a rollover decision is
+                # already being made, not as a separate action item.
+                if sym in _INDEX_TICKERS:
+                    vix_note = _india_vix_percentile_note()
+                    if vix_note:
+                        lines.append(f"   💡 **Strangle-alternative check:** {vix_note}")
             lines.append("")
 
     # --- Also watching ---
