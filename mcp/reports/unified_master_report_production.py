@@ -1388,18 +1388,28 @@ class UnifiedReportProduction:
         except Exception:
             pass
 
-        # Ticker-level RSI/conviction/heat (reliable) drives manage-vs-hold
+        # Ticker-level RSI/conviction/heat drives manage-vs-hold. Was
+        # `rsi >= 65 or "RED" in heat` -- the raw RSI leg ran independently of
+        # heat_status, so it bypassed the 50/200MA + analyst-upside
+        # confirmation gates entirely and reproduced the exact bug those
+        # gates were built to fix. Confirmed live 2026-08-25: this block kept
+        # flagging CRCL/ALB/DIS/LLY/ELF for REDUCE via raw RSI>=65 in the same
+        # report where Section 3 (using the confirmed heat_status) correctly
+        # excluded all five -- a direct, visible contradiction between two
+        # sections of one report. heat_status already incorporates RSI (its
+        # own trigger is RSI>75 or range>90) plus the confirmation layers, so
+        # using it alone is strictly more correct, not just consistent.
         reduce_, letrun = [], []
         for tk, m in (self.metrics or {}).items():
             rsi = m.get("rsi") or 50
             conv = m.get("conviction") or 5
             heat = str(m.get("heat_status", "")).upper()
-            if rsi >= 65 or "RED" in heat:
+            if "RED" in heat:
                 reduce_.append((tk, rsi, conv))
             elif rsi <= 48 and conv >= 6:
                 letrun.append((tk, rsi, conv))
 
-        out.append("🔻 REDUCE / MANAGE  (overbought RSI≥65 or RED heat):")
+        out.append("🔻 REDUCE / MANAGE  (RED heat — RSI/trend/fundamentals all confirmed):")
         out.append("   short CALLS here → roll up+out for credit or close (delta risk, theta won't save them);")
         out.append("   short PUTS here → near max profit, fine to take.")
         for tk, rsi, conv in sorted(reduce_, key=lambda x: -x[1])[:12]:
