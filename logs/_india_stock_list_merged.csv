@@ -1,0 +1,36 @@
+scrip,price,sector,pos_in_range,rsi,held_equity,held_fno,strategy,verdict,reason
+HDFCBANK,727.0,Financial Services,0.7,40.1,True,False,Watch — cheap by range,🟡,Bottom-quartile range (1%) but RSI 40 not confirming oversold
+ITC,278.2,Consumer Defensive,1.8,38.0,False,False,Strong entry candidate,✅,Near 52w low (2% range) AND oversold (RSI 38)
+RVNL,227.35,Industrials,3.6,54.8,False,False,Watch — cheap by range,🟡,Bottom-quartile range (4%) but RSI 55 not confirming oversold
+LEMONTREE,108.92,Consumer Cyclical,11.0,48.8,True,False,Watch — cheap by range,🟡,Bottom-quartile range (11%) but RSI 49 not confirming oversold
+RELIANCE,1310.0,Energy,15.4,57.8,True,False,Watch — cheap by range,🟡,Bottom-quartile range (15%) but RSI 58 not confirming oversold
+SWIGGY,276.3,Consumer Cyclical,17.1,62.4,False,False,Watch — cheap by range,🟡,Bottom-quartile range (17%) but RSI 62 not confirming oversold
+POWERGRID,266.05,Utilities,18.0,20.5,True,False,Strong entry candidate,✅,Near 52w low (18% range) AND oversold (RSI 20)
+RAILTEL,282.15,Communication Services,23.3,42.8,False,False,Watch — cheap by range,🟡,Bottom-quartile range (23%) but RSI 43 not confirming oversold
+NTPC,340.0,Utilities,23.4,39.1,True,False,Watch — cheap by range,🟡,Bottom-quartile range (23%) but RSI 39 not confirming oversold
+INFY,1169.2,Technology,26.1,69.8,False,False,Neutral — no signal,⚪,"26% of range, RSI 70 — mid-range, no clear entry signal"
+DRREDDY,1200.0,Healthcare,26.8,66.1,False,False,Neutral — no signal,⚪,"27% of range, RSI 66 — mid-range, no clear entry signal"
+ICRA,5265.6,Financial Services,27.4,79.2,False,False,Neutral — no signal,⚪,"27% of range, RSI 79 — mid-range, no clear entry signal"
+PFC,376.0,Financial Services,28.0,17.3,False,False,Neutral — no signal,⚪,"28% of range, RSI 17 — mid-range, no clear entry signal"
+VBL,435.0,Consumer Defensive,32.6,36.0,True,False,Neutral — no signal,⚪,"33% of range, RSI 36 — mid-range, no clear entry signal"
+SUZLON,47.1,Industrials,36.2,13.8,False,False,Neutral — no signal,⚪,"36% of range, RSI 14 — mid-range, no clear entry signal"
+COCHINSHIP,1496.5,Industrials,41.3,69.7,False,False,Neutral — no signal,⚪,"41% of range, RSI 70 — mid-range, no clear entry signal"
+BEL,410.8,Industrials,44.9,53.5,True,False,Neutral — no signal,⚪,"45% of range, RSI 54 — mid-range, no clear entry signal"
+LUPIN,2235.0,Healthcare,55.2,22.3,True,False,Neutral — no signal,⚪,"55% of range, RSI 22 — mid-range, no clear entry signal"
+MAZDOCK,2580.0,Industrials,55.2,80.2,False,False,Neutral — no signal,⚪,"55% of range, RSI 80 — mid-range, no clear entry signal"
+DLF,665.0,Real Estate,56.9,55.5,True,False,Neutral — no signal,⚪,"57% of range, RSI 56 — mid-range, no clear entry signal"
+M&M,3428.3,Consumer Cyclical,57.1,65.4,False,False,Neutral — no signal,⚪,"57% of range, RSI 65 — mid-range, no clear entry signal"
+SBIN,1067.7,Financial Services,62.4,64.8,True,False,Neutral — no signal,⚪,"62% of range, RSI 65 — mid-range, no clear entry signal"
+HEROMOTOCO,5790.0,Consumer Cyclical,65.9,78.8,False,False,Neutral — no signal,⚪,"66% of range, RSI 79 — mid-range, no clear entry signal"
+ADANIPOWER,205.25,Utilities,66.9,33.0,True,False,Neutral — no signal,⚪,"67% of range, RSI 33 — mid-range, no clear entry signal"
+ADANIPORTS,1700.0,Industrials,68.6,35.8,True,False,Neutral — no signal,⚪,"69% of range, RSI 36 — mid-range, no clear entry signal"
+MCX,2911.5,Financial Services,73.0,61.1,False,False,Neutral — no signal,⚪,"73% of range, RSI 61 — mid-range, no clear entry signal"
+CONCOR,527.0,Industrials,73.5,60.2,False,False,Neutral — no signal,⚪,"74% of range, RSI 60 — mid-range, no clear entry signal"
+ETERNAL,318.5,Consumer Cyclical,74.1,67.3,True,False,Neutral — no signal,⚪,"74% of range, RSI 67 — mid-range, no clear entry signal"
+CGPOWER,890.15,Industrials,80.6,53.0,False,False,Neutral — no signal,⚪,"81% of range, RSI 53 — mid-range, no clear entry signal"
+ADANIENT,3035.1,Energy,87.8,49.8,False,False,Avoid — extended,❌,Near 52w high (88% range)
+IDEA,14.11,Communication Services,89.8,70.8,True,False,Avoid — extended,❌,Near 52w high (90% range)
+AUROPHARMA,1622.1,Healthcare,93.0,61.7,True,False,Avoid — extended,❌,Near 52w high (93% range)
+SOLARINDS,19969.0,Basic Materials,95.8,66.8,True,False,Avoid — extended,❌,Near 52w high (96% range)
+PARAS,1377.5,Industrials,96.2,72.9,True,False,Avoid — extended,❌,Near 52w high (96% range)
+ABB,7649.0,Industrials,97.2,65.6,False,False,Avoid — extended,❌,Near 52w high (97% range)

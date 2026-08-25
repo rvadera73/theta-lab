@@ -48,7 +48,6 @@ except ImportError as e:
 from accounts_config import (
     ACCOUNTS_CONFIG, TOTAL_PORTFOLIO_BALANCE, CLOSE_COST_RATIO,
     MONTHLY_TARGET_NET_BASE, MONTHLY_TARGET_GROSS_BASE, REGIME_ADJUSTMENTS,
-    ACCOUNT_TARGETS,
 )
 
 
@@ -165,16 +164,23 @@ class UnifiedReportProduction:
         ytd_target = adjusted_monthly_target * ytd_months
         ytd_gap = ytd_target - ytd_net
 
-        # Per-account gap breakdown
+        # Per-account gap breakdown. Was `config['balance'] / TOTAL_PORTFOLIO_BALANCE`
+        # -- raw balance share, which ignores Account A's documented $700K
+        # margin-capacity weighting (see accounts_config.py) and was the
+        # direct cause of the $17,211-vs-$18,600 same-account discrepancy
+        # confirmed live 2026-08-25. `config['monthly_target']` is already
+        # computed on the correct (capacity-aware) weighting basis at the
+        # $100K BULL baseline, so dividing it back out gives the same
+        # target_pct this loop needs, consistently with every other section.
         account_gaps = {}
         for account_name, config in ACCOUNTS_CONFIG.items():
-            balance_pct = config['balance'] / TOTAL_PORTFOLIO_BALANCE
-            account_target = int(adjusted_monthly_target * balance_pct)
+            target_pct = config['monthly_target'] / MONTHLY_TARGET_NET_BASE
+            account_target = int(adjusted_monthly_target * target_pct)
 
-            # Estimate account contribution (proportional)
+            # Estimate account contribution (proportional to the same basis)
             acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
             if not acct_positions.empty:
-                acct_contribution = int(current_total * balance_pct)
+                acct_contribution = int(current_total * target_pct)
                 acct_gap = account_target - acct_contribution
             else:
                 acct_contribution = 0
@@ -231,22 +237,6 @@ class UnifiedReportProduction:
                 breakdown[ticker]["call_notional"] += notional
 
         return breakdown
-
-    def _calculate_option_requirement(self) -> Dict[str, float]:
-        """Calculate option requirement using Greeks-based approach: |delta| × price × contracts × 100"""
-        requirement = defaultdict(float)
-
-        for ticker, m in self.metrics.items():
-            price = self.prices.get(ticker, 0)
-            contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
-            delta = m.get('conviction', 5.0) / 10.0  # Approximate delta from conviction (0-1)
-
-            # Option requirement: |delta| × price × contracts × 100
-            # For short positions, approximate delta as 0.3-0.7 depending on strike location
-            req = abs(delta * price * contracts * 100)
-            requirement[ticker] = req
-
-        return requirement
 
     def _get_heat_summary(self) -> Dict[str, int]:
         """Count positions by heat status"""
@@ -329,11 +319,29 @@ class UnifiedReportProduction:
             balance = config['balance']
             pct = (balance / TOTAL_PORTFOLIO_BALANCE) * 100
             account_type = "Margin" if config['margin'] else "Cash-Sec"
-            status = "✅ MARGIN" if config['margin'] else "✅ OK"
 
             # Calculate account-specific notional and option requirement
             acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
             acct_opt_req = self.option_requirements.get(account_name, 0)
+
+            # Status was cosmetic -- "✅ MARGIN" whenever config['margin'] was
+            # True, regardless of actual load. Confirmed live 2026-08-25:
+            # Account A showed a green "✅ MARGIN" badge here while its real
+            # option requirement ($708,874) was already OVER its documented
+            # $700K capacity ceiling -- the same fact the trader's own
+            # quarterly document flagged independently. Now computed from
+            # real utilization against the true weighting basis (capacity
+            # for Account A, balance for everyone else), using the same
+            # 75%/80% thresholds already stated in the Risk Guardrails block
+            # below rather than inventing a third set of numbers.
+            utilization_basis = config.get('capacity', balance)
+            utilization = (acct_opt_req / utilization_basis * 100) if utilization_basis else 0
+            if utilization >= 80:
+                status = "🔴 OVER CAP" if utilization >= 100 else "🔴 EMERGENCY"
+            elif utilization >= 75:
+                status = "⚠️ ALERT"
+            else:
+                status = "✅ MARGIN" if config['margin'] else "✅ OK"
 
             if not acct_positions.empty:
                 acct_notional = sum(self.prices.get(row['ticker'], 0) * row['net_quantity'] * 100
@@ -486,9 +494,15 @@ class UnifiedReportProduction:
         output.append("-" * 120)
         total_gross = 0
         total_net = 0
-        for account_name, target in ACCOUNT_TARGETS.items():
-            adj_gross = int(target['gross'] * targets['adjustment'])
-            adj_net = int(target['net'] * targets['adjustment'])
+        # Single source now: ACCOUNTS_CONFIG[...]['monthly_target'] (computed
+        # in accounts_config.py from each account's weighting basis). Was a
+        # second, independently-maintained ACCOUNT_TARGETS dict here that had
+        # drifted to different numbers for the same account -- removed.
+        for account_name, config in ACCOUNTS_CONFIG.items():
+            if config['monthly_target'] == 0:
+                continue  # passive accounts (401K, wound-down Minor Roth)
+            adj_net = int(config['monthly_target'] * targets['adjustment'])
+            adj_gross = int(adj_net / (1 - CLOSE_COST_RATIO))
             total_gross += adj_gross
             total_net += adj_net
             output.append(f"  {account_name:<45} ${adj_gross:>10,} gross / ${adj_net:>10,} net")
@@ -720,10 +734,19 @@ class UnifiedReportProduction:
         output.extend(self._format_section_header("6.5", "CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS"))
         output.append("")
 
-        # Analyze macro risk
+        # Analyze macro risk. spx_price was self.open_positions['ticker'].iloc[0]
+        # -- the first TICKER SYMBOL STRING in the positions dataframe (e.g.
+        # "AAPL"), not an index price. Harmless today only because
+        # analyze_risk()/analyze_macro_risk() never actually reads spx_price/
+        # spx_50ma/spx_200ma from market_data in their computation (confirmed
+        # by inspection of macro_risk_analyzer.py -- they appear only in its
+        # docstring and __main__ demo block), so nothing downstream has
+        # broken on this yet. Fixed anyway: sp500_ma.current is the real spot
+        # price computed a few lines above via regime.py, already sitting
+        # right next to ma50/ma200 in the same signals dict.
         macro_risk_data = {
             "vix": self.regime_data.get('signals', {}).get('vix', {}).get('value', 15.8),
-            "spx_price": self.open_positions['ticker'].iloc[0] if len(self.open_positions) > 0 else 7580,
+            "spx_price": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('current', 7580),
             "spx_50ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma50', 7058),
             "spx_200ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma200', 6831),
         }
@@ -1203,82 +1226,104 @@ class UnifiedReportProduction:
         # SECTION 5: IV RANK & ENTRY GATE
         output.extend(self._format_section_header(5, "IV RANK & ENTRY GATE (Weekly Scan)"))
 
-        output.append("**Tier 1 Entry Candidates (IVR ≥ 40):**")
+        # Was self.position_summary.head(15) -- an arbitrary first-15 slice by
+        # whatever order position_summary happens to be indexed, scanned
+        # BEFORE ever checking IV rank, plus no RED-heat exclusion. Same two
+        # bug classes already fixed in Section 2/3 of this report (see the
+        # comments there, 2026-08-25) -- confirmed this section could show a
+        # ✅ Tier 1 Entry Candidate for a ticker Section 3 flags CLOSE/TRIM in
+        # the same report. Now scans every ticker with IV data, sorts before
+        # truncating, and excludes RED-heat names for consistency.
+        output.append("**Tier 1 Entry Candidates (IVR ≥ 40, RED-heat excluded):**")
         tier1_entries = []
-        for ticker in self.position_summary.head(15).index.tolist():
-            iv_data = self.iv_ranks.get(ticker, {})
+        tier1_blocked = []
+        for ticker, iv_data in self.iv_ranks.items():
             iv_rank = iv_data.get('iv_rank', 0)
+            if self.metrics.get(ticker, {}).get('heat_status') == 'RED':
+                continue
+            price = self.prices.get(ticker, 0)
             if iv_rank >= 40:
-                price = self.prices.get(ticker, 0)
                 tier1_entries.append((ticker, iv_rank, price))
+            elif iv_rank:
+                tier1_blocked.append((ticker, iv_rank))
 
         tier1_entries.sort(key=lambda x: x[1], reverse=True)
         for ticker, iv_rank, price in tier1_entries[:10]:
-            output.append(f"✅ {ticker}: {iv_rank:.1f} IVR | ${price:.2f}")
+            output.append(f"✅ {ticker}: {iv_rank:.1f} IVR | ${price:.2f} — short put only")
 
         output.append("")
         output.append("**Tier 1 BLOCKED (IVR < 40):**")
-        for ticker in self.position_summary.head(15).index.tolist():
-            iv_data = self.iv_ranks.get(ticker, {})
-            iv_rank = iv_data.get('iv_rank', 0)
-            if iv_rank and iv_rank < 40:
-                output.append(f"❌ {ticker}: {iv_rank:.1f} IVR (below gate)")
+        for ticker, iv_rank in sorted(tier1_blocked, key=lambda x: x[1], reverse=True)[:10]:
+            output.append(f"❌ {ticker}: {iv_rank:.1f} IVR (below gate)")
         output.append("")
 
-        # SECTION 6: CASH & MARGIN FORECAST
+        # SECTION 6: CASH & MARGIN FORECAST. Was entirely static text every
+        # single run ("56%", "54-56%", "2-3 new entries") -- confirmed
+        # verbatim identical across multiple days' reports, not derived from
+        # self.option_requirements or ACCOUNTS_CONFIG at all. Replaced with
+        # the same real utilization calc now used in Section 0 (capacity-
+        # aware for Account A, balance-based elsewhere) rather than
+        # reproducing a number with no data behind it.
         output.extend(self._format_section_header(6, "WEEKLY CASH & MARGIN FORECAST"))
-        output.append("Starting position (Weekly):")
-        output.append("- Estimated margin utilization: 56% (safe, below 80% alert)")
-        output.append("- Cash to trade: Adequate for 2-3 new entries per tier")
-        output.append("- Option requirement: Within normal range for portfolio size")
+        total_opt_req = sum(self.option_requirements.values())
+        total_capacity = sum(cfg.get('capacity', cfg['balance']) for cfg in ACCOUNTS_CONFIG.values())
+        overall_util = (total_opt_req / total_capacity * 100) if total_capacity else 0
+        output.append("Current position (real, from live option requirements):")
+        output.append(f"- Portfolio-wide utilization: {overall_util:.0f}% (${total_opt_req:,.0f} req against ${total_capacity:,.0f} capacity)")
+        over_cap = [name for name, cfg in ACCOUNTS_CONFIG.items()
+                    if cfg.get('capacity') and self.option_requirements.get(name, 0) > cfg['capacity']]
+        if over_cap:
+            output.append(f"- ⚠️ Over documented capacity: {', '.join(over_cap)} — see Section 0 per-account status")
+        else:
+            output.append("- No account over its documented capacity")
+        output.append(f"- {gap_data['positions_needed']} more Tier 1 entries needed to close the ${gap_data['monthly_gap']:,} monthly gap (${gap_data['positions_needed']*10000:,} capital)")
         output.append("")
 
-        output.append("Mid-week impact (Expected):")
-        output.append("- If actions executed: Margin utilization improves 2-3%")
-        output.append("- If new entries: Deployment of $20-25K capital estimated")
-        output.append("")
-
-        output.append("End-of-week projection:")
-        output.append("- Margin utilization: 54-56% (improving)")
-        output.append("- Available capital: Healthy, supports continued operations")
-        output.append("")
-
-        # SECTION 7: THETA & P&L TRACKING
+        # SECTION 7: THETA & P&L TRACKING. "Target pace: $122.7K/month" was a
+        # stale hardcoded constant -- the biweekly report's own code comment
+        # documents this exact number as already fixed there (replaced with
+        # MONTHLY_TARGET_NET_BASE) but the fix was never applied here, three
+        # sections after this same report's Section 2 already uses the
+        # correct dynamic gap_data['adjusted_monthly_target']. The
+        # theta-accumulation/"Week 1 pace" figures were fabricated -- no
+        # Greeks are actually computed anywhere in this pipeline
+        # (BlackScholesGreeks is imported at the top of this file and never
+        # instantiated). Replaced with the real current premium pace instead
+        # of a fake theta estimate.
         output.extend(self._format_section_header(7, "WEEKLY THETA & P&L TRACKING"))
-        output.append("Target pace: $122.7K/month ($2,905/day average)")
+        output.append(f"Target pace: ${gap_data['adjusted_monthly_target']:,}/month (ISO week: ${gap_data['adjusted_monthly_target']/4.33:,.0f})")
+        output.append("")
+        output.append("Current pace (real, from live position tiers):")
+        output.append(f"- {len(conviction_by_bucket.get('HIGH', []))} HIGH conviction positions, {gap_data['tier1_count']+gap_data['tier2_count']+gap_data['tier3_count']} total")
+        output.append(f"- Current run rate: ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
+        output.append("- Note: per-position theta/Greeks are not computed in this pipeline -- this is a")
+        output.append("  tier-contribution estimate, not a live Greeks-based P&L projection.")
         output.append("")
 
-        output.append("Weekly forecast (52 trading days/year):")
-        output.append(f"- {len(conviction_by_bucket.get('HIGH', []))} HIGH conviction positions contributing theta")
-        output.append(f"- Estimated theta accumulation: $2,900 - $3,500 (on target)")
-        output.append(f"- P&L drivers: Time decay (primary), IV changes (secondary), assignment/rolls (tactical)")
-        output.append("")
-
-        output.append("Month-to-date projection:")
-        output.append(f"- Week 1 pace: ~${2900*5:.0f}")
-        output.append(f"- On pace for monthly target: $122.7K ✅")
-        output.append("")
-
-        # SECTION 8: RISK & GUARDRAILS
+        # SECTION 8: RISK & GUARDRAILS. The Greeks block (Delta/Gamma/Theta/
+        # Vega) was entirely fabricated -- identical numbers every run,
+        # nothing in this codebase computes real portfolio Greeks. Removed
+        # rather than left in with a false "✅ IN RANGE" next to it, matching
+        # the precedent already set in the monthly report (its own code
+        # comment notes a fabricated Citadel comparison was removed there for
+        # the same reason). Margin guardrail replaced with the same real
+        # utilization number as Section 6 instead of a second hardcoded "56%".
         output.extend(self._format_section_header(8, "RISK & GUARDRAILS (Weekly Check)"))
-        output.append("Greeks Portfolio Level:")
-        output.append("- Delta: +16 (target ±25) ✅ IN RANGE")
-        output.append("- Gamma: 0.39 (target ≤1.0) ✅ IN RANGE")
-        output.append("- Theta: $385/day (target ≥$300) ✅ IN RANGE")
-        output.append("- Vega: $240 (IV sensitivity) ✅ SAFE")
+        output.append("Portfolio Greeks: not computed in this pipeline -- no live delta/gamma/theta/vega")
+        output.append("tracking exists yet. Flagging honestly rather than showing fabricated numbers.")
         output.append("")
 
-        output.append("Margin guardrails:")
-        output.append("- Used: 56% (hard ceiling 80%) ✅ SAFE")
-        output.append("- Available: Adequate for operations ✅")
-        output.append("- Emergency fund: Intact and separate ✅")
+        output.append("Margin guardrails (real):")
+        output.append(f"- Used: {overall_util:.0f}% (alert 75%, emergency 80%) {'✅ SAFE' if overall_util < 75 else '⚠️ ALERT' if overall_util < 80 else '🔴 EMERGENCY'}")
+        if over_cap:
+            output.append(f"- ⚠️ {', '.join(over_cap)} over documented capacity — see Section 0")
         output.append("")
 
         heat_summary = self._get_heat_summary()
-        output.append("Position concentration:")
-        output.append(f"- GREEN heat: {heat_summary.get('GREEN', 0)} positions (acceptable risk)")
-        output.append(f"- RED heat: {heat_summary.get('RED', 0)} positions (monitor actively)")
-        output.append(f"- No structural breaches detected ✅")
+        output.append("Position concentration (real):")
+        output.append(f"- GREEN heat: {heat_summary.get('GREEN', 0)} positions")
+        output.append(f"- YELLOW heat: {heat_summary.get('YELLOW', 0)} positions")
+        output.append(f"- RED heat: {heat_summary.get('RED', 0)} positions (see Section 3 for the ranked action list)")
         output.append("")
 
         # SECTION 9: DECISION TREE
@@ -1320,7 +1365,7 @@ class UnifiedReportProduction:
         output.append(f"Regime Detection:              ✅ {self.regime_data['regime']} confirmed")
         output.append(f"Win Rate Tracking:             ✅ Conviction-based entry filtration")
         output.append(f"IV Rank Entry Gate:            ✅ {len(entry_candidates)} names qualified (IVR ≥40)")
-        output.append(f"Sharpe Ratio (7-day rolling):  ✅ 1.7+ target maintained")
+        output.append(f"Sharpe Ratio (rolling):        not computed in this pipeline -- no return-series tracking exists yet")
         output.append("")
 
         output.append("Automation notes:")
@@ -1702,7 +1747,14 @@ class UnifiedReportProduction:
         for account_name, config in ACCOUNTS_CONFIG.items():
             balance = config['balance']
             acct_data = per_acct_realized.get(account_name)
-            acct_target = int((acct_data['annual_target'] / 12)) if acct_data and acct_data.get('annual_target') else 0
+            # Was acct_data['annual_target']/12 -- a value cached inside the
+            # persisted snapshot at whatever time it was last regenerated, a
+            # 4th independent path alongside the ones already reconciled in
+            # Section 0/Supplementary. Reading ACCOUNTS_CONFIG directly means
+            # this always reflects the current computed target even if the
+            # snapshot itself is stale, rather than silently agreeing with it
+            # only by coincidence.
+            acct_target = config['monthly_target']
             acct_actual = int(acct_data['mtd_realized']) if acct_data else 0
             acct_ytd = int(acct_data['ytd_realized']) if acct_data else 0
             acct_variance = acct_actual - acct_target

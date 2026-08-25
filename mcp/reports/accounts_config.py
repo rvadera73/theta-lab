@@ -19,40 +19,49 @@ needs realized_pnl.py's numbers) — this module has no dependency on either.
 # are NOT independently verified by this month's data. Re-confirm from each
 # broker's account-summary screen (not the positions export) if updating.
 #
-# monthly_target = round(weighted_basis / total_weighted_basis * 100,000) —
-# the $100K/month base pool is split across the 9 OPTIONS-TRADING accounts
-# only. The Fidelity 401K is a passive, options-free account (per persona:
-# "passive accounts... excluded from these caps") and gets monthly_target=0,
-# never billed against the premium-income target.
+# monthly_target = round(weighting_basis / total_weighting_basis * $100K) —
+# the $100K/month base pool (BULL-regime baseline; the report engine applies
+# REGIME_ADJUSTMENTS on top of this at read time) is split across the 9
+# OPTIONS-TRADING accounts only. The Fidelity 401K and the wound-down Minor
+# Roth are passive/empty (per persona: "passive accounts... excluded from
+# these caps") and get weighting_basis=0, never billed against the target.
 #
 # Account A is the ONLY margin-enabled account. Confirmed by the trader
 # (2026-08) that its real, lockable margin buying power is $700,000 — not
-# its $403,000 cash/net-liq balance. monthly_target below is weighted
-# against that $700K capacity (not the $403K balance) so the target
-# reflects what the account can actually support; every other account's
-# target shifted down slightly as a result, since it's one shared pool.
-# `balance` itself is left at the true $403,000 net-liq figure — do not
-# use it as the target-weighting basis for Account A, only monthly_target
-# already reflects the $700K adjustment.
+# its $403,000 cash/net-liq balance. `capacity` overrides `balance` as the
+# weighting basis for exactly this reason: every other account's target
+# shifts down slightly as a result, since it's one shared $100K pool.
+# `balance` itself stays at the true $403,000 net-liq figure for display
+# and margin-utilization purposes — only the TARGET weighting uses capacity.
+#
+# monthly_target is now COMPUTED below, not hand-maintained. Previously this
+# was a hardcoded literal per account (e.g. Account A: 28615) that a second,
+# independently-maintained dict (the old ACCOUNT_TARGETS, removed) also
+# tried to express as gross/net figures -- confirmed live 2026-08-25 that
+# the two had drifted to different numbers ($17,211 dynamic vs $18,600 from
+# that static dict) for the same account in the same report. Every consumer
+# of ACCOUNTS_CONFIG[...]['monthly_target'] (this report engine AND
+# scripts/realized_pnl.py, which reads it directly) now gets the same
+# single computed number automatically -- no call site needed to change.
 # ═══════════════════════════════════════════════════════════════════
 ACCOUNTS_CONFIG = {
-    'Account A (232)': {'balance': 403000, 'margin': True, 'monthly_target': 28615},  # weighted on $700K margin capacity, not the $403K balance shown here
-    'Account B (275)': {'balance': 261000, 'margin': False, 'monthly_target': 10669},
-    'Account C (634)': {'balance': 266000, 'margin': False, 'monthly_target': 10874},
-    'Fidelity (Rahul)': {'balance': 498560, 'margin': False, 'monthly_target': 20380},
-    'Fidelity (Rajul — Roth IRA)': {'balance': 39158, 'margin': False, 'monthly_target': 1601},
-    'Fidelity (Rajul — Rollover IRA)': {'balance': 128081, 'margin': False, 'monthly_target': 5236},
-    'Vanguard (Rahul)': {'balance': 320492, 'margin': False, 'monthly_target': 13101},
-    'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'monthly_target': 531},
-    'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'monthly_target': 8993},
-    'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'monthly_target': 0},
+    'Account A (232)': {'balance': 403000, 'margin': True, 'capacity': 700000},
+    'Account B (275)': {'balance': 261000, 'margin': False},
+    'Account C (634)': {'balance': 266000, 'margin': False},
+    'Fidelity (Rahul)': {'balance': 498560, 'margin': False},
+    'Fidelity (Rajul — Roth IRA)': {'balance': 39158, 'margin': False},
+    'Fidelity (Rajul — Rollover IRA)': {'balance': 128081, 'margin': False},
+    'Vanguard (Rahul)': {'balance': 320492, 'margin': False},
+    'Robinhood (Individual)': {'balance': 13000, 'margin': False},
+    'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False},
+    'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'weighting_basis': 0},
     # The 5th Fidelity account (custodial "ROTH IRA for Minor", 258240575) —
     # previously untracked entirely (see scripts/update_snapshot.py's
     # _FIDELITY_ACCOUNT_LABELS). Confirmed real, had genuine 2026 option
     # activity, wound down / transferred out ~March-May 2026, now ~$3 cash —
-    # monthly_target=0 like the 401K since there's no capital left to trade,
+    # weighting_basis=0 like the 401K since there's no capital left to trade,
     # not because it can't do options.
-    'Fidelity (Rahul — Roth IRA Minor)': {'balance': 3, 'margin': False, 'monthly_target': 0},
+    'Fidelity (Rahul — Roth IRA Minor)': {'balance': 3, 'margin': False, 'weighting_basis': 0},
 }
 
 TOTAL_PORTFOLIO_BALANCE = sum(acc['balance'] for acc in ACCOUNTS_CONFIG.values())
@@ -64,21 +73,37 @@ CLOSE_COST_RATIO = 0.60
 MONTHLY_TARGET_NET_BASE = 100000
 MONTHLY_TARGET_GROSS_BASE = int(MONTHLY_TARGET_NET_BASE / (1 - CLOSE_COST_RATIO))  # $250K gross
 
+# Keyed to the exact 4 strings analysis/regime.py's Regime enum actually
+# emits (confirmed via mcp/config.py) -- this dict previously had 'SIDEWAYS'
+# and 'BEAR' instead of the real 'TRANSITIONING'/'BEAR_SIDEWAYS', so
+# REGIME_ADJUSTMENTS.get(regime, 0.85) silently fell through to the 0.85
+# default for both. Coincidentally harmless for TRANSITIONING (0.85 either
+# way) but silently overstated every target by ~21% for BEAR_SIDEWAYS
+# (should be 0.70) -- dormant only because the live regime has been BULL
+# throughout this session. Default changed to 0.70 (the most conservative
+# real value) rather than a number that was never actually correct for
+# anything, so an unrecognized future regime string fails safe/low instead
+# of failing high.
 REGIME_ADJUSTMENTS = {
     'BULL': 1.00,
     'CAUTIOUS_BULL': 0.90,
-    'SIDEWAYS': 0.85,
-    'BEAR': 0.70,
+    'TRANSITIONING': 0.85,
+    'BEAR_SIDEWAYS': 0.70,
 }
 
-ACCOUNT_TARGETS = {
-    'Account A (232)': {'gross': 46500, 'net': 18600},
-    'Account B (275)': {'gross': 30250, 'net': 12100},
-    'Account C (634)': {'gross': 30750, 'net': 12300},
-    'Fidelity (Rahul)': {'gross': 57750, 'net': 23100},
-    'Fidelity (Rajul — Roth IRA)': {'gross': 5750, 'net': 2300},
-    'Fidelity (Rajul — Rollover IRA)': {'gross': 15000, 'net': 6000},
-    'Vanguard (Rahul)': {'gross': 37250, 'net': 14900},
-    'Robinhood (Individual)': {'gross': 1500, 'net': 600},
-    'Robinhood (Traditional IRA)': {'gross': 25500, 'net': 10200},
-}
+# weighting_basis: explicit override (0 for passive accounts) > capacity
+# (Account A's real margin buying power) > balance (everyone else).
+_TOTAL_WEIGHTING_BASIS = sum(
+    acc.get('weighting_basis', acc.get('capacity', acc['balance']))
+    for acc in ACCOUNTS_CONFIG.values()
+)
+for _acc in ACCOUNTS_CONFIG.values():
+    _basis = _acc.get('weighting_basis', _acc.get('capacity', _acc['balance']))
+    _acc['monthly_target'] = round(MONTHLY_TARGET_NET_BASE * _basis / _TOTAL_WEIGHTING_BASIS) if _TOTAL_WEIGHTING_BASIS else 0
+del _acc, _basis
+
+# ACCOUNT_TARGETS (a second, independently-hand-maintained gross/net dict)
+# removed 2026-08-25 -- confirmed it had drifted from the computed
+# monthly_target above (e.g. Account A: $18,600 net here vs $17,211 from
+# the dynamic calc, same report, same day). Gross is always derivable from
+# net via CLOSE_COST_RATIO, so there is no longer a second number to drift.

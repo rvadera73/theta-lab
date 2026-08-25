@@ -1,0 +1,66 @@
+# THETA-LAB India Weekly Action Report
+**Week of:** August 25 – August 29, 2026
+**Generated:** 2026-08-25 07:50
+**Regime:** TRANSITIONING | New entries: YES
+**Profit-take target:** 40-50% of max premium
+
+## Market Signals
+
+- **India VIX:** 11.1 — India VIX 11.1 sustained < 15.0 — low fear
+- **Nifty 50:** 24,335 | 50-day MA: 24,204 (✅ above) | 200-day MA: 24,677 (❌ below)
+
+> ℹ️ Trader override active: TRANSITIONING (set via INDIA_REGIME_OVERRIDE)
+
+_No Breeze credentials — loading positions from local statement files._
+
+## TOP 5 ACTIONS THIS WEEK
+
+### #1 URGENT — CNXBAN
+**Price:** ₹57,514.20 | **Net P&L:** +₹30,972 | **Reason:** Expires in 0 days — decide now
+**Legs:** PUT ₹54,500 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹54,800 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹55,200 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹55,500 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹55,700 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹55,500 2026-09-29 (🟡 35d — watch)
+✅ **Profit target hit:** CLOSE — at profit target
+🔄 **Roll needed:** PUT 54500.0 exp 2026-08-25 (0 DTE), PUT 54800.0 exp 2026-08-25 (0 DTE), PUT 55200.0 exp 2026-08-25 (0 DTE), PUT 55500.0 exp 2026-08-25 (0 DTE), PUT 55700.0 exp 2026-08-25 (0 DTE) — ROLL — within 21 DTE
+
+### #2 URGENT — NIFSEL
+**Price:** ₹0.00 | **Net P&L:** +₹13,044 | **Reason:** Expires in 0 days — decide now
+**Legs:** PUT ₹14,300 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹14,550 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹14,000 2026-09-29 (🟡 35d — watch)
+✅ **Profit target hit:** CLOSE — at profit target
+🔄 **Roll needed:** PUT 14300.0 exp 2026-08-25 (0 DTE), PUT 14550.0 exp 2026-08-25 (0 DTE) — ROLL — within 21 DTE
+
+### #3 URGENT — NIFTY
+**Price:** ₹24,334.55 | **Net P&L:** +₹5,798 | **Reason:** Expires in 7 days — decide now
+**Legs:** PUT ₹23,800 2026-09-01 (⚠️ 7d — URGENT) | PUT ₹23,000 2026-09-08 (🔶 14d — act soon) | PUT ₹23,200 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹23,250 2026-08-25 (⚠️ 0d — URGENT) | PUT ₹23,600 2026-08-25 (⚠️ 0d — URGENT)
+✅ **Profit target hit:** CLOSE — at profit target
+🔄 **Roll needed:** PUT 23800.0 exp 2026-09-01 (7 DTE), PUT 23000.0 exp 2026-09-08 (14 DTE), PUT 23200.0 exp 2026-08-25 (0 DTE), PUT 23250.0 exp 2026-08-25 (0 DTE), PUT 23600.0 exp 2026-08-25 (0 DTE) — ROLL — within 21 DTE
+
+### #4 NEW ENTRY — SOBHA
+**Price:** ₹1,279.70 | **Status:** not yet held | **Reason:** IN ZONE — Added 2026-08-24 as part of the accumulation_plan_2026_h2 below (20% / Rs 1,00,000). Oversold entry — 24.3% of 52-week range, RSI 31.2, below both 50-MA (1,394) and 200-MA (1,419). HONEST FLAG: the cheap PEG (0.22) that makes this look statistically undervalued is driven by a 274% YoY earnings-growth figure that is almost certainly a base-effect distortion (a weak prior-year quarter), not confirmed durable growth — sized down accordingly. Note: this is Sobha Limited (SOBHA.NS), the India-listed subsidiary — NOT Sobha Realty, the separate Dubai-based private parent. No Dubai exposure via this ticker.
+
+🌱 **NEW ENTRY CANDIDATE** — Entry zone ₹1,150-₹1,350 | Strategy: Oversold technical entry confirmed — buy first tranche now, verify next quarter's earnings print before increasing size given the base-effect concern above. | Source: curated watchlist (india_config.yaml)
+
+### #5 NEW ENTRY — PFC
+**Price:** ₹367.00 | **Status:** not yet held | **Reason:** IN ZONE — Added 2026-08-24, already in zone. RSI 8 — genuinely extreme, confirmed via research to be a broad sector/market re-rating (PFC got expensive in the 2023-24 bull run and has round-tripped as valuations normalized), not a company-specific problem. PE 4.6 (cheap), dividend yield 4.3%, analyst target 493.93 (strong_buy, ~36% upside from 364).
+
+🌱 **NEW ENTRY CANDIDATE** — Entry zone ₹340-₹380 | Strategy: Already in zone — enter first tranche now (small size), add on further weakness toward 335 (52w low). | Source: curated watchlist (india_config.yaml)
+
+## ALSO WATCHING
+- **ITC**: IN ZONE — Added 2026-08-24, already in zone. Near 52w low (2% range), RSI 22 — but HONEST FLAG: revenue growth -11.1% and earnings growth -16% YoY, genuinely declining, not just cheap. Diversified blue-chip with a 5.94% dividend yield and analyst target 327 (buy, ~21% upside) softens the concern, but this is not a clean "oversold + growing" story like PFC/ICRA — verify the segment-level cause of the decline before sizing up, not just the technical reading. Part of the Rs 5L / 6-month accumulation_plan_2026_h2 below (40% / Rs 2,00,000) — the best risk-adjusted entry of that group as of 2026-08-24 (cheapest PE, most oversold, highest dividend yield). Buy on schedule.
+ | Net P&L: +₹0
+- **RVNL**: Near 52w low (0% range) AND oversold (RSI 34) | Net P&L: +₹0
+
+## 🚨 EXIT TRIGGERS (Phased Plan)
+
+**Phase 1 — Immediate:**
+- 🎯 **YATHOS**: Exit all at market — price 845.50 above the 820 trigger, +8.0% profit on ~150 sh. Genuinely actionable now.
+
+**Phase 2 — On Bounce:**
+- 🎯 **DRREDD**: Exit on bounce >= 1,350 — pharma not in core theme, real earnings growth -68.7% (worse than originally stated, thesis still holds)
+- 🎯 **ADAPOW**: Exit >= 230 — take 38%+ gain, re-enter lower (stock ran 108% in 1Y). Live price 209.95, not yet triggered; recent buys at ~208-219 look like averaging, not exit prep.
+
+## WEEKLY P&L TRACKER
+
+| Account | Weekly Target | Realized This Week | YTD Pace |
+|---------|--------------|-------------------|---------|
+| Rahul — ICICI Direct | ₹25,000 | — (pull from order history) | — |
+
+_Note: Breeze API does not expose order history in this integration. Pull realized P&L from ICICI Direct statement._
