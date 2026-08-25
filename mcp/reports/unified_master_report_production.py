@@ -1105,17 +1105,34 @@ class UnifiedReportProduction:
         output.append("")
 
         output.append("Priority 3 — IV Rank Entry Gate Check:")
-        entry_candidates = [t for t, iv_data in self.iv_ranks.items() if iv_data.get('iv_rank', 0) >= 40]
+        # Cross-filtered against heat_status -- previously this list was built
+        # from IV rank ALONE (>=40), with zero check against whether the SAME
+        # ticker was flagged RED elsewhere in this same report. Confirmed live
+        # 2026-08-25: COIN could appear here as a "new entry" while carrying a
+        # RED/overbought flag a few lines above in Priority 2 -- a direct,
+        # visible self-contradiction in one report. RED-heat names are now
+        # excluded from entry candidacy entirely; a name isn't a "new entry
+        # opportunity" if this same report is simultaneously flagging it for
+        # exit review.
+        entry_candidates = [
+            t for t, iv_data in self.iv_ranks.items()
+            if iv_data.get('iv_rank', 0) >= 40
+            and self.metrics.get(t, {}).get('heat_status') != 'RED'
+        ]
         new_entries_contribution = len(entry_candidates) * 3800
-        output.append(f"├─ Tier 1 entry candidates (IVR ≥40): {len(entry_candidates)} names")
+        output.append(f"├─ Tier 1 entry candidates (IVR ≥40, RED-heat excluded): {len(entry_candidates)} names")
         output.append(f"├─ Potential contribution: ${new_entries_contribution:,}/month if all deployed")
         output.append(f"├─ Capital required: ${len(entry_candidates)*10000:,} ({len(entry_candidates)} × $10K per position)")
         output.append(f"├─ Gap closure from new entries: {new_entries_contribution/gap_data['adjusted_monthly_target']*100:.0f}% of ${'$' + str(gap_data['monthly_gap'])[1:] if gap_data['monthly_gap'] < 0 else '$' + str(gap_data['monthly_gap'])} gap")
         if entry_candidates:
-            top_entry = sorted([(t, self.iv_ranks[t]) for t in entry_candidates[:5]],
-                             key=lambda x: x[1].get('iv_rank', 0), reverse=True)
+            # Sort the FULL candidate list by IVR first, THEN take the top 5 --
+            # previously this truncated to an arbitrary first-5-by-dict-order
+            # BEFORE sorting, so the "top 5 by IV rank" shown often weren't the
+            # actual top 5 in the whole book.
+            top_entry = sorted([(t, self.iv_ranks[t]) for t in entry_candidates],
+                             key=lambda x: x[1].get('iv_rank', 0), reverse=True)[:5]
             for ticker, iv_data in top_entry:
-                output.append(f"├─ {ticker}: IVR {iv_data.get('iv_rank', 0):.1f} | ${self.prices.get(ticker, 0):.2f} | Contributes $3,800/mo if added")
+                output.append(f"├─ {ticker}: IVR {iv_data.get('iv_rank', 0):.1f} | ${self.prices.get(ticker, 0):.2f} | Contributes $3,800/mo if added — short put only")
         output.append("")
 
         output.append("WEEKLY PACE TO MONTH-END TARGET:")
@@ -1133,21 +1150,40 @@ class UnifiedReportProduction:
         # Find positions needing action
         action_items = []
 
-        # Red heat positions
+        # Red heat positions. Was always labeled "POSITION REVIEW" regardless
+        # of severity -- not an action verb, just a name to go look at.
+        # Matches the CLOSE/TRIM split the daily report's Section 7 already
+        # uses (critical vs. monitor), so Section 3 stops inventing its own
+        # vaguer category.
         for ticker, m in self.metrics.items():
             if m['heat_status'] == 'RED' and m['conviction'] < 6:
-                action_items.append((f"{ticker} POSITION REVIEW", f"Conv {m['conviction']:.1f}, Heat RED, RSI {m['rsi']:.1f}"))
+                verb = "CLOSE" if m['conviction'] < 5 else "TRIM / REVIEW"
+                action_items.append((f"{verb} {ticker}", f"Conv {m['conviction']:.1f}, Heat RED, RSI {m['rsi']:.1f} — {m['heat_reason']}"))
 
-        # High conviction greens to enter
+        # High conviction greens to enter. Was "ENTER {ticker} STRANGLE" --
+        # contradicted the correction made this session: this book's own
+        # backtest data shows stagger call legs underperforming put legs, and
+        # a BULL regime (the live regime as of 2026-08-25) structurally
+        # punishes being short calls. Short put only, matching every other
+        # entry recommendation in this report.
         for ticker, m in conviction_by_bucket.get('HIGH', [])[:3]:
             if m['heat_status'] == 'GREEN':
-                action_items.append((f"ENTER {ticker} STRANGLE", f"Conv {m['conviction']:.1f}, RSI {m['rsi']:.1f}, Oversold"))
+                action_items.append((f"ENTER {ticker} SHORT PUT", f"Conv {m['conviction']:.1f}, RSI {m['rsi']:.1f}, Oversold"))
 
-        # IV gate opportunities
-        for ticker, iv_data in sorted([(t, self.iv_ranks[t]) for t in list(self.iv_ranks.keys())[:10]],
-                                     key=lambda x: x[1].get('iv_rank', 0), reverse=True)[:2]:
-            if iv_data.get('iv_rank', 0) >= 40:
-                action_items.append((f"NEW ENTRY: {ticker}", f"IVR {iv_data.get('iv_rank', 0):.1f} — Above gate"))
+        # IV gate opportunities. Was list(self.iv_ranks.keys())[:10] -- an
+        # arbitrary dict-iteration-order slice, sorted only WITHIN that slice,
+        # so "top opportunities" often weren't the actual top ones in the
+        # book. Now sorts the full set first, and excludes RED-heat names for
+        # the same reason as the Priority 3 fix above -- a name flagged for
+        # exit a few lines up in this same report shouldn't also show as a
+        # new-entry opportunity here.
+        iv_candidates = [
+            (t, iv_data) for t, iv_data in self.iv_ranks.items()
+            if iv_data.get('iv_rank', 0) >= 40
+            and self.metrics.get(t, {}).get('heat_status') != 'RED'
+        ]
+        for ticker, iv_data in sorted(iv_candidates, key=lambda x: x[1].get('iv_rank', 0), reverse=True)[:2]:
+            action_items.append((f"NEW ENTRY: {ticker}", f"IVR {iv_data.get('iv_rank', 0):.1f} — Above gate, short put"))
 
         # Display top 5
         for i, (action, detail) in enumerate(action_items[:5], 1):
@@ -1249,8 +1285,10 @@ class UnifiedReportProduction:
         output.extend(self._format_section_header(9, "DECISION TREE — END-OF-WEEK (Friday 4 PM ET)"))
 
         output.append("**IF HIGH conviction positions cleared:**")
-        output.append("→ Approve new STRANGLE entries on Tier 1 names (SHOP, CRM candidates)")
-        output.append("→ Size: 45-60 DTE, delta 0.15-0.20 puts, 0.20 calls")
+        output.append("→ Approve new SHORT PUT entries on Tier 1 names — not strangles/calls: this")
+        output.append("  book's own backtest shows stagger call legs underperforming put legs, and")
+        output.append("  a BULL regime structurally punishes being short calls")
+        output.append("→ Size: 45-60 DTE, delta 0.15-0.20 puts")
         output.append("→ Deploy ~$20-25K capital")
         output.append("→ Expected net +$2-3K weekly P&L ✅")
         output.append("")
