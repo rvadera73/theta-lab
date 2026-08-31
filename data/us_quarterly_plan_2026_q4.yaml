@@ -16,6 +16,31 @@
 
 as_of: 2026-08-30
 
+exit_discipline:
+  basis: "premium profit captured (%), same metric used throughout this
+          session's put-reduction ledgers"
+  call_leg_close_pct: 50
+  put_leg_close_pct: 70
+  note: "Puts run further than calls deliberately -- puts are this plan's
+         core conviction leg (wheel/assignment-welcome), calls are the
+         defensive/capped side, closed sooner to bank the bounded gain.
+         Confirmed by trader 2026-08-30."
+
+macro_override:
+  rule: "Primary de-risk gate for this 90-day window is the Phase-1 trigger
+         firing (see the Circular Financing Playbook / Tier CR framework in
+         .claude/skills/ai-capex-risk-review.md), NOT proactive margin-driven
+         trimming. Trader's explicit position 2026-08-30: 'I am playing
+         strangles in these accounts and plan to play it until the trigger
+         for Phase-1 clears.' Existing underwater positions (NFLX 95P,
+         APP 450P -- see action items 2/3) are a deliberate thesis-hold
+         under this rule, not an open decision pending trader input."
+  exception: "Calendar/DTE-driven items (e.g. action item 4, AXON 570P) are
+              NOT covered by this override -- gamma/assignment-timing risk
+              near expiry is independent of thesis and of the exit-discipline
+              profit thresholds above. These still need an explicit roll/close
+              call on their own clock, even during a macro hold."
+
 baseline_snapshot:
   account_a_total_value: 570000          # trader-reported, 2026-08-30
   account_a_cash_investment: 388000
@@ -75,18 +100,20 @@ action_items:
     cadence: "check every Monday before any new entry"
     status: open
   - id: 2
-    item: "NFLX 95P x5 (Mar 2027), -$4,164 unrealized, ~2x credit -- roll or
-           close decision"
-    deadline: "2026-09-06"
-    status: open
+    item: "NFLX 95P x5 (Mar 2027), -$4,164 unrealized, ~2x credit -- HOLD
+           under macro_override (thesis-driven, gated to Phase-1 trigger,
+           not a pending decision). Re-evaluate only if Phase-1 fires or
+           put_leg_close_pct (70%) is reached."
+    status: hold_pending_phase1
   - id: 3
-    item: "APP 450P (Jun 2027), -$7,536 unrealized, ~1.9x credit -- roll or
-           close decision"
-    deadline: "2026-09-06"
-    status: open
+    item: "APP 450P (Jun 2027), -$7,536 unrealized, ~1.9x credit -- HOLD
+           under macro_override, same basis as item 2."
+    status: hold_pending_phase1
   - id: 4
     item: "AXON 570P (Sep 18 2026 exp, 19 DTE at plan inception, 20%
-           captured) -- roll out or close, independent of the net-put-freeze"
+           captured) -- EXCEPTION to macro_override (see macro_override.
+           exception): calendar/gamma risk near expiry, roll out or close
+           on its own clock regardless of Phase-1 status."
     deadline: "2026-09-18"
     status: open
   - id: 5
