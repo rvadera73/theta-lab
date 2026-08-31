@@ -779,7 +779,11 @@ class OpenPositionsLoaderV2:
                     'account_type': group['account_type'].iloc[0],
                     'transaction_count': len(group),
                     'strike': strike,
-                    'option_type': opt_type
+                    'option_type': opt_type,
+                    # Already parsed on consolidated_df (line ~583) for expired-position
+                    # filtering -- carried through here too so callers needing expiry
+                    # (e.g. assignment-probability calcs) don't have to re-parse `symbol`.
+                    'expiry_date': first_row.get('expiry_date'),
                 }
                 open_positions_list.append(position)
 

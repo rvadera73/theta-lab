@@ -829,6 +829,52 @@ TIER CR — PORTFOLIO-WIDE CREDIT EXIT GATE:
 Underperformance proxy: no tracked name diverging >10pp from SPX over 7 days.
 
 ========================================================================================================================
+SECTION 6.7: ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE)
+========================================================================================================================
+
+
+Account                      Ticker  T   Strike  DTE   Prob  Cash-at-Risk  Flag
+Account A (232)              COIN    P    250.0   19    98% $     25,000  
+Account A (232)              CRM     C    175.0   19    96% $     17,500  🔴 EXIT CANDIDATE
+Account C (634)              PL      P     32.0   47    94% $      3,200  
+Account A (232)              NKE     P     62.5   19    93% $      6,250  
+Account A (232)              AXON    C    450.0   19    92% $     45,000  
+Account A (232)              AXON    C    470.0   19    91% $     47,000  
+Account A (232)              ADBE    C    230.0   19    90% $     23,000  
+Account C (634)              ABNB    C    145.0   47    89% $     14,500  🔴 EXIT CANDIDATE
+Account A (232)              IBM     P    270.0   47    89% $     27,000  
+Account A (232)              CRCL    P    105.0   19    88% $     10,500  
+Account A (232)              PYPL    C     42.5   19    87% $      8,500  
+Account A (232)              CRM     C    185.0   82    87% $     18,500  🔴 EXIT CANDIDATE
+Account B (275)              NVO     P     55.0   19    87% $      5,500  
+Account B (275)              CRM     C    175.0  110    85% $     17,500  🔴 EXIT CANDIDATE
+Account A (232)              ADBE    C    240.0   47    80% $     24,000  
+Account A (232)              ETSY    C     60.0  110    77% $      6,000  🔴 EXIT CANDIDATE
+Account A (232)              XYZ     C     65.0  110    75% $     13,000  
+Account A (232)              WMT     P    110.0   82    75% $     11,000  
+Account A (232)              ADBE    C    230.0  110    74% $     23,000  
+Account A (232)              PYPL    C     42.5   82    73% $     21,250  
+Account A (232)              ALAB    P    330.0   47    73% $     33,000  
+Account A (232)              PYPL    C     45.0   82    72% $      9,000  
+Account A (232)              NVO     P     50.0  110    72% $      5,000  
+Account A (232)              CRM     C    210.0  110    72% $     21,000  🔴 EXIT CANDIDATE
+Account A (232)              PYPL    C     45.0  110    70% $     13,500  
+  ... and 62 more within 120 DTE (not shown)
+
+  Worst case (all shown): $2,151,700 across 87 positions
+  Realistic (>=30% prob): $1,643,200 across 71 positions
+  Likely (>=50% prob): $704,700 across 39 positions
+
+🔴 EXIT CANDIDATES (>=50% probability AND RED heat — both signals agree): 7
+    CRM C 175.0 (Account A (232)) — 96% probability, RED heat
+    ABNB C 145.0 (Account C (634)) — 89% probability, RED heat
+    CRM C 185.0 (Account A (232)) — 87% probability, RED heat
+    CRM C 175.0 (Account B (275)) — 85% probability, RED heat
+    ETSY C 60.0 (Account A (232)) — 77% probability, RED heat
+    CRM C 210.0 (Account A (232)) — 72% probability, RED heat
+    OKTA C 140.0 (Account A (232)) — 69% probability, RED heat
+
+========================================================================================================================
 SECTION 7: ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT
 ========================================================================================================================
 

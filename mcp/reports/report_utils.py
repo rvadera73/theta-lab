@@ -349,6 +349,59 @@ def option_market_price(symbol: str, expiry: str, strike: float, option_type: st
         return None
 
 
+def option_probability_itm(symbol: str, expiry: str, strike: float, option_type: str, spot: float) -> float | None:
+    """Risk-neutral probability the contract finishes ITM at expiry. Uses
+    the contract's own live implied vol (same cached chain as
+    option_market_price -- no extra fetch if that was already called for
+    this symbol/expiry this run) and delegates the actual d2/probability
+    math to enhanced_metrics.BlackScholesGreeks.d2 -- that class was
+    already imported into the production report and never instantiated
+    (see unified_master_report_production.py's Section 7 comment); this is
+    its first real caller rather than a second hand-rolled Black-Scholes
+    implementation. Risk-free rate fixed at 0 -- no existing call site in
+    this codebase sets one, and it's immaterial at these DTEs.
+    Returns None if spot/strike/IV aren't all usable (matches
+    option_market_price's fail-quiet convention -- callers already handle
+    a None price the same way).
+    Trader-facing meaning: for a short PUT this is "probability of
+    assignment"; for a short CALL, "probability of being exercised against."
+    """
+    from enhanced_metrics import BlackScholesGreeks
+    from scipy.stats import norm
+
+    key = (symbol, expiry)
+    chain = _OPTION_CHAIN_CACHE.get(key)
+    if chain is None:
+        try:
+            chain = yf.Ticker(symbol).option_chain(expiry)
+        except Exception:
+            chain = None
+        _OPTION_CHAIN_CACHE[key] = chain
+    if chain is None or not spot or spot <= 0 or not strike or strike <= 0:
+        return None
+    try:
+        table = chain.calls if option_type == "CALL" else chain.puts
+        if table is None or table.empty:
+            return None
+        row = table.loc[(table["strike"] - float(strike)).abs().idxmin()]
+        if abs(float(row["strike"]) - float(strike)) > 0.01:
+            return None
+        iv = float(row.get("impliedVolatility", 0) or 0)
+        if iv <= 0:
+            return None
+        expiry_date = date.fromisoformat(expiry)
+        T = max((expiry_date - date.today()).days, 0) / 365.0
+        if T <= 0:
+            return 1.0 if (option_type == "PUT") == (spot < strike) else 0.0
+        d2 = BlackScholesGreeks.d2(spot, strike, T, 0, iv)
+        # P(S_T < K) for a put's assignment risk, P(S_T > K) for a call's
+        # exercise risk -- both expressed as "probability this leg finishes
+        # against the seller."
+        return round(float(norm.cdf(-d2)) if option_type == "PUT" else float(norm.cdf(d2)), 4)
+    except Exception:
+        return None
+
+
 def parse_option_symbol(symbol: str) -> dict[str, Any] | None:
     import re
 

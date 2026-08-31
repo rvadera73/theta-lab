@@ -22,6 +22,7 @@ sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp')
 from open_positions_loader_v2 import OpenPositionsLoaderV2
 from enhanced_metrics import batch_get_metrics, BlackScholesGreeks
 from sector_analysis import batch_get_sector_analysis
+from report_utils import option_probability_itm
 
 try:
     from analysis.regime import detect_regime
@@ -937,6 +938,83 @@ class UnifiedReportProduction:
                     output.append("")
         except Exception as e:
             output.append(f"⚠️ AI capex risk tracker unavailable: {e}")
+            output.append("")
+
+        # SECTION 6.7: ASSIGNMENT/EXERCISE PROBABILITY — across ALL accounts,
+        # not just the margin account. Trader-requested (2026-08-30): show
+        # real probability against each option so it becomes a standing
+        # decision input, not a one-off scratchpad calc. Uses each contract's
+        # own live implied vol via report_utils.option_probability_itm,
+        # which finally puts BlackScholesGreeks (imported at the top of this
+        # file, never previously instantiated — see the Section 7 comment a
+        # few hundred lines down) to real use instead of adding a second
+        # hand-rolled Black-Scholes implementation.
+        # Scoped to <=120 DTE: far-dated (some of this book runs to mid-2027)
+        # probabilities are both less decision-relevant today and would push
+        # this section's live option-chain-fetch count (one per distinct
+        # underlying+expiry, uncached across runs) high enough to materially
+        # slow every scheduled report run for little actionable benefit.
+        output.extend(self._format_section_header("6.7", "ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE)"))
+        output.append("")
+        try:
+            today = date.today()
+            rows = []
+            for _, r in self.open_positions.iterrows():
+                exp = r.get("expiry_date")
+                if exp is None or (hasattr(exp, "__float__") and pd.isna(exp)):
+                    continue
+                dte = (exp - today).days
+                if not (0 <= dte <= 120):
+                    continue
+                ticker = r["ticker"]
+                spot = self.prices.get(ticker)
+                strike = r.get("strike")
+                opt_type_raw = str(r.get("option_type") or "").upper()
+                opt_type = "CALL" if opt_type_raw.startswith("C") else "PUT" if opt_type_raw.startswith("P") else None
+                if not (spot and strike and opt_type):
+                    continue
+                prob = option_probability_itm(ticker, exp.isoformat(), float(strike), opt_type, float(spot))
+                if prob is None:
+                    continue
+                qty = abs(r.get("net_quantity") or 0)
+                cash_at_risk = float(strike) * 100 * qty
+                heat = str((self.metrics.get(ticker) or {}).get("heat_status", "")).upper()
+                rows.append({
+                    "account": r["account_name"], "ticker": ticker, "type": opt_type[0],
+                    "strike": strike, "dte": dte, "prob": prob, "cash": cash_at_risk,
+                    "heat": heat,
+                })
+
+            rows.sort(key=lambda x: -x["prob"])
+            if rows:
+                output.append(f"{'Account':<28} {'Ticker':7} {'T':1} {'Strike':>8} {'DTE':>4} {'Prob':>6} {'Cash-at-Risk':>13}  Flag")
+                for row in rows[:25]:
+                    exit_flag = "🔴 EXIT CANDIDATE" if row["prob"] >= 0.50 and "RED" in row["heat"] else ""
+                    output.append(
+                        f"{row['account']:<28} {row['ticker']:7} {row['type']:1} {row['strike']:>8.1f} "
+                        f"{row['dte']:>4} {row['prob']*100:>5.0f}% ${row['cash']:>11,.0f}  {exit_flag}"
+                    )
+                if len(rows) > 25:
+                    output.append(f"  ... and {len(rows) - 25} more within 120 DTE (not shown)")
+                output.append("")
+
+                for label, lo in (("Worst case (all shown)", 0.0), ("Realistic (>=30% prob)", 0.30), ("Likely (>=50% prob)", 0.50)):
+                    total = sum(row["cash"] for row in rows if row["prob"] >= lo)
+                    output.append(f"  {label}: ${total:,.0f} across {sum(1 for row in rows if row['prob'] >= lo)} positions")
+                output.append("")
+                exit_candidates = [row for row in rows if row["prob"] >= 0.50 and "RED" in row["heat"]]
+                if exit_candidates:
+                    output.append(f"🔴 EXIT CANDIDATES (>=50% probability AND RED heat — both signals agree): {len(exit_candidates)}")
+                    for row in exit_candidates:
+                        output.append(f"    {row['ticker']} {row['type']} {row['strike']:.1f} ({row['account']}) — {row['prob']*100:.0f}% probability, RED heat")
+                else:
+                    output.append("No positions currently combine >=50% probability with RED heat.")
+                output.append("")
+            else:
+                output.append("No open positions with a parseable expiry within 120 DTE.")
+                output.append("")
+        except Exception as e:
+            output.append(f"⚠️ Assignment probability section unavailable: {e}")
             output.append("")
 
         # SECTION 7: ACTION FRAMEWORK WITH GAP CLOSURE IMPACT
