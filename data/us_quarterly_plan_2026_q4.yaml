@@ -1,0 +1,120 @@
+# US 90-Day Quarterly Plan — Account A (232) — Nov/Dec/Jan expiry window
+# Created 2026-08-30. Thesis and risk posture agreed with the trader this date.
+#
+# THESIS: Build a covered-strangle-driven premium program for Nov/Dec/Jan
+# expiries, funded by roll-off and active profit-take closes (NOT a margin
+# ceiling increase — Account A is already at/over its documented capacity).
+# Call legs must be genuinely covered (backed by owned/assignable shares) or
+# skipped entirely — no new naked calls for the duration of this window,
+# since the account's own backtest data shows naked call legs underperforming
+# put legs in this bull regime, and margin equity is currently thin (29% at
+# plan inception, cash-to-trade sitting exactly at the trader's own $25K
+# floor). Put-side is explicitly acknowledged as the larger existing risk
+# (assigned/wheel exposure already dominant) — this plan manages that risk
+# via a net-requirement discipline rather than by adding strangle exposure
+# on top of it.
+
+as_of: 2026-08-30
+
+baseline_snapshot:
+  account_a_total_value: 570000          # trader-reported, 2026-08-30
+  account_a_cash_investment: 388000
+  account_a_total_securities: 545000
+  account_a_option_value: -286000
+  account_a_option_requirement: -773000  # trader-reported (Schwab); internal
+                                          # model showed $806,496 same date —
+                                          # different methodology, same direction
+  account_a_margin_equity_pct: 29        # Schwab's real house-margin figure
+  account_a_cash_to_trade: 25000         # trader's stated hard floor, AT this
+                                          # value at plan inception, not above it
+  schwab_house_maintenance_pct: null     # UNCONFIRMED — action item #7, anchors
+                                          # every trigger threshold below
+
+standing_rules_for_this_window:
+  - "Account A ONLY (the sole margin-enabled account in this book -- Account
+     B, Account C, Fidelity, Vanguard, and Robinhood all run cash-secured
+     puts, not margin, so a naked-call risk doesn't structurally exist
+     there; this rule has no 'beyond Account A' pathway by definition): no
+     new naked calls for the full 90 days. New strangles only on names
+     with owned/assignable shares in Account A (covered call leg); put-only
+     if the name is uncovered in Account A."
+  - "No new put opens (strangle or standalone) while in net-put-freeze
+     (see triggers.margin_equity and triggers.cash_to_trade below).
+     Covered calls are exempt — margin-neutral."
+  - "Weekly net-requirement rule: total Account A put margin requirement
+     must be flat-or-down week over week. A new put may only open if an
+     equal-or-greater amount of put margin closes the same week."
+  - "Tier-CR / AI-theme-adjacent names excluded entirely from new put or
+     call exposure this window: CRWV, ORCL, HUT, RIOT (see
+     .claude/skills/ai-capex-risk-review.md)."
+  - "MRNA: covered calls only, standing permanent-exit rule bars any new
+     put on this name regardless of this plan."
+
+triggers:
+  margin_equity_pct:
+    normal: ">= 40"
+    watch: "35-40"
+    proactive_derisk: "30-35"
+    emergency: "< 30"
+    note: "Calibrated off FINRA's 25% floor + typical 30-35% house
+           requirements -- REVISE once Schwab's actual house % is confirmed
+           (see standing action item #7)."
+  cash_to_trade_usd:
+    normal: ">= 75000"
+    watch: "50000-75000"
+    proactive_derisk: "25000-50000"
+    emergency: "< 25000"
+    note: "Trader's own stated hard floor is 25000 -- sitting AT this value
+           at plan inception counts as proactive_derisk/emergency boundary,
+           not normal."
+
+action_items:
+  - id: 1
+    item: "Net-put freeze while margin equity / cash-to-trade are in
+           watch-or-worse zones"
+    cadence: "check every Monday before any new entry"
+    status: open
+  - id: 2
+    item: "NFLX 95P x5 (Mar 2027), -$4,164 unrealized, ~2x credit -- roll or
+           close decision"
+    deadline: "2026-09-06"
+    status: open
+  - id: 3
+    item: "APP 450P (Jun 2027), -$7,536 unrealized, ~1.9x credit -- roll or
+           close decision"
+    deadline: "2026-09-06"
+    status: open
+  - id: 4
+    item: "AXON 570P (Sep 18 2026 exp, 19 DTE at plan inception, 20%
+           captured) -- roll out or close, independent of the net-put-freeze"
+    deadline: "2026-09-18"
+    status: open
+  - id: 5
+    item: "Write covered calls on MRNA (400sh) and UNH (100sh) -- the only
+           two uncovered equity positions in Account A"
+    deadline: "2026-09-06"
+    status: open
+  - id: 6
+    item: "Weekly net put-requirement check -- log total Account A put
+           margin, confirm flat-or-down vs prior week"
+    cadence: weekly
+    status: open
+  - id: 7
+    item: "Confirm Schwab's real house maintenance % for Account A"
+    deadline: "2026-09-06"
+    status: open
+
+covered_strangle_candidates:
+  # Names with actual owned/assignable shares in Account A eligible for a
+  # covered call leg. Cross-account gap-scan candidates (NIO/FMC/INMD/ISRG)
+  # do NOT qualify -- those shares live in other accounts, not Account A.
+  - ticker: MRNA
+    shares: 400
+    put_leg: "blocked -- standing permanent-exit rule"
+  - ticker: UNH
+    shares: 100
+    put_leg: "blocked -- already carries 2 open puts (330 Jun2027, 360 Dec2026)"
+
+review_cadence: "Re-run this checklist and the weekly net-requirement number
+  every Monday for the duration of the 90-day window. Full re-assessment at
+  each of Nov/Dec/Jan expiry cycles."
