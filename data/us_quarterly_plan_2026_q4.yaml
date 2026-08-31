@@ -16,6 +16,22 @@
 
 as_of: 2026-08-30
 
+september_target:
+  deadline: "2026-09-30"
+  margin_equity_pct: ">= 35"     # from 29% at plan inception
+  cash_to_trade_usd: ">= 50000"  # from the $25000 hard floor at plan inception
+  method: "SAME closing discipline that produced August's $59,039 realized
+           (best month of the year, >2x the YTD monthly average) -- NOT the
+           same pace of new gross exposure. August also sold $203,268 of new
+           gross premium; repeating that volume works against this target,
+           not toward it. Naked-call cleanup (AXON 450C/470C Sep2026, CRM
+           175C Sep2026 -- see 2026-08-30 sweep) is itself a margin-equity
+           tailwind and counts toward this target, not a separate task."
+  note: "Trader-set goal, 2026-08-30. Re-check against real numbers weekly
+         (see action_items id 6) -- if margin equity isn't trending toward
+         35% by mid-September, that's the signal to slow new entries further,
+         not wait for the deadline to find out."
+
 exit_discipline:
   basis: "premium profit captured (%), same metric used throughout this
           session's put-reduction ledgers"
