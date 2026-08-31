@@ -16,6 +16,17 @@
 
 as_of: 2026-08-30
 
+progress_log:
+  - date: "2026-08-31"
+    margin_equity_pct: 31        # up from 29% at plan inception
+    cash_to_trade_usd: 37000     # up from the $25000 hard floor at plan inception
+    option_requirement_usd: 760000  # down from 773-806K on 2026-08-30 (both
+                                     # trader-reported and internal-model readings)
+    note: "First real check-in since plan inception -- all three metrics
+           moving the right direction. Still in the proactive_derisk band on
+           both margin equity (30-35%) and cash-to-trade (25000-50000), one
+           tier below watch, two below normal -- net-put-freeze still applies."
+
 september_target:
   deadline: "2026-09-30"
   margin_equity_pct: ">= 35"     # from 29% at plan inception
