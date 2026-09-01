@@ -444,6 +444,50 @@ WEEKLY EXECUTION PLAN  —  put/call + DTE aware
     → Run screen_new_entries / factor_screener for live strikes & IVR before selling.
 
 ========================================================================================================================
+SEEKING ALPHA WEEKLY THEME SCAN — added 2026-09-01, real-time web research
+(see .claude/skills/seekingalpha-weekly-theme-scan.md for the recurring
+Friday process; this section is manually appended, not part of the
+automated Python pipeline — real web research judgment doesn't run inside
+the scheduled report generation)
+========================================================================================================================
+
+Trending on Seeking Alpha this week: GOOGL, MRVL, MU, PYPL, CRM, NVDA, NIO,
+INTC, PCG. Of these, only the ones already held or with a real thesis-moving
+development get an action below -- trending alone isn't a signal.
+
+CRM -- Salesforce/Anthropic "Claudeforce" partnership (Aug 26-27): $5B
+invested in Anthropic, $300M planned 2026 token spend, Claude becoming
+Salesforce's default reasoning engine, open beta launching Sept 2026. Real
+structural catalyst on an already-held name (Account A, 200sh, calls under
+active management). ACTION: no new low-strike calls this week -- let
+existing ITM calls execute as planned, don't cap upside into a real catalyst.
+
+AI capex exhaustion -- hyperscaler spend $775-800B in 2026, ~$1.15T
+cumulative 2025-27, matching (not exceeding) the Circular Financing
+Playbook's existing figures. "Four buyers control a capex pool larger than
+the entire semiconductor industry's annual capex" -- real pricing power now,
+real cliff risk if one buyer pulls back. NO Tier CR trigger this week --
+confirmation, not escalation. Standing avoid-list unchanged (CRWV, ORCL,
+HUT, RIOT).
+
+MU -- HBM4 in high-volume production, entire 2026 HBM supply sold out with
+pricing locked, capex raised 25% to $25B+, 16 take-or-pay contracts through
+2030 (~$100B minimum revenue). Structural shift from cyclical/commodity
+toward contracted revenue -- attacks MU's classic memory-bust downside risk
+directly. Currently sits in the AI Capex Risk Tracker's HIGH_RISK_BUCKET
+(30% target, with ALAB/LITE/PLTR) rather than QUALITY_AI_BUCKET. ACTION:
+flag for next quarterly bucket review -- not an immediate reclass off one
+data point. Existing MU 720P (Nov 2026) short put looks better-supported,
+not worse.
+
+NIO -- Q2 earnings Sept 1: deliveries +49.4% YoY, revenue +69.1%, shares
+fell on a revenue miss + margin/competition concerns. NIO is the identified
+covered-call gap (1,000sh, Account C + Fidelity, zero calls written,
+flagged 2026-08-30, never acted on). Post-earnings IV crush + fresh
+negative reaction is a reasonable window. ACTION: write covered calls on
+5-6 of the available 10 contracts, not the full position at once.
+
+========================================================================================================================
 Report generated: 2026-08-30
 Next Weekly Report: Sunday, September 06, 2026 08:00 AM ET
 ========================================================================================================================
