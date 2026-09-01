@@ -26,6 +26,20 @@ progress_log:
            moving the right direction. Still in the proactive_derisk band on
            both margin equity (30-35%) and cash-to-trade (25000-50000), one
            tier below watch, two below normal -- net-put-freeze still applies."
+  - date: "2026-08-31 (later same day)"
+    margin_equity_pct: 33
+    cash_to_trade_usd: 42000
+    option_requirement_usd: 754000
+    itm_covered_calls_usd: 123000
+    note: "Second reading same day -- continued improvement on all three
+           (31->33%, 37K->42K, 760K->754K). Still proactive_derisk band on
+           both trigger metrics, but closing in on the watch threshold
+           (35% / 50K) faster than one reading per day would suggest --
+           worth noting the pace, not just the level. $123K of covered
+           calls are currently ITM -- this is the wheel working normally
+           (bounded, backed by owned shares), not a risk item like the
+           AXON/ANET/CRM/NKE naked-excess flagged 2026-08-30. Letting these
+           get called away is a fine outcome and doesn't need intervention."
 
 september_target:
   deadline: "2026-09-30"
