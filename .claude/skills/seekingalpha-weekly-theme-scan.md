@@ -64,10 +64,19 @@ Python report pipeline.
   **Flag for next quarterly bucket review — not an immediate reclass off
   one data point. Existing MU 720P (Nov 2026) short put looks
   better-supported, not worse.**
-- **NIO** — Q2 earnings Sept 1: deliveries +49.4% YoY, revenue +69.1%,
-  shares fell on a revenue miss + margin/competition concerns. NIO is the
-  identified covered-call gap (1,000sh, Account C + Fidelity, zero calls
-  written, flagged 2026-08-30, never acted on). Post-earnings IV crush +
-  fresh negative reaction is a reasonable window. **Concrete action: write
-  covered calls on 5-6 of the available 10 contracts, not the full
-  position at once.**
+- ~~**NIO** — identified covered-call gap (1,000sh, Account C + Fidelity,
+  zero calls written), recommended writing covered calls on 5-6 of 10
+  contracts.~~ **RETRACTED 2026-09-01: false.** The 1,000sh figure came
+  from `data/positions/portfolio_equity_positions.yaml`, a static
+  reference file dated 2026-05-31 (three months stale) that the equity
+  loader (`open_positions_loader_v2.py::_load_equity_positions_from_yaml`)
+  reads FIRST, ahead of any live transaction data -- confirmed by the
+  trader that neither account actually holds NIO shares or puts. Fixed by
+  removing the two stale NIO entries from that YAML. Root-cause note: the
+  live-computation fallback (`_track_equity_positions`) that's supposed to
+  kick in when the YAML is absent returns EMPTY for Account A entirely
+  (tested directly) -- so the YAML, despite being stale, is still the only
+  working equity data source for that account. Any other entry in that
+  file could be similarly stale; this was only caught because the trader
+  spot-checked one name. Treat every equity-derived finding from before
+  2026-09-01 (covered-call gap scans, coverage checks) with that in mind.
