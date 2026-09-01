@@ -89,10 +89,31 @@ class OpenPositionsLoaderV2:
         """Load all account data and fetch live prices"""
         self._load_accounts()
         self._calculate_open_positions()
-        # Try to load equity positions from YAML file; fall back to transaction history
-        self.equity_positions = self._load_equity_positions_from_yaml()
-        if not self.equity_positions:
-            self.equity_positions = self._track_equity_positions()
+        # Prefer live-computed equity positions (real Schwab position-file
+        # holdings overlaid on transaction-reconstructed data for the other
+        # brokers) over the static YAML -- that file is a point-in-time
+        # snapshot (confirmed stale: dated 2026-05-31, caught carrying a
+        # fully-closed NIO position weeks after the fact) that previously
+        # loaded FIRST and silently overrode live data whenever it was
+        # merely non-empty, not merely current. Fall back to it only if live
+        # computation returns nothing at all.
+        live_equity = self._track_equity_positions()
+        yaml_equity = self._load_equity_positions_from_yaml()
+        # Per-account quality gate: trust live computation only where it
+        # looks sane (no negative share counts -- confirmed Robinhood's
+        # transaction-based reconstruction has its own pre-existing bug
+        # here, e.g. "LLY -1", unrelated to the Schwab position-file fix
+        # above; previously masked because the YAML always won outright).
+        # Fall back to the YAML per-account, not globally, so one broker's
+        # broken reconstruction doesn't force every account back onto the
+        # stale file.
+        self.equity_positions = {}
+        for account in set(live_equity) | set(yaml_equity):
+            live = live_equity.get(account, {})
+            if live and all(qty >= 0 for qty in live.values()):
+                self.equity_positions[account] = live
+            else:
+                self.equity_positions[account] = yaml_equity.get(account, live)
         self._fetch_prices()
         self.option_requirements = self._calculate_option_requirements(self.equity_positions)
         return self.open_positions, self.prices
@@ -392,8 +413,13 @@ class OpenPositionsLoaderV2:
         if symbol.startswith('-'):
             symbol = symbol[1:].strip()
 
-        # Extract first 1-5 uppercase letters followed by space or number
-        match = re.match(r'^([A-Z]{1,5})[\s\d]', symbol)
+        # Extract first 1-5 uppercase letters followed by space, number, or
+        # end-of-string -- a bare equity symbol in a Schwab position file
+        # (e.g. "ADBE") has nothing trailing it, unlike an option symbol
+        # ("IONQ 270319P35"); the old space/digit-only requirement matched
+        # options fine but silently returned None for every plain equity
+        # row, contributing to _track_equity_positions() coming back empty.
+        match = re.match(r'^([A-Z]{1,5})(?:[\s\d]|$)', symbol)
         if match:
             return match.group(1)
 
@@ -552,6 +578,15 @@ class OpenPositionsLoaderV2:
             if is_equity:
                 equity_positions[account][ticker] += int(qty)
 
+        # Overlay the Schwab position-file ground truth (see
+        # _calculate_open_positions) on top of the transaction-reconstructed
+        # result -- it reflects the account's actual current holdings as of
+        # the export, so it's authoritative wherever it has data for a given
+        # account+ticker, not just a tiebreaker.
+        for account, tickers in getattr(self, 'equity_from_position_files', {}).items():
+            for ticker, qty in tickers.items():
+                equity_positions[account][ticker] = qty
+
         return dict(equity_positions)
 
     def _calculate_open_positions(self):
@@ -566,6 +601,28 @@ class OpenPositionsLoaderV2:
                 (self.consolidated_df['source'] == 'position_file') if 'source' in self.consolidated_df.columns
                 else False
             ) & (self.consolidated_df['asset type'] == 'Equity')
+
+            # Capture these rows as ground truth BEFORE dropping them -- a
+            # Schwab position file lists CURRENT real holdings directly (no
+            # transaction-history reconstruction needed), which is more
+            # reliable than _track_equity_positions()'s reconstruction from
+            # transaction actions: that reconstruction only sees activity
+            # inside the transaction file's date window, so equity acquired
+            # via an old assignment (or plain Buy, which it didn't even
+            # detect -- see _track_equity_positions) silently vanished,
+            # which is why the live equity fallback came back empty for
+            # Account A despite it holding real, confirmed shares.
+            self.equity_from_position_files: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+            equity_rows = self.consolidated_df[position_file_equity_mask]
+            for _, row in equity_rows.iterrows():
+                ticker = self._extract_ticker(row)
+                qty = row.get('quantity')
+                if not ticker or pd.isna(qty):
+                    continue
+                try:
+                    self.equity_from_position_files[row['account_name']][ticker] += int(float(qty))
+                except (ValueError, TypeError):
+                    continue
 
             self.consolidated_df = self.consolidated_df[~position_file_equity_mask].copy()
 
