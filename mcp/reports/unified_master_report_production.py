@@ -104,15 +104,40 @@ class UnifiedReportProduction:
         )
 
     def _load_portfolio_snapshot(self) -> dict:
-        """Load portfolio snapshot for YTD/MTD figures"""
+        """Load portfolio snapshot for YTD/MTD figures.
+
+        ytd_net_options_income/month_to_date_premium are then OVERWRITTEN
+        below with the live, FIFO-realized figures from monthly_premium.py
+        wherever live computation succeeds. Every section that reads these
+        two snapshot keys (there were ~8 call sites, several duplicating
+        the same figure across the daily report alone) now gets one
+        consistent number instead of some reading this stale YAML literal
+        and others reading a separately-computed live value -- that split
+        is what let Section 0's headline "YTD Net Premium (live from
+        transactions)" disagree with its own "PERFORMANCE VS TARGET"
+        block a few lines below, confirmed 2026-09-02.
+        """
         snapshot_file = Path('/home/rahulvadera/projects/theta-lab/data/portfolio_snapshot.yaml')
+        snapshot = {}
         if snapshot_file.exists():
             try:
                 with open(snapshot_file) as f:
-                    return yaml.safe_load(f) or {}
+                    snapshot = yaml.safe_load(f) or {}
             except Exception as e:
                 print(f"⚠️ Could not load snapshot: {e}")
-        return {}
+
+        try:
+            from monthly_premium import compute_monthly_premium, to_table
+            _tbl = to_table(compute_monthly_premium())
+            if "TOTAL" in _tbl.index:
+                _months = [c for c in _tbl.columns if c != "YTD"]
+                snapshot['ytd_net_options_income'] = float(_tbl.loc["TOTAL", "YTD"])
+                if _months:
+                    snapshot['month_to_date_premium'] = float(_tbl.loc["TOTAL", _months[-1]])
+        except Exception as e:
+            print(f"⚠️ Live YTD/MTD premium unavailable, falling back to snapshot file: {e}")
+
+        return snapshot
 
     def _calculate_position_contribution_to_target(self, ticker: str, conviction: float) -> float:
         """
@@ -633,21 +658,19 @@ class UnifiedReportProduction:
         output.append(f"├─ Total option requirement:     ${total_option_req:>12,.0f}")
         output.append(f"├─ Positions with short puts:    {sum(1 for bd in put_call_breakdown.values() if bd['puts'] > 0)}")
         output.append(f"├─ Positions with short calls:   {sum(1 for bd in put_call_breakdown.values() if bd['calls'] > 0)}")
-        # Real YTD/MTD premium + monthly trend computed live from transaction history
+        # YTD/MTD figures below come from self.snapshot, which
+        # _load_portfolio_snapshot() already overlays with the live,
+        # FIFO-realized computation from monthly_premium.py -- same source
+        # the LENS 1 table (_trend_lines, right below) and the
+        # PERFORMANCE VS TARGET block (further down this section) both
+        # read, so all three agree by construction instead of drifting.
         try:
-            from monthly_premium import compute_monthly_premium, to_table, render_trend_block
-            _res = compute_monthly_premium()
-            _tbl = to_table(_res)
-            _months = [c for c in _tbl.columns if c != "YTD"]
-            _ytd_total = float(_tbl.loc["TOTAL", "YTD"]) if "TOTAL" in _tbl.index else 0.0
-            _mtd_total = float(_tbl.loc["TOTAL", _months[-1]]) if _months and "TOTAL" in _tbl.index else 0.0
+            from monthly_premium import render_trend_block
             _trend_lines = render_trend_block()
         except Exception as _e:
-            _ytd_total = self.snapshot.get("ytd_net_options_income", 0)
-            _mtd_total = self.snapshot.get("month_to_date_premium", 0)
             _trend_lines = [f"(YTD monthly trend unavailable: {_e})", ""]
-        output.append(f"├─ YTD Net Premium:              ${_ytd_total:>12,.0f}  (live from transactions)")
-        output.append(f"├─ Month-to-Date Premium:        ${_mtd_total:>12,.0f}")
+        output.append(f"├─ YTD Net Premium:              ${self.snapshot.get('ytd_net_options_income', 0):>12,.0f}  (live from transactions)")
+        output.append(f"├─ Month-to-Date Premium:        ${self.snapshot.get('month_to_date_premium', 0):>12,.0f}")
         output.append(f"└─ Snapshot currency:            {self.snapshot.get('last_updated', 'N/A')}")
         output.append("")
         output.extend(_trend_lines)
@@ -798,17 +821,14 @@ class UnifiedReportProduction:
         output.append(f"Adjusted Target: ${targets['monthly_target_gross']:,} gross / ${targets['monthly_target_net']:,} net")
         output.append("")
 
-        # YTD pace
-        ytd_net = self.snapshot.get('ytd_net_options_income', 0)
-        ytd_months = date.today().month
-        if ytd_months > 0 and ytd_net > 0:
-            monthly_avg = ytd_net / ytd_months
-            annual_pace = monthly_avg * 12
-            status = "✅ ON TARGET" if annual_pace >= MONTHLY_TARGET_NET_BASE * 12 * 0.95 else "⚠️ BELOW TARGET"
-            output.append(f"YTD Performance: ${ytd_net:,} net ({ytd_months} months)")
-            output.append(f"Monthly average: ${monthly_avg:,.0f}")
-            output.append(f"Annualized pace: ${annual_pace:,.0f} {status}")
-            output.append("")
+        # YTD performance (net $, monthly average, gap) is Section 0's
+        # PERFORMANCE VS TARGET block, off the same live-realized number
+        # (self.snapshot['ytd_net_options_income'], overlaid live in
+        # _load_portfolio_snapshot()) -- was re-derived a second/third time
+        # here as "YTD Performance"/"Annualized pace", confirmed 2026-09-02
+        # to be the exact duplication the trader flagged ("what shows above
+        # Section 1 is repeated below"). Removed; see Section 0 instead.
+        output.append("")
 
         output.append("Account Targets (Regime-Adjusted) -- complements Section 0's PER-ACCOUNT")
         output.append("BREAKDOWN 'Target' column: that one is the raw monthly_target; these are the")
@@ -2173,38 +2193,32 @@ class UnifiedReportProduction:
         # SECTION 1: ACTUAL VS TARGET
         output.extend(self._format_section_header(1, "MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS"))
 
+        # Actual/target/variance/status for YTD is Section 0's PERFORMANCE VS
+        # TARGET block above -- was re-derived here too, using the RAW
+        # (non-regime-adjusted) MONTHLY_TARGET_NET_BASE while Section 0 uses
+        # the regime-adjusted target, so this and Section 0 could show two
+        # different "Target" and "Variance" numbers for the same YTD actual
+        # in the same report. Reusing gap_data here instead of recomputing
+        # keeps this section's forward-looking projection consistent with
+        # Section 0's numbers rather than a second, conflicting source.
+        gap_data = self._calculate_gap_to_target()
+        ytd_net = gap_data['ytd_net']
+        ytd_months = gap_data['ytd_months']
+        monthly_target = gap_data['adjusted_monthly_target']
         mtd_premium = self.snapshot.get('month_to_date_premium', 0)
-        monthly_target = MONTHLY_TARGET_NET_BASE  # $100K/month base = $1.2M/year — was a stale hardcoded $122,700
-        variance = mtd_premium - monthly_target
-        variance_pct = (variance / monthly_target) * 100 if monthly_target > 0 else 0
-        ytd_net = self.snapshot.get('ytd_net_options_income', 0)
-        ytd_months = today.month
-        ytd_target = monthly_target * ytd_months
-        ytd_variance = ytd_net - ytd_target
-        ytd_variance_pct = (ytd_variance / ytd_target) * 100 if ytd_target > 0 else 0
 
-        output.append("PERFORMANCE HEADLINE")
-        output.append("")
-        output.append(f"Target:              ${monthly_target:,}")
-        output.append(f"Actual (YTD):        ${ytd_net:,} ({ytd_months} months)")
-        output.append(f"Variance:            ${variance:,.0f}")
-        output.append(f"% Variance:          {variance_pct:.1f}%")
-        status_msg = "✅ ON TARGET" if abs(variance_pct) < 5 else ("⚠️ BELOW TARGET" if variance_pct < 0 else "✅ EXCEEDING TARGET")
-        output.append(f"Status:              {status_msg}")
+        output.append("See Section 0's PERFORMANCE VS TARGET block for YTD actual/target/gap and")
+        output.append("this month's pace vs. the regime-adjusted target -- not repeated here.")
         output.append("")
 
-        output.append("YTD CUMULATIVE:")
+        output.append("REST-OF-YEAR PROJECTION (using the same regime-adjusted target as Section 0):")
         output.append("")
-        output.append(f"YTD Actual ({today.year} Jan-{today.strftime('%b')}): ${ytd_net:,} ({ytd_months} months)")
-        output.append(f"YTD Target ({ytd_months} months):               ${ytd_target:,} ({ytd_months} × ${monthly_target:,})")
-        output.append(f"YTD Variance:                            ${ytd_variance:,}")
-        output.append(f"YTD % Variance:                          {ytd_variance_pct:.1f}%")
-        remaining_months = 12 - ytd_months
+        remaining_months = max(0, 12 - ytd_months)
         remaining_target = monthly_target * remaining_months
         output.append(f"Remaining months:                        {remaining_months} (as of {today.strftime('%B')})")
         output.append(f"Remaining target (est):                  ${remaining_target:,} ({remaining_months} × ${monthly_target:,})")
-        output.append(f"Pace required to recover:                ${monthly_target:,}/month (baseline)")
-        output.append(f"Confidence:                              ✅ LIVE DATA (updating monthly)")
+        output.append(f"Pace required to recover:                ${monthly_target:,}/month (regime-adjusted)")
+        output.append(f"This month so far (MTD, live):           ${mtd_premium:,.0f}")
         output.append("")
 
         # SECTION 2: ACCOUNT PERFORMANCE BY ACCOUNT (ALL accounts in ACCOUNTS_CONFIG)
