@@ -370,6 +370,103 @@ class UnifiedReportProduction:
         except Exception:
             return (70, 50)
 
+    def _get_macro_risk_analysis(self) -> dict:
+        """Cached wrapper around analyze_macro_risk() -- was previously
+        computed inline only inside Section 6.5, so Section 6 (the sector
+        position table) had no way to cross-reference which sectors are
+        macro-exposed. Trader flagged this synthesis gap directly (2026-09-01):
+        the report showed a 50%+ crash probability at the same time as 60-70%
+        of positions reading GREEN/'attractive, let run' with nothing
+        connecting the two. Both signals are real and don't contradict --
+        crash probability is a top-down, broad-market question; per-name
+        heat/conviction is a bottom-up, idiosyncratic-technicals question --
+        but they need to be shown together, not left to look like a
+        contradiction. This cache is what lets both sections read the same
+        analysis."""
+        if hasattr(self, '_macro_risk_cache'):
+            return self._macro_risk_cache
+        macro_risk_data = {
+            "vix": self.regime_data.get('signals', {}).get('vix', {}).get('value', 15.8),
+            "spx_price": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('current', 7580),
+            "spx_50ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma50', 7058),
+            "spx_200ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma200', 6831),
+        }
+        try:
+            result = analyze_macro_risk(macro_risk_data)
+        except Exception:
+            result = {}
+        self._macro_risk_cache = result
+        return result
+
+    def _log_macro_risk_history(self, risk_analysis: dict) -> None:
+        """Append today's crash-probability reading to data/macro_risk_history.yaml
+        (one entry per calendar day, overwriting same-day re-runs rather than
+        duplicating) so Section 6.5 can show a real trend instead of a single
+        snapshot -- trader-requested 2026-09-01: 'range of the risk level
+        indicator over last 90 days on weekly/biweekly basis... to show the
+        trend.' Capped to the last 130 days on write so the file doesn't grow
+        unbounded."""
+        try:
+            import yaml as _yaml
+            path = "/home/rahulvadera/projects/theta-lab/data/macro_risk_history.yaml"
+            try:
+                with open(path) as f:
+                    history = _yaml.safe_load(f) or []
+            except FileNotFoundError:
+                history = []
+            today_str = date.today().isoformat()
+            crash_prob = risk_analysis.get('crash_probability', {})
+            entry = {
+                "date": today_str,
+                "risk_level": risk_analysis.get("risk_level"),
+                "prob_30d": round(crash_prob.get("prob_30d", 0), 1),
+                "prob_60d": round(crash_prob.get("prob_60d", 0), 1),
+                "prob_90d": round(crash_prob.get("prob_90d", 0), 1),
+                "primary_risk": crash_prob.get("primary_risk"),
+            }
+            history = [h for h in history if h.get("date") != today_str]
+            history.append(entry)
+            cutoff = (date.today() - timedelta(days=130)).isoformat()
+            history = [h for h in history if h.get("date", "0000-00-00") >= cutoff]
+            history.sort(key=lambda h: h.get("date", ""))
+            with open(path, "w") as f:
+                _yaml.safe_dump(history, f, default_flow_style=False, sort_keys=False)
+        except Exception:
+            pass  # history logging is best-effort, never block report generation
+
+    def _render_macro_risk_trend(self) -> List[str]:
+        """90-day weekly-sampled trend of the 30-day crash probability, as an
+        ASCII sparkline -- same visual language already used elsewhere in
+        this report (Section 5's position-distribution bars) rather than
+        introducing a new style. Reads data/macro_risk_history.yaml, written
+        by _log_macro_risk_history() on every report run."""
+        output = []
+        try:
+            import yaml as _yaml
+            with open("/home/rahulvadera/projects/theta-lab/data/macro_risk_history.yaml") as f:
+                history = _yaml.safe_load(f) or []
+        except Exception:
+            history = []
+        if len(history) < 2:
+            output.append("90-day trend: not enough history yet (need 2+ report runs on different")
+            output.append("  days) -- this fills in automatically as reports run going forward.")
+            return output
+
+        cutoff = (date.today() - timedelta(days=90)).isoformat()
+        recent = [h for h in history if h.get("date", "0000-00-00") >= cutoff]
+        blocks = "▁▂▃▄▅▆▇█"
+        sparkline = ""
+        for h in recent:
+            v = h.get("prob_30d", 0)
+            idx = min(int(v / 100 * (len(blocks) - 1)), len(blocks) - 1)
+            sparkline += blocks[idx]
+        first, last = recent[0], recent[-1]
+        delta = last.get("prob_30d", 0) - first.get("prob_30d", 0)
+        trend_word = "rising" if delta > 5 else "falling" if delta < -5 else "flat"
+        output.append(f"90-day trend (30-day crash probability, one reading per day with data): {sparkline}")
+        output.append(f"  {first.get('date')}: {first.get('prob_30d', 0):.0f}%  →  {last.get('date')}: {last.get('prob_30d', 0):.0f}%  ({trend_word}, {delta:+.0f}pp)")
+        return output
+
     def _build_sector_position_table(self, critical: list, monitor: list, healthy: list) -> List[str]:
         """Consolidated Sector -> Symbol table (trader-requested 2026-09-01):
         one row per SYMBOL (not per option leg), grouped by sector, with put
@@ -388,19 +485,52 @@ class UnifiedReportProduction:
         trim_tickers = {t for t, _ in classified['trim']}
         enter_tickers = {t for t, _ in classified['enter_short_put']}
 
+        # Macro-exposure cross-reference (trader-flagged synthesis gap,
+        # 2026-09-01): a per-name GREEN/"attractive" read is a bottom-up,
+        # idiosyncratic-technicals signal -- it says nothing about top-down
+        # broad-market crash risk. Tag sectors the macro layer identifies as
+        # HIGH-exposure to the current primary risk driver, so an
+        # "ATTRACTIVE" suggestion in a HIGH-exposure sector reads as
+        # qualified, not as a contradiction of the crash-probability number
+        # shown separately in Section 6.5.
+        risk_analysis = self._get_macro_risk_analysis()
+        sensitivity = risk_analysis.get('sector_sensitivity') or {}
+        high_exposure_sectors = set(sensitivity.get('high_sensitivity_sectors', []))
+
         by_heat = {}
         for pos in critical + monitor + healthy:
             by_heat[pos['ticker']] = pos
 
-        def suggestion_for(ticker, heat, conv):
-            if ticker in close_tickers:
-                return "🔴 CLOSE"
-            if ticker in trim_tickers:
-                return "🔴 TRIM"
+        def suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason):
+            macro_flag = " ⚠️ HIGH macro exposure" if sector in high_exposure_sectors else ""
+            has_put, has_call = put_val > 0, call_val > 0
+
+            if ticker in close_tickers or ticker in trim_tickers:
+                verb = "CLOSE" if ticker in close_tickers else "TRIM"
+                # heat_status RED fires on extension in EITHER direction (see
+                # enhanced_metrics.py's heat_status logic) -- the leg actually
+                # at risk depends on which way, not on RED alone. A short
+                # CALL benefits from a decline (it's a natural crash/downside
+                # hedge, not a liability), so a blanket "CLOSE" that doesn't
+                # distinguish direction can tell you to close the one leg
+                # that's protecting you. Trader-flagged 2026-09-01: "how call
+                # should be exited as they will turn positive in case of crash."
+                reason_upper = str(reason).upper()
+                is_upside_extension = "OVERBOUGHT" in reason_upper or "EXTENDED" in reason_upper and "OVERSOLD" not in reason_upper
+                if has_put and has_call:
+                    if is_upside_extension:
+                        return f"🔴 {verb} CALL (delta/assignment risk) | 🟢 HOLD PUT (near max profit, unaffected — a short call gains protection in a decline, don't close it purely on crash fears)"
+                    else:
+                        return f"🔴 {verb} PUT (downside/assignment risk) | 🟢 HOLD CALL (unaffected by this signal)"
+                elif has_call and not has_put:
+                    return f"🔴 {verb} CALL"
+                elif has_put and not has_call:
+                    return f"🔴 {verb} PUT"
+                return f"🔴 {verb}"
             if ticker in enter_tickers:
-                return "🟢 ENTER (short put)"
+                return f"🟢 ENTER (short put){macro_flag}"
             if heat == 'GREEN':
-                return "🟢 ATTRACTIVE — let run"
+                return f"🟢 ATTRACTIVE — let run{macro_flag}"
             if heat == 'RED':
                 return "🟡 WATCH (RED, conv holds it back from CLOSE/TRIM)"
             return "🟡 MONITOR"
@@ -421,7 +551,8 @@ class UnifiedReportProduction:
             signal = s_data.get('signal', '🟡 MONITOR — Neutral positioning')
             s_notional = sector_total(sector)
 
-            output.append(f"── {sector}  ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}")
+            macro_tag = "  🔴 HIGH MACRO EXPOSURE (see Section 6.5)" if sector in high_exposure_sectors else ""
+            output.append(f"── {sector}  ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}{macro_tag}")
             output.append(f"  {'Symbol':8} {'Put Value':>12} {'Call Value':>12} {'Total Value':>12} {'Heat':>7} {'Conv':>5} {'Suggestion'}")
 
             rows = []
@@ -430,12 +561,13 @@ class UnifiedReportProduction:
                 pos = by_heat.get(ticker, {})
                 heat = pos.get('heat', self.metrics.get(ticker, {}).get('heat_status', 'YELLOW'))
                 conv = pos.get('conv', self.metrics.get(ticker, {}).get('conviction', 5.0))
+                reason = pos.get('reason', self.metrics.get(ticker, {}).get('heat_reason', ''))
                 total_val = pc['put_notional'] + pc['call_notional']
-                rows.append((ticker, pc['put_notional'], pc['call_notional'], total_val, heat, conv))
+                rows.append((ticker, pc['put_notional'], pc['call_notional'], total_val, heat, conv, reason))
 
-            for ticker, put_val, call_val, total_val, heat, conv in sorted(rows, key=lambda r: -r[3]):
+            for ticker, put_val, call_val, total_val, heat, conv, reason in sorted(rows, key=lambda r: -r[3]):
                 heat_icon = {"RED": "🔴", "YELLOW": "🟡", "GREEN": "🟢"}.get(heat, "🟡")
-                sugg = suggestion_for(ticker, heat, conv)
+                sugg = suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason)
                 output.append(
                     f"  {ticker:8} ${put_val:>11,.0f} ${call_val:>11,.0f} ${total_val:>11,.0f} "
                     f"{heat_icon:>7} {conv:>5.1f} {sugg}"
@@ -899,16 +1031,13 @@ class UnifiedReportProduction:
         # broken on this yet. Fixed anyway: sp500_ma.current is the real spot
         # price computed a few lines above via regime.py, already sitting
         # right next to ma50/ma200 in the same signals dict.
-        macro_risk_data = {
-            "vix": self.regime_data.get('signals', {}).get('vix', {}).get('value', 15.8),
-            "spx_price": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('current', 7580),
-            "spx_50ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma50', 7058),
-            "spx_200ma": self.regime_data.get('signals', {}).get('sp500_ma', {}).get('ma200', 6831),
-        }
-
-        risk_analysis = {}  # default so Section 7 below can safely reference it even if this fails
+        # Uses the cached _get_macro_risk_analysis() -- Section 6 (the sector
+        # position table) reads the same cache to cross-reference
+        # sector_sensitivity, so both sections agree on one computation
+        # instead of Section 6 seeing stale/absent data.
+        risk_analysis = self._get_macro_risk_analysis()
         try:
-            risk_analysis = analyze_macro_risk(macro_risk_data)
+            self._log_macro_risk_history(risk_analysis)
 
             # Display risk level
             risk_emoji = "🟢" if risk_analysis["risk_level"] == "GREEN" else "🟡" if risk_analysis["risk_level"] == "YELLOW" else "🔴"
@@ -943,6 +1072,30 @@ class UnifiedReportProduction:
                 output.append(f"  {emoji_90d} 90-day crash probability:  {prob_90d:>5.1f}%")
                 output.append(f"  📌 Primary risk factor: {crash_prob.get('primary_risk', 'None')}")
                 output.append("")
+
+            # Trend over time (trader-requested 2026-09-01: "range of the
+            # risk level indicator over last 90 days... to show the trend" --
+            # a single snapshot number gives no sense of direction).
+            output.extend(self._render_macro_risk_trend())
+            output.append("")
+
+            # Magnitude reference (trader-requested 2026-09-01: "crash to
+            # what level... is still unknown"). This model estimates
+            # PROBABILITY, not magnitude -- these are real historical
+            # comparisons (yfinance-verified earlier this session), shown as
+            # context for "if a correction like this happens, how far have
+            # comparable ones gone," not a prediction specific to today.
+            output.append("Historical magnitude reference (real, verified past events — NOT a")
+            output.append("prediction of this specific reading's outcome):")
+            output.append("-" * 120)
+            output.append("  2000 dot-com:       -17.2% initial leg / -49.1% full bear")
+            output.append("  2007 GFC:            -56.8% full bear, VIX peaked 80.9")
+            output.append("  2013 taper tantrum:  -5.8% / 34 days")
+            output.append("  2021-22 growth derate: -25.4% / 282 days")
+            output.append("  2023 SVB:            -4.8% / 7 days (resolved fast via FDIC backstop)")
+            output.append("  See logs/circular_financing_playbook.html for the full framework this")
+            output.append("  session's AI-capex risk analysis is built on.")
+            output.append("")
 
             # Sector crash-sensitivity — WHICH sectors are most exposed to
             # today's specific primary risk driver, not a generic list. The

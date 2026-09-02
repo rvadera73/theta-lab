@@ -725,13 +725,13 @@ SECTION 6: POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total V
 ========================================================================================================================
 
 
-── Technology  (33 positions, $2,641,643) — 🟡 MONITOR — Neutral positioning
+── Technology  (33 positions, $2,641,643) — 🟡 MONITOR — Neutral positioning  🔴 HIGH MACRO EXPOSURE (see Section 6.5)
   Symbol      Put Value   Call Value  Total Value    Heat  Conv Suggestion
   LITE     $    347,580 $          0 $    347,580       🟡   7.5 🟡 MONITOR
   CRM      $     77,433 $    180,677 $    258,110       🔴   6.4 🟡 WATCH (RED, conv holds it back from CLOSE/TRIM)
-  ADBE     $     85,824 $    171,648 $    257,472       🟢   5.7 🟢 ATTRACTIVE — let run
+  ADBE     $     85,824 $    171,648 $    257,472       🟢   5.7 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   TSM      $    207,000 $     41,400 $    248,400       🟡   6.4 🟡 MONITOR
-  ALAB     $    195,937 $     27,991 $    223,928       🟢   7.6 🟢 ATTRACTIVE — let run
+  ALAB     $    195,937 $     27,991 $    223,928       🟢   7.6 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   MU       $    186,688 $          0 $    186,688       🟡   8.8 🟡 MONITOR
   OKTA     $     33,286 $    116,501 $    149,787       🔴   6.6 🟡 WATCH (RED, conv holds it back from CLOSE/TRIM)
   IBM      $     92,560 $     23,140 $    115,700       🟡   7.2 🟡 MONITOR
@@ -741,25 +741,25 @@ SECTION 6: POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total V
   ZS       $     35,674 $     35,674 $     71,348       🟡   5.9 🟡 MONITOR
   APH      $     48,954 $     16,318 $     65,272       🟡   7.2 🟡 MONITOR
   NVDA     $     65,232 $          0 $     65,232       🟡   7.6 🟡 MONITOR
-  SHOP     $     55,928 $          0 $     55,928       🟢   6.5 🟢 ATTRACTIVE — let run
+  SHOP     $     55,928 $          0 $     55,928       🟢   6.5 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   XYZ      $     31,152 $     15,576 $     46,728       🟡   4.5 🟡 MONITOR
   CRWD     $     43,014 $          0 $     43,014       🔴   6.5 🟡 WATCH (RED, conv holds it back from CLOSE/TRIM)
-  FSLR     $     39,930 $          0 $     39,930       🟢   7.0 🟢 ATTRACTIVE — let run
+  FSLR     $     39,930 $          0 $     39,930       🟢   7.0 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   UBER     $     37,620 $          0 $     37,620       🟡   6.5 🟡 MONITOR
-  SKHY     $     32,156 $          0 $     32,156       🟢   8.5 🟢 ATTRACTIVE — let run
-  IONQ     $     18,890 $      7,556 $     26,446       🟢   6.4 🟢 ATTRACTIVE — let run
-  AMKR     $     22,865 $          0 $     22,865       🟢   6.9 🟢 ATTRACTIVE — let run
+  SKHY     $     32,156 $          0 $     32,156       🟢   8.5 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  IONQ     $     18,890 $      7,556 $     26,446       🟢   6.4 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  AMKR     $     22,865 $          0 $     22,865       🟢   6.9 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   PLTR     $     17,992 $          0 $     17,992       🟡   6.5 🟡 MONITOR
   RBRK     $     17,680 $          0 $     17,680       🟡   6.7 🟡 MONITOR
-  LYFT     $      1,677 $      8,385 $     10,062       🟢   6.5 🟢 ATTRACTIVE — let run
-  CRWV     $      8,185 $          0 $      8,185       🟢   7.0 🟢 ATTRACTIVE — let run
-  LASR     $      8,064 $          0 $      8,064       🟢   7.0 🟢 ATTRACTIVE — let run
-  SONO     $          0 $      6,056 $      6,056       🟢   5.5 🟢 ATTRACTIVE — let run
-  CIFR     $      5,844 $          0 $      5,844       🟢   5.2 🟢 ATTRACTIVE — let run
-  ASTS     $      5,580 $          0 $      5,580       🟢   6.7 🟢 ATTRACTIVE — let run
-  INFY     $      1,200 $      1,200 $      2,400       🟢   5.0 🟢 ATTRACTIVE — let run
-  QUBT     $        790 $          0 $        790       🟢   6.7 🟢 ATTRACTIVE — let run
-  ONDS     $        704 $          0 $        704       🟢   7.4 🟢 ATTRACTIVE — let run
+  LYFT     $      1,677 $      8,385 $     10,062       🟢   6.5 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  CRWV     $      8,185 $          0 $      8,185       🟢   7.0 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  LASR     $      8,064 $          0 $      8,064       🟢   7.0 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  SONO     $          0 $      6,056 $      6,056       🟢   5.5 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  CIFR     $      5,844 $          0 $      5,844       🟢   5.2 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  ASTS     $      5,580 $          0 $      5,580       🟢   6.7 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  INFY     $      1,200 $      1,200 $      2,400       🟢   5.0 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  QUBT     $        790 $          0 $        790       🟢   6.7 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  ONDS     $        704 $          0 $        704       🟢   7.4 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
 
 ── Industrials  (9 positions, $1,227,185) — 🟢 BUY — Oversold + rich premium (avg IVR 54, good for selling)
   Symbol      Put Value   Call Value  Total Value    Heat  Conv Suggestion
@@ -773,15 +773,15 @@ SECTION 6: POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total V
   KTOS     $      4,934 $          0 $      4,934       🟢   7.4 🟢 ATTRACTIVE — let run
   PL       $      3,852 $          0 $      3,852       🟢   6.0 🟢 ATTRACTIVE — let run
 
-── Communication Services  (7 positions, $894,476) — 🟢 BUY — Oversold + rich premium (avg IVR 57, good for selling)
+── Communication Services  (7 positions, $894,476) — 🟢 BUY — Oversold + rich premium (avg IVR 57, good for selling)  🔴 HIGH MACRO EXPOSURE (see Section 6.5)
   Symbol      Put Value   Call Value  Total Value    Heat  Conv Suggestion
   META     $    231,416 $     57,854 $    289,270       🟡   8.5 🟡 MONITOR
-  APP      $    187,044 $     62,348 $    249,392       🟢   9.1 🟢 ENTER (short put)
+  APP      $    187,044 $     62,348 $    249,392       🟢   9.1 🟢 ENTER (short put) ⚠️ HIGH macro exposure
   NFLX     $    113,134 $     48,486 $    161,620       🟡   7.2 🟡 MONITOR
-  GOOGL    $    100,506 $          0 $    100,506       🟢   7.3 🟢 ATTRACTIVE — let run
+  GOOGL    $    100,506 $          0 $    100,506       🟢   7.3 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   NBIS     $     39,908 $          0 $     39,908       🟡   6.7 🟡 MONITOR
-  RBLX     $     20,335 $     12,201 $     32,536       🟢   7.8 🟢 ATTRACTIVE — let run
-  DIS      $     21,244 $          0 $     21,244       🟢   5.3 🟢 ATTRACTIVE — let run
+  RBLX     $     20,335 $     12,201 $     32,536       🟢   7.8 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
+  DIS      $     21,244 $          0 $     21,244       🟢   5.3 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
 
 ── Financial Services  (7 positions, $648,191) — 🟡 MONITOR — Neutral positioning
   Symbol      Put Value   Call Value  Total Value    Heat  Conv Suggestion
@@ -793,20 +793,20 @@ SECTION 6: POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total V
   HUT      $     23,271 $          0 $     23,271       🟡   6.7 🟡 MONITOR
   RIOT     $      8,895 $      1,779 $     10,674       🟢   5.9 🟢 ATTRACTIVE — let run
 
-── Consumer Cyclical  (12 positions, $392,242) — 🟢 BUY — Oversold + rich premium (avg IVR 64, good for selling)
+── Consumer Cyclical  (12 positions, $392,242) — 🟢 BUY — Oversold + rich premium (avg IVR 64, good for selling)  🔴 HIGH MACRO EXPOSURE (see Section 6.5)
   Symbol      Put Value   Call Value  Total Value    Heat  Conv Suggestion
   EXPE     $     91,269 $          0 $     91,269       🟡   6.5 🟡 MONITOR
-  AMZN     $     50,984 $     25,492 $     76,476       🟢   6.8 🟢 ATTRACTIVE — let run
+  AMZN     $     50,984 $     25,492 $     76,476       🟢   6.8 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   ABNB     $     18,254 $     54,763 $     73,018       🟡   4.9 🟡 MONITOR
-  BABA     $     45,140 $          0 $     45,140       🟢   6.0 🟢 ATTRACTIVE — let run
+  BABA     $     45,140 $          0 $     45,140       🟢   6.0 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   TSLA     $     35,609 $          0 $     35,609       🟡   6.4 🟡 MONITOR
   MMYT     $     22,452 $      5,613 $     28,065       🟡   4.9 🟡 MONITOR
   JD       $      8,370 $      8,370 $     16,740       🟡   7.5 🟡 MONITOR
   ETSY     $          0 $      8,175 $      8,175       🟡   4.7 🟡 MONITOR
-  CAVA     $      6,108 $          0 $      6,108       🟢   6.2 🟢 ATTRACTIVE — let run
+  CAVA     $      6,108 $          0 $      6,108       🟢   6.2 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   DKNG     $      4,688 $          0 $      4,688       🟡   6.0 🟡 MONITOR
-  BROS     $      4,631 $          0 $      4,631       🟢   9.0 🟢 ENTER (short put)
-  CCL      $      2,323 $          0 $      2,323       🟢   6.4 🟢 ATTRACTIVE — let run
+  BROS     $      4,631 $          0 $      4,631       🟢   9.0 🟢 ENTER (short put) ⚠️ HIGH macro exposure
+  CCL      $      2,323 $          0 $      2,323       🟢   6.4 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
 
 ── Brand-Quality (Non-AI)  (4 positions, $366,832) — 🟡 MONITOR — Neutral positioning
   Symbol      Put Value   Call Value  Total Value    Heat  Conv Suggestion
@@ -828,9 +828,9 @@ SECTION 6: POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total V
   NOC      $    106,582 $          0 $    106,582       🟡   6.2 🟡 MONITOR
   BA       $     41,132 $          0 $     41,132       🟡   5.7 🟡 MONITOR
 
-── Basic Materials  (2 positions, $116,374) — 🟡 BUY (stock only) — High conviction but THIN premium (avg IVR 23 < 40)
+── Basic Materials  (2 positions, $116,374) — 🟡 BUY (stock only) — High conviction but THIN premium (avg IVR 23 < 40)  🔴 HIGH MACRO EXPOSURE (see Section 6.5)
   Symbol      Put Value   Call Value  Total Value    Heat  Conv Suggestion
-  ALB      $     81,324 $     13,554 $     94,878       🟢   8.0 🟢 ATTRACTIVE — let run
+  ALB      $     81,324 $     13,554 $     94,878       🟢   8.0 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   MP       $     16,122 $      5,374 $     21,496       🟡   6.7 🟡 MONITOR
 
 ── Utilities  (3 positions, $81,014) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 31 < 40) — not attractive for CSPs/CCs
@@ -880,6 +880,20 @@ Crash Probability Forecast (Probabilistic):
   🔴 60-day crash probability:   81.0%
   🔴 90-day crash probability:   95.0%
   📌 Primary risk factor: AD_RATIO critical
+
+90-day trend: not enough history yet (need 2+ report runs on different
+  days) -- this fills in automatically as reports run going forward.
+
+Historical magnitude reference (real, verified past events — NOT a
+prediction of this specific reading's outcome):
+------------------------------------------------------------------------------------------------------------------------
+  2000 dot-com:       -17.2% initial leg / -49.1% full bear
+  2007 GFC:            -56.8% full bear, VIX peaked 80.9
+  2013 taper tantrum:  -5.8% / 34 days
+  2021-22 growth derate: -25.4% / 282 days
+  2023 SVB:            -4.8% / 7 days (resolved fast via FDIC backstop)
+  See logs/circular_financing_playbook.html for the full framework this
+  session's AI-capex risk analysis is built on.
 
 Sector Sensitivity to Primary Risk Driver (AD_RATIO):
 ------------------------------------------------------------------------------------------------------------------------
