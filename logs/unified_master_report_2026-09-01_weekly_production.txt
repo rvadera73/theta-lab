@@ -391,8 +391,9 @@ Automation notes:
 
 ========================================================================================================================
 WEEKLY EXECUTION PLAN  —  put/call + DTE aware
-  Regime: CAUTIOUS_BULL.  short PUTS (OTM, 45-90 DTE) → hold to 50-70%;  short CALLS → manage on
-  DELTA (roll up+out / close, esp <30 DTE — theta won't save a tested call);  <21 DTE → take (gamma).
+  Regime: CAUTIOUS_BULL.  short PUTS (OTM, 45-90 DTE) → hold to 70% (per the quarterly plan's
+  exit discipline);  short CALLS → close at 50% or manage on DELTA (roll up+out / close,
+  esp <30 DTE — theta won't save a tested call);  <21 DTE → take (gamma).
 ========================================================================================================================
 
 🔻 REDUCE / MANAGE  (RED heat — RSI/trend/fundamentals all confirmed):
@@ -410,7 +411,7 @@ WEEKLY EXECUTION PLAN  —  put/call + DTE aware
     PYPL   1 leg(s) @ DTE [17]
     APP    1 leg(s) @ DTE [17]
 
-✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to 50-70%, DON'T close early = the leak):
+✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to 70%, DON'T close early = the leak):
     PL, CRWV, RKLB, FSLR, JD, KTOS, ASTS, CCL, ONDS, NBIS, BABA, ISRG, WMT, GEV, NOC, AMKR, ALAB, LASR, VST, TWLO, BE, IONQ, VRT, QUBT, SHOP, AMZN, DKNG, NKE, UBER, TSM, GOOGL, HUT, BROS, LYFT, EXPE, BWXT, RBRK, IBM, ANET, NVDA, APP, SPCX, UNH, APH, CRWD
 
 ▶️ NEW ENTRIES  (redeploy freed collateral — 45-60 DTE CSP, delta 0.15-0.20, no new AI):

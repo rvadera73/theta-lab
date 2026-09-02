@@ -29,9 +29,17 @@ Python report pipeline.
      week, given in realistic percentage-point terms against available
      capacity (e.g. "5-6 of 10 available covered-call contracts," not
      "buy MU").
-5. Append the week's findings to that week's daily/weekly report file
-   under a "SEEKING ALPHA WEEKLY THEME SCAN" section, and to this skill's
-   own running log below so the history persists across weeks.
+5. Write the week's findings to `data/seekingalpha_theme_state.yaml`
+   (same pattern as `data/tier_cr_state.yaml` for the AI Capex Risk
+   Tracker): `last_check_date` (today), a `findings` list (one entry per
+   relevant ticker/theme: `ticker`, `summary`, `action`), and
+   `action_items_open` (anything still pending). `unified_master_report_production.py`'s
+   Section 6.9 reads this file on every scheduled run and self-flags
+   staleness after 10 days — this is what makes a finding persist across
+   report regenerations instead of living only in one week's dated log
+   file (the prior approach, confirmed lost the moment that report
+   regenerated). Also append to this skill's own running log below, for
+   the narrative history a flat YAML doesn't carry well.
 6. Never let this override the standing rules already in force (net-put
    freeze status, no naked calls outside Account A's covered book, Tier-CR
    exclusion list) — a trending theme is an input to weigh, not a reason to

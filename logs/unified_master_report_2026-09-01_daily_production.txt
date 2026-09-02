@@ -888,6 +888,28 @@ Account A (232)              ZBH     C     85.0  108    66% $      8,500
     OKTA C 140.0 (Account A (232)) — 69% probability, RED heat
 
 ========================================================================================================================
+SECTION 6.8: QUARTERLY PLAN STATUS
+========================================================================================================================
+
+
+✅ Plan as of: 2026-08-30
+  Exit discipline: calls close at 50% premium captured, puts at 70%
+  Macro override: Primary de-risk gate for this 90-day window is the Phase-1 trigger firing (see the Circular Financing Playbook / Tier CR framework in .claude/skills/ai-capex-risk-review.md), NOT proactive margin-driven trimming.
+  September target: margin equity >= 35, cash-to-trade >= 50000 by 2026-09-30
+  Latest reading (2026-09-01): margin equity 37%, cash-to-trade $67,600, option req $746,000
+  Standing rules this window: 5 in effect (see the plan file for full text)
+
+========================================================================================================================
+SECTION 6.9: SEEKING ALPHA WEEKLY THEMES
+========================================================================================================================
+
+
+✅ Last scan: 2026-09-01 (0 days ago)
+  CRM: No new low-strike calls this week -- let existing ITM calls execute as planned.
+  MACRO: No Tier CR trigger this week -- confirmation, not escalation.
+  MU: Flag for next quarterly bucket review (HIGH_RISK_BUCKET -> QUALITY_AI_BUCKET candidate) -- not an immediate reclass off one data point.
+
+========================================================================================================================
 SECTION 7: ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT
 ========================================================================================================================
 

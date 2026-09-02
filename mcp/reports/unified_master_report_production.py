@@ -343,6 +343,23 @@ class UnifiedReportProduction:
         self._account_status_cache = result
         return result
 
+    def _get_quarterly_plan_exit_discipline(self) -> tuple:
+        """Real put/call profit-take targets from data/us_quarterly_plan_2026_q4.yaml
+        (put_pct, call_pct), falling back to the old generic (70, 50) constants
+        -- which happen to already match the plan's real trader-confirmed
+        values -- if the file is missing/unreadable, so callers never need a
+        None-check. Small, dedicated helper rather than duplicating the
+        Section 6.8 YAML read inline at each of the two call sites that need
+        just these two numbers."""
+        try:
+            import yaml as _yaml
+            with open("/home/rahulvadera/projects/theta-lab/data/us_quarterly_plan_2026_q4.yaml") as f:
+                qplan = _yaml.safe_load(f) or {}
+            ed = qplan.get("exit_discipline", {})
+            return (ed.get("put_leg_close_pct", 70), ed.get("call_leg_close_pct", 50))
+        except Exception:
+            return (70, 50)
+
     def _classify_positions_for_action(self) -> Dict[str, list]:
         """Single shared classification pass over self.metrics, used by both
         Section 3 (TOP-5 WEEKLY ACTION ITEMS) and the Weekly Execution Plan
@@ -1100,6 +1117,101 @@ class UnifiedReportProduction:
             output.append(f"⚠️ Assignment probability section unavailable: {e}")
             output.append("")
 
+        # SECTION 6.8: QUARTERLY PLAN STATUS -- same precedent as Section 6.6's
+        # tier_cr_state.yaml read (a Claude-driven process writes a dated
+        # state file, the report reads it every run and self-flags
+        # staleness). Confirmed via audit: data/us_quarterly_plan_2026_q4.yaml
+        # existed all session but was never read by any code path -- the
+        # report's own hardcoded profit-take language ("hold to 50-70%")
+        # directly contradicted the plan's real, trader-confirmed discipline
+        # (70% puts / 50% calls). This section surfaces the plan directly;
+        # _get_quarterly_plan_exit_discipline() below feeds the real values
+        # into the Weekly Execution Plan header instead of the old constant.
+        output.extend(self._format_section_header("6.8", "QUARTERLY PLAN STATUS"))
+        output.append("")
+        try:
+            import yaml as _yaml
+            with open("/home/rahulvadera/projects/theta-lab/data/us_quarterly_plan_2026_q4.yaml") as f:
+                qplan = _yaml.safe_load(f) or {}
+            as_of = qplan.get("as_of", "unknown")
+            try:
+                days_stale = (date.today() - date.fromisoformat(as_of)).days
+            except (ValueError, TypeError):
+                days_stale = None
+            staleness_flag = "⚠️ " if (days_stale is not None and days_stale > 14) else "✅ "
+            output.append(f"{staleness_flag}Plan as of: {as_of}" + (f" ({days_stale} days ago)" if days_stale is not None else ""))
+
+            ed = qplan.get("exit_discipline", {})
+            if ed:
+                output.append(f"  Exit discipline: calls close at {ed.get('call_leg_close_pct', '?')}% premium captured, "
+                               f"puts at {ed.get('put_leg_close_pct', '?')}%")
+
+            mo = qplan.get("macro_override", {})
+            if mo.get("rule"):
+                # YAML folds a wrapped multi-line double-quoted scalar into
+                # one long line (no embedded newlines survive), so
+                # splitlines()[0] doesn't trim it -- take the first sentence
+                # instead, which is a self-contained summary in this plan's
+                # own wording ("Primary de-risk gate ... NOT proactive
+                # margin-driven trimming.").
+                first_sentence = mo['rule'].strip().split('. ')[0].rstrip('.') + '.'
+                output.append(f"  Macro override: {first_sentence}")
+
+            sept = qplan.get("september_target", {})
+            progress = qplan.get("progress_log", [])
+            if sept and progress:
+                latest = progress[-1]
+                output.append(f"  September target: margin equity {sept.get('margin_equity_pct', '?')}, "
+                               f"cash-to-trade {sept.get('cash_to_trade_usd', '?')} by {sept.get('deadline', '?')}")
+                output.append(f"  Latest reading ({latest.get('date', '?')}): "
+                               f"margin equity {latest.get('margin_equity_pct', '?')}%, "
+                               f"cash-to-trade ${latest.get('cash_to_trade_usd', 0):,}, "
+                               f"option req ${latest.get('option_requirement_usd', 0):,}")
+
+            rules = qplan.get("standing_rules_for_this_window", [])
+            if rules:
+                output.append(f"  Standing rules this window: {len(rules)} in effect (see the plan file for full text)")
+
+            if days_stale is not None and days_stale > 14:
+                output.append("  ⚠️ Over 14 days since this plan was last updated — re-confirm it's still current.")
+        except Exception as e:
+            output.append(f"  ⚠️ No quarterly plan on record ({e}).")
+        output.append("")
+
+        # SECTION 6.9: SEEKING ALPHA WEEKLY THEMES -- same tier_cr_state.yaml
+        # precedent as 6.6/6.8. Replaces the fragile prior approach (a
+        # skill-driven manual text append into one specific dated log file,
+        # confirmed lost on the next regeneration since no code path ever
+        # read it back).
+        output.extend(self._format_section_header("6.9", "SEEKING ALPHA WEEKLY THEMES"))
+        output.append("")
+        try:
+            import yaml as _yaml
+            with open("/home/rahulvadera/projects/theta-lab/data/seekingalpha_theme_state.yaml") as f:
+                sa_state = _yaml.safe_load(f) or {}
+            last_check = sa_state.get("last_check_date", "unknown")
+            try:
+                days_stale = (date.today() - date.fromisoformat(last_check)).days
+            except (ValueError, TypeError):
+                days_stale = None
+            staleness_flag = "⚠️ " if (days_stale is not None and days_stale > 10) else "✅ "
+            output.append(f"{staleness_flag}Last scan: {last_check}" + (f" ({days_stale} days ago)" if days_stale is not None else ""))
+            findings = sa_state.get("findings", [])
+            for f in findings:
+                if str(f.get("action", "")).upper().startswith("RETRACTED") or "RETRACTED" in str(f.get("summary", "")).upper():
+                    continue  # don't keep resurfacing a retracted finding every run
+                output.append(f"  {f.get('ticker', '?')}: {f.get('action', 'no action recorded')}")
+            open_items = sa_state.get("action_items_open", [])
+            if open_items and open_items != ["None currently open from this scan -- CRM/MU are watch-only, NIO retracted."]:
+                output.append("  Open items:")
+                for item in open_items:
+                    output.append(f"    - {item}")
+            if days_stale is not None and days_stale > 10:
+                output.append("  ⚠️ Over 10 days since the last Seeking Alpha scan — run the weekly theme-scan skill.")
+        except Exception as e:
+            output.append(f"  ⚠️ No Seeking Alpha scan on record ({e}) — run the weekly theme-scan skill to establish a baseline.")
+        output.append("")
+
         # SECTION 7: ACTION FRAMEWORK WITH GAP CLOSURE IMPACT
         output.extend(self._format_section_header(7, "ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT"))
         output.append("")
@@ -1554,10 +1666,12 @@ class UnifiedReportProduction:
         import re
         from datetime import date as _date
         regime = (self.regime_data or {}).get("regime", "BULL")
+        put_pct, call_pct = self._get_quarterly_plan_exit_discipline()
         out = ["=" * 120,
                "WEEKLY EXECUTION PLAN  —  put/call + DTE aware",
-               f"  Regime: {regime}.  short PUTS (OTM, 45-90 DTE) → hold to 50-70%;  short CALLS → manage on",
-               "  DELTA (roll up+out / close, esp <30 DTE — theta won't save a tested call);  <21 DTE → take (gamma).",
+               f"  Regime: {regime}.  short PUTS (OTM, 45-90 DTE) → hold to {put_pct}% (per the quarterly plan's",
+               f"  exit discipline);  short CALLS → close at {call_pct}% or manage on DELTA (roll up+out / close,",
+               "  esp <30 DTE — theta won't save a tested call);  <21 DTE → take (gamma).",
                "=" * 120, ""]
 
         def _dte(sym):
@@ -1626,7 +1740,7 @@ class UnifiedReportProduction:
             out.append("    (none parsed under 21 DTE)")
         out.append("")
 
-        out.append("✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to 50-70%, DON'T close early = the leak):")
+        out.append(f"✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to {put_pct}%, DON'T close early = the leak):")
         if letrun:
             out.append("    " + ", ".join(f"{tk}" for tk, _, _ in sorted(letrun, key=lambda x: x[1])))
         else:

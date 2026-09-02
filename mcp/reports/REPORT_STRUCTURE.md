@@ -1,0 +1,114 @@
+# Report Structure — canonical section map
+
+Written 2026-09-01 as part of a report consolidation pass (see git history
+around this date for the specific fixes). **Purpose: the earlier report
+redesign this session had no persisted spec, only commit-message history —
+that's confirmed to be why later additions (Section 6.6, 6.7, the Seeking
+Alpha scan) got bolted on independently and drifted back into the same
+duplication/contradiction problems the redesign was meant to fix. Check any
+new section against this doc before adding it, and update this doc when you
+do.**
+
+## Shared computation — use these, don't re-derive
+
+- **`_compute_account_status()`** — the single source of truth for
+  per-account balance, requirement, utilization, status label, target,
+  actual, gap. Cached on `self._account_status_cache` per report run. Any
+  section showing account-level financial data should read from this, not
+  re-iterate `ACCOUNTS_CONFIG.items()` independently. Status labeling is
+  account-type-aware: margin accounts (only Account A) get real margin-call
+  language (OVER CAP/EMERGENCY/ALERT/OK); cash-secured accounts (everyone
+  else) get coverage language (FULLY COLLATERALIZED/WATCH/COVERAGE GAP) —
+  they cannot be margin-called, so presenting the same crisis wording for
+  both is a bug, not a style choice.
+- **`_classify_positions_for_action()`** — the single source of truth for
+  CLOSE/TRIM/ENTER position classification (RED heat + conviction, or HIGH
+  conviction + GREEN heat). Cached on `self._action_classification_cache`.
+  Any section recommending a position action should read from this, not
+  re-code its own heat/conviction/RSI thresholds — that's exactly how
+  Section 3 and the Weekly Execution Plan disagreed on the same ticker
+  before this fix.
+- **`_get_quarterly_plan_exit_discipline()`** — real put/call profit-take
+  percentages from `data/us_quarterly_plan_2026_q4.yaml`, not a hardcoded
+  constant. Any section stating a profit-take target should call this.
+- **State-file pattern** (tier_cr_state.yaml precedent) — for anything that
+  needs live web research judgment and can't run inside this Python
+  pipeline: a Claude-driven skill writes a dated YAML state file to
+  `data/`, this report reads it every run and self-flags staleness past a
+  threshold. Three examples: `tier_cr_state.yaml` (Section 6.6),
+  `us_quarterly_plan_2026_q4.yaml` (Section 6.8),
+  `seekingalpha_theme_state.yaml` (Section 6.9). **Don't manually append
+  findings into a dated log file instead** — that's the mistake the Seeking
+  Alpha scan made originally, and it's silently lost on the next
+  regeneration.
+
+## Daily report (`generate_daily_report`)
+
+| # | Title | Purpose |
+|---|---|---|
+| 0 | ACCOUNT HEALTH, FRAMEWORK STATUS & GAP ANALYSIS | Consolidated per-account table (via `_compute_account_status`) + 60% close-cost framework |
+| supp. | PRODUCTION FRAMEWORK — 60% CLOSE COST RATIO TARGETS | Regime-adjusted gross/net targets — cross-references Section 0's Target column, doesn't re-derive balance/status |
+| 1 | SYSTEM STATUS & PORTFOLIO SNAPSHOT | Headline counts |
+| 2 | CONVICTION UPDATES + FRAMEWORK CONTRIBUTION | Per-tier conviction contribution to the monthly gap |
+| 3 | POSITION HEAT DISTRIBUTION | Green/yellow/red counts |
+| 4 | MARKET REGIME & SIGNALS | VIX/MA regime detection |
+| 5 | POSITION DISTRIBUTION BY ACCOUNT | Position counts per account (not financial detail — that's Section 0) |
+| 6 | POSITION HEAT MATRIX & PRIORITY ACTION | Critical/monitor/healthy buckets by notional |
+| 6.5 | CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS | AI-capex crash-probability framework |
+| 6.6 | AI CAPEX RISK TRACKER — CIRCULAR FINANCING PLAYBOOK | Reads `tier_cr_state.yaml` |
+| 6.7 | ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE) | Per-position Black-Scholes probability + EXIT CANDIDATE flag |
+| 6.8 | QUARTERLY PLAN STATUS | Reads `us_quarterly_plan_2026_q4.yaml` |
+| 6.9 | SEEKING ALPHA WEEKLY THEMES | Reads `seekingalpha_theme_state.yaml` |
+| 7 | ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT | Uses `_classify_positions_for_action()` |
+
+## Weekly report (`generate_weekly_report`)
+
+| # | Title | Purpose |
+|---|---|---|
+| 1 | WEEKLY MARKET REGIME FORECAST | |
+| 2 | WEEKLY ACTION PRIORITIES + GAP CLOSURE IMPACT | |
+| 3 | TOP-5 WEEKLY ACTION ITEMS | Uses `_classify_positions_for_action()` — same buckets as the Weekly Execution Plan tail, cannot disagree by construction |
+| 4 | POSITION HEAT BY ACCOUNT | |
+| 5 | IV RANK & ENTRY GATE (Weekly Scan) | Sort-before-truncate, RED-heat excluded — confirmed working, don't regress |
+| 6 | WEEKLY CASH & MARGIN FORECAST | |
+| 7 | WEEKLY THETA & P&L TRACKING | |
+| 8 | RISK & GUARDRAILS (Weekly Check) | |
+| 9 | DECISION TREE — END-OF-WEEK | |
+| 10 | FRAMEWORK STATUS & AUTOMATION | |
+| tail | WEEKLY EXECUTION PLAN | Uses `_classify_positions_for_action()` for REDUCE/MANAGE; `_get_quarterly_plan_exit_discipline()` for the put/call % targets; LET-RUN (RSI-driven) and the DTE/sector blocks are genuinely separate signals, not required to unify further |
+
+## Biweekly report (`generate_biweekly_report`)
+
+Sections 1-7: rolling 3-month pace, conviction trend, tier evolution, realized
+premium trend, win-rate/Greeks, sector concentration, premium-vs-target.
+Trend/history-focused — does not currently duplicate Section 0's account
+table; keep it that way (link to Section 0 rather than re-listing balances
+if a future addition needs per-account detail here).
+
+## Monthly report (`generate_monthly_report`)
+
+| # | Title | Purpose |
+|---|---|---|
+| 1 | MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS | |
+| 2 | MONTHLY PERFORMANCE BY ACCOUNT (ALL N) | **Still a separate per-account loop** (MTD/YTD variance) — per the approved consolidation approach, this is intentionally kept as extra columns/detail on top of the same `_compute_account_status()` data, not a re-derivation. If this section is touched again, pull its balance/status fields from `_compute_account_status()` rather than recomputing. |
+| 3 | MONTHLY PREMIUM vs TARGET (real) | |
+| 4 | MOAT RECALIBRATION & TIER ASSIGNMENTS | |
+| 5 | PERFORMANCE PACE (real) | |
+
+## Adding a new section — checklist
+
+1. Does it show per-account balance/status/target data? → read from
+   `_compute_account_status()`, don't add a 6th independent loop.
+2. Does it recommend closing/trimming/entering a position? → read from
+   `_classify_positions_for_action()`, don't add new heat/conviction/RSI
+   thresholds.
+3. Does it need live web research (news, ratings actions, thematic
+   screens)? → it can't run in this pipeline. Use the state-file pattern:
+   a skill writes a dated YAML to `data/`, this report reads it with a
+   staleness self-flag. Don't manually edit a specific dated log file.
+4. States a profit-take/exit target? → read from
+   `_get_quarterly_plan_exit_discipline()` (or the quarterly plan YAML
+   directly for other fields), don't hardcode a percentage that can drift
+   out of sync with the trader's actual current discipline.
+5. Update this file's section table for whichever report type(s) you
+   touched.

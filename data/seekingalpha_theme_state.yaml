@@ -1,0 +1,43 @@
+# Seeking Alpha weekly theme scan state.
+#
+# Updated by .claude/skills/seekingalpha-weekly-theme-scan.md after each
+# Friday run -- that skill does the actual WebFetch/WebSearch-driven
+# research, since that can't run unattended in the scheduled Python report
+# pipeline. This file is the handoff, same pattern as data/tier_cr_state.yaml
+# for the AI Capex Risk Tracker: unified_master_report_production.py reads
+# it on every scheduled run to show how stale the last scan is and what it
+# found, instead of the finding living only in one week's dated log file
+# (the previous approach, which was silently lost on the next regeneration --
+# confirmed zero references to Seeking Alpha in the report code before this).
+
+last_check_date: "2026-09-01"
+findings:
+  - ticker: CRM
+    summary: >
+      Salesforce/Anthropic "Claudeforce" partnership (Aug 26-27): $5B
+      invested in Anthropic, $300M planned 2026 token spend, Claude becoming
+      Salesforce's default reasoning engine, open beta launching Sept 2026.
+      Real structural catalyst on an already-held name.
+    action: "No new low-strike calls this week -- let existing ITM calls execute as planned."
+  - ticker: MACRO
+    summary: >
+      AI capex exhaustion -- hyperscaler spend $775-800B in 2026, ~$1.15T
+      cumulative 2025-27, matching (not exceeding) the Circular Financing
+      Playbook's existing figures. No new rating action found.
+    action: "No Tier CR trigger this week -- confirmation, not escalation."
+  - ticker: MU
+    summary: >
+      HBM4 in high-volume production, entire 2026 HBM supply sold out with
+      pricing locked, capex raised 25% to $25B+, 16 take-or-pay contracts
+      through 2030 (~$100B minimum revenue). Structural shift from
+      cyclical/commodity toward contracted revenue.
+    action: "Flag for next quarterly bucket review (HIGH_RISK_BUCKET -> QUALITY_AI_BUCKET candidate) -- not an immediate reclass off one data point."
+  - ticker: NIO
+    summary: >
+      RETRACTED 2026-09-01: the original finding (1,000sh covered-call gap)
+      was based on a stale entry in portfolio_equity_positions.yaml --
+      trader confirmed neither account actually holds NIO shares or puts.
+      See scripts/open_positions_loader_v2.py fix, same date.
+    action: "No action -- finding was false, do not resurface."
+action_items_open:
+  - "None currently open from this scan -- CRM/MU are watch-only, NIO retracted."
