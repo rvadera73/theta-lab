@@ -881,38 +881,30 @@ class UnifiedReportProduction:
         output.append(f"  Portfolio: {gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target) — Need ${gap_data['monthly_gap']:,} more")
         output.append("")
 
+        # Compact table per bucket -- was a 2-line text block per ticker
+        # (price/value/conviction/heat_reason line + a separate stagger
+        # put/call sub-line), redundant with Section 6's sector table which
+        # already shows put/call/total value and heat per ticker. Keeps only
+        # what Section 6 does NOT show (contribution $ and % of target);
+        # points to Section 6 for the put/call breakdown instead of
+        # repeating it.
         for bucket_name, bucket_data, tier_contribution in [("HIGH (Tier 1: 8-10)", conviction_by_bucket.get("HIGH", []), 3800),
                                                               ("MODERATE (Tier 2: 6-8)", conviction_by_bucket.get("MODERATE", []), 1000),
                                                               ("LOW (Tier 3: <6)", conviction_by_bucket.get("LOW", []), -500)]:
             if bucket_data:
                 tier_total = len(bucket_data) * tier_contribution
                 output.append(f"{bucket_name} CONVICTION — {len(bucket_data)} positions | Total contribution: ${tier_total:,}/month ({tier_total/gap_data['adjusted_monthly_target']*100:.1f}% of target)")
-                output.append("-" * 120)
+                output.append(f"  {'Heat':4} {'Symbol':8} {'Price':>9} {'Conv':>5} {'Contribution':>14} {'% Target':>9}  (put/call detail: Section 6)")
                 for ticker, m in bucket_data[:20]:  # Show top 20 per bucket
                     heat_icon = "🟢" if m['heat_status'] == "GREEN" else "🟡" if m['heat_status'] == "YELLOW" else "🔴"
                     price = self.prices.get(ticker, 0)
-                    contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
-                    notional = price * contracts * 100  # Options notional: price × contracts × 100
-                    bd = put_call_breakdown.get(ticker, {"puts": 0, "calls": 0, "put_notional": 0, "call_notional": 0})
                     contribution = self._calculate_position_contribution_to_target(ticker, m['conviction'])
                     pct_of_target = (contribution / gap_data['adjusted_monthly_target'] * 100) if contribution > 0 else 0
-
                     output.append(
-                        f"  {heat_icon} {ticker:6} | ${price:>7.2f} | Value: ${notional:>10.0f} | Conv: {m['conviction']:>4.1f}/10 | "
-                        f"Contribution: ${contribution:>6,.0f}/mo ({pct_of_target:.1f}%) | {m['heat_reason']}"
+                        f"  {heat_icon:4} {ticker:8} ${price:>8.2f} {m['conviction']:>5.1f} ${contribution:>13,.0f} {pct_of_target:>8.1f}%"
                     )
-
-                    # Show put/call breakdown if stagger exists
-                    if bd['puts'] > 0 and bd['calls'] > 0:
-                        output.append(
-                            f"      └─ Stagger: {int(bd['puts'])} puts (${bd['put_notional']:>10,.0f}) + "
-                            f"{int(bd['calls'])} calls (${bd['call_notional']:>10,.0f})"
-                        )
-                    elif bd['puts'] > 0:
-                        output.append(f"      └─ Puts only: {int(bd['puts'])} contracts (${bd['put_notional']:>10,.0f})")
-                    elif bd['calls'] > 0:
-                        output.append(f"      └─ Calls only: {int(bd['calls'])} contracts (${bd['call_notional']:>10,.0f})")
-
+                if len(bucket_data) > 20:
+                    output.append(f"  ... and {len(bucket_data)-20} more (see Section 6 for the full sector-grouped list)")
                 output.append("")
 
         # SECTION 3: POSITION HEAT DISTRIBUTION
@@ -1445,13 +1437,9 @@ class UnifiedReportProduction:
         output.append(f"   └─ Gap Impact: Closing {len(close_now)} RED positions saves ~${abs(close_contribution_savings):,}/month drag")
         output.append(f"       Moves gap from ${gap_data['monthly_gap']:,} to ${new_gap_after_closes:,} ({close_impact_pct:.1f}% improvement)")
         if close_now:
-            for pos in close_now[:5]:
-                output.append(
-                    f"       • {pos['ticker']:8} | Contracts: {pos['contracts']:2} | Notional: ${pos['notional']:>10,.0f} | "
-                    f"{pos['reason']}"
-                )
-            if len(close_now) > 5:
-                output.append(f"       • ... and {len(close_now)-5} more RED positions")
+            top_names = ", ".join(p['ticker'] for p in close_now[:5])
+            more = f" +{len(close_now)-5} more" if len(close_now) > 5 else ""
+            output.append(f"       Names: {top_names}{more}  (full detail — put/call value, sector, suggestion — in Section 6)")
         else:
             output.append("       ✅ None needed — no RED + high conviction conflicts")
         output.append("")
@@ -1461,13 +1449,9 @@ class UnifiedReportProduction:
         output.append("   └─ Why: Approaching strike or extremes. Roll if thesis intact, close if thesis broken.")
         output.append(f"   └─ Gap Impact: Preserve existing ${len(monitor_closely) * 1000:,}/month contribution from MODERATE conviction positions")
         if monitor_closely:
-            for pos in monitor_closely[:5]:
-                output.append(
-                    f"       • {pos['ticker']:8} | Contracts: {pos['contracts']:2} | Conv: {pos['conv']:.1f}/10 | "
-                    f"{pos['reason']}"
-                )
-            if len(monitor_closely) > 5:
-                output.append(f"       • ... and {len(monitor_closely)-5} more YELLOW + low conviction positions")
+            top_names = ", ".join(p['ticker'] for p in monitor_closely[:5])
+            more = f" +{len(monitor_closely)-5} more" if len(monitor_closely) > 5 else ""
+            output.append(f"       Names: {top_names}{more}  (full detail in Section 6)")
         else:
             output.append("       ✅ None — all CRITICAL positions are RED/close candidates")
         output.append("")

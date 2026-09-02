@@ -294,50 +294,10 @@ class SectorAnalyzer:
             output.append(f"{sector:<25} {data['position_count']:>10} {conv:>10} {rsi:>9.1f} {range_pct:>10.1f} {ivr_str:>9} {signal_short:>40}")
 
         output.append("")
+        output.append("Per-symbol drill-down (put/call/total value, heat, suggestion, grouped by")
+        output.append("sector) is in Section 6 — not repeated here to avoid two versions of the")
+        output.append("same per-ticker/per-sector data going out of sync with each other.")
         output.append("")
-
-        # Detailed breakdown by sector
-        output.append("DETAILED SECTOR BREAKDOWN:")
-        output.append("")
-
-        for sector in ordered_sectors:
-            data = sector_summary[sector]
-
-            ivr = data.get('avg_iv_rank')
-            output.append(f"\n{sector.upper()}")
-            output.append(f"├─ Positions: {data['position_count']} | Total notional: ${data['total_notional']:,.0f}")
-            output.append(f"├─ Avg conviction: {data['avg_conviction']}/10 | Avg RSI: {data['avg_rsi']:.1f}")
-            output.append(f"├─ Position in 52W range: {data['avg_position_in_52w_range']:.1f}% (0=low, 100=high)")
-            output.append(f"├─ Avg IV rank: {ivr:.0f}/100 (≥40 = rich premium)" if ivr is not None else "├─ Avg IV rank: n/a")
-            output.append(f"├─ {data['signal']}")
-            output.append("")
-
-            # Conviction distribution
-            conv_dist = data['conviction_dist']
-            output.append(f"   Conviction Distribution:")
-            output.append(f"   ├─ HIGH (8-10):    {conv_dist['HIGH (8-10)']:>3} positions")
-            output.append(f"   ├─ MODERATE (6-8): {conv_dist['MODERATE (6-8)']:>3} positions")
-            output.append(f"   └─ LOW (<6):       {conv_dist['LOW (<6)']:>3} positions")
-            output.append("")
-
-            # Heat distribution
-            heat_dist = data['heat_dist']
-            output.append(f"   Heat Distribution:")
-            output.append(f"   ├─ 🟢 GREEN:   {heat_dist.get('GREEN', 0):>3} positions (attractive/oversold)")
-            output.append(f"   ├─ 🟡 YELLOW:  {heat_dist.get('YELLOW', 0):>3} positions (neutral/approaching extremes)")
-            output.append(f"   └─ 🔴 RED:     {heat_dist.get('RED', 0):>3} positions (extended/overbought)")
-            output.append("")
-
-            # Top positions
-            top = data['top_positions']
-            if top:
-                output.append(f"   Top Positions in {sector}:")
-                for ticker, notional, conv in top:
-                    ticker_metrics = self.metrics.get(ticker, {})
-                    heat = ticker_metrics.get('heat_status', 'YELLOW')
-                    output.append(f"   ├─ {ticker:<8} ${notional:>12,.0f} | Conv {conv:>5.1f}/10 | Heat {heat}")
-                output.append("")
-
         output.append("=" * 120)
         output.append("")
 
