@@ -473,8 +473,7 @@ class UnifiedReportProduction:
         except Exception:
             history = []
         if len(history) < 2:
-            output.append("90-day trend: not enough history yet (need 2+ report runs on different")
-            output.append("  days) -- this fills in automatically as reports run going forward.")
+            output.append("- 90-day trend: not enough history yet (need 2+ report runs on different days) — this fills in automatically as reports run going forward.")
             return output
 
         cutoff = (date.today() - timedelta(days=90)).isoformat()
@@ -488,8 +487,8 @@ class UnifiedReportProduction:
         first, last = recent[0], recent[-1]
         delta = last.get("prob_30d", 0) - first.get("prob_30d", 0)
         trend_word = "rising" if delta > 5 else "falling" if delta < -5 else "flat"
-        output.append(f"90-day trend (30-day crash probability, one reading per day with data): {sparkline}")
-        output.append(f"  {first.get('date')}: {first.get('prob_30d', 0):.0f}%  →  {last.get('date')}: {last.get('prob_30d', 0):.0f}%  ({trend_word}, {delta:+.0f}pp)")
+        output.append(f"- **90-day trend** (30-day crash probability, one reading per day with data): `{sparkline}`")
+        output.append(f"  - {first.get('date')}: {first.get('prob_30d', 0):.0f}% → {last.get('date')}: {last.get('prob_30d', 0):.0f}% ({trend_word}, {delta:+.0f}pp)")
         return output
 
     def _build_sector_position_table(self, critical: list, monitor: list, healthy: list) -> List[str]:
@@ -543,10 +542,13 @@ class UnifiedReportProduction:
                 reason_upper = str(reason).upper()
                 is_upside_extension = "OVERBOUGHT" in reason_upper or "EXTENDED" in reason_upper and "OVERSOLD" not in reason_upper
                 if has_put and has_call:
+                    # No literal "|" in these strings -- they land in a
+                    # Markdown table cell (Section 6) and "|" is the column
+                    # delimiter there, so it would silently break the table.
                     if is_upside_extension:
-                        return f"🔴 {verb} CALL (delta/assignment risk) | 🟢 HOLD PUT (near max profit, unaffected — a short call gains protection in a decline, don't close it purely on crash fears)"
+                        return f"🔴 {verb} CALL (delta/assignment risk); 🟢 HOLD PUT (near max profit, unaffected — a short call gains protection in a decline, don't close it purely on crash fears)"
                     else:
-                        return f"🔴 {verb} PUT (downside/assignment risk) | 🟢 HOLD CALL (unaffected by this signal)"
+                        return f"🔴 {verb} PUT (downside/assignment risk); 🟢 HOLD CALL (unaffected by this signal)"
                 elif has_call and not has_put:
                     return f"🔴 {verb} CALL"
                 elif has_put and not has_call:
@@ -576,9 +578,9 @@ class UnifiedReportProduction:
             signal = s_data.get('signal', '🟡 MONITOR — Neutral positioning')
             s_notional = sector_total(sector)
 
-            macro_tag = "  🔴 HIGH MACRO EXPOSURE (see Section 6.5)" if sector in high_exposure_sectors else ""
-            output.append(f"── {sector}  ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}{macro_tag}")
-            output.append(f"  {'Symbol':8} {'Put Value':>12} {'Call Value':>12} {'Total Value':>12} {'Heat':>7} {'Conv':>5} {'Suggestion'}")
+            macro_tag = " 🔴 HIGH MACRO EXPOSURE (see Section 6.5)" if sector in high_exposure_sectors else ""
+            output.append(f"### {sector} ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}{macro_tag}")
+            output.append("")
 
             rows = []
             for ticker in tickers:
@@ -590,13 +592,16 @@ class UnifiedReportProduction:
                 total_val = pc['put_notional'] + pc['call_notional']
                 rows.append((ticker, pc['put_notional'], pc['call_notional'], total_val, heat, conv, reason))
 
+            table_rows = []
             for ticker, put_val, call_val, total_val, heat, conv, reason in sorted(rows, key=lambda r: -r[3]):
                 heat_icon = {"RED": "🔴", "YELLOW": "🟡", "GREEN": "🟢"}.get(heat, "🟡")
                 sugg = suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason)
-                output.append(
-                    f"  {ticker:8} ${put_val:>11,.0f} ${call_val:>11,.0f} ${total_val:>11,.0f} "
-                    f"{heat_icon:>7} {conv:>5.1f} {sugg}"
-                )
+                table_rows.append([ticker, f"${put_val:,.0f}", f"${call_val:,.0f}", f"${total_val:,.0f}",
+                                    heat_icon, f"{conv:.1f}", sugg])
+            output.extend(self._md_table(
+                ["Symbol", "Put Value", "Call Value", "Total Value", "Heat", "Conv", "Suggestion"],
+                table_rows
+            ))
             output.append("")
 
         return output
@@ -642,9 +647,7 @@ class UnifiedReportProduction:
         put_call_breakdown = self._parse_put_call_breakdown()
         gap_data = self._calculate_gap_to_target()
 
-        output.append("=" * 120)
-        output.append("SECTION 0: ACCOUNT HEALTH, FRAMEWORK STATUS & GAP ANALYSIS")
-        output.append("=" * 120)
+        output.append("## Section 0: Account Health, Framework Status & Gap Analysis")
         output.append("")
 
         # Portfolio-level metrics
@@ -652,12 +655,13 @@ class UnifiedReportProduction:
                            for t in self.position_summary.index)
         total_option_req = sum(self.option_requirements.values())
 
-        output.append("CONSOLIDATED PORTFOLIO SNAPSHOT:")
-        output.append(f"├─ Total Portfolio Balance:      ${TOTAL_PORTFOLIO_BALANCE:,}")
-        output.append(f"├─ Total notional exposure:      ${total_notional:>12,.0f}")
-        output.append(f"├─ Total option requirement:     ${total_option_req:>12,.0f}")
-        output.append(f"├─ Positions with short puts:    {sum(1 for bd in put_call_breakdown.values() if bd['puts'] > 0)}")
-        output.append(f"├─ Positions with short calls:   {sum(1 for bd in put_call_breakdown.values() if bd['calls'] > 0)}")
+        output.append("### Consolidated Portfolio Snapshot")
+        output.append("")
+        output.append(f"- **Total Portfolio Balance:** ${TOTAL_PORTFOLIO_BALANCE:,}")
+        output.append(f"- **Total notional exposure:** ${total_notional:,.0f}")
+        output.append(f"- **Total option requirement:** ${total_option_req:,.0f}")
+        output.append(f"- **Positions with short puts:** {sum(1 for bd in put_call_breakdown.values() if bd['puts'] > 0)}")
+        output.append(f"- **Positions with short calls:** {sum(1 for bd in put_call_breakdown.values() if bd['calls'] > 0)}")
         # YTD/MTD figures below come from self.snapshot, which
         # _load_portfolio_snapshot() already overlays with the live,
         # FIFO-realized computation from monthly_premium.py -- same source
@@ -669,9 +673,9 @@ class UnifiedReportProduction:
             _trend_lines = render_trend_block()
         except Exception as _e:
             _trend_lines = [f"(YTD monthly trend unavailable: {_e})", ""]
-        output.append(f"├─ YTD Net Premium:              ${self.snapshot.get('ytd_net_options_income', 0):>12,.0f}  (live from transactions)")
-        output.append(f"├─ Month-to-Date Premium:        ${self.snapshot.get('month_to_date_premium', 0):>12,.0f}")
-        output.append(f"└─ Snapshot currency:            {self.snapshot.get('last_updated', 'N/A')}")
+        output.append(f"- **YTD Net Premium:** ${self.snapshot.get('ytd_net_options_income', 0):,.0f} (live from transactions)")
+        output.append(f"- **Month-to-Date Premium:** ${self.snapshot.get('month_to_date_premium', 0):,.0f}")
+        output.append(f"- **Snapshot currency:** {self.snapshot.get('last_updated', 'N/A')}")
         output.append("")
         output.extend(_trend_lines)
 
@@ -680,19 +684,20 @@ class UnifiedReportProduction:
         # across this table plus a separate "ACCOUNT-LEVEL GAP BREAKDOWN"
         # block further down, both iterating ACCOUNTS_CONFIG independently).
         acct_status = self._compute_account_status()
-        output.append("PER-ACCOUNT BREAKDOWN:")
-        output.append("-" * 120)
-        output.append(f"{'Account':<30} {'Balance':>13} {'%':>5} {'Notional':>13} {'Opt Req':>11} {'Type':>9} {'Status':>22} {'Target':>9} {'Gap':>9}")
-        output.append("-" * 120)
-
+        output.append("### Per-Account Breakdown")
+        output.append("")
+        acct_headers = ["Account", "Balance", "%", "Notional", "Opt Req", "Type", "Status", "Target", "Gap"]
+        acct_rows = []
+        acct_notes = []
         for account_name, config in ACCOUNTS_CONFIG.items():
             s = acct_status[account_name]
             gap_icon = "✅" if s['gap'] <= 0 else "⚠️"
-            output.append(
-                f"{account_name:<30} ${s['balance']:>12,} {s['pct']:>4.1f}% ${s['notional']:>12,.0f} "
-                f"${s['opt_req']:>10,.0f} {s['account_type']:>9} {s['status']:>22} "
-                f"${s['target']:>8,} {gap_icon} ${s['gap']:>7,}"
-            )
+            acct_rows.append([
+                account_name, f"${s['balance']:,}", f"{s['pct']:.1f}%", f"${s['notional']:,.0f}",
+                f"${s['opt_req']:,.0f}", s['account_type'], s['status'],
+                f"${s['target']:,}", f"{gap_icon} ${s['gap']:,}"
+            ])
+
             if s['has_positions']:
                 equity = self.equity_positions.get(account_name, {})
                 equity_str = ""
@@ -701,96 +706,109 @@ class UnifiedReportProduction:
                     equity_str = f" | Equity: {', '.join(equity_list)}"
                     if len(equity) > 5:
                         equity_str += f" +{len(equity)-5} more"
-                output.append(f"  ├─ {s['position_count']} option positions | Monthly target: ${config['monthly_target']:,}{equity_str}")
+                acct_notes.append(f"- **{account_name}:** {s['position_count']} option positions | Monthly target: ${config['monthly_target']:,}{equity_str}")
             else:
-                output.append(f"  └─ No open positions | Monthly target: ${config['monthly_target']:,}")
+                acct_notes.append(f"- **{account_name}:** No open positions | Monthly target: ${config['monthly_target']:,}")
 
             if s['balance_as_of'] is None:
-                output.append(f"  └─ ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the {s['status']} reading above")
+                acct_notes.append(f"  - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the {s['status']} reading above")
             elif s['balance_days_stale'] is not None and s['balance_days_stale'] > 30:
-                output.append(f"  └─ ⚠️ Balance as of {s['balance_as_of']} ({s['balance_days_stale']} days ago) — re-confirm if the {s['status']} reading above matters for a decision")
+                acct_notes.append(f"  - ⚠️ Balance as of {s['balance_as_of']} ({s['balance_days_stale']} days ago) — re-confirm if the {s['status']} reading above matters for a decision")
 
-        output.append("-" * 120)
-        output.append(f"{'TOTAL':<30} ${TOTAL_PORTFOLIO_BALANCE:>12,} {'100.0%':>5} ${total_notional:>12,.0f} ${total_option_req:>10,.0f}")
+        acct_rows.append(["**TOTAL**", f"${TOTAL_PORTFOLIO_BALANCE:,}", "100.0%", f"${total_notional:,.0f}", f"${total_option_req:,.0f}", "", "", "", ""])
+        output.extend(self._md_table(acct_headers, acct_rows))
+        output.append("")
+        output.extend(acct_notes)
         output.append("")
 
-        output.append("DEFINITIONS:")
-        output.append("  • Notional = Stock price × contracts × 100 (underlying value of options position)")
-        output.append("  • Opt Req = Strike × contracts × 100 for short puts + current_price × contracts × 100 for naked calls (covered calls = $0)")
-        output.append("  • Margin accounts (Account A only): real Reg-T buffer -- OVER CAP/EMERGENCY means real margin-call risk")
-        output.append("  • Cash-secured accounts (everyone else): no leverage, no margin call possible -- COVERAGE GAP means the")
-        output.append("    requirement exceeds the account's own cash, a liquidity question answered in dollars, not a broker-enforced risk")
-        output.append("  • Target/Gap columns: same figures previously shown in a separate 'ACCOUNT-LEVEL GAP BREAKDOWN' block below this one")
+        output.append("**Definitions:**")
+        output.append("")
+        output.append("- Notional = Stock price × contracts × 100 (underlying value of options position)")
+        output.append("- Opt Req = Strike × contracts × 100 for short puts + current_price × contracts × 100 for naked calls (covered calls = $0)")
+        output.append("- Margin accounts (Account A only): real Reg-T buffer — OVER CAP/EMERGENCY means real margin-call risk")
+        output.append("- Cash-secured accounts (everyone else): no leverage, no margin call possible — COVERAGE GAP means the requirement exceeds the account's own cash, a liquidity question answered in dollars, not a broker-enforced risk")
+        output.append("- Target/Gap columns: same figures previously shown in a separate 'ACCOUNT-LEVEL GAP BREAKDOWN' block below this one")
         output.append("")
 
-        # ═══════════════════════════════════════════════════════════════════
-        # 60% CLOSE COST RATIO FRAMEWORK INTEGRATED
-        # ═══════════════════════════════════════════════════════════════════
-        output.append("")
-        output.append("─" * 120)
-        output.append("60% CLOSE COST RATIO FRAMEWORK — CONSOLIDATED VIEW")
-        output.append("─" * 120)
+        output.append("### 60% Close Cost Ratio Framework — Consolidated View")
         output.append("")
 
-        output.append("FRAMEWORK OVERVIEW:")
-        output.append(f"  Base: ${MONTHLY_TARGET_NET_BASE:,}/month net = $1.2M/year (at 60% close costs)")
-        output.append(f"  Current Regime: {gap_data['regime']} (applies {gap_data['adjustment_factor']*100:.0f}% of base)")
-        output.append(f"  Adjusted Target: ${gap_data['adjusted_monthly_target']:,} net per month")
+        output.append("**Framework overview:**")
+        output.append("")
+        output.append(f"- Base: ${MONTHLY_TARGET_NET_BASE:,}/month net = $1.2M/year (at 60% close costs)")
+        output.append(f"- Current Regime: {gap_data['regime']} (applies {gap_data['adjustment_factor']*100:.0f}% of base)")
+        output.append(f"- Adjusted Target: ${gap_data['adjusted_monthly_target']:,} net per month")
         output.append("")
 
-        output.append("PERFORMANCE VS TARGET (YTD CUMULATIVE):")
-        output.append(f"  Target ({gap_data['ytd_months']} months):     ${gap_data['ytd_target']:,}")
-        output.append(f"  Actual YTD:                 ${gap_data['ytd_net']:,}")
-        output.append(f"  Gap to close:               ${gap_data['ytd_gap']:,} ({gap_data['ytd_pct_gap']:.1f}%)")
-        output.append(f"  Monthly average (YTD):      ${gap_data['ytd_net']/max(1, gap_data['ytd_months']):,.0f}")
-        output.append(f"  Monthly average needed:     ${gap_data['adjusted_monthly_target']:,}")
-        output.append(f"  Monthly gap:                ${gap_data['monthly_gap']:,}")
+        output.append("**Performance vs. target (YTD cumulative):**")
+        output.append("")
+        output.append(f"- Target ({gap_data['ytd_months']} months): ${gap_data['ytd_target']:,}")
+        output.append(f"- Actual YTD: ${gap_data['ytd_net']:,}")
+        output.append(f"- Gap to close: ${gap_data['ytd_gap']:,} ({gap_data['ytd_pct_gap']:.1f}%)")
+        output.append(f"- Monthly average (YTD): ${gap_data['ytd_net']/max(1, gap_data['ytd_months']):,.0f}")
+        output.append(f"- Monthly average needed: ${gap_data['adjusted_monthly_target']:,}")
+        output.append(f"- Monthly gap: ${gap_data['monthly_gap']:,}")
         output.append("")
 
-        output.append("POSITION TIER DISTRIBUTION → GAP CLOSURE:")
-        output.append(f"  Tier 1 ({gap_data['tier1_count']:2} positions): ${gap_data['tier1_contribution']:>7,}/month ({gap_data['tier1_contribution']/gap_data['adjusted_monthly_target']*100:>4.0f}% of ${gap_data['adjusted_monthly_target']:,} target)")
-        output.append(f"  Tier 2 ({gap_data['tier2_count']:2} positions): ${gap_data['tier2_contribution']:>7,}/month ({gap_data['tier2_contribution']/gap_data['adjusted_monthly_target']*100:>4.0f}% of target)")
-        output.append(f"  Tier 3 ({gap_data['tier3_count']:2} positions): ${gap_data['tier3_contribution']:>7,}/month ({gap_data['tier3_contribution']/gap_data['adjusted_monthly_target']*100:>4.0f}% drag)")
-        output.append(f"  Current total: {gap_data['tier1_count'] + gap_data['tier2_count'] + gap_data['tier3_count']} positions = ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
+        output.append("**Position tier distribution → gap closure:**")
+        output.append("")
+        output.append(f"- Tier 1 ({gap_data['tier1_count']} positions): ${gap_data['tier1_contribution']:,}/month ({gap_data['tier1_contribution']/gap_data['adjusted_monthly_target']*100:.0f}% of ${gap_data['adjusted_monthly_target']:,} target)")
+        output.append(f"- Tier 2 ({gap_data['tier2_count']} positions): ${gap_data['tier2_contribution']:,}/month ({gap_data['tier2_contribution']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
+        output.append(f"- Tier 3 ({gap_data['tier3_count']} positions): ${gap_data['tier3_contribution']:,}/month ({gap_data['tier3_contribution']/gap_data['adjusted_monthly_target']*100:.0f}% drag)")
+        output.append(f"- Current total: {gap_data['tier1_count'] + gap_data['tier2_count'] + gap_data['tier3_count']} positions = ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
         output.append("")
 
-        output.append("GAP CLOSURE PATH:")
-        output.append(f"  To hit ${gap_data['adjusted_monthly_target']:,} target: Need {gap_data['positions_needed']} more Tier 1 positions")
-        output.append(f"  Alternative: Scale existing OR exit {max(0, int(gap_data['tier3_count']*0.4))} worst Tier 3 positions")
-        output.append(f"  Capital required for {gap_data['positions_needed']} new positions: ${gap_data['positions_needed'] * 10000:,} ({gap_data['positions_needed']} × $10K)")
+        output.append("**Gap closure path:**")
+        output.append("")
+        output.append(f"- To hit ${gap_data['adjusted_monthly_target']:,} target: Need {gap_data['positions_needed']} more Tier 1 positions")
+        output.append(f"- Alternative: Scale existing OR exit {max(0, int(gap_data['tier3_count']*0.4))} worst Tier 3 positions")
+        output.append(f"- Capital required for {gap_data['positions_needed']} new positions: ${gap_data['positions_needed'] * 10000:,} ({gap_data['positions_needed']} × $10K)")
         output.append("")
 
-        output.append("RISK GUARDRAILS:")
-        output.append("├─ Margin account (Account A only): >75% alert, >80% emergency -- real broker margin-call risk")
-        output.append("├─ Cash-secured accounts (everyone else): >75% watch, >=100% coverage gap -- a liquidity")
-        output.append("│  question (does cash cover full assignment), not a leverage/margin-call risk")
-        output.append("├─ Cash floor (all accounts): $75,000 minimum to trade")
-        output.append("├─ Cash emergency: <$50,000 → deploy emergency fund")
-        output.append(f"└─ Current status: {'✅ SAFE' if total_option_req < TOTAL_PORTFOLIO_BALANCE * 0.3 else '⚠️ MONITOR'}")
+        output.append("**Risk guardrails:**")
+        output.append("")
+        output.append("- Margin account (Account A only): >75% alert, >80% emergency — real broker margin-call risk")
+        output.append("- Cash-secured accounts (everyone else): >75% watch, >=100% coverage gap — a liquidity question (does cash cover full assignment), not a leverage/margin-call risk")
+        output.append("- Cash floor (all accounts): $75,000 minimum to trade")
+        output.append("- Cash emergency: <$50,000 → deploy emergency fund")
+        output.append(f"- Current status: {'✅ SAFE' if total_option_req < TOTAL_PORTFOLIO_BALANCE * 0.3 else '⚠️ MONITOR'}")
         output.append("")
 
         return output
 
-    def _format_header(self, title: str, report_type: str, today: date) -> List[str]:
-        """Format report header"""
-        lines = []
-        lines.append("╔" + "=" * 118 + "╗")
-        regime = self.regime_data['regime']
-        lines.append(
-            f"║ {title.ljust(60)} │ Type: {report_type.ljust(8)} │ Regime: {regime.ljust(16)} ║".ljust(120)
-        )
-        lines.append(
-            f"║ {today.strftime('%B %d, %Y — %I:%M %p ET').ljust(118)} ║"
-        )
-        lines.append("╚" + "=" * 118 + "╝")
+    def _md_table(self, headers: List[str], rows: List[List[str]]) -> List[str]:
+        """Render a real Markdown table. Cells are pre-formatted strings
+        (including any embedded emoji/status glyphs) -- no fixed-width
+        padding needed, that's what made the old aligned f-string "tables"
+        fragile (glyphs don't have monospace display width, alignment drifted
+        the moment a cell's content changed shape). A literal "|" in a cell
+        (e.g. a suggestion string that used "|" as a plain-text separator)
+        would silently break the table's column count, so it's escaped here
+        rather than trusted to never appear in derived text.
+        """
+        def _cell(c):
+            return str(c).replace("|", "\\|").replace("\n", " ")
+        lines = ["| " + " | ".join(headers) + " |",
+                 "|" + "|".join(["---"] * len(headers)) + "|"]
+        for row in rows:
+            lines.append("| " + " | ".join(_cell(c) for c in row) + " |")
         return lines
 
-    def _format_section_header(self, num: int, title: str) -> List[str]:
-        """Format section header"""
+    def _format_header(self, title: str, report_type: str, today: date) -> List[str]:
+        """Format report header (Markdown)"""
+        regime = self.regime_data['regime']
         return [
-            "=" * 120,
-            f"SECTION {num}: {title}",
-            "=" * 120,
+            f"# {title}",
+            "",
+            f"**Type:** {report_type}  |  **Regime:** {regime}  |  **Generated:** {today.strftime('%B %d, %Y — %I:%M %p ET')}",
+            ""
+        ]
+
+    def _format_section_header(self, num, title: str) -> List[str]:
+        """Format section header (Markdown)"""
+        return [
+            "",
+            f"## Section {num}: {title}",
             ""
         ]
 
@@ -811,14 +829,12 @@ class UnifiedReportProduction:
         targets = self._get_regime_adjusted_targets(regime)
 
         output.append("")
-        output.append("─" * 120)
-        output.append("SUPPLEMENTARY: PRODUCTION FRAMEWORK — 60% CLOSE COST RATIO TARGETS")
-        output.append("─" * 120)
+        output.append("### Supplementary: Production Framework — 60% Close Cost Ratio Targets")
         output.append("")
 
-        output.append(f"Framework: ${MONTHLY_TARGET_NET_BASE:,}/month net = $1.2M/year target (at 60% close costs)")
-        output.append(f"Regime: {targets['regime']} (applies {targets['adjustment']*100:.0f}% of base)")
-        output.append(f"Adjusted Target: ${targets['monthly_target_gross']:,} gross / ${targets['monthly_target_net']:,} net")
+        output.append(f"- Framework: ${MONTHLY_TARGET_NET_BASE:,}/month net = $1.2M/year target (at 60% close costs)")
+        output.append(f"- Regime: {targets['regime']} (applies {targets['adjustment']*100:.0f}% of base)")
+        output.append(f"- Adjusted Target: ${targets['monthly_target_gross']:,} gross / ${targets['monthly_target_net']:,} net")
         output.append("")
 
         # YTD performance (net $, monthly average, gap) is Section 0's
@@ -828,14 +844,14 @@ class UnifiedReportProduction:
         # here as "YTD Performance"/"Annualized pace", confirmed 2026-09-02
         # to be the exact duplication the trader flagged ("what shows above
         # Section 1 is repeated below"). Removed; see Section 0 instead.
-        output.append("")
 
-        output.append("Account Targets (Regime-Adjusted) -- complements Section 0's PER-ACCOUNT")
-        output.append("BREAKDOWN 'Target' column: that one is the raw monthly_target; these are the")
+        output.append("**Account Targets (Regime-Adjusted)** — complements Section 0's Per-Account")
+        output.append("Breakdown 'Target' column: that one is the raw monthly_target; these are the")
         output.append("same targets scaled by the current regime's adjustment factor, gross+net.")
-        output.append("-" * 120)
+        output.append("")
         total_gross = 0
         total_net = 0
+        target_rows = []
         # Single source now: ACCOUNTS_CONFIG[...]['monthly_target'] (computed
         # in accounts_config.py from each account's weighting basis). Was a
         # second, independently-maintained ACCOUNT_TARGETS dict here that had
@@ -847,10 +863,10 @@ class UnifiedReportProduction:
             adj_gross = int(adj_net / (1 - CLOSE_COST_RATIO))
             total_gross += adj_gross
             total_net += adj_net
-            output.append(f"  {account_name:<45} ${adj_gross:>10,} gross / ${adj_net:>10,} net")
+            target_rows.append([account_name, f"${adj_gross:,}", f"${adj_net:,}"])
 
-        output.append("-" * 120)
-        output.append(f"  {'TOTAL':<45} ${total_gross:>10,} gross / ${total_net:>10,} net")
+        target_rows.append(["**TOTAL**", f"${total_gross:,}", f"${total_net:,}"])
+        output.extend(self._md_table(["Account", "Gross", "Net"], target_rows))
         output.append("")
 
         return output
@@ -880,11 +896,11 @@ class UnifiedReportProduction:
 
         # SECTION 1: SYSTEM STATUS
         output.extend(self._format_section_header(1, "SYSTEM STATUS & PORTFOLIO SNAPSHOT"))
-        output.append(f"Total open positions:        {len(self.open_positions)}")
-        output.append(f"Unique tickers:              {self.open_positions['ticker'].nunique()}")
-        output.append(f"Active accounts:             {self.account_summary.shape[0]}")
-        output.append(f"Data currency:               {today.isoformat()}")
-        output.append(f"Live prices:                 {len(self.prices)} tickers fetched from Yahoo Finance")
+        output.append(f"- **Total open positions:** {len(self.open_positions)}")
+        output.append(f"- **Unique tickers:** {self.open_positions['ticker'].nunique()}")
+        output.append(f"- **Active accounts:** {self.account_summary.shape[0]}")
+        output.append(f"- **Data currency:** {today.isoformat()}")
+        output.append(f"- **Live prices:** {len(self.prices)} tickers fetched from Yahoo Finance")
         output.append("")
 
         # SECTION 2: CONVICTION ANALYSIS WITH FRAMEWORK INTEGRATION
@@ -894,11 +910,12 @@ class UnifiedReportProduction:
         gap_data = self._calculate_gap_to_target()
 
         # Show tier contribution summary first
-        output.append("TIER CONTRIBUTION TO TARGET:")
-        output.append(f"  Tier 1 ({gap_data['tier1_count']:2} positions): ${gap_data['tier1_contribution']:>7,}/month | Each contributes $3,800/month (4.2% of ${gap_data['adjusted_monthly_target']:,})")
-        output.append(f"  Tier 2 ({gap_data['tier2_count']:2} positions): ${gap_data['tier2_contribution']:>7,}/month | Each contributes $1,000/month (1.1% of target)")
-        output.append(f"  Tier 3 ({gap_data['tier3_count']:2} positions): ${gap_data['tier3_contribution']:>7,}/month | Each drags -$500/month (-0.6% of target)")
-        output.append(f"  Portfolio: {gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target) — Need ${gap_data['monthly_gap']:,} more")
+        output.append("**Tier contribution to target:**")
+        output.append("")
+        output.append(f"- Tier 1 ({gap_data['tier1_count']} positions): ${gap_data['tier1_contribution']:,}/month — each contributes $3,800/month (4.2% of ${gap_data['adjusted_monthly_target']:,})")
+        output.append(f"- Tier 2 ({gap_data['tier2_count']} positions): ${gap_data['tier2_contribution']:,}/month — each contributes $1,000/month (1.1% of target)")
+        output.append(f"- Tier 3 ({gap_data['tier3_count']} positions): ${gap_data['tier3_contribution']:,}/month — each drags -$500/month (-0.6% of target)")
+        output.append(f"- Portfolio: {gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target) — Need ${gap_data['monthly_gap']:,} more")
         output.append("")
 
         # Compact table per bucket -- was a 2-line text block per ticker
@@ -913,44 +930,47 @@ class UnifiedReportProduction:
                                                               ("LOW (Tier 3: <6)", conviction_by_bucket.get("LOW", []), -500)]:
             if bucket_data:
                 tier_total = len(bucket_data) * tier_contribution
-                output.append(f"{bucket_name} CONVICTION — {len(bucket_data)} positions | Total contribution: ${tier_total:,}/month ({tier_total/gap_data['adjusted_monthly_target']*100:.1f}% of target)")
-                output.append(f"  {'Heat':4} {'Symbol':8} {'Price':>9} {'Conv':>5} {'Contribution':>14} {'% Target':>9}  (put/call detail: Section 6)")
+                output.append(f"**{bucket_name} conviction** — {len(bucket_data)} positions | Total contribution: ${tier_total:,}/month ({tier_total/gap_data['adjusted_monthly_target']*100:.1f}% of target)")
+                output.append("")
+                bucket_rows = []
                 for ticker, m in bucket_data[:20]:  # Show top 20 per bucket
                     heat_icon = "🟢" if m['heat_status'] == "GREEN" else "🟡" if m['heat_status'] == "YELLOW" else "🔴"
                     price = self.prices.get(ticker, 0)
                     contribution = self._calculate_position_contribution_to_target(ticker, m['conviction'])
                     pct_of_target = (contribution / gap_data['adjusted_monthly_target'] * 100) if contribution > 0 else 0
-                    output.append(
-                        f"  {heat_icon:4} {ticker:8} ${price:>8.2f} {m['conviction']:>5.1f} ${contribution:>13,.0f} {pct_of_target:>8.1f}%"
-                    )
+                    bucket_rows.append([heat_icon, ticker, f"${price:.2f}", f"{m['conviction']:.1f}",
+                                         f"${contribution:,.0f}", f"{pct_of_target:.1f}%"])
+                output.extend(self._md_table(
+                    ["Heat", "Symbol", "Price", "Conv", "Contribution", "% Target"], bucket_rows
+                ))
+                output.append("_(put/call detail: Section 6)_")
                 if len(bucket_data) > 20:
-                    output.append(f"  ... and {len(bucket_data)-20} more (see Section 6 for the full sector-grouped list)")
+                    output.append(f"_...and {len(bucket_data)-20} more (see Section 6 for the full sector-grouped list)_")
                 output.append("")
 
         # SECTION 3: POSITION HEAT DISTRIBUTION
         output.extend(self._format_section_header(3, "POSITION HEAT DISTRIBUTION"))
         heat_summary = self._get_heat_summary()
         total = sum(heat_summary.values())
-        output.append(f"🟢 GREEN (Attractive/Oversold):  {heat_summary.get('GREEN', 0):3} positions ({heat_summary.get('GREEN', 0)*100/total:5.1f}%)")
-        output.append(f"🟡 YELLOW (Neutral):             {heat_summary.get('YELLOW', 0):3} positions ({heat_summary.get('YELLOW', 0)*100/total:5.1f}%)")
-        output.append(f"🔴 RED (Extended/Overbought):   {heat_summary.get('RED', 0):3} positions ({heat_summary.get('RED', 0)*100/total:5.1f}%)")
+        output.append(f"- 🟢 GREEN (Attractive/Oversold): {heat_summary.get('GREEN', 0)} positions ({heat_summary.get('GREEN', 0)*100/total:.1f}%)")
+        output.append(f"- 🟡 YELLOW (Neutral): {heat_summary.get('YELLOW', 0)} positions ({heat_summary.get('YELLOW', 0)*100/total:.1f}%)")
+        output.append(f"- 🔴 RED (Extended/Overbought): {heat_summary.get('RED', 0)} positions ({heat_summary.get('RED', 0)*100/total:.1f}%)")
         output.append("")
 
         # SECTION 4: MARKET REGIME ANALYSIS
         output.extend(self._format_section_header(4, "MARKET REGIME & SIGNALS"))
-        output.append(f"Current Regime: {self.regime_data['regime']}")
-        output.append(f"Note: {self.regime_data.get('note', 'N/A')}")
-        output.append("")
+        output.append(f"- **Current Regime:** {self.regime_data['regime']}")
+        output.append(f"- **Note:** {self.regime_data.get('note', 'N/A')}")
 
         if 'signals' in self.regime_data:
             signals = self.regime_data['signals']
             if 'vix' in signals:
                 vix_info = signals['vix']
-                output.append(f"VIX: {vix_info['value']} — {vix_info['detail']}")
+                output.append(f"- **VIX:** {vix_info['value']} — {vix_info['detail']}")
             if 'sp500_ma' in signals:
                 ma = signals['sp500_ma']
-                output.append(f"S&P 500: {ma['current']:.0f} (50d MA: {ma['ma50']:.0f}, 200d MA: {ma['ma200']:.0f})")
-                output.append(f"  Above 50d MA: {ma['above_50d']} | Above 200d MA: {ma['above_200d']}")
+                output.append(f"- **S&P 500:** {ma['current']:.0f} (50d MA: {ma['ma50']:.0f}, 200d MA: {ma['ma200']:.0f})")
+                output.append(f"  - Above 50d MA: {ma['above_50d']} | Above 200d MA: {ma['above_200d']}")
         output.append("")
 
         # SECTION 4.5: SECTOR ANALYSIS & ROTATION
@@ -963,7 +983,7 @@ class UnifiedReportProduction:
         for acct_name, row in self.account_summary.iterrows():
             pct = 100 * row['open_positions'] / total_positions
             bar = "█" * int(pct / 2)
-            output.append(f"{acct_name:35}: {row['open_positions']:3} positions ({pct:5.1f}%) {bar}")
+            output.append(f"- **{acct_name}:** {row['open_positions']} positions ({pct:.1f}%) `{bar}`")
         output.append("")
 
         # SECTION 6: POSITION HEAT MATRIX BY SECTOR
@@ -1020,13 +1040,14 @@ class UnifiedReportProduction:
         # Portfolio heat summary
         total_notional = sum(pos['notional'] for pos in critical + monitor + healthy)
         if total_notional > 0:
-            output.append("PORTFOLIO HEAT ALLOCATION:")
+            output.append("**Portfolio Heat Allocation:**")
+            output.append("")
             critical_pct = sum(p['notional'] for p in critical) / total_notional * 100 if critical else 0
             monitor_pct = sum(p['notional'] for p in monitor) / total_notional * 100 if monitor else 0
             healthy_pct = sum(p['notional'] for p in healthy) / total_notional * 100 if healthy else 0
-            output.append(f"  🔴 CRITICAL: {critical_pct:>5.1f}% (${sum(p['notional'] for p in critical):>12,.0f})")
-            output.append(f"  🟡 MONITOR:  {monitor_pct:>5.1f}% (${sum(p['notional'] for p in monitor):>12,.0f})")
-            output.append(f"  🟢 HEALTHY:  {healthy_pct:>5.1f}% (${sum(p['notional'] for p in healthy):>12,.0f})")
+            output.append(f"- 🔴 CRITICAL: {critical_pct:.1f}% (${sum(p['notional'] for p in critical):,.0f})")
+            output.append(f"- 🟡 MONITOR: {monitor_pct:.1f}% (${sum(p['notional'] for p in monitor):,.0f})")
+            output.append(f"- 🟢 HEALTHY: {healthy_pct:.1f}% (${sum(p['notional'] for p in healthy):,.0f})")
         output.append("")
 
         # SECTION 6.5: MACRO RISK ANALYSIS (CRASH EARLY WARNING)
@@ -1053,23 +1074,26 @@ class UnifiedReportProduction:
 
             # Display risk level
             risk_emoji = "🟢" if risk_analysis["risk_level"] == "GREEN" else "🟡" if risk_analysis["risk_level"] == "YELLOW" else "🔴"
-            output.append(f"{risk_emoji} RISK LEVEL: {risk_analysis['risk_level']}")
-            output.append(f"Summary: {risk_analysis['summary']}")
+            output.append(f"**Risk Level:** {risk_emoji} {risk_analysis['risk_level']}")
+            output.append("")
+            output.append(f"**Summary:** {risk_analysis['summary']}")
             output.append("")
 
             # Display individual signals
-            output.append("Indicator Status:")
-            output.append("-" * 120)
+            output.append("**Indicator Status:**")
+            output.append("")
+            indicator_rows = []
             for indicator, details in risk_analysis['signals'].items():
                 status_emoji = "✅" if details['status'] == 'GREEN' else "⚠️" if details['status'] == 'YELLOW' else "🔴"
-                output.append(f"  {status_emoji} {indicator.upper():20} | Value: {str(details['value']):15} | Status: {details['status']:10} | Threshold: {details['threshold']}")
+                indicator_rows.append([status_emoji, indicator.upper(), str(details['value']), details['status'], details['threshold']])
+            output.extend(self._md_table(["", "Indicator", "Value", "Status", "Threshold"], indicator_rows))
             output.append("")
 
             # Display crash probability forecast
             crash_prob = risk_analysis.get('crash_probability', {})
             if crash_prob:
-                output.append("Crash Probability Forecast (Probabilistic):")
-                output.append("-" * 120)
+                output.append("**Crash Probability Forecast (Probabilistic):**")
+                output.append("")
                 prob_30d = crash_prob.get('prob_30d', 0)
                 prob_60d = crash_prob.get('prob_60d', 0)
                 prob_90d = crash_prob.get('prob_90d', 0)
@@ -1079,10 +1103,10 @@ class UnifiedReportProduction:
                 emoji_60d = "🟢" if prob_60d < 25 else "🟡" if prob_60d < 50 else "🟠" if prob_60d < 70 else "🔴"
                 emoji_90d = "🟢" if prob_90d < 30 else "🟡" if prob_90d < 60 else "🟠" if prob_90d < 80 else "🔴"
 
-                output.append(f"  {emoji_30d} 30-day crash probability:  {prob_30d:>5.1f}%  |  Action: {crash_prob.get('action_trigger', '')}")
-                output.append(f"  {emoji_60d} 60-day crash probability:  {prob_60d:>5.1f}%")
-                output.append(f"  {emoji_90d} 90-day crash probability:  {prob_90d:>5.1f}%")
-                output.append(f"  📌 Primary risk factor: {crash_prob.get('primary_risk', 'None')}")
+                output.append(f"- {emoji_30d} 30-day crash probability: {prob_30d:.1f}% — Action: {crash_prob.get('action_trigger', '')}")
+                output.append(f"- {emoji_60d} 60-day crash probability: {prob_60d:.1f}%")
+                output.append(f"- {emoji_90d} 90-day crash probability: {prob_90d:.1f}%")
+                output.append(f"- 📌 Primary risk factor: {crash_prob.get('primary_risk', 'None')}")
                 output.append("")
 
             # Trend over time (trader-requested 2026-09-01: "range of the
@@ -1097,16 +1121,20 @@ class UnifiedReportProduction:
             # comparisons (yfinance-verified earlier this session), shown as
             # context for "if a correction like this happens, how far have
             # comparable ones gone," not a prediction specific to today.
-            output.append("Historical magnitude reference (real, verified past events — NOT a")
-            output.append("prediction of this specific reading's outcome):")
-            output.append("-" * 120)
-            output.append("  2000 dot-com:       -17.2% initial leg / -49.1% full bear")
-            output.append("  2007 GFC:            -56.8% full bear, VIX peaked 80.9")
-            output.append("  2013 taper tantrum:  -5.8% / 34 days")
-            output.append("  2021-22 growth derate: -25.4% / 282 days")
-            output.append("  2023 SVB:            -4.8% / 7 days (resolved fast via FDIC backstop)")
-            output.append("  See logs/circular_financing_playbook.html for the full framework this")
-            output.append("  session's AI-capex risk analysis is built on.")
+            output.append("**Historical magnitude reference** (real, verified past events — NOT a prediction of this specific reading's outcome):")
+            output.append("")
+            output.extend(self._md_table(
+                ["Event", "Magnitude"],
+                [
+                    ["2000 dot-com", "-17.2% initial leg / -49.1% full bear"],
+                    ["2007 GFC", "-56.8% full bear, VIX peaked 80.9"],
+                    ["2013 taper tantrum", "-5.8% / 34 days"],
+                    ["2021-22 growth derate", "-25.4% / 282 days"],
+                    ["2023 SVB", "-4.8% / 7 days (resolved fast via FDIC backstop)"],
+                ]
+            ))
+            output.append("")
+            output.append("See logs/circular_financing_playbook.html for the full framework this session's AI-capex risk analysis is built on.")
             output.append("")
 
             # Sector crash-sensitivity — WHICH sectors are most exposed to
@@ -1117,28 +1145,34 @@ class UnifiedReportProduction:
             # opportunity list in Section 7 below.
             sensitivity = risk_analysis.get('sector_sensitivity') or {}
             if sensitivity:
-                output.append(f"Sector Sensitivity to Primary Risk Driver ({sensitivity['driver']}):")
-                output.append("-" * 120)
-                output.append(f"  🔴 HIGH exposure: {', '.join(sensitivity['high_sensitivity_sectors'])}")
-                output.append(f"  🟢 LOW exposure:  {', '.join(sensitivity['low_sensitivity_sectors'])}")
-                output.append("  (New entries in HIGH-exposure sectors compound the exact risk this driver is")
-                output.append("   flagging, even if the individual name looks statistically oversold — see the")
-                output.append("   opportunity list in Section 7 for a per-name check against this.)")
+                output.append(f"**Sector Sensitivity to Primary Risk Driver** ({sensitivity['driver']}):")
+                output.append("")
+                output.append(f"- 🔴 HIGH exposure: {', '.join(sensitivity['high_sensitivity_sectors'])}")
+                output.append(f"- 🟢 LOW exposure: {', '.join(sensitivity['low_sensitivity_sectors'])}")
+                output.append("")
+                output.append("New entries in HIGH-exposure sectors compound the exact risk this driver is flagging, even if the individual name looks statistically oversold — see the opportunity list in Section 7 for a per-name check against this.")
                 output.append("")
 
             # Display actions
-            output.append("Recommended Actions:")
-            output.append("-" * 120)
+            output.append("**Recommended Actions:**")
+            output.append("")
             for action in risk_analysis.get('actions', []):
-                output.append(f"  • {action}")
+                output.append(f"- {action}")
             output.append("")
 
-            # Display rotation playbook if not GREEN
+            # Display rotation playbook if not GREEN. This string comes from
+            # macro_risk_analyzer.py's own pre-formatted multi-level text
+            # (indented bullets, numbered sub-lists, sub-headers) -- a code
+            # fence preserves its structure faithfully instead of mangling it
+            # by prefixing every line with "- " regardless of its own
+            # existing indentation (confirmed broken that way: nesting was
+            # lost and literal "•"/numbers leaked into flattened bullets).
             if risk_analysis["stage"] > 0:
-                output.append("Rotation Playbook:")
-                output.append("-" * 120)
-                for line in risk_analysis['playbook'].strip().split('\n'):
-                    output.append(f"  {line}")
+                output.append("**Rotation Playbook:**")
+                output.append("")
+                output.append("```")
+                output.append(risk_analysis['playbook'].strip())
+                output.append("```")
                 output.append("")
 
         except Exception as e:
@@ -1156,9 +1190,7 @@ class UnifiedReportProduction:
         # check (Oracle/CoreWeave credit news, Anthropic IPO status,
         # private-credit gating) needs live web research judgment and can't
         # run in this unattended report -- that stays on /ai-capex-risk-review.
-        output.append("-" * 120)
-        output.append("AI CAPEX RISK TRACKER (Circular Financing Playbook — the scriptable half of the same macro picture above)")
-        output.append("-" * 120)
+        output.append("### AI Capex Risk Tracker (Circular Financing Playbook — the scriptable half of the same macro picture above)")
         output.append("")
         try:
             all_positions = critical + monitor + healthy
@@ -1171,9 +1203,8 @@ class UnifiedReportProduction:
             tech_notional = tech.get('total_notional', 0)
             tech_pct = (tech_notional / total_book_notional * 100) if total_book_notional else 0
 
-            output.append(f"Technology concentration: {tech_pct:.1f}% of notional ({tech.get('position_count', 0)} positions, ${tech_notional:,.0f})")
-            output.append("  Reference: top-10 S&P 500 concentration is 41.2%, a record — this line tracks")
-            output.append("  your own book against that same structural risk, not just the index's.")
+            output.append(f"- **Technology concentration:** {tech_pct:.1f}% of notional ({tech.get('position_count', 0)} positions, ${tech_notional:,.0f})")
+            output.append("  - Reference: top-10 S&P 500 concentration is 41.2%, a record — this line tracks your own book against that same structural risk, not just the index's.")
             output.append("")
 
             HIGH_RISK_BUCKET = ["ALAB", "LITE", "MU", "PLTR"]
@@ -1186,18 +1217,17 @@ class UnifiedReportProduction:
             bucket_total = hi_total + qual_total
             hi_pct = (hi_total / bucket_total * 100) if bucket_total else 0
 
-            output.append("90-day capital plan tracking (target 30% high-risk / 70% quality, $700K base):")
-            output.append(f"  High-risk ({'/'.join(HIGH_RISK_BUCKET)}): ${hi_total:,.0f} live — {hi_pct:.0f}% of tracked pair vs. 30% target")
-            output.append(f"  Quality-AI ({'/'.join(QUALITY_AI_BUCKET)}): ${qual_total:,.0f} live")
+            output.append("**90-day capital plan tracking** (target 30% high-risk / 70% quality, $700K base):")
+            output.append("")
+            output.append(f"- High-risk ({'/'.join(HIGH_RISK_BUCKET)}): ${hi_total:,.0f} live — {hi_pct:.0f}% of tracked pair vs. 30% target")
+            output.append(f"- Quality-AI ({'/'.join(QUALITY_AI_BUCKET)}): ${qual_total:,.0f} live")
             if abs(hi_pct - 30) > 10 and bucket_total > 0:
-                output.append(f"  ⚠️ Drift >10pp from the 30/70 target — check whether a tier fired to justify it before rebalancing.")
+                output.append(f"- ⚠️ Drift >10pp from the 30/70 target — check whether a tier fired to justify it before rebalancing.")
             held_avoid = [t for t in AVOID_LIST if notional_by_ticker.get(t)]
             if held_avoid:
-                output.append(f"  ⚠️ Avoid-list exposure still open: ${avoid_total:,.0f} across {', '.join(held_avoid)}")
+                output.append(f"- ⚠️ Avoid-list exposure still open: ${avoid_total:,.0f} across {', '.join(held_avoid)}")
             output.append("")
-            output.append("Qualitative Tier 1/2 check (credit news, IPO status, private-credit gating) is")
-            output.append("NOT computed here — run /ai-capex-risk-review for the live dial state. This")
-            output.append("section tracks only the scriptable half.")
+            output.append("Qualitative Tier 1/2 check (credit news, IPO status, private-credit gating) is NOT computed here — run /ai-capex-risk-review for the live dial state. This section tracks only the scriptable half.")
             output.append("")
 
             # Tier CR staleness — the actual rating-action check needs live web
@@ -1205,8 +1235,8 @@ class UnifiedReportProduction:
             # surface how overdue it is and what it last found, read from the
             # state file that skill writes to, so the need is never silently
             # forgotten between manual reviews.
-            output.append("TIER CR — PORTFOLIO-WIDE CREDIT EXIT GATE:")
-            output.append("-" * 120)
+            output.append("#### Tier CR — Portfolio-Wide Credit Exit Gate")
+            output.append("")
             cr_state: dict = {}
             try:
                 with open("/home/rahulvadera/projects/theta-lab/data/tier_cr_state.yaml") as f:
@@ -1214,13 +1244,13 @@ class UnifiedReportProduction:
                 last_check = date.fromisoformat(cr_state["last_check_date"])
                 days_stale = (date.today() - last_check).days
                 staleness_flag = "⚠️ " if days_stale > 14 else "✅ "
-                output.append(f"{staleness_flag}Last check: {cr_state['last_check_date']} ({days_stale} days ago)")
-                output.append(f"  Gate fired: {'🔴 YES' if cr_state.get('gate_fired') else 'No'}")
-                output.append(f"  Last outcome: {cr_state.get('last_outcome', 'n/a').strip()}")
+                output.append(f"- {staleness_flag}Last check: {cr_state['last_check_date']} ({days_stale} days ago)")
+                output.append(f"- Gate fired: {'🔴 YES' if cr_state.get('gate_fired') else 'No'}")
+                output.append(f"- Last outcome: {cr_state.get('last_outcome', 'n/a').strip()}")
                 if days_stale > 14:
-                    output.append("  ⚠️ Over 14 days since the last real rating-action check — run /ai-capex-risk-review.")
+                    output.append("- ⚠️ Over 14 days since the last real rating-action check — run /ai-capex-risk-review.")
             except Exception as e:
-                output.append(f"  ⚠️ No Tier CR check on record ({e}) — run /ai-capex-risk-review to establish a baseline.")
+                output.append(f"- ⚠️ No Tier CR check on record ({e}) — run /ai-capex-risk-review to establish a baseline.")
             output.append("")
 
             # Scriptable early-warning PROXY only — NOT a rating-action detector.
@@ -1250,14 +1280,15 @@ class UnifiedReportProduction:
                         except Exception:
                             continue
                     if flagged:
-                        output.append("⚠️ Underperformance proxy — check these for credit news specifically:")
+                        output.append("**⚠️ Underperformance proxy** — check these for credit news specifically:")
+                        output.append("")
                         for t, r7 in sorted(flagged, key=lambda x: x[1]):
-                            output.append(f"    {t}: {r7:+.1f}% (7d) vs SPX {spx_7d:+.1f}% — >10pp gap")
+                            output.append(f"- {t}: {r7:+.1f}% (7d) vs SPX {spx_7d:+.1f}% — >10pp gap")
                     else:
                         output.append("Underperformance proxy: no tracked name diverging >10pp from SPX over 7 days.")
                     output.append("")
                 except Exception as e:
-                    output.append(f"  ⚠️ Underperformance proxy unavailable: {e}")
+                    output.append(f"⚠️ Underperformance proxy unavailable: {e}")
                     output.append("")
         except Exception as e:
             output.append(f"⚠️ AI capex risk tracker unavailable: {e}")
@@ -1310,26 +1341,28 @@ class UnifiedReportProduction:
 
             rows.sort(key=lambda x: -x["prob"])
             if rows:
-                output.append(f"{'Account':<28} {'Ticker':7} {'T':1} {'Strike':>8} {'DTE':>4} {'Prob':>6} {'Cash-at-Risk':>13}  Flag")
+                table_rows = []
                 for row in rows[:25]:
                     exit_flag = "🔴 EXIT CANDIDATE" if row["prob"] >= 0.50 and "RED" in row["heat"] else ""
-                    output.append(
-                        f"{row['account']:<28} {row['ticker']:7} {row['type']:1} {row['strike']:>8.1f} "
-                        f"{row['dte']:>4} {row['prob']*100:>5.0f}% ${row['cash']:>11,.0f}  {exit_flag}"
-                    )
+                    table_rows.append([row['account'], row['ticker'], row['type'], f"{row['strike']:.1f}",
+                                        str(row['dte']), f"{row['prob']*100:.0f}%", f"${row['cash']:,.0f}", exit_flag])
+                output.extend(self._md_table(
+                    ["Account", "Ticker", "T", "Strike", "DTE", "Prob", "Cash-at-Risk", "Flag"], table_rows
+                ))
                 if len(rows) > 25:
-                    output.append(f"  ... and {len(rows) - 25} more within 120 DTE (not shown)")
+                    output.append(f"_...and {len(rows) - 25} more within 120 DTE (not shown)_")
                 output.append("")
 
                 for label, lo in (("Worst case (all shown)", 0.0), ("Realistic (>=30% prob)", 0.30), ("Likely (>=50% prob)", 0.50)):
                     total = sum(row["cash"] for row in rows if row["prob"] >= lo)
-                    output.append(f"  {label}: ${total:,.0f} across {sum(1 for row in rows if row['prob'] >= lo)} positions")
+                    output.append(f"- **{label}:** ${total:,.0f} across {sum(1 for row in rows if row['prob'] >= lo)} positions")
                 output.append("")
                 exit_candidates = [row for row in rows if row["prob"] >= 0.50 and "RED" in row["heat"]]
                 if exit_candidates:
-                    output.append(f"🔴 EXIT CANDIDATES (>=50% probability AND RED heat — both signals agree): {len(exit_candidates)}")
+                    output.append(f"**🔴 Exit Candidates** (>=50% probability AND RED heat — both signals agree): {len(exit_candidates)}")
+                    output.append("")
                     for row in exit_candidates:
-                        output.append(f"    {row['ticker']} {row['type']} {row['strike']:.1f} ({row['account']}) — {row['prob']*100:.0f}% probability, RED heat")
+                        output.append(f"- {row['ticker']} {row['type']} {row['strike']:.1f} ({row['account']}) — {row['prob']*100:.0f}% probability, RED heat")
                 else:
                     output.append("No positions currently combine >=50% probability with RED heat.")
                 output.append("")
@@ -1362,11 +1395,11 @@ class UnifiedReportProduction:
             except (ValueError, TypeError):
                 days_stale = None
             staleness_flag = "⚠️ " if (days_stale is not None and days_stale > 14) else "✅ "
-            output.append(f"{staleness_flag}Plan as of: {as_of}" + (f" ({days_stale} days ago)" if days_stale is not None else ""))
+            output.append(f"- {staleness_flag}Plan as of: {as_of}" + (f" ({days_stale} days ago)" if days_stale is not None else ""))
 
             ed = qplan.get("exit_discipline", {})
             if ed:
-                output.append(f"  Exit discipline: calls close at {ed.get('call_leg_close_pct', '?')}% premium captured, "
+                output.append(f"- Exit discipline: calls close at {ed.get('call_leg_close_pct', '?')}% premium captured, "
                                f"puts at {ed.get('put_leg_close_pct', '?')}%")
 
             mo = qplan.get("macro_override", {})
@@ -1378,27 +1411,27 @@ class UnifiedReportProduction:
                 # own wording ("Primary de-risk gate ... NOT proactive
                 # margin-driven trimming.").
                 first_sentence = mo['rule'].strip().split('. ')[0].rstrip('.') + '.'
-                output.append(f"  Macro override: {first_sentence}")
+                output.append(f"- Macro override: {first_sentence}")
 
             sept = qplan.get("september_target", {})
             progress = qplan.get("progress_log", [])
             if sept and progress:
                 latest = progress[-1]
-                output.append(f"  September target: margin equity {sept.get('margin_equity_pct', '?')}, "
+                output.append(f"- September target: margin equity {sept.get('margin_equity_pct', '?')}, "
                                f"cash-to-trade {sept.get('cash_to_trade_usd', '?')} by {sept.get('deadline', '?')}")
-                output.append(f"  Latest reading ({latest.get('date', '?')}): "
+                output.append(f"- Latest reading ({latest.get('date', '?')}): "
                                f"margin equity {latest.get('margin_equity_pct', '?')}%, "
                                f"cash-to-trade ${latest.get('cash_to_trade_usd', 0):,}, "
                                f"option req ${latest.get('option_requirement_usd', 0):,}")
 
             rules = qplan.get("standing_rules_for_this_window", [])
             if rules:
-                output.append(f"  Standing rules this window: {len(rules)} in effect (see the plan file for full text)")
+                output.append(f"- Standing rules this window: {len(rules)} in effect (see the plan file for full text)")
 
             if days_stale is not None and days_stale > 14:
-                output.append("  ⚠️ Over 14 days since this plan was last updated — re-confirm it's still current.")
+                output.append("- ⚠️ Over 14 days since this plan was last updated — re-confirm it's still current.")
         except Exception as e:
-            output.append(f"  ⚠️ No quarterly plan on record ({e}).")
+            output.append(f"- ⚠️ No quarterly plan on record ({e}).")
         output.append("")
 
         # SECTION 6.9: SEEKING ALPHA WEEKLY THEMES -- same tier_cr_state.yaml
@@ -1418,21 +1451,21 @@ class UnifiedReportProduction:
             except (ValueError, TypeError):
                 days_stale = None
             staleness_flag = "⚠️ " if (days_stale is not None and days_stale > 10) else "✅ "
-            output.append(f"{staleness_flag}Last scan: {last_check}" + (f" ({days_stale} days ago)" if days_stale is not None else ""))
+            output.append(f"- {staleness_flag}Last scan: {last_check}" + (f" ({days_stale} days ago)" if days_stale is not None else ""))
             findings = sa_state.get("findings", [])
             for f in findings:
                 if str(f.get("action", "")).upper().startswith("RETRACTED") or "RETRACTED" in str(f.get("summary", "")).upper():
                     continue  # don't keep resurfacing a retracted finding every run
-                output.append(f"  {f.get('ticker', '?')}: {f.get('action', 'no action recorded')}")
+                output.append(f"- **{f.get('ticker', '?')}:** {f.get('action', 'no action recorded')}")
             open_items = sa_state.get("action_items_open", [])
             if open_items and open_items != ["None currently open from this scan -- CRM/MU are watch-only, NIO retracted."]:
-                output.append("  Open items:")
+                output.append("- Open items:")
                 for item in open_items:
-                    output.append(f"    - {item}")
+                    output.append(f"  - {item}")
             if days_stale is not None and days_stale > 10:
-                output.append("  ⚠️ Over 10 days since the last Seeking Alpha scan — run the weekly theme-scan skill.")
+                output.append("- ⚠️ Over 10 days since the last Seeking Alpha scan — run the weekly theme-scan skill.")
         except Exception as e:
-            output.append(f"  ⚠️ No Seeking Alpha scan on record ({e}) — run the weekly theme-scan skill to establish a baseline.")
+            output.append(f"- ⚠️ No Seeking Alpha scan on record ({e}) — run the weekly theme-scan skill to establish a baseline.")
         output.append("")
 
         # SECTION 7: ACTION FRAMEWORK WITH GAP CLOSURE IMPACT
@@ -1456,7 +1489,7 @@ class UnifiedReportProduction:
 
         close_now.sort(key=lambda x: x['notional'], reverse=True)
 
-        output.append("EXECUTION SEQUENCE (Do in this order):")
+        output.append("**Execution Sequence (do in this order):**")
         output.append("")
 
         # Calculate gap impact from closes
@@ -1465,36 +1498,38 @@ class UnifiedReportProduction:
         close_impact_pct = (close_contribution_savings / gap_data['adjusted_monthly_target'] * 100)
 
         # 1. CLOSE positions
-        output.append(f"1️⃣  CLOSE NOW 🔴 ({len(close_now)} positions)")
-        output.append("   └─ Why: Extended/overbought + structural risk. Act before deterioration.")
-        output.append(f"   └─ Gap Impact: Closing {len(close_now)} RED positions saves ~${abs(close_contribution_savings):,}/month drag")
-        output.append(f"       Moves gap from ${gap_data['monthly_gap']:,} to ${new_gap_after_closes:,} ({close_impact_pct:.1f}% improvement)")
+        output.append(f"#### 1. Close Now 🔴 ({len(close_now)} positions)")
+        output.append("")
+        output.append("- Why: Extended/overbought + structural risk. Act before deterioration.")
+        output.append(f"- Gap Impact: Closing {len(close_now)} RED positions saves ~${abs(close_contribution_savings):,}/month drag; moves gap from ${gap_data['monthly_gap']:,} to ${new_gap_after_closes:,} ({close_impact_pct:.1f}% improvement)")
         if close_now:
             top_names = ", ".join(p['ticker'] for p in close_now[:5])
             more = f" +{len(close_now)-5} more" if len(close_now) > 5 else ""
-            output.append(f"       Names: {top_names}{more}  (full detail — put/call value, sector, suggestion — in Section 6)")
+            output.append(f"- Names: {top_names}{more} (full detail — put/call value, sector, suggestion — in Section 6)")
         else:
-            output.append("       ✅ None needed — no RED + high conviction conflicts")
+            output.append("- ✅ None needed — no RED + high conviction conflicts")
         output.append("")
 
         # 2. ROLL positions
-        output.append(f"2️⃣  MONITOR FOR ROLLS 🟡 ({len(monitor_closely)} positions at risk)")
-        output.append("   └─ Why: Approaching strike or extremes. Roll if thesis intact, close if thesis broken.")
-        output.append(f"   └─ Gap Impact: Preserve existing ${len(monitor_closely) * 1000:,}/month contribution from MODERATE conviction positions")
+        output.append(f"#### 2. Monitor for Rolls 🟡 ({len(monitor_closely)} positions at risk)")
+        output.append("")
+        output.append("- Why: Approaching strike or extremes. Roll if thesis intact, close if thesis broken.")
+        output.append(f"- Gap Impact: Preserve existing ${len(monitor_closely) * 1000:,}/month contribution from MODERATE conviction positions")
         if monitor_closely:
             top_names = ", ".join(p['ticker'] for p in monitor_closely[:5])
             more = f" +{len(monitor_closely)-5} more" if len(monitor_closely) > 5 else ""
-            output.append(f"       Names: {top_names}{more}  (full detail in Section 6)")
+            output.append(f"- Names: {top_names}{more} (full detail in Section 6)")
         else:
-            output.append("       ✅ None — all CRITICAL positions are RED/close candidates")
+            output.append("- ✅ None — all CRITICAL positions are RED/close candidates")
         output.append("")
 
         # 3. NOTHING (let healthy run)
-        output.append(f"3️⃣  LET RUN — NOTHING NEEDED 🟢 ({len(nothing)} positions)")
-        output.append("   └─ Why: Attractive pricing (oversold) + adequate conviction. No action required.")
-        output.append(f"   └─ Gap Impact: {len(nothing)} healthy positions contribute ${len(nothing)*1000:,}/month baseline (expected)")
+        output.append(f"#### 3. Let Run — Nothing Needed 🟢 ({len(nothing)} positions)")
+        output.append("")
+        output.append("- Why: Attractive pricing (oversold) + adequate conviction. No action required.")
+        output.append(f"- Gap Impact: {len(nothing)} healthy positions contribute ${len(nothing)*1000:,}/month baseline (expected)")
         if len(nothing) > 0:
-            output.append(f"       ✅ {len(nothing)} positions: Continue monitoring weekly")
+            output.append(f"- ✅ {len(nothing)} positions: Continue monitoring weekly")
         output.append("")
 
         # 4. OPPORTUNITY section
@@ -1504,10 +1539,10 @@ class UnifiedReportProduction:
         new_entry_impact_pct = (new_entry_contribution / gap_data['adjusted_monthly_target'] * 100)
 
         if high_conviction_GREEN:
-            output.append(f"4️⃣  OPPORTUNITY — HIGH CONVICTION ENTRIES 🟢 ({len(high_conviction_GREEN)} names)")
-            output.append("   └─ Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.")
-            output.append(f"   └─ Gap Impact: Adding {len(high_conviction_GREEN)} Tier 1 entries = ${new_entry_contribution:,}/month")
-            output.append(f"       Closes gap from ${gap_data['monthly_gap']:,} to ${gap_after_new_entries:,} ({new_entry_impact_pct:.1f}% closure)")
+            output.append(f"#### 4. Opportunity — High Conviction Entries 🟢 ({len(high_conviction_GREEN)} names)")
+            output.append("")
+            output.append("- Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.")
+            output.append(f"- Gap Impact: Adding {len(high_conviction_GREEN)} Tier 1 entries = ${new_entry_contribution:,}/month; closes gap from ${gap_data['monthly_gap']:,} to ${gap_after_new_entries:,} ({new_entry_impact_pct:.1f}% closure)")
             # Cross-check each candidate's sector against the sector-sensitivity
             # map from Section 6.5 — a name can look individually oversold/
             # high-conviction while sitting in the exact sector the macro
@@ -1520,31 +1555,32 @@ class UnifiedReportProduction:
                 sector = self.ticker_sector_map.get(pos['ticker'])
                 warn = ""
                 if sector and sector in high_sensitivity_sectors:
-                    warn = f"  ⚠️ {sector} is HIGH-exposure to today's primary risk driver — adding here compounds it"
+                    warn = f" ⚠️ {sector} is HIGH-exposure to today's primary risk driver — adding here compounds it"
                     flagged += 1
-                output.append(f"       • {pos['ticker']:8} Conv {pos['conv']:.1f}/10 | RSI {pos['rsi']:>5.1f} | Value ${pos['notional']:>10,.0f}{warn}")
+                output.append(f"  - {pos['ticker']}: Conv {pos['conv']:.1f}/10 | RSI {pos['rsi']:.1f} | Value ${pos['notional']:,.0f}{warn}")
             if high_sensitivity_sectors and flagged == 0:
-                output.append("       (None of these sit in a sector flagged HIGH-exposure to today's primary risk driver.)")
+                output.append("  - (None of these sit in a sector flagged HIGH-exposure to today's primary risk driver.)")
             output.append("")
 
-        output.append("PORTFOLIO STATUS & GAP TRAJECTORY:")
-        output.append(f"  ✅ Total positions scanned: {len(critical) + len(monitor) + len(healthy)}")
-        output.append(f"  🔴 Critical actions: {len(close_now)} closes + {len(monitor_closely)} monitors")
-        output.append(f"  🟡 Yellow cautions: {len(monitor)}")
-        output.append(f"  🟢 Green healthy: {len(healthy)}")
-        output.append(f"  📊 Market regime: {self.regime_data['regime']}")
+        output.append("**Portfolio Status & Gap Trajectory:**")
         output.append("")
-        output.append("GAP CLOSURE SUMMARY:")
-        output.append(f"  Current gap: ${gap_data['monthly_gap']:,} ({gap_data['monthly_gap']/gap_data['adjusted_monthly_target']*100:.1f}% below target)")
-        output.append(f"  After closes: ${new_gap_after_closes:,} (saves ~{close_impact_pct:.1f}%)")
-        output.append(f"  After new Tier 1 entries: ${gap_after_new_entries:,} ({new_entry_impact_pct:.1f}% to gap closure)")
-        output.append(f"  Path to target: Execute closes → add HIGH conviction Tier 1 → scale over 2-3 weeks")
+        output.append(f"- ✅ Total positions scanned: {len(critical) + len(monitor) + len(healthy)}")
+        output.append(f"- 🔴 Critical actions: {len(close_now)} closes + {len(monitor_closely)} monitors")
+        output.append(f"- 🟡 Yellow cautions: {len(monitor)}")
+        output.append(f"- 🟢 Green healthy: {len(healthy)}")
+        output.append(f"- 📊 Market regime: {self.regime_data['regime']}")
+        output.append("")
+        output.append("**Gap Closure Summary:**")
+        output.append("")
+        output.append(f"- Current gap: ${gap_data['monthly_gap']:,} ({gap_data['monthly_gap']/gap_data['adjusted_monthly_target']*100:.1f}% below target)")
+        output.append(f"- After closes: ${new_gap_after_closes:,} (saves ~{close_impact_pct:.1f}%)")
+        output.append(f"- After new Tier 1 entries: ${gap_after_new_entries:,} ({new_entry_impact_pct:.1f}% to gap closure)")
+        output.append(f"- Path to target: Execute closes → add HIGH conviction Tier 1 → scale over 2-3 weeks")
         output.append("")
 
         # FOOTER
-        output.append("=" * 120)
-        output.append(f"Report generated: {today.isoformat()} | Data source: OpenPositionsLoaderV2 + Yahoo Finance + Technical Analysis")
-        output.append("=" * 120)
+        output.append("---")
+        output.append(f"_Report generated: {today.isoformat()} | Data source: OpenPositionsLoaderV2 + Yahoo Finance + Technical Analysis_")
 
         return "\n".join(output)
 
@@ -2377,7 +2413,10 @@ class UnifiedReportProduction:
         # Save all reports (absolute path — cwd of the calling process isn't reliable)
         output_files = {}
         for report_type, report_text in reports.items():
-            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.txt"
+            # Daily is real Markdown (.md) as of 2026-09-02; weekly/biweekly/
+            # monthly stay .txt until they get the same conversion.
+            ext = 'md' if report_type == 'daily' else 'txt'
+            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.{ext}"
             Path(output_file).parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 f.write(report_text)

@@ -63,9 +63,12 @@ async def generate_unified_master_report(
         # Absolute path: the MCP server's cwd is whatever launched it (often the
         # client's own working directory, not this project folder), so a bare
         # "logs/..." relative path silently writes reports somewhere else.
+        # Daily is real Markdown (.md) as of 2026-09-02; weekly/biweekly/monthly
+        # stay .txt until they get the same conversion.
+        ext = 'md' if report_type == 'DAILY' else 'txt'
         output_file = (
             f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_"
-            f"{today.isoformat()}_{report_type.lower()}_production.txt"
+            f"{today.isoformat()}_{report_type.lower()}_production.{ext}"
         )
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:

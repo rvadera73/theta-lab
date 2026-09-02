@@ -208,72 +208,75 @@ def to_table(result: dict[str, pd.Series]) -> pd.DataFrame:
     return df
 
 
+def _md_table(headers: list[str], rows: list[list[str]]) -> list[str]:
+    def _cell(c):
+        return str(c).replace("|", "\\|").replace("\n", " ")
+    lines = ["| " + " | ".join(headers) + " |",
+             "|" + "|".join(["---"] * len(headers)) + "|"]
+    for row in rows:
+        lines.append("| " + " | ".join(_cell(c) for c in row) + " |")
+    return lines
+
+
 def render_trend_block(width: int = 120) -> list[str]:
     """Two lenses on performance: (1) premium income cash-flow and (2) total book P&L (MTM)."""
     net = compute_monthly_premium("net")
     if not net:
-        return ["YTD PREMIUM TREND: (no transaction history available)", ""]
+        return ["**YTD Premium Trend:** (no transaction history available)", ""]
     net_tbl = to_table(net)
     gross = compute_monthly_premium("gross")
     gross_tbl = to_table(gross) if gross else None
     months = [c for c in net_tbl.columns if c != "YTD"]
 
-    lines = ["═" * width,
-             "TWO LENSES ON MONTHLY PERFORMANCE  (both derived from your transaction history)",
-             "═" * width, ""]
+    lines = ["### Two Lenses on Monthly Performance",
+             "",
+             "_(both derived from your transaction history)_", ""]
 
     # ── LENS 1 — PREMIUM INCOME (cash flow) — the $100K/month target metric ──
-    lines += ["LENS 1 — PREMIUM INCOME (cash flow)  =  what you COLLECT selling options  [the $100K target]",
-              "─" * width]
-    hdr = f"{'Account':<32}" + "".join(f"{m[-2:]:>11}" for m in months) + f"{'YTD':>13}"
-    lines += [hdr, "-" * len(hdr)]
+    lines += ["#### Lens 1 — Premium Income (cash flow) = what you COLLECT selling options [the $100K target]",
+              ""]
+    headers = ["Account"] + [m[-2:] for m in months] + ["YTD"]
+    rows = []
     for acct in net_tbl.index:
-        if acct == "TOTAL":
-            lines.append("-" * len(hdr))
-        lines.append(f"{acct:<32}" + "".join(f"{net_tbl.loc[acct, m]:>11,.0f}" for m in months)
-                     + f"{net_tbl.loc[acct, 'YTD']:>13,.0f}")
+        rows.append([acct if acct != "TOTAL" else "**TOTAL**"]
+                    + [f"{net_tbl.loc[acct, m]:,.0f}" for m in months]
+                    + [f"{net_tbl.loc[acct, 'YTD']:,.0f}"])
     # Gross SOLD (this month's opens) vs Net REALIZED (this month's closes,
     # FIFO-matched) — these are on DIFFERENT bases (open-month vs close-month),
     # so their difference is NOT a "buyback drag" figure and isn't shown as
     # one; a prior version of this line subtracted the two directly, which
     # only made sense when both sides were same-month cash-flow sums.
     if gross_tbl is not None and "TOTAL" in gross_tbl.index:
-        lines += ["", f"{'  Gross SOLD (STO, opened this month)':<32}"
-                  + "".join(f"{gross_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
-                  + f"{gross_tbl.loc['TOTAL', 'YTD']:>13,.0f}"]
-        lines.append(f"{'  Net REALIZED (FIFO, closed this month)':<32}"
-                     + "".join(f"{net_tbl.loc['TOTAL', m]:>11,.0f}" for m in months)
-                     + f"{net_tbl.loc['TOTAL', 'YTD']:>13,.0f}")
+        rows.append(["Gross SOLD (STO, opened this month)"]
+                    + [f"{gross_tbl.loc['TOTAL', m]:,.0f}" for m in months]
+                    + [f"{gross_tbl.loc['TOTAL', 'YTD']:,.0f}"])
+        rows.append(["Net REALIZED (FIFO, closed this month)"]
+                    + [f"{net_tbl.loc['TOTAL', m]:,.0f}" for m in months]
+                    + [f"{net_tbl.loc['TOTAL', 'YTD']:,.0f}"])
+    lines += _md_table(headers, rows)
     lines += ["", "Net REALIZED = FIFO-matched close gain/loss, attributed to the month a position CLOSED",
               "(assignment counts as a close). Gross SOLD = premium collected on positions OPENED that",
               "month — a different basis, so Gross minus Net is not a meaningful 'drag' figure; a position",
               "opened this month may not close for months. See scripts/realized_pnl.py for the full method.", ""]
 
     # ── LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market) ≈ Empower "portfolio value change" ──
-    lines += ["─" * width,
-              "LENS 2 — TOTAL ACCOUNT VALUE (mark-to-market)  ≈  Empower 'portfolio value change'",
-              "─" * width,
-              "  = premium income  +  unrealized option MTM  +  equity/assigned-stock MTM  +  dividends",
+    lines += ["#### Lens 2 — Total Account Value (mark-to-market) ≈ Empower 'portfolio value change'",
+              "",
+              "= premium income + unrealized option MTM + equity/assigned-stock MTM + dividends",
               ""]
     lines += [
-        "  Total value = premium income (LENS 1, accurate) + unrealized option MTM + equity MTM + dividends.",
-        "  The MTM parts need CURRENT option marks, which live in your POSITION-SNAPSHOT exports (or live",
-        "  quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are",
-        "  stale). Transactions give income; marks give value — you need both, from different exports.",
+        "- Total value = premium income (LENS 1, accurate) + unrealized option MTM + equity MTM + dividends.",
+        "- The MTM parts need CURRENT option marks, which live in your POSITION-SNAPSHOT exports (or live quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are stale). Transactions give income; marks give value — you need both, from different exports.",
+        "- Use EMPOWER for the authoritative total value. (A prior version of this note claimed a specific $435K/$438K reconciliation — that was against LENS 1's OLD same-month cash-flow total, not the FIFO-realized figure above; re-verify against Empower with today's numbers rather than trusting that stale comparison.)",
+        "- To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).",
         "",
-        "  → Use EMPOWER for the authoritative total value. (A prior version of this note claimed a",
-        "    specific $435K/$438K reconciliation — that was against LENS 1's OLD same-month cash-flow",
-        "    total, not the FIFO-realized figure above; re-verify against Empower with today's numbers",
-        "    rather than trusting that stale comparison.)",
-        "  → To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).",
+        "**Why they diverge month-to-month:**",
         "",
-              "WHY THEY DIVERGE MONTH-TO-MONTH:",
-              "  • Empower's monthly figure is dominated by MARKET moves (unrealized MTM) — e.g. May +$288K",
-              "    was your long book marking UP, not premium income (premium that month was ~$4K).",
-              "  • LENS 1 books premium when SOLD — front-loaded because you sell long-dated (2027) contracts.",
-              "  • So: use LENS 1 (income) for the $100K goal; use Empower (Lens 2) for net-worth/market view.",
-              "  • To make Lens 2 exact here: backfill the ~12 names' transactions + drop fresh position snapshots.",
-              ""]
+        "- Empower's monthly figure is dominated by MARKET moves (unrealized MTM) — e.g. May +$288K was your long book marking UP, not premium income (premium that month was ~$4K).",
+        "- LENS 1 books premium when SOLD — front-loaded because you sell long-dated (2027) contracts.",
+        "- So: use LENS 1 (income) for the $100K goal; use Empower (Lens 2) for net-worth/market view.",
+        "- To make Lens 2 exact here: backfill the ~12 names' transactions + drop fresh position snapshots.",
+        ""]
     return lines
 
 

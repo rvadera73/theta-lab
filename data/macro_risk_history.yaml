@@ -4,3 +4,9 @@
   prob_60d: 81.0
   prob_90d: 95.0
   primary_risk: AD_RATIO critical
+- date: '2026-09-02'
+  risk_level: YELLOW
+  prob_30d: 48.0
+  prob_60d: 81.0
+  prob_90d: 95.0
+  primary_risk: AD_RATIO critical

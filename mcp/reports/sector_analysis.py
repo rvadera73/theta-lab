@@ -245,9 +245,7 @@ class SectorAnalyzer:
         """Generate formatted sector analysis section for reports"""
         output = []
 
-        output.append("=" * 120)
-        output.append("SECTOR ANALYSIS & ROTATION FRAMEWORK")
-        output.append("=" * 120)
+        output.append("## Section 4.5: Sector Analysis & Rotation Framework")
         output.append("")
 
         # Sort sectors by order for display
@@ -257,10 +255,10 @@ class SectorAnalyzer:
         ordered_sectors.extend(sorted(other_sectors))
 
         # Summary table
-        output.append("SECTOR SNAPSHOT — Conviction & Valuation Positioning:")
+        output.append("### Sector Snapshot — Conviction & Valuation Positioning")
         output.append("")
-        output.append(f"{'Sector':<25} {'Positions':>10} {'Avg Conv':>10} {'Avg RSI':>9} {'52W %ile':>10} {'Avg IVR':>9} {'Signal':>40}")
-        output.append("-" * 120)
+        headers = ["Sector", "Positions", "Avg Conv", "Avg RSI", "52W %ile", "Avg IVR", "Signal"]
+        rows = []
 
         for sector in ordered_sectors:
             data = sector_summary[sector]
@@ -291,14 +289,16 @@ class SectorAnalyzer:
             else:
                 signal_short = "🟡 NEUTRAL"
 
-            output.append(f"{sector:<25} {data['position_count']:>10} {conv:>10} {rsi:>9.1f} {range_pct:>10.1f} {ivr_str:>9} {signal_short:>40}")
+            rows.append([sector, str(data['position_count']), str(conv), f"{rsi:.1f}", f"{range_pct:.1f}", ivr_str, signal_short])
 
+        output.append("| " + " | ".join(headers) + " |")
+        output.append("|" + "|".join(["---"] * len(headers)) + "|")
+        for row in rows:
+            output.append("| " + " | ".join(row) + " |")
         output.append("")
         output.append("Per-symbol drill-down (put/call/total value, heat, suggestion, grouped by")
         output.append("sector) is in Section 6 — not repeated here to avoid two versions of the")
         output.append("same per-ticker/per-sector data going out of sync with each other.")
-        output.append("")
-        output.append("=" * 120)
         output.append("")
 
         return output
@@ -307,9 +307,7 @@ class SectorAnalyzer:
         """Generate sector rotation framework insights"""
         output = []
 
-        output.append("=" * 120)
-        output.append("SECTOR ROTATION FRAMEWORK")
-        output.append("=" * 120)
+        output.append("### Sector Rotation Framework")
         output.append("")
 
         # Categorize sectors by signal
@@ -318,47 +316,44 @@ class SectorAnalyzer:
         reduce_sectors = [s for s, d in sector_summary.items() if d['signal_type'] == 'EXTENSION']
         monitor_sectors = [s for s, d in sector_summary.items() if d['signal_type'] in ['CAUTION', 'NEUTRAL']]
 
-        output.append("PRIORITY 1: BUY SIGNALS (Attractive pricing + conviction)")
+        output.append("**Priority 1: Buy Signals** (Attractive pricing + conviction)")
+        output.append("")
         if buy_sectors:
             for sector in buy_sectors:
                 data = sector_summary[sector]
-                output.append(f"  ✓ {sector}: Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f}")
-                output.append(f"    {data['signal']}")
+                output.append(f"- ✓ **{sector}:** Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f} — {data['signal']}")
         else:
-            output.append("  (None currently)")
+            output.append("- (None currently)")
         output.append("")
 
-        output.append("PRIORITY 2: HOLD SIGNALS (Conviction intact but extended)")
+        output.append("**Priority 2: Hold Signals** (Conviction intact but extended)")
+        output.append("")
         if hold_sectors:
             for sector in hold_sectors:
                 data = sector_summary[sector]
-                output.append(f"  ⊙ {sector}: Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f}")
-                output.append(f"    {data['signal']}")
+                output.append(f"- ⊙ **{sector}:** Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f} — {data['signal']}")
         else:
-            output.append("  (None currently)")
+            output.append("- (None currently)")
         output.append("")
 
-        output.append("PRIORITY 3: REDUCE SIGNALS (Extended positioning or low conviction)")
+        output.append("**Priority 3: Reduce Signals** (Extended positioning or low conviction)")
+        output.append("")
         if reduce_sectors:
             for sector in reduce_sectors:
                 data = sector_summary[sector]
-                output.append(f"  ✗ {sector}: Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f}")
-                output.append(f"    {data['signal']}")
+                output.append(f"- ✗ **{sector}:** Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f} — {data['signal']}")
         else:
-            output.append("  (None currently)")
+            output.append("- (None currently)")
         output.append("")
 
-        output.append("PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)")
+        output.append("**Priority 4: Monitor Signals** (Neutral or low conviction)")
+        output.append("")
         if monitor_sectors:
             for sector in monitor_sectors:
                 data = sector_summary[sector]
-                output.append(f"  ◇ {sector}: Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f}")
-                output.append(f"    {data['signal']}")
+                output.append(f"- ◇ **{sector}:** Conv {data['avg_conviction']:.1f}/10, RSI {data['avg_rsi']:.1f}, 52W %ile {data['avg_position_in_52w_range']:.1f} — {data['signal']}")
         else:
-            output.append("  (None currently)")
-        output.append("")
-
-        output.append("=" * 120)
+            output.append("- (None currently)")
         output.append("")
 
         return output

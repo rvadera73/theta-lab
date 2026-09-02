@@ -76,7 +76,10 @@ class UnifiedReportsScheduler:
         # Debug: Check what files exist before running
         from pathlib import Path
         print("Files matching today's date BEFORE running reports:")
-        existing = list(Path('logs').glob(f'unified_master_report_{report_date.isoformat()}_*.txt'))
+        # No extension filter: daily reports are now .md (2026-09-02),
+        # weekly/biweekly/monthly are still .txt -- this listing is purely
+        # informational, so it should show whichever files actually exist.
+        existing = list(Path('logs').glob(f'unified_master_report_{report_date.isoformat()}_*'))
         if existing:
             for f in existing:
                 print(f"  {f.name}")
@@ -130,7 +133,10 @@ class UnifiedReportsScheduler:
 
         # Debug: Check what files were created
         print("Files matching today's date AFTER running reports:")
-        existing = list(Path('logs').glob(f'unified_master_report_{report_date.isoformat()}_*.txt'))
+        # No extension filter: daily reports are now .md (2026-09-02),
+        # weekly/biweekly/monthly are still .txt -- this listing is purely
+        # informational, so it should show whichever files actually exist.
+        existing = list(Path('logs').glob(f'unified_master_report_{report_date.isoformat()}_*'))
         if existing:
             for f in existing:
                 print(f"  {f.name}")
