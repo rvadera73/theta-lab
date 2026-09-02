@@ -41,6 +41,21 @@ do.**
 - **`_build_sector_position_table()`** — produces Section 6, the canonical
   per-symbol table. See the Presentation principle below for when to use
   this instead of a new per-ticker block.
+- **`self.snapshot['ytd_net_options_income']` / `['month_to_date_premium']`**
+  — set in `_load_portfolio_snapshot()`, overlaid with the LIVE FIFO-realized
+  computation from `monthly_premium.compute_monthly_premium()` at load time
+  (falls back to the `data/portfolio_snapshot.yaml` literal only if live
+  computation fails). Read these two keys for any YTD/MTD premium figure —
+  don't call `compute_monthly_premium()` again independently. Before this
+  fix (2026-09-02) the daily report's own Section 0 headline (live) and its
+  PERFORMANCE VS TARGET block a few lines below (stale snapshot literal)
+  could show two different numbers for the same YTD figure; the Monthly
+  report had the same bug in its own Section 1 vs. Section 0 with an
+  additional twist — Section 1 used the flat, non-regime-adjusted target
+  while Section 0 used the regime-adjusted one. Both fixed by reading one
+  overlaid value everywhere and, in Monthly's case, reusing `_calculate_
+  gap_to_target()`'s `adjusted_monthly_target` instead of a second target
+  constant.
 - **State-file pattern** (tier_cr_state.yaml precedent) — for anything that
   needs live web research judgment and can't run inside this Python
   pipeline: a Claude-driven skill writes a dated YAML state file to
@@ -132,7 +147,7 @@ if a future addition needs per-account detail here).
 
 | # | Title | Purpose |
 |---|---|---|
-| 1 | MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS | |
+| 1 | MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS | Actual/target/gap is Section 0's PERFORMANCE VS TARGET block (pointer only, not repeated); this section adds the genuinely new part — the rest-of-year projection, using the same regime-adjusted target as Section 0 |
 | 2 | MONTHLY PERFORMANCE BY ACCOUNT (ALL N) | **Still a separate per-account loop** (MTD/YTD variance) — per the approved consolidation approach, this is intentionally kept as extra columns/detail on top of the same `_compute_account_status()` data, not a re-derivation. If this section is touched again, pull its balance/status fields from `_compute_account_status()` rather than recomputing. |
 | 3 | MONTHLY PREMIUM vs TARGET (real) | |
 | 4 | MOAT RECALIBRATION & TIER ASSIGNMENTS | |
