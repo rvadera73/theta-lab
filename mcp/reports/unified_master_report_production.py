@@ -370,6 +370,80 @@ class UnifiedReportProduction:
         except Exception:
             return (70, 50)
 
+    def _build_sector_position_table(self, critical: list, monitor: list, healthy: list) -> List[str]:
+        """Consolidated Sector -> Symbol table (trader-requested 2026-09-01):
+        one row per SYMBOL (not per option leg), grouped by sector, with put
+        value / call value / total value / heat / suggestion together, and
+        the sector's own rotation signal shown once per sector group instead
+        of in a separate section. Replaces the old flat, ticker-only
+        critical/monitor/healthy listing -- reuses the exact same
+        critical/monitor/healthy classification (still needed by Section 6.6,
+        which depends on `critical + monitor + healthy`) so nothing about
+        WHICH bucket a ticker falls into changes, only how it's displayed.
+        """
+        output = []
+        put_call = self._parse_put_call_breakdown()
+        classified = self._classify_positions_for_action()
+        close_tickers = {t for t, _ in classified['close']}
+        trim_tickers = {t for t, _ in classified['trim']}
+        enter_tickers = {t for t, _ in classified['enter_short_put']}
+
+        by_heat = {}
+        for pos in critical + monitor + healthy:
+            by_heat[pos['ticker']] = pos
+
+        def suggestion_for(ticker, heat, conv):
+            if ticker in close_tickers:
+                return "🔴 CLOSE"
+            if ticker in trim_tickers:
+                return "🔴 TRIM"
+            if ticker in enter_tickers:
+                return "🟢 ENTER (short put)"
+            if heat == 'GREEN':
+                return "🟢 ATTRACTIVE — let run"
+            if heat == 'RED':
+                return "🟡 WATCH (RED, conv holds it back from CLOSE/TRIM)"
+            return "🟡 MONITOR"
+
+        # Group tickers by sector
+        sector_tickers: Dict[str, list] = defaultdict(list)
+        for ticker in self.position_summary.index:
+            sector = self.ticker_sector_map.get(ticker, "Other")
+            sector_tickers[sector].append(ticker)
+
+        # Sort sectors by total notional (portfolio impact), descending
+        def sector_total(sector):
+            return sum(by_heat.get(t, {}).get('notional', 0) for t in sector_tickers[sector])
+
+        for sector in sorted(sector_tickers.keys(), key=sector_total, reverse=True):
+            tickers = sector_tickers[sector]
+            s_data = self.sector_summary.get(sector, {})
+            signal = s_data.get('signal', '🟡 MONITOR — Neutral positioning')
+            s_notional = sector_total(sector)
+
+            output.append(f"── {sector}  ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}")
+            output.append(f"  {'Symbol':8} {'Put Value':>12} {'Call Value':>12} {'Total Value':>12} {'Heat':>7} {'Conv':>5} {'Suggestion'}")
+
+            rows = []
+            for ticker in tickers:
+                pc = put_call.get(ticker, {"put_notional": 0, "call_notional": 0})
+                pos = by_heat.get(ticker, {})
+                heat = pos.get('heat', self.metrics.get(ticker, {}).get('heat_status', 'YELLOW'))
+                conv = pos.get('conv', self.metrics.get(ticker, {}).get('conviction', 5.0))
+                total_val = pc['put_notional'] + pc['call_notional']
+                rows.append((ticker, pc['put_notional'], pc['call_notional'], total_val, heat, conv))
+
+            for ticker, put_val, call_val, total_val, heat, conv in sorted(rows, key=lambda r: -r[3]):
+                heat_icon = {"RED": "🔴", "YELLOW": "🟡", "GREEN": "🟢"}.get(heat, "🟡")
+                sugg = suggestion_for(ticker, heat, conv)
+                output.append(
+                    f"  {ticker:8} ${put_val:>11,.0f} ${call_val:>11,.0f} ${total_val:>11,.0f} "
+                    f"{heat_icon:>7} {conv:>5.1f} {sugg}"
+                )
+            output.append("")
+
+        return output
+
     def _classify_positions_for_action(self) -> Dict[str, list]:
         """Single shared classification pass over self.metrics, used by both
         Section 3 (TOP-5 WEEKLY ACTION ITEMS) and the Weekly Execution Plan
@@ -748,8 +822,8 @@ class UnifiedReportProduction:
             output.append(f"{acct_name:35}: {row['open_positions']:3} positions ({pct:5.1f}%) {bar}")
         output.append("")
 
-        # SECTION 6: POSITION HEAT MATRIX & PRIORITY ACTION
-        output.extend(self._format_section_header(6, "POSITION HEAT MATRIX & PRIORITY ACTION"))
+        # SECTION 6: POSITION HEAT MATRIX BY SECTOR
+        output.extend(self._format_section_header(6, "POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total Value, Heat, Suggestion"))
         output.append("")
 
         # Build position action matrix
@@ -790,49 +864,14 @@ class UnifiedReportProduction:
         monitor.sort(key=lambda x: x['notional'], reverse=True)
         healthy.sort(key=lambda x: x['notional'], reverse=True)
 
-        # Display CRITICAL section
-        output.append(f"🔴 CRITICAL — ACTION REQUIRED ({len(critical)} positions)")
-        output.append("-" * 120)
-        if critical:
-            for i, pos in enumerate(critical[:10], 1):
-                output.append(
-                    f"  {i:2}. {pos['ticker']:8} | ${pos['price']:>8.2f} | {pos['contracts']:2} contracts | "
-                    f"Value: ${pos['notional']:>10.0f} | Conv: {pos['conv']:>4.1f}/10 | RSI: {pos['rsi']:>5.1f} | {pos['reason']}"
-                )
-            if len(critical) > 10:
-                output.append(f"  ... and {len(critical)-10} more RED/low conviction positions")
-        else:
-            output.append("  ✅ None — portfolio is clean")
-        output.append("")
-
-        # Display MONITOR section
-        output.append(f"🟡 MONITOR — WATCH FOR CHANGES ({len(monitor)} positions)")
-        output.append("-" * 120)
-        if monitor:
-            for i, pos in enumerate(monitor[:8], 1):
-                output.append(
-                    f"  {i:2}. {pos['ticker']:8} | ${pos['price']:>8.2f} | {pos['contracts']:2} contracts | "
-                    f"Value: ${pos['notional']:>10.0f} | Conv: {pos['conv']:>4.1f}/10 | RSI: {pos['rsi']:>5.1f}"
-                )
-            if len(monitor) > 8:
-                output.append(f"  ... and {len(monitor)-8} more YELLOW positions")
-        else:
-            output.append("  ✅ None — all positions are healthy or critical")
-        output.append("")
-
-        # Display HEALTHY section
-        output.append(f"🟢 HEALTHY — LET RUN ({len(healthy)} positions)")
-        output.append("-" * 120)
-        if healthy:
-            output.append(f"  {len(healthy)} positions are attractively priced (oversold/neutral)")
-            if len(healthy) > 0:
-                top_3 = sorted(healthy, key=lambda x: x['rsi'])[:3]
-                output.append(f"  Most oversold candidates (lowest RSI):")
-                for pos in top_3:
-                    output.append(f"    • {pos['ticker']:8} RSI {pos['rsi']:>5.1f} | Conv {pos['conv']:.1f}/10")
-        else:
-            output.append("  None currently oversold")
-        output.append("")
+        # Consolidated Sector -> Symbol table (trader-requested 2026-09-01):
+        # one row per symbol (not per option leg), grouped by sector, with
+        # put/call/total value, heat, and a suggestion together, plus the
+        # sector's own rotation signal shown once per sector group. Replaces
+        # the old flat per-ticker critical/monitor/healthy listing (that
+        # classification is still computed above -- Section 6.6 depends on
+        # `critical + monitor + healthy` -- only the rendering changed).
+        output.extend(self._build_sector_position_table(critical, monitor, healthy))
 
         # Portfolio heat summary
         total_notional = sum(pos['notional'] for pos in critical + monitor + healthy)

@@ -316,7 +316,7 @@ SECTION 6: SECTOR CONCENTRATION (current, live)
 Sector                       % of notional  Avg Conv        Signal
 ------------------------------------------------------------------
 Technology                           38.2%      6.58       NEUTRAL
-Industrials                          17.8%      6.52    ATTRACTION
+Industrials                          17.8%      6.53    ATTRACTION
 Communication Services               12.9%      7.87    ATTRACTION
 Financial Services                    9.4%      6.13       NEUTRAL
 Consumer Cyclical                     5.7%      6.04    ATTRACTION

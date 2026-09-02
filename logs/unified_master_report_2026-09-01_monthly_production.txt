@@ -366,7 +366,7 @@ BROS (Moat Score: 9.0/10, Position Value: $4,631)
 
 MU (Moat Score: 8.8/10, Position Value: $186,688)
 ├─ Conviction: 8.8 (YELLOW heat)
-├─ Current: $933.44 | Contracts: 2 | 52-Week: $114.25 - $1255.00
+├─ Current: $933.44 | Contracts: 2 | 52-Week: $117.30 - $1255.00
 ├─ Technical: RSI 53.1, Position 72% of range
 └─ Moat verdict: STRONG (Approaching extremes)
 
