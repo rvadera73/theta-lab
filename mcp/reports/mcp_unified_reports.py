@@ -94,7 +94,8 @@ async def generate_weekly_report_tool(report_date: Optional[str] = None) -> dict
         generator = UnifiedReportProduction()
         report = generator.generate_weekly_report(today)
 
-        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_weekly_production.txt"
+        # Real Markdown as of 2026-09-02 (propagated from the daily conversion).
+        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_weekly_production.md"
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(report)
@@ -145,7 +146,8 @@ async def generate_biweekly_report_tool(report_date: Optional[str] = None) -> di
         generator = UnifiedReportProduction()
         report = generator.generate_biweekly_report(today)
 
-        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_biweekly_production.txt"
+        # Real Markdown as of 2026-09-02 (propagated from the daily conversion).
+        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_biweekly_production.md"
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(report)
@@ -195,7 +197,8 @@ async def generate_monthly_report_tool(report_date: Optional[str] = None) -> dic
         generator = UnifiedReportProduction()
         report = generator.generate_monthly_report(today)
 
-        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_monthly_production.txt"
+        # Real Markdown as of 2026-09-02 (propagated from the daily conversion).
+        output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_monthly_production.md"
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(report)
@@ -258,10 +261,8 @@ async def generate_all_reports_tool(report_date: Optional[str] = None) -> dict:
 
         output_files = {}
         for report_type, report_text in reports.items():
-            # Daily is Markdown (.md) as of 2026-09-02; weekly/biweekly/monthly
-            # stay .txt until they get the same conversion.
-            ext = 'md' if report_type == 'daily' else 'txt'
-            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.{ext}"
+            # All 4 report types are real Markdown as of 2026-09-02.
+            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.md"
             Path(output_file).parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 f.write(report_text)

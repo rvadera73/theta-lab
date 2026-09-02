@@ -11,23 +11,25 @@ do.**
 
 ## Output format
 
-The Daily report (`generate_daily_report`) was fully converted to real
-Markdown 2026-09-02 (trader-requested, decided against PDF for git-
-diffability and zero rendering-step complexity) — `#`/`##`/`###`/`####`
-headers, real `|` tables via `_md_table()`, `-` bullet lists. Its output
-file is `.md`; weekly/biweekly/monthly are still the original ASCII
-box-drawing/tree-line format and still write `.txt`, pending a separate
-follow-up pass. Two shared sections (`_generate_account_health_section` /
-Section 0, `_format_production_framework_section`) already render as
-Markdown in ALL 4 report types as a side effect of being shared code —
-don't be surprised to see real tables there even in an otherwise-ASCII
-weekly/biweekly/monthly report; that's intentional, not a half-finished
-conversion of those three.
+All 4 report types (`generate_daily_report`, `generate_weekly_report`,
+`generate_biweekly_report`, `generate_monthly_report`) are real Markdown as
+of 2026-09-02 (trader-requested; decided against PDF for git-diffability
+and zero rendering-step complexity) — `#`/`##`/`###`/`####` headers, real
+`|` tables via `_md_table()`, `-` bullet lists. Daily was converted first
+as the model (a full rewrite of every box-drawing header, aligned f-string
+"table", and tree line in its call chain, including the shared helper
+functions and `monthly_premium.py`/`sector_analysis.py`'s spliced-in
+output), then the same treatment was propagated to weekly/biweekly/monthly
+the same day. All 4 report types' output files are `.md`.
 
-**When adding to or editing the Daily report specifically:**
+**When adding to or editing ANY of the 4 report types:**
 - Every standalone label/value or status line needs a `- ` prefix (or to be
   a table row) — Markdown collapses consecutive bare lines into one
   paragraph, which is not obvious until you actually render the output.
+  (One real instance of this was missed and caught during the weekly
+  conversion — a "Priority 3" header lost its bold/blank-line treatment
+  that "Priority 1"/"Priority 2" got — worth grepping the surrounding
+  lines for the same pattern when adding a new labeled block.)
 - Genuinely tabular data (same columns, N rows) → `self._md_table(headers, rows)`,
   not a hand-aligned f-string. It already escapes a literal `|` in any cell
   so derived text can't silently corrupt the table's column count (a real
@@ -37,10 +39,11 @@ conversion of those three.
   sub-lists/sub-headers) → a fenced ` ``` ` code block, not a blanket
   `f"- {line}"` per line — that mangles the original structure (confirmed
   broken this way once, fixed by fencing it instead).
-- When touching `_generate_account_health_section` or `_format_production_
-  framework_section` (shared across all 4 reports), keep them Markdown —
-  don't reintroduce ASCII dividers just because the report type calling
-  them (weekly/biweekly/monthly) is still ASCII elsewhere.
+- Section 2 of the monthly report (`MONTHLY PERFORMANCE BY ACCOUNT`) is a
+  genuine per-account table now (`_md_table`), not the old per-account
+  `├─`/`└─` tree block — if you add a per-row detail that doesn't fit a
+  table column, put it as a note/bullet below the table (same pattern as
+  Section 0's per-account equity/staleness notes), not back into a tree.
 
 ## Shared computation — use these, don't re-derive
 
@@ -145,11 +148,10 @@ sometimes a compact summary table directly above the verbose block).
 | 4.5 | SECTOR ANALYSIS & ROTATION | Sector-level snapshot table + rotation-priority grouping — per-symbol drill-down is Section 6, not repeated |
 | 5 | POSITION DISTRIBUTION BY ACCOUNT | Position counts per account (not financial detail — that's Section 0) |
 | 6 | POSITION HEAT MATRIX BY SECTOR | **The** per-symbol table: sector → symbol, put/call/total value, heat, conviction, suggestion (put/call-directional, macro-exposure-tagged). Built by `_build_sector_position_table()`. Most other sections should reference this rather than re-listing tickers. |
-| 6.5 | CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS | Risk level, probability (30/60/90d), 90-day trend sparkline, historical magnitude reference, sector sensitivity (consumed by Section 6's macro-exposure tags via `_get_macro_risk_analysis()`) |
-| 6.6 | AI CAPEX RISK TRACKER — CIRCULAR FINANCING PLAYBOOK | Reads `tier_cr_state.yaml` |
-| 6.7 | ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE) | Per-position Black-Scholes probability + EXIT CANDIDATE flag |
-| 6.8 | QUARTERLY PLAN STATUS | Reads `us_quarterly_plan_2026_q4.yaml` |
-| 6.9 | SEEKING ALPHA WEEKLY THEMES | Reads `seekingalpha_theme_state.yaml` |
+| 6.5 | CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS | Risk level, probability (30/60/90d), 90-day trend sparkline, historical magnitude reference, sector sensitivity (consumed by Section 6's macro-exposure tags via `_get_macro_risk_analysis()`). AI Capex Risk Tracker (Circular Financing Playbook, reads `tier_cr_state.yaml`) is a `###` subsection here as of 2026-09-02 — merged with 6.5 rather than a separate top-level section, since it's the AI-capex-specific half of the same macro picture. |
+| 6.6 | ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE) | Per-position Black-Scholes probability + EXIT CANDIDATE flag |
+| 6.7 | QUARTERLY PLAN STATUS | Reads `us_quarterly_plan_2026_q4.yaml` |
+| 6.8 | SEEKING ALPHA WEEKLY THEMES | Reads `seekingalpha_theme_state.yaml` |
 | 7 | ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT | Uses `_classify_positions_for_action()` |
 
 ## Weekly report (`generate_weekly_report`)

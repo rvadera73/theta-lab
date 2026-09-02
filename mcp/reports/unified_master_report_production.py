@@ -1593,15 +1593,13 @@ class UnifiedReportProduction:
         output = []
 
         # HEADER
-        output.append("=" * 120)
-        output.append("UNIFIED MASTER REPORT — WEEKLY STAGE")
-        output.append(f"Week {week_num} of {today.strftime('%B')} — {today.strftime('%A, %B %d, %Y')} — 8:00 AM ET")
-        output.append(f"Regime: {self.regime_data['regime']}")
-        output.append("=" * 120)
+        output.append("# Unified Master Report — Weekly Stage")
+        output.append("")
+        output.append(f"**Week {week_num} of {today.strftime('%B')}** — {today.strftime('%A, %B %d, %Y')} — 8:00 AM ET  |  **Regime:** {self.regime_data['regime']}")
         output.append("")
 
-        output.append(f"REPORT CADENCE: Weekly Action Report (Monday)")
-        output.append(f"Data Sources: {len(self.open_positions)} live positions, IV rank scan, market regime analysis")
+        output.append(f"- **Report Cadence:** Weekly Action Report (Monday)")
+        output.append(f"- **Data Sources:** {len(self.open_positions)} live positions, IV rank scan, market regime analysis")
         output.append("")
 
         # SECTION 0: ACCOUNT HEALTH & MARGIN STATUS
@@ -1612,18 +1610,19 @@ class UnifiedReportProduction:
 
         # SECTION 1: MARKET REGIME FORECAST
         output.extend(self._format_section_header(1, "WEEKLY MARKET REGIME FORECAST"))
-        output.append(f"**Regime: {self.regime_data['regime']}**")
+        output.append(f"**Regime:** {self.regime_data['regime']}")
         output.append("")
 
-        output.append("Current signals:")
+        output.append("**Current signals:**")
+        output.append("")
         if 'signals' in self.regime_data and 'vix' in self.regime_data['signals']:
             vix_info = self.regime_data['signals']['vix']
-            output.append(f"├─ VIX: {vix_info['value']} ({vix_info['detail']})")
+            output.append(f"- VIX: {vix_info['value']} ({vix_info['detail']})")
 
         if 'signals' in self.regime_data and 'sp500_ma' in self.regime_data['signals']:
             ma = self.regime_data['signals']['sp500_ma']
-            output.append(f"├─ S&P 500 50-MA: {'+' if ma['above_50d'] else '-'}{abs(ma['current'] - ma['ma50']):.0f}")
-            output.append(f"└─ S&P 500 200-MA: {'+' if ma['above_200d'] else '-'}{abs(ma['current'] - ma['ma200']):.0f}")
+            output.append(f"- S&P 500 50-MA: {'+' if ma['above_50d'] else '-'}{abs(ma['current'] - ma['ma50']):.0f}")
+            output.append(f"- S&P 500 200-MA: {'+' if ma['above_200d'] else '-'}{abs(ma['current'] - ma['ma200']):.0f}")
 
         output.append("")
         output.append(f"**Probability of regime shift this week:** 15% | **Probability of staying {self.regime_data['regime']}:** 85% ✅")
@@ -1634,33 +1633,36 @@ class UnifiedReportProduction:
         conviction_by_bucket = self._get_conviction_summary()
         gap_data = self._calculate_gap_to_target()
 
-        output.append("Priority 1 — Execute on HIGH Conviction positions:")
-        output.append(f"├─ {len(conviction_by_bucket.get('HIGH', []))} positions with Conv ≥8/10 identified")
-        output.append(f"├─ Contribution: ${len(conviction_by_bucket.get('HIGH', []))*3800:,}/month = {len(conviction_by_bucket.get('HIGH', []))*3800/gap_data['adjusted_monthly_target']*100:.0f}% of target")
-        output.append(f"├─ Gap to close: ${gap_data['monthly_gap']:,}/month → Need {gap_data['positions_needed']} more Tier 1 positions")
+        output.append("**Priority 1 — Execute on HIGH Conviction positions:**")
+        output.append("")
+        output.append(f"- {len(conviction_by_bucket.get('HIGH', []))} positions with Conv ≥8/10 identified")
+        output.append(f"- Contribution: ${len(conviction_by_bucket.get('HIGH', []))*3800:,}/month = {len(conviction_by_bucket.get('HIGH', []))*3800/gap_data['adjusted_monthly_target']*100:.0f}% of target")
+        output.append(f"- Gap to close: ${gap_data['monthly_gap']:,}/month → Need {gap_data['positions_needed']} more Tier 1 positions")
         top_high = conviction_by_bucket.get('HIGH', [])[:3]
         for ticker, m in top_high:
             price = self.prices.get(ticker, 0)
             contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
             notional = price * contracts * 100
             contribution = self._calculate_position_contribution_to_target(ticker, m['conviction'])
-            output.append(f"├─ {ticker}: Conv {m['conviction']:.1f} | Contribution ${contribution:,}/mo | Value ${notional:,.0f} | Heat: {m['heat_status']}")
+            output.append(f"- {ticker}: Conv {m['conviction']:.1f} | Contribution ${contribution:,}/mo | Value ${notional:,.0f} | Heat: {m['heat_status']}")
         output.append("")
 
-        output.append("Priority 2 — Monitor LOW Conviction positions for exit:")
+        output.append("**Priority 2 — Monitor LOW Conviction positions for exit:**")
+        output.append("")
         low_tier3 = conviction_by_bucket.get('LOW', [])
         low_red = [pos for pos in low_tier3 if pos[1]['heat_status'] == 'RED'][:3]
-        output.append(f"├─ {len(low_tier3)} positions with Conv <6/10 identified")
-        output.append(f"├─ Drag impact: ${len(low_tier3)*500:,}/month drag (-{len(low_tier3)*500/gap_data['adjusted_monthly_target']*100:.1f}% of target)")
-        output.append(f"├─ Action: Close worst RED positions to eliminate drag")
+        output.append(f"- {len(low_tier3)} positions with Conv <6/10 identified")
+        output.append(f"- Drag impact: ${len(low_tier3)*500:,}/month drag (-{len(low_tier3)*500/gap_data['adjusted_monthly_target']*100:.1f}% of target)")
+        output.append(f"- Action: Close worst RED positions to eliminate drag")
         for ticker, m in low_red:
             price = self.prices.get(ticker, 0)
             contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
             notional = price * contracts * 100
-            output.append(f"├─ {ticker}: Conv {m['conviction']:.1f} | Drag ${500:,}/mo | Value ${notional:,.0f} | RSI {m['rsi']:.1f} (CONCERN: {m['heat_reason']})")
+            output.append(f"- {ticker}: Conv {m['conviction']:.1f} | Drag ${500:,}/mo | Value ${notional:,.0f} | RSI {m['rsi']:.1f} (CONCERN: {m['heat_reason']})")
         output.append("")
 
-        output.append("Priority 3 — IV Rank Entry Gate Check:")
+        output.append("**Priority 3 — IV Rank Entry Gate Check:**")
+        output.append("")
         # Cross-filtered against heat_status -- previously this list was built
         # from IV rank ALONE (>=40), with zero check against whether the SAME
         # ticker was flagged RED elsewhere in this same report. Confirmed live
@@ -1676,10 +1678,10 @@ class UnifiedReportProduction:
             and self.metrics.get(t, {}).get('heat_status') != 'RED'
         ]
         new_entries_contribution = len(entry_candidates) * 3800
-        output.append(f"├─ Tier 1 entry candidates (IVR ≥40, RED-heat excluded): {len(entry_candidates)} names")
-        output.append(f"├─ Potential contribution: ${new_entries_contribution:,}/month if all deployed")
-        output.append(f"├─ Capital required: ${len(entry_candidates)*10000:,} ({len(entry_candidates)} × $10K per position)")
-        output.append(f"├─ Gap closure from new entries: {new_entries_contribution/gap_data['adjusted_monthly_target']*100:.0f}% of ${'$' + str(gap_data['monthly_gap'])[1:] if gap_data['monthly_gap'] < 0 else '$' + str(gap_data['monthly_gap'])} gap")
+        output.append(f"- Tier 1 entry candidates (IVR ≥40, RED-heat excluded): {len(entry_candidates)} names")
+        output.append(f"- Potential contribution: ${new_entries_contribution:,}/month if all deployed")
+        output.append(f"- Capital required: ${len(entry_candidates)*10000:,} ({len(entry_candidates)} × $10K per position)")
+        output.append(f"- Gap closure from new entries: {new_entries_contribution/gap_data['adjusted_monthly_target']*100:.0f}% of ${'$' + str(gap_data['monthly_gap'])[1:] if gap_data['monthly_gap'] < 0 else '$' + str(gap_data['monthly_gap'])} gap")
         if entry_candidates:
             # Sort the FULL candidate list by IVR first, THEN take the top 5 --
             # previously this truncated to an arbitrary first-5-by-dict-order
@@ -1688,16 +1690,17 @@ class UnifiedReportProduction:
             top_entry = sorted([(t, self.iv_ranks[t]) for t in entry_candidates],
                              key=lambda x: x[1].get('iv_rank', 0), reverse=True)[:5]
             for ticker, iv_data in top_entry:
-                output.append(f"├─ {ticker}: IVR {iv_data.get('iv_rank', 0):.1f} | ${self.prices.get(ticker, 0):.2f} | Contributes $3,800/mo if added — short put only")
+                output.append(f"- {ticker}: IVR {iv_data.get('iv_rank', 0):.1f} | ${self.prices.get(ticker, 0):.2f} | Contributes $3,800/mo if added — short put only")
         output.append("")
 
-        output.append("WEEKLY PACE TO MONTH-END TARGET:")
+        output.append("**Weekly Pace to Month-End Target:**")
+        output.append("")
         days_left_month = (date(today.year, today.month % 12 + 1, 1) - today).days
         weekly_target = gap_data['adjusted_monthly_target'] / 4.33  # Approx weeks per month
-        output.append(f"├─ Days left in month: {days_left_month}")
-        output.append(f"├─ Weekly target pace: ${weekly_target:,.0f}/week")
-        output.append(f"├─ Current run rate: ${gap_data['current_total']:,.0f}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
-        output.append(f"└─ Required this week: Execute HIGH priority 1 items to stay on pace")
+        output.append(f"- Days left in month: {days_left_month}")
+        output.append(f"- Weekly target pace: ${weekly_target:,.0f}/week")
+        output.append(f"- Current run rate: ${gap_data['current_total']:,.0f}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
+        output.append(f"- Required this week: Execute HIGH priority 1 items to stay on pace")
         output.append("")
 
         # SECTION 3: TOP 5 ACTION ITEMS
@@ -1741,7 +1744,8 @@ class UnifiedReportProduction:
         # Display top 5
         for i, (action, detail) in enumerate(action_items[:5], 1):
             output.append(f"**#{i} — {action}**")
-            output.append(f"└─ {detail}")
+            output.append("")
+            output.append(f"- {detail}")
             output.append("")
 
         # SECTION 4: POSITION HEAT BY ACCOUNT
@@ -1778,13 +1782,15 @@ class UnifiedReportProduction:
                 tier1_blocked.append((ticker, iv_rank))
 
         tier1_entries.sort(key=lambda x: x[1], reverse=True)
+        output.append("")
         for ticker, iv_rank, price in tier1_entries[:10]:
-            output.append(f"✅ {ticker}: {iv_rank:.1f} IVR | ${price:.2f} — short put only")
+            output.append(f"- ✅ {ticker}: {iv_rank:.1f} IVR | ${price:.2f} — short put only")
 
         output.append("")
         output.append("**Tier 1 BLOCKED (IVR < 40):**")
+        output.append("")
         for ticker, iv_rank in sorted(tier1_blocked, key=lambda x: x[1], reverse=True)[:10]:
-            output.append(f"❌ {ticker}: {iv_rank:.1f} IVR (below gate)")
+            output.append(f"- ❌ {ticker}: {iv_rank:.1f} IVR (below gate)")
         output.append("")
 
         # SECTION 6: CASH & MARGIN FORECAST. Was entirely static text every
@@ -1798,7 +1804,7 @@ class UnifiedReportProduction:
         total_opt_req = sum(self.option_requirements.values())
         total_capacity = sum(cfg.get('capacity', cfg['balance']) for cfg in ACCOUNTS_CONFIG.values())
         overall_util = (total_opt_req / total_capacity * 100) if total_capacity else 0
-        output.append("Current position (real, from live option requirements):")
+        output.append("**Current position** (real, from live option requirements):")
         output.append(f"- Portfolio-wide utilization: {overall_util:.0f}% (${total_opt_req:,.0f} req against ${total_capacity:,.0f} capacity)")
         over_cap = [name for name, cfg in ACCOUNTS_CONFIG.items()
                     if cfg.get('capacity') and self.option_requirements.get(name, 0) > cfg['capacity']]
@@ -1821,13 +1827,13 @@ class UnifiedReportProduction:
         # instantiated). Replaced with the real current premium pace instead
         # of a fake theta estimate.
         output.extend(self._format_section_header(7, "WEEKLY THETA & P&L TRACKING"))
-        output.append(f"Target pace: ${gap_data['adjusted_monthly_target']:,}/month (ISO week: ${gap_data['adjusted_monthly_target']/4.33:,.0f})")
+        output.append(f"**Target pace:** ${gap_data['adjusted_monthly_target']:,}/month (ISO week: ${gap_data['adjusted_monthly_target']/4.33:,.0f})")
         output.append("")
-        output.append("Current pace (real, from live position tiers):")
+        output.append("**Current pace** (real, from live position tiers):")
+        output.append("")
         output.append(f"- {len(conviction_by_bucket.get('HIGH', []))} HIGH conviction positions, {gap_data['tier1_count']+gap_data['tier2_count']+gap_data['tier3_count']} total")
         output.append(f"- Current run rate: ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
-        output.append("- Note: per-position theta/Greeks are not computed in this pipeline -- this is a")
-        output.append("  tier-contribution estimate, not a live Greeks-based P&L projection.")
+        output.append("- Note: per-position theta/Greeks are not computed in this pipeline — this is a tier-contribution estimate, not a live Greeks-based P&L projection.")
         output.append("")
 
         # SECTION 8: RISK & GUARDRAILS. The Greeks block (Delta/Gamma/Theta/
@@ -1839,18 +1845,19 @@ class UnifiedReportProduction:
         # the same reason). Margin guardrail replaced with the same real
         # utilization number as Section 6 instead of a second hardcoded "56%".
         output.extend(self._format_section_header(8, "RISK & GUARDRAILS (Weekly Check)"))
-        output.append("Portfolio Greeks: not computed in this pipeline -- no live delta/gamma/theta/vega")
-        output.append("tracking exists yet. Flagging honestly rather than showing fabricated numbers.")
+        output.append("Portfolio Greeks: not computed in this pipeline — no live delta/gamma/theta/vega tracking exists yet. Flagging honestly rather than showing fabricated numbers.")
         output.append("")
 
-        output.append("Margin guardrails (real):")
+        output.append("**Margin guardrails** (real):")
+        output.append("")
         output.append(f"- Used: {overall_util:.0f}% (alert 75%, emergency 80%) {'✅ SAFE' if overall_util < 75 else '⚠️ ALERT' if overall_util < 80 else '🔴 EMERGENCY'}")
         if over_cap:
             output.append(f"- ⚠️ {', '.join(over_cap)} over documented capacity — see Section 0")
         output.append("")
 
         heat_summary = self._get_heat_summary()
-        output.append("Position concentration (real):")
+        output.append("**Position concentration** (real):")
+        output.append("")
         output.append(f"- GREEN heat: {heat_summary.get('GREEN', 0)} positions")
         output.append(f"- YELLOW heat: {heat_summary.get('YELLOW', 0)} positions")
         output.append(f"- RED heat: {heat_summary.get('RED', 0)} positions (see Section 3 for the ranked action list)")
@@ -1860,45 +1867,48 @@ class UnifiedReportProduction:
         output.extend(self._format_section_header(9, "DECISION TREE — END-OF-WEEK (Friday 4 PM ET)"))
 
         output.append("**IF HIGH conviction positions cleared:**")
-        output.append("→ Approve new SHORT PUT entries on Tier 1 names — not strangles/calls: this")
-        output.append("  book's own backtest shows stagger call legs underperforming put legs, and")
-        output.append("  a BULL regime structurally punishes being short calls")
-        output.append("→ Size: 45-60 DTE, delta 0.15-0.20 puts")
-        output.append("→ Deploy ~$20-25K capital")
-        output.append("→ Expected net +$2-3K weekly P&L ✅")
+        output.append("")
+        output.append("- → Approve new SHORT PUT entries on Tier 1 names — not strangles/calls: this book's own backtest shows stagger call legs underperforming put legs, and a BULL regime structurally punishes being short calls")
+        output.append("- → Size: 45-60 DTE, delta 0.15-0.20 puts")
+        output.append("- → Deploy ~$20-25K capital")
+        output.append("- → Expected net +$2-3K weekly P&L ✅")
         output.append("")
 
         output.append("**IF action items NOT completed by Thursday:**")
-        output.append("→ Extend execution to Monday (no penalty)")
-        output.append("→ Delay new entries to following week (stagger 1 week)")
-        output.append("→ Focus on execution quality, not speed")
+        output.append("")
+        output.append("- → Extend execution to Monday (no penalty)")
+        output.append("- → Delay new entries to following week (stagger 1 week)")
+        output.append("- → Focus on execution quality, not speed")
         output.append("")
 
         output.append("**IF IV Rank improves (>40 gate):**")
-        output.append("→ Queue new entries for Tier 1 names")
-        output.append("→ Size at 25% of full position, scale remaining 75% over 3 weeks")
+        output.append("")
+        output.append("- → Queue new entries for Tier 1 names")
+        output.append("- → Size at 25% of full position, scale remaining 75% over 3 weeks")
         output.append("")
 
         output.append("**IF RED positions worsen:**")
-        output.append("→ Close positions at loss if conviction drops <4/10")
-        output.append("→ Redeploy capital to GREEN opportunities")
+        output.append("")
+        output.append("- → Close positions at loss if conviction drops <4/10")
+        output.append("- → Redeploy capital to GREEN opportunities")
         output.append("")
 
         # SECTION 10: FRAMEWORK STATUS & AUTOMATION
         output.extend(self._format_section_header(10, "FRAMEWORK STATUS & AUTOMATION"))
 
-        output.append(f"Daily Conviction Tracking:     ✅ Real-time, {len(conviction_by_bucket.get('HIGH', []))} HIGH identified")
-        output.append(f"Earnings Date Monitoring:      ✅ Integrated in technical analysis")
-        output.append(f"Momentum Trend Tracking:       ✅ RSI, MACD, Bollinger Bands (all active)")
-        output.append(f"Multi-Trigger Exit Logic:      ✅ {heat_summary.get('RED', 0)} RED detected, monitoring")
-        output.append(f"Greeks Guardrails:             ✅ All in range, portfolio balanced")
-        output.append(f"Regime Detection:              ✅ {self.regime_data['regime']} confirmed")
-        output.append(f"Win Rate Tracking:             ✅ Conviction-based entry filtration")
-        output.append(f"IV Rank Entry Gate:            ✅ {len(entry_candidates)} names qualified (IVR ≥40)")
-        output.append(f"Sharpe Ratio (rolling):        not computed in this pipeline -- no return-series tracking exists yet")
+        output.append(f"- **Daily Conviction Tracking:** ✅ Real-time, {len(conviction_by_bucket.get('HIGH', []))} HIGH identified")
+        output.append(f"- **Earnings Date Monitoring:** ✅ Integrated in technical analysis")
+        output.append(f"- **Momentum Trend Tracking:** ✅ RSI, MACD, Bollinger Bands (all active)")
+        output.append(f"- **Multi-Trigger Exit Logic:** ✅ {heat_summary.get('RED', 0)} RED detected, monitoring")
+        output.append(f"- **Greeks Guardrails:** ✅ All in range, portfolio balanced")
+        output.append(f"- **Regime Detection:** ✅ {self.regime_data['regime']} confirmed")
+        output.append(f"- **Win Rate Tracking:** ✅ Conviction-based entry filtration")
+        output.append(f"- **IV Rank Entry Gate:** ✅ {len(entry_candidates)} names qualified (IVR ≥40)")
+        output.append(f"- **Sharpe Ratio (rolling):** not computed in this pipeline -- no return-series tracking exists yet")
         output.append("")
 
-        output.append("Automation notes:")
+        output.append("**Automation notes:**")
+        output.append("")
         output.append("- GitHub Actions: Weekly email Monday 8 AM ET")
         output.append("- Daily logs: Conviction history persisted in JSON")
         output.append("- Re-stagger tracking: Position management windows open")
@@ -1909,10 +1919,8 @@ class UnifiedReportProduction:
         output.extend(self._format_weekly_execution_plan())
 
         # FOOTER
-        output.append("=" * 120)
-        output.append(f"Report generated: {today.isoformat()}")
-        output.append(f"Next Weekly Report: {(today + timedelta(days=7)).strftime('%A, %B %d, %Y')} 08:00 AM ET")
-        output.append("=" * 120)
+        output.append("---")
+        output.append(f"_Report generated: {today.isoformat()} | Next Weekly Report: {(today + timedelta(days=7)).strftime('%A, %B %d, %Y')} 08:00 AM ET_")
 
         return "\n".join(output)
 
@@ -1927,12 +1935,12 @@ class UnifiedReportProduction:
         from datetime import date as _date
         regime = (self.regime_data or {}).get("regime", "BULL")
         put_pct, call_pct = self._get_quarterly_plan_exit_discipline()
-        out = ["=" * 120,
-               "WEEKLY EXECUTION PLAN  —  put/call + DTE aware",
-               f"  Regime: {regime}.  short PUTS (OTM, 45-90 DTE) → hold to {put_pct}% (per the quarterly plan's",
-               f"  exit discipline);  short CALLS → close at {call_pct}% or manage on DELTA (roll up+out / close,",
-               "  esp <30 DTE — theta won't save a tested call);  <21 DTE → take (gamma).",
-               "=" * 120, ""]
+        out = ["## Weekly Execution Plan — put/call + DTE aware",
+               "",
+               f"Regime: {regime}. short PUTS (OTM, 45-90 DTE) → hold to {put_pct}% (per the quarterly plan's "
+               f"exit discipline); short CALLS → close at {call_pct}% or manage on DELTA (roll up+out / close, "
+               "esp <30 DTE — theta won't save a tested call); <21 DTE → take (gamma).",
+               ""]
 
         def _dte(sym):
             s = str(sym)
@@ -1983,31 +1991,35 @@ class UnifiedReportProduction:
             if rsi <= 48 and conv >= 6:
                 letrun.append((tk, rsi, conv))
 
-        out.append("🔻 REDUCE / MANAGE  (RED heat — RSI/trend/fundamentals all confirmed):")
-        out.append("   short CALLS here → roll up+out for credit or close (delta risk, theta won't save them);")
-        out.append("   short PUTS here → near max profit, fine to take.")
+        out.append("### 🔻 Reduce / Manage (RED heat — RSI/trend/fundamentals all confirmed)")
+        out.append("")
+        out.append("short CALLS here → roll up+out for credit or close (delta risk, theta won't save them); short PUTS here → near max profit, fine to take.")
+        out.append("")
         for tk, rsi, conv in sorted(reduce_, key=lambda x: -x[1])[:12]:
-            out.append(f"    {tk:6} RSI {rsi:>4.0f}  conv {conv:>3.1f}")
+            out.append(f"- {tk} RSI {rsi:.0f} conv {conv:.1f}")
         if not reduce_:
-            out.append("    (none overbought)")
+            out.append("- (none overbought)")
         out.append("")
 
-        out.append("⏳ TAKE / ROLL  (<21 DTE — gamma zone, don't hold to expiry):")
+        out.append("### ⏳ Take / Roll (<21 DTE — gamma zone, don't hold to expiry)")
+        out.append("")
         if take:
             for tk, a in sorted(take.items(), key=lambda x: min(x[1]["dtes"]) if x[1]["dtes"] else 99):
-                out.append(f"    {tk:6} {a['legs']} leg(s) @ DTE {sorted(a['dtes'])}")
+                out.append(f"- {tk} {a['legs']} leg(s) @ DTE {sorted(a['dtes'])}")
         else:
-            out.append("    (none parsed under 21 DTE)")
+            out.append("- (none parsed under 21 DTE)")
         out.append("")
 
-        out.append(f"✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to {put_pct}%, DON'T close early = the leak):")
+        out.append(f"### ✋ Let Run (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to {put_pct}%, DON'T close early = the leak)")
+        out.append("")
         if letrun:
-            out.append("    " + ", ".join(f"{tk}" for tk, _, _ in sorted(letrun, key=lambda x: x[1])))
+            out.append("- " + ", ".join(f"{tk}" for tk, _, _ in sorted(letrun, key=lambda x: x[1])))
         else:
-            out.append("    (none)")
+            out.append("- (none)")
         out.append("")
 
-        out.append("▶️ NEW ENTRIES  (redeploy freed collateral — 45-60 DTE CSP, delta 0.15-0.20, no new AI):")
+        out.append("### ▶️ New Entries (redeploy freed collateral — 45-60 DTE CSP, delta 0.15-0.20, no new AI)")
+        out.append("")
         buy = []
         try:
             for name, d in (self.sector_summary or {}).items():
@@ -2015,10 +2027,9 @@ class UnifiedReportProduction:
                     buy.append(name)
         except Exception:
             pass
-        out.append(f"    🟢 BUY sectors now: {', '.join(buy) if buy else '(run screener)'}")
-        out.append("    Efficiency-optimized (growth × IV-yield × collateral granularity):")
-        out.append("      NU, ETN, CEG, TGT, DKNG  — prefer over BLK/JPM/CAT (huge collateral per contract).")
-        out.append("    → Run screen_new_entries / factor_screener for live strikes & IVR before selling.")
+        out.append(f"- 🟢 BUY sectors now: {', '.join(buy) if buy else '(run screener)'}")
+        out.append("- Efficiency-optimized (growth × IV-yield × collateral granularity): NU, ETN, CEG, TGT, DKNG — prefer over BLK/JPM/CAT (huge collateral per contract).")
+        out.append("- → Run screen_new_entries / factor_screener for live strikes & IVR before selling.")
         out.append("")
         return out
 
@@ -2030,16 +2041,14 @@ class UnifiedReportProduction:
         output = []
 
         # HEADER
-        output.append("=" * 120)
-        output.append("UNIFIED MASTER REPORT — BI-WEEKLY TREND ANALYSIS")
-        output.append(f"{today.strftime('%B %d, %Y')} — 4:00 PM ET")
-        output.append("Mid-Month Checkpoint (First Half Review)")
-        output.append("=" * 120)
+        output.append("# Unified Master Report — Bi-Weekly Trend Analysis")
+        output.append("")
+        output.append(f"**{today.strftime('%B %d, %Y')}** — 4:00 PM ET | Mid-Month Checkpoint (First Half Review)")
         output.append("")
 
-        output.append("SYSTEM BOOT: 3-month rolling trend analysis cycle")
-        output.append(f"Report Type: BI-WEEKLY TREND ANALYSIS")
-        output.append(f"Data Window: {(today - timedelta(days=90)).strftime('%B %d')} - {today.strftime('%B %d')} (3 months)")
+        output.append("- **System Boot:** 3-month rolling trend analysis cycle")
+        output.append("- **Report Type:** BI-WEEKLY TREND ANALYSIS")
+        output.append(f"- **Data Window:** {(today - timedelta(days=90)).strftime('%B %d')} - {today.strftime('%B %d')} (3 months)")
         output.append("")
 
         # SECTION 0: ACCOUNT HEALTH & MARGIN STATUS
@@ -2061,26 +2070,26 @@ class UnifiedReportProduction:
         projected_month = mtd_premium + (daily_avg * days_remaining)
         variance_to_target = projected_month - monthly_target
 
-        output.append("PACE CHECK — 3-MONTH ROLLING WINDOW (Biweekly Priority)")
+        output.append("**Pace Check — 3-Month Rolling Window** (Biweekly Priority)")
         output.append("")
-        output.append(f"Current Month-to-Date P&L:      ${mtd_premium:,} ({today.strftime('%B')} 1-{days_elapsed})")
-        output.append(f"Daily average this month:        ${daily_avg:,.0f}/day (trending)")
-        output.append(f"Days remaining in month:         {days_remaining}")
-        output.append(f"Projected month-end P&L:         ${projected_month:,.0f}")
-        output.append(f"Monthly target:                  ${monthly_target:,}")
-        output.append(f"Variance to target:              ${variance_to_target:,.0f} ({variance_to_target/monthly_target*100:.1f}%)")
+        output.append(f"- Current Month-to-Date P&L: ${mtd_premium:,} ({today.strftime('%B')} 1-{days_elapsed})")
+        output.append(f"- Daily average this month: ${daily_avg:,.0f}/day (trending)")
+        output.append(f"- Days remaining in month: {days_remaining}")
+        output.append(f"- Projected month-end P&L: ${projected_month:,.0f}")
+        output.append(f"- Monthly target: ${monthly_target:,}")
+        output.append(f"- Variance to target: ${variance_to_target:,.0f} ({variance_to_target/monthly_target*100:.1f}%)")
         status_msg = "✅ ON TARGET" if abs(variance_to_target) < monthly_target * 0.05 else ("⚠️ BELOW TARGET" if variance_to_target < 0 else "✅ ABOVE TARGET")
-        output.append(f"Status:                          {status_msg}")
+        output.append(f"- Status: {status_msg}")
         output.append("")
 
-        output.append("3-MONTH ROLLING PACE (Biweekly horizon):")
-        output.append(f"  YTD average:                    ${ytd_net/max(1, today.month):,.0f}/month")
-        output.append(f"  Required to sustain annually:   ${monthly_target:,}/month ($1.2M+/year)")
-        output.append(f"  Current trajectory:             {'↗ ACCELERATING' if daily_avg > monthly_target/30 else '→ STABLE' if daily_avg > monthly_target/35 else '↘ BELOW PACE'}")
+        output.append("**3-Month Rolling Pace** (Biweekly horizon):")
+        output.append("")
+        output.append(f"- YTD average: ${ytd_net/max(1, today.month):,.0f}/month")
+        output.append(f"- Required to sustain annually: ${monthly_target:,}/month ($1.2M+/year)")
+        output.append(f"- Current trajectory: {'↗ ACCELERATING' if daily_avg > monthly_target/30 else '→ STABLE' if daily_avg > monthly_target/35 else '↘ BELOW PACE'}")
         output.append("")
 
-        output.append("NOTE: YTD detail variance analysis moved to MONTHLY report (consolidated for clarity)")
-        output.append("      Biweekly focus: Rolling 3-month trend vs month-to-date pace")
+        output.append("Note: YTD detail variance analysis moved to MONTHLY report (consolidated for clarity). Biweekly focus: Rolling 3-month trend vs month-to-date pace.")
         output.append("")
 
         # SECTION 2: CONVICTION TREND
@@ -2089,29 +2098,31 @@ class UnifiedReportProduction:
         conviction_by_bucket = self._get_conviction_summary()
         avg_conviction = np.mean([m['conviction'] for m in self.metrics.values()])
 
-        output.append("CONVICTION DISTRIBUTION (current, live):")
+        output.append("**Conviction Distribution** (current, live):")
         output.append("")
         _n = max(1, len(self.metrics))
         _hi = sum(1 for m in self.metrics.values() if m['conviction'] >= 8)
         _mo = sum(1 for m in self.metrics.values() if 6 <= m['conviction'] < 8)
         _lo = sum(1 for m in self.metrics.values() if m['conviction'] < 6)
-        output.append(f"  HIGH (≥8):      {_hi*100//_n:>3}%  ({_hi} positions)")
-        output.append(f"  MODERATE (6-8): {_mo*100//_n:>3}%  ({_mo} positions)")
-        output.append(f"  LOW (<6):       {_lo*100//_n:>3}%  ({_lo} positions)")
-        output.append(f"  Portfolio avg:  {avg_conviction:.1f}/10")
-        output.append("  (Month-over-month conviction history needs a tracking store — not fabricated.)")
+        output.append(f"- HIGH (≥8): {_hi*100//_n}% ({_hi} positions)")
+        output.append(f"- MODERATE (6-8): {_mo*100//_n}% ({_mo} positions)")
+        output.append(f"- LOW (<6): {_lo*100//_n}% ({_lo} positions)")
+        output.append(f"- Portfolio avg: {avg_conviction:.1f}/10")
+        output.append("- (Month-over-month conviction history needs a tracking store — not fabricated.)")
         output.append("")
 
-        output.append("Top HIGH-conviction positions (current):")
+        output.append("**Top HIGH-conviction positions** (current):")
+        output.append("")
         top_high = conviction_by_bucket.get('HIGH', [])[:5]
         for ticker, m in top_high:
-            output.append(f"  {ticker:8} Conviction: {m['conviction']:.1f}/10")
+            output.append(f"- {ticker}: Conviction {m['conviction']:.1f}/10")
         output.append("")
 
-        output.append("Framework Health:")
-        output.append(f"  ✅ {len(conviction_by_bucket.get('HIGH', []))} positions in HIGH tier (target: ≥30%)")
-        output.append(f"  ✅ Conviction converging toward 7.0 target")
-        output.append(f"  ✅ No forced exits (framework working)")
+        output.append("**Framework Health:**")
+        output.append("")
+        output.append(f"- ✅ {len(conviction_by_bucket.get('HIGH', []))} positions in HIGH tier (target: ≥30%)")
+        output.append(f"- ✅ Conviction converging toward 7.0 target")
+        output.append(f"- ✅ No forced exits (framework working)")
         output.append("")
 
         # SECTION 3: TIER DISTRIBUTION + FRAMEWORK GAP CONTRIBUTION
@@ -2119,21 +2130,21 @@ class UnifiedReportProduction:
 
         gap_data = self._calculate_gap_to_target()
 
-        output.append("TIER CONTRIBUTION TO TARGET (current, live):")
+        output.append("**Tier Contribution to Target** (current, live):")
         output.append("")
-        output.append(f"  Tier 1 (Conv ≥8): {len(conviction_by_bucket.get('HIGH', []))} positions → ${gap_data['tier1_contribution']:,}/month")
-        output.append(f"  Tier 2 (Conv 6-8): {len(conviction_by_bucket.get('MODERATE', []))} positions → ${gap_data['tier2_contribution']:,}/month")
-        output.append(f"  Tier 3 (Conv <6): {len(conviction_by_bucket.get('LOW', []))} positions → ${gap_data['tier3_contribution']:,} drag")
-        output.append("  (Prior-month tier history needs a tracking store — not fabricated.)")
-        output.append("")
-
-        output.append("PORTFOLIO TOTAL CONTRIBUTION TO $90K TARGET:")
-        output.append(f"  Current: ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
-        output.append(f"  Gap: ${gap_data['monthly_gap']:,} → {gap_data['positions_needed']} more Tier 1 needed OR scale/trim Tier 3")
+        output.append(f"- Tier 1 (Conv ≥8): {len(conviction_by_bucket.get('HIGH', []))} positions → ${gap_data['tier1_contribution']:,}/month")
+        output.append(f"- Tier 2 (Conv 6-8): {len(conviction_by_bucket.get('MODERATE', []))} positions → ${gap_data['tier2_contribution']:,}/month")
+        output.append(f"- Tier 3 (Conv <6): {len(conviction_by_bucket.get('LOW', []))} positions → ${gap_data['tier3_contribution']:,} drag")
+        output.append("- (Prior-month tier history needs a tracking store — not fabricated.)")
         output.append("")
 
-        output.append("FRAMEWORK VERDICT: Portfolio quality concentrating in Tier 1 as designed.")
-        output.append("Weekly tier monitoring catching opportunities earlier. Framework gap-closure path clear.")
+        output.append("**Portfolio Total Contribution to $90K Target:**")
+        output.append("")
+        output.append(f"- Current: ${gap_data['current_total']:,}/month ({gap_data['current_total']/gap_data['adjusted_monthly_target']*100:.0f}% of target)")
+        output.append(f"- Gap: ${gap_data['monthly_gap']:,} → {gap_data['positions_needed']} more Tier 1 needed OR scale/trim Tier 3")
+        output.append("")
+
+        output.append("**Framework verdict:** Portfolio quality concentrating in Tier 1 as designed. Weekly tier monitoring catching opportunities earlier. Framework gap-closure path clear.")
         output.append("")
 
         # SECTION 4: REALIZED MONTHLY PREMIUM (real data from transactions)
@@ -2159,12 +2170,12 @@ class UnifiedReportProduction:
             sec = self.sector_summary or {}
             total_not = sum(d.get("total_notional", 0) for d in sec.values()) or 1
             rows = sorted(sec.items(), key=lambda kv: kv[1].get("total_notional", 0), reverse=True)
-            output.append(f"{'Sector':<28}{'% of notional':>14}{'Avg Conv':>10}{'Signal':>14}")
-            output.append("-" * 66)
+            table_rows = []
             for name, d in rows[:12]:
                 pct = d.get("total_notional", 0) / total_not * 100
                 sig = d.get("signal_type", "NEUTRAL")
-                output.append(f"{name:<28}{pct:>13.1f}%{d.get('avg_conviction', 0):>10}{sig:>14}")
+                table_rows.append([name, f"{pct:.1f}%", str(d.get('avg_conviction', 0)), sig])
+            output.extend(self._md_table(["Sector", "% of Notional", "Avg Conv", "Signal"], table_rows))
             output.append("")
             output.append("Month-by-month rotation history is not tracked yet — omitted rather than fabricated.")
         except Exception as _e:
@@ -2179,23 +2190,21 @@ class UnifiedReportProduction:
             _months = [c for c in _t.columns if c != "YTD"]
             tgt = MONTHLY_TARGET_NET_BASE
             output.append(f"Monthly net target (base): ${tgt:,}")
-            output.append(f"{'Month':<10}{'Actual':>14}{'vs Target':>14}")
-            output.append("-" * 38)
+            output.append("")
+            table_rows = []
             for m in _months:
                 act = float(_t.loc["TOTAL", m]) if "TOTAL" in _t.index else 0.0
-                output.append(f"{m:<10}{act:>14,.0f}{act - tgt:>14,.0f}")
+                table_rows.append([m, f"{act:,.0f}", f"{act - tgt:,.0f}"])
+            output.extend(self._md_table(["Month", "Actual", "vs Target"], table_rows))
             output.append("")
-            output.append("Per-driver attribution (regime/thesis/timing) requires trade-level tagging not")
-            output.append("yet captured — omitted rather than estimated.")
+            output.append("Per-driver attribution (regime/thesis/timing) requires trade-level tagging not yet captured — omitted rather than estimated.")
         except Exception as _e:
             output.append(f"(variance unavailable: {_e})")
         output.append("")
 
         # FOOTER
-        output.append("=" * 120)
-        output.append(f"Report generated: {today.isoformat()}")
-        output.append(f"Next BI-WEEKLY Report: {(today + timedelta(days=14)).strftime('%A, %B %d, %Y')} 4:00 PM ET")
-        output.append("=" * 120)
+        output.append("---")
+        output.append(f"_Report generated: {today.isoformat()} | Next BI-WEEKLY Report: {(today + timedelta(days=14)).strftime('%A, %B %d, %Y')} 4:00 PM ET_")
 
         return "\n".join(output)
 
@@ -2208,16 +2217,14 @@ class UnifiedReportProduction:
         conviction_by_bucket = self._get_conviction_summary()
 
         # HEADER
-        output.append("=" * 120)
-        output.append("UNIFIED MASTER REPORT — MONTHLY STAGE")
-        output.append(f"{today.strftime('%B %d, %Y')} — 8:00 AM ET")
-        output.append(f"{today.strftime('%B %Y')} Performance & {(today + timedelta(days=32)).strftime('%B')} Outlook")
-        output.append("=" * 120)
+        output.append("# Unified Master Report — Monthly Stage")
+        output.append("")
+        output.append(f"**{today.strftime('%B %d, %Y')}** — 8:00 AM ET | {today.strftime('%B %Y')} Performance & {(today + timedelta(days=32)).strftime('%B')} Outlook")
         output.append("")
 
-        output.append("SYSTEM BOOT: Monthly recalibration & moat strength update")
-        output.append(f"Report Type: MONTHLY STRATEGIC REVIEW")
-        output.append(f"Data Window: {today.replace(day=1).strftime('%B 1-%d, %Y')} (current month)")
+        output.append("- **System Boot:** Monthly recalibration & moat strength update")
+        output.append("- **Report Type:** MONTHLY STRATEGIC REVIEW")
+        output.append(f"- **Data Window:** {today.replace(day=1).strftime('%B 1-%d, %Y')} (current month)")
         output.append("")
 
         # SECTION 0: ACCOUNT HEALTH & MARGIN STATUS
@@ -2243,18 +2250,17 @@ class UnifiedReportProduction:
         monthly_target = gap_data['adjusted_monthly_target']
         mtd_premium = self.snapshot.get('month_to_date_premium', 0)
 
-        output.append("See Section 0's PERFORMANCE VS TARGET block for YTD actual/target/gap and")
-        output.append("this month's pace vs. the regime-adjusted target -- not repeated here.")
+        output.append("See Section 0's PERFORMANCE VS TARGET block for YTD actual/target/gap and this month's pace vs. the regime-adjusted target — not repeated here.")
         output.append("")
 
-        output.append("REST-OF-YEAR PROJECTION (using the same regime-adjusted target as Section 0):")
+        output.append("**Rest-of-Year Projection** (using the same regime-adjusted target as Section 0):")
         output.append("")
         remaining_months = max(0, 12 - ytd_months)
         remaining_target = monthly_target * remaining_months
-        output.append(f"Remaining months:                        {remaining_months} (as of {today.strftime('%B')})")
-        output.append(f"Remaining target (est):                  ${remaining_target:,} ({remaining_months} × ${monthly_target:,})")
-        output.append(f"Pace required to recover:                ${monthly_target:,}/month (regime-adjusted)")
-        output.append(f"This month so far (MTD, live):           ${mtd_premium:,.0f}")
+        output.append(f"- Remaining months: {remaining_months} (as of {today.strftime('%B')})")
+        output.append(f"- Remaining target (est): ${remaining_target:,} ({remaining_months} × ${monthly_target:,})")
+        output.append(f"- Pace required to recover: ${monthly_target:,}/month (regime-adjusted)")
+        output.append(f"- This month so far (MTD, live): ${mtd_premium:,.0f}")
         output.append("")
 
         # SECTION 2: ACCOUNT PERFORMANCE BY ACCOUNT (ALL accounts in ACCOUNTS_CONFIG)
@@ -2267,6 +2273,8 @@ class UnifiedReportProduction:
         # attributed premium to accounts whether or not they actually
         # generated it that month.
         per_acct_realized = self.snapshot.get('per_account_realized', {})
+        table_rows = []
+        no_realized_data = []
         for account_name, config in ACCOUNTS_CONFIG.items():
             balance = config['balance']
             acct_data = per_acct_realized.get(account_name)
@@ -2282,28 +2290,28 @@ class UnifiedReportProduction:
             acct_ytd = int(acct_data['ytd_realized']) if acct_data else 0
             acct_variance = acct_actual - acct_target
             acct_variance_pct = (acct_variance / acct_target * 100) if acct_target > 0 else 0
-
-            output.append(f"{account_name}")
-            output.append("")
-            output.append(f"├─ Balance: ${balance:,} ({balance/TOTAL_PORTFOLIO_BALANCE*100:.1f}% of portfolio)")
-            output.append(f"├─ Target (monthly): ${acct_target:,}")
-            output.append(f"├─ Actual (MTD, realized/FIFO): ${acct_actual:,}")
-            output.append(f"├─ Actual (YTD, realized/FIFO): ${acct_ytd:,}")
-            output.append(f"├─ Variance (MTD): ${acct_variance:,} ({acct_variance_pct:+.1f}%)")
-            if acct_data is None:
-                output.append("├─ (No option-level realized data for this account — see realized_pnl.py's")
-                output.append("│   module docstring for why, e.g. Vanguard's option-side data is untracked.)")
-
-            # Show position count
             acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
-            output.append(f"├─ Open positions: {len(acct_positions)}")
 
-            # Status
             if acct_target > 0:
                 status = "✅ ON TARGET" if abs(acct_variance_pct) < 5 else ("⚠️ BELOW" if acct_variance < 0 else "✅ ABOVE")
             else:
                 status = "— (no target)"
-            output.append(f"└─ Status: {status}")
+
+            table_rows.append([
+                account_name, f"${balance:,}", f"{balance/TOTAL_PORTFOLIO_BALANCE*100:.1f}%",
+                f"${acct_target:,}", f"${acct_actual:,}", f"${acct_ytd:,}",
+                f"${acct_variance:,} ({acct_variance_pct:+.1f}%)", str(len(acct_positions)), status
+            ])
+            if acct_data is None:
+                no_realized_data.append(account_name)
+
+        output.extend(self._md_table(
+            ["Account", "Balance", "% Portfolio", "Target (mo)", "Actual (MTD)", "Actual (YTD)", "Variance (MTD)", "Open Positions", "Status"],
+            table_rows
+        ))
+        output.append("")
+        if no_realized_data:
+            output.append(f"No option-level realized data for: {', '.join(no_realized_data)} — see `realized_pnl.py`'s module docstring for why (e.g. Vanguard's option-side data is untracked).")
             output.append("")
 
         # SECTION 3: PREMIUM vs TARGET (real, computed from transaction history)
@@ -2314,16 +2322,15 @@ class UnifiedReportProduction:
             _months = [c for c in _t.columns if c != "YTD"]
             tgt = MONTHLY_TARGET_NET_BASE
             _ytd = float(_t.loc['TOTAL', 'YTD']) if 'TOTAL' in _t.index else 0.0
-            output.append(f"Monthly net target (base): ${tgt:,}    |    YTD actual: ${_ytd:,.0f}")
+            output.append(f"Monthly net target (base): ${tgt:,} | YTD actual: ${_ytd:,.0f}")
             output.append("")
-            output.append(f"{'Month':<10}{'Actual':>14}{'Target':>12}{'Variance':>14}")
-            output.append("-" * 50)
+            table_rows = []
             for m in _months:
                 act = float(_t.loc['TOTAL', m]) if 'TOTAL' in _t.index else 0.0
-                output.append(f"{m:<10}{act:>14,.0f}{tgt:>12,.0f}{act - tgt:>14,.0f}")
+                table_rows.append([m, f"{act:,.0f}", f"{tgt:,.0f}", f"{act - tgt:,.0f}"])
+            output.extend(self._md_table(["Month", "Actual", "Target", "Variance"], table_rows))
             output.append("")
-            output.append("Per-driver attribution (regime / thesis / timing / slippage) requires trade-level")
-            output.append("tagging that is not captured yet — omitted rather than estimated.")
+            output.append("Per-driver attribution (regime / thesis / timing / slippage) requires trade-level tagging that is not captured yet — omitted rather than estimated.")
         except Exception as _e:
             output.append(f"(premium vs target unavailable: {_e})")
         output.append("")
@@ -2331,41 +2338,46 @@ class UnifiedReportProduction:
         # SECTION 4: MOAT RECALIBRATION
         output.extend(self._format_section_header(4, "MOAT RECALIBRATION & TIER ASSIGNMENTS"))
 
-        output.append("TIER 1 — STRONG MOAT (Conviction ≥7, 30+ day history, positive P&L)")
+        output.append("**Tier 1 — Strong Moat** (Conviction ≥7, 30+ day history, positive P&L)")
         output.append("")
 
         top_high = conviction_by_bucket.get('HIGH', [])[:5]
         if top_high:
-            output.append(f"  {'Symbol':8} {'Conv':>5} {'Heat':>6} {'Price':>9} {'Value':>12} {'RSI':>5} {'52W Range':>10}  Verdict")
+            table_rows = []
             for ticker, m in top_high:
                 price = self.prices.get(ticker, 0)
                 contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
                 notional = price * contracts * 100
-                output.append(
-                    f"  {ticker:8} {m['conviction']:>5.1f} {m['heat_status']:>6} ${price:>8.2f} ${notional:>11,.0f} "
-                    f"{m['rsi']:>5.1f} {m['position_in_52w_range']:>9.0f}%  STRONG ({m['heat_reason']})"
-                )
+                table_rows.append([
+                    ticker, f"{m['conviction']:.1f}", m['heat_status'], f"${price:.2f}", f"${notional:,.0f}",
+                    f"{m['rsi']:.1f}", f"{m['position_in_52w_range']:.0f}%", f"STRONG ({m['heat_reason']})"
+                ])
+            output.extend(self._md_table(
+                ["Symbol", "Conv", "Heat", "Price", "Value", "RSI", "52W Range", "Verdict"], table_rows
+            ))
         output.append("")
 
-        output.append(f"TIER 1 SUMMARY: {len(top_high)} positions, quality improving")
+        output.append(f"Tier 1 summary: {len(top_high)} positions, quality improving")
         output.append("")
 
-        output.append("TIER 2 — MODERATE MOAT (Conviction 5-7)")
+        output.append("**Tier 2 — Moderate Moat** (Conviction 5-7)")
+        output.append("")
         moderate = conviction_by_bucket.get('MODERATE', [])[:3]
         for ticker, m in moderate:
             price = self.prices.get(ticker, 0)
             contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
             notional = price * contracts * 100
-            output.append(f"  {ticker}: {m['conviction']:.1f}/10 ({m['heat_status']}) | Value ${notional:,.0f} — {m['heat_reason']}")
+            output.append(f"- {ticker}: {m['conviction']:.1f}/10 ({m['heat_status']}) | Value ${notional:,.0f} — {m['heat_reason']}")
         output.append("")
 
-        output.append("TIER 3 & EXITED:")
+        output.append("**Tier 3 & Exited:**")
+        output.append("")
         low = conviction_by_bucket.get('LOW', [])[:2]
         for ticker, m in low:
-            output.append(f"  {ticker}: {m['conviction']:.1f}/10 ({m['heat_status']}) — Watch for exit")
+            output.append(f"- {ticker}: {m['conviction']:.1f}/10 ({m['heat_status']}) — Watch for exit")
         output.append("")
 
-        output.append("MOAT VERDICT: Quality improving with framework. Tier 1 concentration rising.")
+        output.append("**Moat verdict:** Quality improving with framework. Tier 1 concentration rising.")
         output.append("")
 
         # SECTION 5: PERFORMANCE PACE (real) — fabricated Citadel comparison removed
@@ -2375,22 +2387,19 @@ class UnifiedReportProduction:
             _t = to_table(compute_monthly_premium())
             _ytd = float(_t.loc['TOTAL', 'YTD']) if 'TOTAL' in _t.index else 0.0
             _mo = max(1, today.month)
-            output.append(f"YTD net premium (real):       ${_ytd:,.0f}  (Jan–{today.strftime('%b')})")
-            output.append(f"Average monthly pace:         ${_ytd/_mo:,.0f}/month")
-            output.append(f"Annualized run-rate:          ${_ytd/_mo*12:,.0f}")
-            output.append(f"Monthly net target (base):    ${MONTHLY_TARGET_NET_BASE:,}")
+            output.append(f"- YTD net premium (real): ${_ytd:,.0f} (Jan–{today.strftime('%b')})")
+            output.append(f"- Average monthly pace: ${_ytd/_mo:,.0f}/month")
+            output.append(f"- Annualized run-rate: ${_ytd/_mo*12:,.0f}")
+            output.append(f"- Monthly net target (base): ${MONTHLY_TARGET_NET_BASE:,}")
             output.append("")
-            output.append("NOTE: The prior Citadel/peer comparison used fabricated P&L figures and has been")
-            output.append("removed. Benchmark against external estimates manually if you want that view.")
+            output.append("Note: The prior Citadel/peer comparison used fabricated P&L figures and has been removed. Benchmark against external estimates manually if you want that view.")
         except Exception as _e:
             output.append(f"(performance pace unavailable: {_e})")
         output.append("")
 
         # FOOTER
-        output.append("=" * 120)
-        output.append(f"Report generated: {today.isoformat()}")
-        output.append(f"Next Monthly Report: {(today + timedelta(days=32)).replace(day=1).strftime('%A, %B %d, %Y')} 8:00 AM ET")
-        output.append("=" * 120)
+        output.append("---")
+        output.append(f"_Report generated: {today.isoformat()} | Next Monthly Report: {(today + timedelta(days=32)).replace(day=1).strftime('%A, %B %d, %Y')} 8:00 AM ET_")
 
         return "\n".join(output)
 
@@ -2411,12 +2420,10 @@ class UnifiedReportProduction:
         }
 
         # Save all reports (absolute path — cwd of the calling process isn't reliable)
+        # All 4 report types are real Markdown as of 2026-09-02.
         output_files = {}
         for report_type, report_text in reports.items():
-            # Daily is real Markdown (.md) as of 2026-09-02; weekly/biweekly/
-            # monthly stay .txt until they get the same conversion.
-            ext = 'md' if report_type == 'daily' else 'txt'
-            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.{ext}"
+            output_file = f"/home/rahulvadera/projects/theta-lab/logs/unified_master_report_{today.isoformat()}_{report_type}_production.md"
             Path(output_file).parent.mkdir(parents=True, exist_ok=True)
             with open(output_file, 'w') as f:
                 f.write(report_text)
