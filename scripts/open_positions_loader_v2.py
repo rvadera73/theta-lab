@@ -233,14 +233,30 @@ class OpenPositionsLoaderV2:
                     # No disclaimer rows or metadata - just read normally
                     df = pd.read_csv(file_path, encoding='utf-8-sig', on_bad_lines='skip')
 
-                    # Map column names for consistency
-                    # Fidelity position files have misaligned columns - data is shifted left
-                    # Symbol column has descriptions like "HOOD MAR 19 2027 $65 PUT"
-                    # Description column actually contains quantities like "-1.0"
+                    # Map column names for consistency.
+                    # ATTEMPTED FIX 2026-09-01, REVERTED: for fidelity_rahul.csv
+                    # specifically, raw-file inspection confirmed Symbol holds
+                    # the ticker/option code, Description holds the human
+                    # description, and Quantity holds the real numeric
+                    # quantity -- NOT shifted the way this comment used to
+                    # claim. Switching df['quantity'] = df['Quantity'] fixed
+                    # that file but crashed _calculate_open_positions() on a
+                    # ValueError ("could not convert string to float:
+                    # '$85.85'") sourced from a DIFFERENT Fidelity file variant
+                    # (401K and/or the Rajul combined file) where the column
+                    # actually named "Quantity" is not reliably a clean
+                    # number for every row. The three Fidelity position files
+                    # (fidelity_rahul.csv, fidelity_rajul.csv, and whatever
+                    # produces the 401K rows) do NOT all share one column
+                    # layout -- a real per-file-variant investigation is
+                    # needed before changing this safely, not a blanket
+                    # switch. Reverted to the original Description-based
+                    # mapping (which at least doesn't crash) until that
+                    # investigation happens; this is why Fidelity equity
+                    # coverage (COIN, etc.) is still not reliably captured --
+                    # documented, not silently left broken.
                     if is_position_file:
-                        # Symbol already has what we need (descriptions)
                         df['symbol'] = df['Symbol']
-                        # Description column has quantities for position files
                         if 'Description' in df.columns:
                             df['quantity'] = df['Description']
                     else:

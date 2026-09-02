@@ -44,24 +44,31 @@ needs realized_pnl.py's numbers) — this module has no dependency on either.
 # scripts/realized_pnl.py, which reads it directly) now gets the same
 # single computed number automatically -- no call site needed to change.
 # ═══════════════════════════════════════════════════════════════════
+# balance_as_of: None means genuinely unconfirmed (no date this figure was
+# last verified against) -- confirmed via direct account-status
+# investigation (2026-09-01) that Account B/C's "over cap"/"coverage gap"
+# readings are NOT a calculation bug (their covered/naked call detection is
+# correct) but ARE explained by these balances being stale -- Schwab's
+# position export has no cash/NLV line at all, so there is currently no way
+# to derive these live; they need a direct re-confirmation from the trader.
 ACCOUNTS_CONFIG = {
-    'Account A (232)': {'balance': 403000, 'margin': True, 'capacity': 700000},
-    'Account B (275)': {'balance': 261000, 'margin': False},
-    'Account C (634)': {'balance': 266000, 'margin': False},
-    'Fidelity (Rahul)': {'balance': 498560, 'margin': False},
-    'Fidelity (Rajul — Roth IRA)': {'balance': 39158, 'margin': False},
-    'Fidelity (Rajul — Rollover IRA)': {'balance': 128081, 'margin': False},
-    'Vanguard (Rahul)': {'balance': 320492, 'margin': False},
-    'Robinhood (Individual)': {'balance': 13000, 'margin': False},
-    'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False},
-    'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'weighting_basis': 0},
+    'Account A (232)': {'balance': 403000, 'margin': True, 'capacity': 700000, 'balance_as_of': None},
+    'Account B (275)': {'balance': 261000, 'margin': False, 'balance_as_of': None},
+    'Account C (634)': {'balance': 266000, 'margin': False, 'balance_as_of': None},
+    'Fidelity (Rahul)': {'balance': 498560, 'margin': False, 'balance_as_of': '2026-07-31'},
+    'Fidelity (Rajul — Roth IRA)': {'balance': 39158, 'margin': False, 'balance_as_of': '2026-07-31'},
+    'Fidelity (Rajul — Rollover IRA)': {'balance': 128081, 'margin': False, 'balance_as_of': '2026-07-31'},
+    'Vanguard (Rahul)': {'balance': 320492, 'margin': False, 'balance_as_of': '2026-07-31'},
+    'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'balance_as_of': None},
+    'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'balance_as_of': None},
+    'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'weighting_basis': 0, 'balance_as_of': '2026-07-31'},
     # The 5th Fidelity account (custodial "ROTH IRA for Minor", 258240575) —
     # previously untracked entirely (see scripts/update_snapshot.py's
     # _FIDELITY_ACCOUNT_LABELS). Confirmed real, had genuine 2026 option
     # activity, wound down / transferred out ~March-May 2026, now ~$3 cash —
     # weighting_basis=0 like the 401K since there's no capital left to trade,
     # not because it can't do options.
-    'Fidelity (Rahul — Roth IRA Minor)': {'balance': 3, 'margin': False, 'weighting_basis': 0},
+    'Fidelity (Rahul — Roth IRA Minor)': {'balance': 3, 'margin': False, 'weighting_basis': 0, 'balance_as_of': '2026-05-31'},
 }
 
 TOTAL_PORTFOLIO_BALANCE = sum(acc['balance'] for acc in ACCOUNTS_CONFIG.values())

@@ -71,26 +71,37 @@ Account                              Balance     %      Notional     Opt Req    
 ------------------------------------------------------------------------------------------------------------------------
 Account A (232)                $     403,000 17.2% $   4,533,403 $   816,013    Margin             🔴 OVER CAP $  25,753 ⚠️ $  4,407
   ├─ 161 option positions | Monthly target: $28,615 | Equity: ADBE 400sh, APP 100sh, AXON 100sh, COIN 100sh, CRM 300sh +13 more
+  └─ ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
 Account B (275)                $     261,000 11.1% $     351,496 $   291,950  Cash-Sec         🔴 COVERAGE GAP $   9,602 ⚠️ $  1,643
   ├─ 20 option positions | Monthly target: $10,669 | Equity: CRM 100sh, NVO 100sh
+  └─ ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 COVERAGE GAP reading above
 Account C (634)                $     266,000 11.4% $     327,441 $   214,450  Cash-Sec               ⚠️ WATCH $   9,786 ⚠️ $  1,674
   ├─ 22 option positions | Monthly target: $10,874 | Equity: ABNB 100sh, NKE 100sh, TWLO 324sh
+  └─ ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the ⚠️ WATCH reading above
 Fidelity (Rahul)               $     498,560 21.3% $     661,962 $   627,800  Cash-Sec         🔴 COVERAGE GAP $  18,342 ⚠️ $  3,139
   ├─ 41 option positions | Monthly target: $20,380 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, CRM 200sh
+  └─ ⚠️ Balance as of 2026-07-31 (32 days ago) — re-confirm if the 🔴 COVERAGE GAP reading above matters for a decision
 Fidelity (Rajul — Roth IRA)    $      39,158  1.7% $      52,371 $    51,682  Cash-Sec         🔴 COVERAGE GAP $   1,440 ⚠️ $    246
   ├─ 8 option positions | Monthly target: $1,601 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
+  └─ ⚠️ Balance as of 2026-07-31 (32 days ago) — re-confirm if the 🔴 COVERAGE GAP reading above matters for a decision
 Fidelity (Rajul — Rollover IRA) $     128,081  5.5% $     170,855 $   161,150  Cash-Sec         🔴 COVERAGE GAP $   4,712 ⚠️ $    806
   ├─ 13 option positions | Monthly target: $5,236
+  └─ ⚠️ Balance as of 2026-07-31 (32 days ago) — re-confirm if the 🔴 COVERAGE GAP reading above matters for a decision
 Vanguard (Rahul)               $     320,492 13.7% $     493,955 $   428,733  Cash-Sec         🔴 COVERAGE GAP $  11,790 ⚠️ $  2,017
   ├─ 27 option positions | Monthly target: $13,101
+  └─ ⚠️ Balance as of 2026-07-31 (32 days ago) — re-confirm if the 🔴 COVERAGE GAP reading above matters for a decision
 Robinhood (Individual)         $      13,000  0.6% $      23,759 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $     477 ⚠️ $     81
   ├─ 4 option positions | Monthly target: $531 | Equity: RIOT 100sh, AAPL 0sh
+  └─ ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the ✅ FULLY COLLATERALIZED reading above
 Robinhood (Traditional IRA)    $     220,000  9.4% $     294,885 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $   8,093 ⚠️ $  1,385
   ├─ 18 option positions | Monthly target: $8,993
+  └─ ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the ✅ FULLY COLLATERALIZED reading above
 Fidelity 401K (Rahul)          $     192,200  8.2% $           0 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $       0 ✅ $      0
   └─ No open positions | Monthly target: $0
+  └─ ⚠️ Balance as of 2026-07-31 (32 days ago) — re-confirm if the ✅ FULLY COLLATERALIZED reading above matters for a decision
 Fidelity (Rahul — Roth IRA Minor) $           3  0.0% $           0 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $       0 ✅ $      0
   └─ No open positions | Monthly target: $0
+  └─ ⚠️ Balance as of 2026-05-31 (93 days ago) — re-confirm if the ✅ FULLY COLLATERALIZED reading above matters for a decision
 ------------------------------------------------------------------------------------------------------------------------
 TOTAL                          $   2,341,494 100.0% $   6,910,127 $ 2,591,778
 
@@ -318,16 +329,16 @@ SECTOR SNAPSHOT — Conviction & Valuation Positioning:
 
 Sector                     Positions   Avg Conv   Avg RSI   52W %ile   Avg IVR                                   Signal
 ------------------------------------------------------------------------------------------------------------------------
-Technology                       114       6.58      47.1       54.9        66                                🟡 NEUTRAL
+Technology                       114       6.58      47.1       54.8        66                                🟡 NEUTRAL
 Healthcare                        15       5.91      41.5       40.9        28                                🟡 NEUTRAL
 Consumer Cyclical                 29       6.04      35.0       44.0        64                     🟢 BUY (rich premium)
 Industrials                       37       6.52      29.0       40.5        54                     🟢 BUY (rich premium)
-Energy                             4        6.6      56.7       60.0        41                                🟡 NEUTRAL
-Consumer Defensive                 1        6.4      29.5       24.3        98                     🟢 BUY (rich premium)
+Energy                             4        6.6      56.7       59.2        41                                🟡 NEUTRAL
+Consumer Defensive                 1        6.4      29.5       22.4        98                     🟢 BUY (rich premium)
 Utilities                          7       6.39      37.9        7.2        31                 🟡 BUY stock/THIN premium
-Communication Services            32       7.87      54.7       22.2        57                     🟢 BUY (rich premium)
+Communication Services            32       7.87      54.7       21.8        57                     🟢 BUY (rich premium)
 Defense                            4       5.95      20.6       27.8        66                     🟢 BUY (rich premium)
-Brand-Quality (Non-AI)            21       6.72      44.1       42.2        37                                🟡 NEUTRAL
+Brand-Quality (Non-AI)            21        6.8      44.6       42.2        36                                🟡 NEUTRAL
 Basic Materials                   11       7.53      55.0       36.6        23                 🟡 BUY stock/THIN premium
 Financial Services                38       6.13      50.5       35.2        50                                🟡 NEUTRAL
 Unknown                            1        5.3      50.0       50.0         0                                🟡 NEUTRAL
@@ -339,7 +350,7 @@ DETAILED SECTOR BREAKDOWN:
 TECHNOLOGY
 ├─ Positions: 114 | Total notional: $2,641,643
 ├─ Avg conviction: 6.58/10 | Avg RSI: 47.1
-├─ Position in 52W range: 54.9% (0=low, 100=high)
+├─ Position in 52W range: 54.8% (0=low, 100=high)
 ├─ Avg IV rank: 66/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
@@ -439,7 +450,7 @@ INDUSTRIALS
 ENERGY
 ├─ Positions: 4 | Total notional: $29,062
 ├─ Avg conviction: 6.6/10 | Avg RSI: 56.7
-├─ Position in 52W range: 60.0% (0=low, 100=high)
+├─ Position in 52W range: 59.2% (0=low, 100=high)
 ├─ Avg IV rank: 41/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
@@ -463,7 +474,7 @@ ENERGY
 CONSUMER DEFENSIVE
 ├─ Positions: 1 | Total notional: $10,592
 ├─ Avg conviction: 6.4/10 | Avg RSI: 29.5
-├─ Position in 52W range: 24.3% (0=low, 100=high)
+├─ Position in 52W range: 22.4% (0=low, 100=high)
 ├─ Avg IV rank: 98/100 (≥40 = rich premium)
 ├─ 🟢 BUY — Oversold + rich premium (avg IVR 98, good for selling)
 
@@ -509,7 +520,7 @@ UTILITIES
 COMMUNICATION SERVICES
 ├─ Positions: 32 | Total notional: $894,476
 ├─ Avg conviction: 7.87/10 | Avg RSI: 54.7
-├─ Position in 52W range: 22.2% (0=low, 100=high)
+├─ Position in 52W range: 21.8% (0=low, 100=high)
 ├─ Avg IV rank: 57/100 (≥40 = rich premium)
 ├─ 🟢 BUY — Oversold + rich premium (avg IVR 57, good for selling)
 
@@ -557,9 +568,9 @@ DEFENSE
 
 BRAND-QUALITY (NON-AI)
 ├─ Positions: 21 | Total notional: $366,832
-├─ Avg conviction: 6.72/10 | Avg RSI: 44.1
+├─ Avg conviction: 6.8/10 | Avg RSI: 44.6
 ├─ Position in 52W range: 42.2% (0=low, 100=high)
-├─ Avg IV rank: 37/100 (≥40 = rich premium)
+├─ Avg IV rank: 36/100 (≥40 = rich premium)
 ├─ 🟡 MONITOR — Neutral positioning
 
    Conviction Distribution:
@@ -661,7 +672,7 @@ PRIORITY 1: BUY SIGNALS (Attractive pricing + conviction)
     🟡 BUY (stock only) — High conviction but THIN premium (avg IVR 23 < 40)
   ✓ Consumer Cyclical: Conv 6.0/10, RSI 35.0, 52W %ile 44.0
     🟢 BUY — Oversold + rich premium (avg IVR 64, good for selling)
-  ✓ Communication Services: Conv 7.9/10, RSI 54.7, 52W %ile 22.2
+  ✓ Communication Services: Conv 7.9/10, RSI 54.7, 52W %ile 21.8
     🟢 BUY — Oversold + rich premium (avg IVR 57, good for selling)
   ✓ Industrials: Conv 6.5/10, RSI 29.0, 52W %ile 40.5
     🟢 BUY — Oversold + rich premium (avg IVR 54, good for selling)
@@ -669,7 +680,7 @@ PRIORITY 1: BUY SIGNALS (Attractive pricing + conviction)
     🟢 BUY — Oversold + rich premium (avg IVR 66, good for selling)
   ✓ Utilities: Conv 6.4/10, RSI 37.9, 52W %ile 7.2
     🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 31 < 40) — not attractive for CSPs/CCs
-  ✓ Consumer Defensive: Conv 6.4/10, RSI 29.5, 52W %ile 24.3
+  ✓ Consumer Defensive: Conv 6.4/10, RSI 29.5, 52W %ile 22.4
     🟢 BUY — Oversold + rich premium (avg IVR 98, good for selling)
 
 PRIORITY 2: HOLD SIGNALS (Conviction intact but extended)
@@ -679,9 +690,9 @@ PRIORITY 3: REDUCE SIGNALS (Extended positioning or low conviction)
   (None currently)
 
 PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)
-  ◇ Technology: Conv 6.6/10, RSI 47.1, 52W %ile 54.9
+  ◇ Technology: Conv 6.6/10, RSI 47.1, 52W %ile 54.8
     🟡 MONITOR — Neutral positioning
-  ◇ Brand-Quality (Non-AI): Conv 6.7/10, RSI 44.1, 52W %ile 42.2
+  ◇ Brand-Quality (Non-AI): Conv 6.8/10, RSI 44.6, 52W %ile 42.2
     🟡 MONITOR — Neutral positioning
   ◇ Unknown: Conv 5.3/10, RSI 50.0, 52W %ile 50.0
     🟡 MONITOR — Neutral positioning
@@ -689,7 +700,7 @@ PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)
     🟡 MONITOR — Neutral positioning
   ◇ Healthcare: Conv 5.9/10, RSI 41.5, 52W %ile 40.9
     🟡 MONITOR — Neutral positioning
-  ◇ Energy: Conv 6.6/10, RSI 56.7, 52W %ile 60.0
+  ◇ Energy: Conv 6.6/10, RSI 56.7, 52W %ile 59.2
     🟡 MONITOR — Neutral positioning
 
 ========================================================================================================================

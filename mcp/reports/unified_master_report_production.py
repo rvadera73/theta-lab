@@ -330,6 +330,15 @@ class UnifiedReportProduction:
 
             acct_gap = gap_data['account_gaps'].get(account_name, {'target': 0, 'actual': 0, 'gap': 0, 'pct_gap': 0})
 
+            balance_as_of = config.get('balance_as_of')
+            if balance_as_of:
+                try:
+                    balance_days_stale = (date.today() - date.fromisoformat(balance_as_of)).days
+                except ValueError:
+                    balance_days_stale = None
+            else:
+                balance_days_stale = None  # genuinely unconfirmed, not just "old" -- no date to diff against
+
             result[account_name] = {
                 'balance': balance, 'pct': pct, 'account_type': account_type,
                 'is_margin': is_margin, 'notional': acct_notional,
@@ -338,6 +347,7 @@ class UnifiedReportProduction:
                 'position_count': len(acct_positions),
                 'target': acct_gap['target'], 'actual': acct_gap['actual'],
                 'gap': acct_gap['gap'], 'pct_gap': acct_gap['pct_gap'],
+                'balance_as_of': balance_as_of, 'balance_days_stale': balance_days_stale,
             }
 
         self._account_status_cache = result
@@ -465,6 +475,11 @@ class UnifiedReportProduction:
                 output.append(f"  ├─ {s['position_count']} option positions | Monthly target: ${config['monthly_target']:,}{equity_str}")
             else:
                 output.append(f"  └─ No open positions | Monthly target: ${config['monthly_target']:,}")
+
+            if s['balance_as_of'] is None:
+                output.append(f"  └─ ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the {s['status']} reading above")
+            elif s['balance_days_stale'] is not None and s['balance_days_stale'] > 30:
+                output.append(f"  └─ ⚠️ Balance as of {s['balance_as_of']} ({s['balance_days_stale']} days ago) — re-confirm if the {s['status']} reading above matters for a decision")
 
         output.append("-" * 120)
         output.append(f"{'TOTAL':<30} ${TOTAL_PORTFOLIO_BALANCE:>12,} {'100.0%':>5} ${total_notional:>12,.0f} ${total_option_req:>10,.0f}")
