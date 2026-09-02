@@ -218,13 +218,13 @@ MODERATE (Tier 2: 6-8) CONVICTION — 59 positions | Total contribution: $59,000
   🟡    JD       $   27.90   7.5 $        1,000      1.1%
   🟡    LITE     $  868.95   7.5 $        1,000      1.1%
   🟢    SPCX     $  142.23   7.5 $        1,000      1.1%
-  🟡    APH      $  163.18   7.4 $        1,000      1.1%
   🟢    KTOS     $   49.34   7.4 $        1,000      1.1%
   🟢    ONDS     $    7.04   7.4 $        1,000      1.1%
   🟢    GOOGL    $  335.02   7.3 $        1,000      1.1%
   🟡    NFLX     $   80.81   7.2 $        1,000      1.1%
   🟡    ANET     $  189.26   7.2 $        1,000      1.1%
   🟡    IBM      $  231.40   7.2 $        1,000      1.1%
+  🟡    APH      $  163.18   7.2 $        1,000      1.1%
   🟢    ULTA     $  545.66   7.2 $        1,000      1.1%
   🟢    RKLB     $   62.54   7.0 $        1,000      1.1%
   🟡    ISRG     $  369.25   7.0 $        1,000      1.1%
@@ -284,14 +284,14 @@ SECTOR SNAPSHOT — Conviction & Valuation Positioning:
 
 Sector                     Positions   Avg Conv   Avg RSI   52W %ile   Avg IVR                                   Signal
 ------------------------------------------------------------------------------------------------------------------------
-Technology                       114       6.58      47.1       54.8        66                                🟡 NEUTRAL
+Technology                       114       6.58      47.2       54.9        67                                🟡 NEUTRAL
 Healthcare                        15       5.91      41.5       40.9        28                                🟡 NEUTRAL
 Consumer Cyclical                 29       6.04      35.0       44.0        64                     🟢 BUY (rich premium)
-Industrials                       37       6.53      29.0       40.4        54                     🟢 BUY (rich premium)
-Energy                             4        6.6      56.7       59.2        41                                🟡 NEUTRAL
-Consumer Defensive                 1        6.4      29.5       22.4        98                     🟢 BUY (rich premium)
+Industrials                       37       6.53      29.0       40.5        54                     🟢 BUY (rich premium)
+Energy                             4        6.6      56.7       60.0        41                                🟡 NEUTRAL
+Consumer Defensive                 1        6.4      29.5       24.3        98                     🟢 BUY (rich premium)
 Utilities                          7       6.39      37.9        7.2        31                 🟡 BUY stock/THIN premium
-Communication Services            32       7.87      54.7       21.8        57                     🟢 BUY (rich premium)
+Communication Services            32       7.87      54.7       22.2        57                     🟢 BUY (rich premium)
 Defense                            4       5.95      20.6       27.8        66                     🟢 BUY (rich premium)
 Brand-Quality (Non-AI)            21        6.8      44.6       42.2        36                                🟡 NEUTRAL
 Basic Materials                   11       7.53      55.0       36.6        23                 🟡 BUY stock/THIN premium
@@ -313,15 +313,15 @@ PRIORITY 1: BUY SIGNALS (Attractive pricing + conviction)
     🟡 BUY (stock only) — High conviction but THIN premium (avg IVR 23 < 40)
   ✓ Consumer Cyclical: Conv 6.0/10, RSI 35.0, 52W %ile 44.0
     🟢 BUY — Oversold + rich premium (avg IVR 64, good for selling)
-  ✓ Communication Services: Conv 7.9/10, RSI 54.7, 52W %ile 21.8
+  ✓ Communication Services: Conv 7.9/10, RSI 54.7, 52W %ile 22.2
     🟢 BUY — Oversold + rich premium (avg IVR 57, good for selling)
-  ✓ Industrials: Conv 6.5/10, RSI 29.0, 52W %ile 40.4
+  ✓ Industrials: Conv 6.5/10, RSI 29.0, 52W %ile 40.5
     🟢 BUY — Oversold + rich premium (avg IVR 54, good for selling)
   ✓ Defense: Conv 6.0/10, RSI 20.6, 52W %ile 27.8
     🟢 BUY — Oversold + rich premium (avg IVR 66, good for selling)
   ✓ Utilities: Conv 6.4/10, RSI 37.9, 52W %ile 7.2
     🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 31 < 40) — not attractive for CSPs/CCs
-  ✓ Consumer Defensive: Conv 6.4/10, RSI 29.5, 52W %ile 22.4
+  ✓ Consumer Defensive: Conv 6.4/10, RSI 29.5, 52W %ile 24.3
     🟢 BUY — Oversold + rich premium (avg IVR 98, good for selling)
 
 PRIORITY 2: HOLD SIGNALS (Conviction intact but extended)
@@ -331,7 +331,7 @@ PRIORITY 3: REDUCE SIGNALS (Extended positioning or low conviction)
   (None currently)
 
 PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)
-  ◇ Technology: Conv 6.6/10, RSI 47.1, 52W %ile 54.8
+  ◇ Technology: Conv 6.6/10, RSI 47.2, 52W %ile 54.9
     🟡 MONITOR — Neutral positioning
   ◇ Brand-Quality (Non-AI): Conv 6.8/10, RSI 44.6, 52W %ile 42.2
     🟡 MONITOR — Neutral positioning
@@ -341,7 +341,7 @@ PRIORITY 4: MONITOR SIGNALS (Neutral or low conviction)
     🟡 MONITOR — Neutral positioning
   ◇ Healthcare: Conv 5.9/10, RSI 41.5, 52W %ile 40.9
     🟡 MONITOR — Neutral positioning
-  ◇ Energy: Conv 6.6/10, RSI 56.7, 52W %ile 59.2
+  ◇ Energy: Conv 6.6/10, RSI 56.7, 52W %ile 60.0
     🟡 MONITOR — Neutral positioning
 
 ========================================================================================================================
@@ -380,7 +380,7 @@ SECTION 6: POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total V
   TWLO     $     22,865 $     68,595 $     91,460       🟡   6.4 🟡 MONITOR
   PANW     $     72,418 $          0 $     72,418       🟡   5.4 🟡 MONITOR
   ZS       $     35,674 $     35,674 $     71,348       🟡   5.9 🟡 MONITOR
-  APH      $     48,954 $     16,318 $     65,272       🟡   7.4 🟡 MONITOR
+  APH      $     48,954 $     16,318 $     65,272       🟡   7.2 🟡 MONITOR
   NVDA     $     65,232 $          0 $     65,232       🟡   7.6 🟡 MONITOR
   SHOP     $     55,928 $          0 $     55,928       🟢   6.5 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure
   XYZ      $     31,152 $     15,576 $     46,728       🟡   4.5 🟡 MONITOR
@@ -576,10 +576,9 @@ Rotation Playbook:
       • IF prob increases to >50% in next 3 days → Move to Stage 2
       • IF prob decreases to <20% → Resume normal sizing
 
-========================================================================================================================
-SECTION 6.6: AI CAPEX RISK TRACKER — CIRCULAR FINANCING PLAYBOOK
-========================================================================================================================
-
+------------------------------------------------------------------------------------------------------------------------
+AI CAPEX RISK TRACKER (Circular Financing Playbook — the scriptable half of the same macro picture above)
+------------------------------------------------------------------------------------------------------------------------
 
 Technology concentration: 38.2% of notional (114 positions, $2,641,643)
   Reference: top-10 S&P 500 concentration is 41.2%, a record — this line tracks
@@ -606,7 +605,7 @@ TIER CR — PORTFOLIO-WIDE CREDIT EXIT GATE:
     RIOT: -10.3% (7d) vs SPX -0.1% — >10pp gap
 
 ========================================================================================================================
-SECTION 6.7: ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE)
+SECTION 6.6: ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE)
 ========================================================================================================================
 
 
@@ -650,7 +649,7 @@ Account A (232)              ZBH     C     85.0  108    66% $      8,500
     OKTA C 140.0 (Account A (232)) — 69% probability, RED heat
 
 ========================================================================================================================
-SECTION 6.8: QUARTERLY PLAN STATUS
+SECTION 6.7: QUARTERLY PLAN STATUS
 ========================================================================================================================
 
 
@@ -662,7 +661,7 @@ SECTION 6.8: QUARTERLY PLAN STATUS
   Standing rules this window: 5 in effect (see the plan file for full text)
 
 ========================================================================================================================
-SECTION 6.9: SEEKING ALPHA WEEKLY THEMES
+SECTION 6.8: SEEKING ALPHA WEEKLY THEMES
 ========================================================================================================================
 
 
@@ -678,16 +677,16 @@ SECTION 7: ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT
 
 EXECUTION SEQUENCE (Do in this order):
 
-1️⃣  CLOSE NOW 🔴 (4 positions)
+1️⃣  CLOSE NOW 🔴 (0 positions)
    └─ Why: Extended/overbought + structural risk. Act before deterioration.
-   └─ Gap Impact: Closing 4 RED positions saves ~$2,000/month drag
-       Moves gap from $15,400 to $13,400 (-2.2% improvement)
-       Names: CRM, OKTA, CRWD, PFE  (full detail — put/call value, sector, suggestion — in Section 6)
+   └─ Gap Impact: Closing 0 RED positions saves ~$0/month drag
+       Moves gap from $15,400 to $15,400 (0.0% improvement)
+       ✅ None needed — no RED + high conviction conflicts
 
-2️⃣  MONITOR FOR ROLLS 🟡 (4 positions at risk)
+2️⃣  MONITOR FOR ROLLS 🟡 (0 positions at risk)
    └─ Why: Approaching strike or extremes. Roll if thesis intact, close if thesis broken.
-   └─ Gap Impact: Preserve existing $4,000/month contribution from MODERATE conviction positions
-       Names: ABNB, XYZ, MMYT, ETSY  (full detail in Section 6)
+   └─ Gap Impact: Preserve existing $0/month contribution from MODERATE conviction positions
+       ✅ None — all CRITICAL positions are RED/close candidates
 
 3️⃣  LET RUN — NOTHING NEEDED 🟢 (43 positions)
    └─ Why: Attractive pricing (oversold) + adequate conviction. No action required.
@@ -705,14 +704,14 @@ EXECUTION SEQUENCE (Do in this order):
 
 PORTFOLIO STATUS & GAP TRAJECTORY:
   ✅ Total positions scanned: 88
-  🔴 Critical actions: 4 closes + 4 monitors
+  🔴 Critical actions: 0 closes + 0 monitors
   🟡 Yellow cautions: 37
   🟢 Green healthy: 43
   📊 Market regime: CAUTIOUS_BULL
 
 GAP CLOSURE SUMMARY:
   Current gap: $15,400 (17.1% below target)
-  After closes: $13,400 (saves ~-2.2%)
+  After closes: $15,400 (saves ~0.0%)
   After new Tier 1 entries: $200 (16.9% to gap closure)
   Path to target: Execute closes → add HIGH conviction Tier 1 → scale over 2-3 weeks
 

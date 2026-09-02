@@ -423,7 +423,7 @@ WEEKLY EXECUTION PLAN  —  put/call + DTE aware
     APP    1 leg(s) @ DTE [17]
 
 ✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to 70%, DON'T close early = the leak):
-    PL, CRWV, RKLB, FSLR, JD, KTOS, ASTS, CCL, ONDS, NBIS, BABA, ISRG, WMT, GEV, NOC, AMKR, ALAB, LASR, VST, TWLO, BE, IONQ, VRT, QUBT, SHOP, AMZN, DKNG, UBER, TSM, GOOGL, HUT, BROS, LYFT, NKE, EXPE, BWXT, RBRK, IBM, ANET, NVDA, APP, SPCX, UNH, APH, CRWD
+    PL, CRWV, RKLB, FSLR, JD, KTOS, ASTS, CCL, ONDS, NBIS, BABA, ISRG, WMT, GEV, NOC, AMKR, ALAB, LASR, VST, TWLO, BE, IONQ, VRT, QUBT, SHOP, AMZN, DKNG, UBER, TSM, GOOGL, HUT, BROS, LYFT, NKE, EXPE, BWXT, RBRK, IBM, ANET, NVDA, APP, SPCX, UNH, CRWD, APH
 
 ▶️ NEW ENTRIES  (redeploy freed collateral — 45-60 DTE CSP, delta 0.15-0.20, no new AI):
     🟢 BUY sectors now: Basic Materials, Consumer Cyclical, Communication Services, Industrials, Defense, Utilities, Consumer Defensive

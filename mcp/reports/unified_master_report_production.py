@@ -1125,16 +1125,20 @@ class UnifiedReportProduction:
             output.append(f"⚠️ Macro risk analysis unavailable: {e}")
             output.append("")
 
-        # SECTION 6.6: AI CAPEX RISK TRACKER — the scriptable half of the
-        # Circular Financing Playbook (logs/circular_financing_playbook.html).
-        # The qualitative Tier 1/2 check (Oracle/CoreWeave credit news,
-        # Anthropic IPO status, private-credit gating) needs live web
-        # research judgment and can't run in this unattended report — that
-        # stays on /ai-capex-risk-review. This section tracks what IS
-        # computable from live prices/fundamentals on every scheduled run:
-        # Technology concentration and the named high-risk/quality-AI/avoid
-        # buckets' actual dollar exposure vs. the 90-day plan's 30/70 target.
-        output.extend(self._format_section_header("6.6", "AI CAPEX RISK TRACKER — CIRCULAR FINANCING PLAYBOOK"))
+        # AI CAPEX RISK TRACKER — merged into Section 6.5 (trader-requested
+        # 2026-09-01: "6.5 and 6.6 can be consolidated") rather than kept as
+        # a second full boxed section -- this IS the AI-capex-specific half
+        # of the same macro risk picture 6.5 just covered generically (the
+        # 7-layer signals feed the SAME crash_probability driving the
+        # sector_sensitivity list above), not a separate topic. The
+        # scriptable half of the Circular Financing Playbook
+        # (logs/circular_financing_playbook.html); the qualitative Tier 1/2
+        # check (Oracle/CoreWeave credit news, Anthropic IPO status,
+        # private-credit gating) needs live web research judgment and can't
+        # run in this unattended report -- that stays on /ai-capex-risk-review.
+        output.append("-" * 120)
+        output.append("AI CAPEX RISK TRACKER (Circular Financing Playbook — the scriptable half of the same macro picture above)")
+        output.append("-" * 120)
         output.append("")
         try:
             all_positions = critical + monitor + healthy
@@ -1253,7 +1257,7 @@ class UnifiedReportProduction:
         # this section's live option-chain-fetch count (one per distinct
         # underlying+expiry, uncached across runs) high enough to materially
         # slow every scheduled report run for little actionable benefit.
-        output.extend(self._format_section_header("6.7", "ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE)"))
+        output.extend(self._format_section_header("6.6", "ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE)"))
         output.append("")
         try:
             today = date.today()
@@ -1326,7 +1330,7 @@ class UnifiedReportProduction:
         # (70% puts / 50% calls). This section surfaces the plan directly;
         # _get_quarterly_plan_exit_discipline() below feeds the real values
         # into the Weekly Execution Plan header instead of the old constant.
-        output.extend(self._format_section_header("6.8", "QUARTERLY PLAN STATUS"))
+        output.extend(self._format_section_header("6.7", "QUARTERLY PLAN STATUS"))
         output.append("")
         try:
             import yaml as _yaml
@@ -1382,7 +1386,7 @@ class UnifiedReportProduction:
         # skill-driven manual text append into one specific dated log file,
         # confirmed lost on the next regeneration since no code path ever
         # read it back).
-        output.extend(self._format_section_header("6.9", "SEEKING ALPHA WEEKLY THEMES"))
+        output.extend(self._format_section_header("6.8", "SEEKING ALPHA WEEKLY THEMES"))
         output.append("")
         try:
             import yaml as _yaml
@@ -1415,9 +1419,18 @@ class UnifiedReportProduction:
         output.extend(self._format_section_header(7, "ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT"))
         output.append("")
 
-        # Build action groups
-        close_now = [p for p in critical if p['heat'] == 'RED']
-        monitor_closely = [p for p in critical if p['heat'] != 'RED']
+        # Build action groups -- now reads from the SAME
+        # _classify_positions_for_action() buckets as Section 3/6 and the
+        # Weekly Execution Plan, not an independently-coded RED-heat check.
+        # Confirmed real contradiction before this fix: `critical` includes
+        # every RED-heat ticker regardless of conviction, so a RED-heat
+        # ticker with conviction>=6 (which classify's close/trim buckets
+        # exclude, matching Section 3's rule) still showed up in Section 7's
+        # "CLOSE NOW" while Section 6 correctly left it out of CLOSE/TRIM.
+        classified = self._classify_positions_for_action()
+        by_ticker = {p['ticker']: p for p in critical + monitor + healthy}
+        close_now = [by_ticker[t] for t, _ in classified['close'] if t in by_ticker]
+        monitor_closely = [by_ticker[t] for t, _ in classified['trim'] if t in by_ticker]
         rolls_to_consider = [p for p in monitor if p['rsi'] > 65]
         nothing = [p for p in healthy]
 
