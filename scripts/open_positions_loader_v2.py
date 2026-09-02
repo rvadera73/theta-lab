@@ -373,8 +373,12 @@ class OpenPositionsLoaderV2:
         # Fidelity: Try to extract from symbol column first (format: "TICKER MONTH DAY YEAR $STRIKE PUT/CALL")
         if account_type == 'Fidelity':
             symbol = str(row.get('symbol', '')).strip()
-            # Pattern: "HOOD MAR 19 2027 $65 PUT" -> extract HOOD
-            match = re.match(r'^([A-Z]{1,5})\s+', symbol)
+            # Pattern: "HOOD MAR 19 2027 $65 PUT" -> extract HOOD. Bare equity
+            # symbols (e.g. a "YOU BOUGHT ASSIGNED PUTS" row's symbol column
+            # is just "COIN", nothing trailing it) need the end-of-string
+            # alternative too -- same failure mode already fixed for Schwab's
+            # _extract_ticker; this branch had the identical bug.
+            match = re.match(r'^([A-Z]{1,5})(?:\s+|$)', symbol)
             if match:
                 return match.group(1)
             return None
@@ -593,6 +597,19 @@ class OpenPositionsLoaderV2:
         """Calculate net open positions by excluding closed-out positions and expired contracts"""
         from datetime import date
 
+        # Ground-truth equity capture from position-file snapshots, across
+        # brokers -- a position file lists CURRENT real holdings directly
+        # (no transaction-history reconstruction needed), which is more
+        # reliable than _track_equity_positions()'s reconstruction from
+        # transaction actions: that reconstruction only sees activity inside
+        # the transaction file's date window and has its own per-broker
+        # action-text gaps (Schwab: plain Buy/Sell wasn't recognized;
+        # Fidelity: position-file rows have no 'action' column at all, so
+        # they were silently invisible to the classifier regardless of the
+        # action-text fix). Populated unconditionally so either branch below
+        # can contribute to it.
+        self.equity_from_position_files: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+
         # For Schwab position files, keep only option rows (they show open positions directly)
         if 'asset type' in self.consolidated_df.columns:
             # Filter out equity rows from position files (tracked separately)
@@ -602,17 +619,6 @@ class OpenPositionsLoaderV2:
                 else False
             ) & (self.consolidated_df['asset type'] == 'Equity')
 
-            # Capture these rows as ground truth BEFORE dropping them -- a
-            # Schwab position file lists CURRENT real holdings directly (no
-            # transaction-history reconstruction needed), which is more
-            # reliable than _track_equity_positions()'s reconstruction from
-            # transaction actions: that reconstruction only sees activity
-            # inside the transaction file's date window, so equity acquired
-            # via an old assignment (or plain Buy, which it didn't even
-            # detect -- see _track_equity_positions) silently vanished,
-            # which is why the live equity fallback came back empty for
-            # Account A despite it holding real, confirmed shares.
-            self.equity_from_position_files: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
             equity_rows = self.consolidated_df[position_file_equity_mask]
             for _, row in equity_rows.iterrows():
                 ticker = self._extract_ticker(row)
@@ -625,6 +631,22 @@ class OpenPositionsLoaderV2:
                     continue
 
             self.consolidated_df = self.consolidated_df[~position_file_equity_mask].copy()
+
+        # NOTE: a Fidelity position-file equity capture (analogous to
+        # Schwab's above) was attempted here and reverted -- Fidelity's
+        # position-file export has a documented column-shift quirk (see the
+        # "Fidelity position files have misaligned columns" comment in
+        # _load_accounts, tuned specifically for OPTION rows: Symbol holds
+        # the description text, Description holds the quantity). Applying
+        # that same shift assumption to equity rows in the same file
+        # corrupted tickers (extracted "NIKE"/"SONOS"/"ADOBE" from
+        # description text instead of real symbols "NKE"/"SONO"/"ADBE").
+        # Fidelity equity relies on _track_equity_positions()'s
+        # transaction-based reconstruction instead (the 'BOUGHT ASSIGNED
+        # PUTS'/'SOLD ASSIGNED CALLS' branch below), which reads the
+        # transaction file -- NOT subject to this position-file-specific
+        # shift -- and is now fixed by the same end-of-string ticker-regex
+        # correction applied to Schwab.
 
             # Mark position file options as already having opening transactions (no netting)
             pf_option_mask = (
