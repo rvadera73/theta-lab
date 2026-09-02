@@ -31,6 +31,16 @@ do.**
 - **`_get_quarterly_plan_exit_discipline()`** — real put/call profit-take
   percentages from `data/us_quarterly_plan_2026_q4.yaml`, not a hardcoded
   constant. Any section stating a profit-take target should call this.
+- **`_get_macro_risk_analysis()`** — cached wrapper around `analyze_macro_risk()`.
+  Any section needing crash probability / sector sensitivity should read
+  this, not call `analyze_macro_risk()` again independently — that's what
+  let Section 6 (per-symbol) and Section 6.5 (macro detail) go out of sync
+  before this fix. `_log_macro_risk_history()` (writes `data/macro_risk_history.yaml`,
+  once per calendar day) and `_render_macro_risk_trend()` (reads it back as
+  an ASCII sparkline) are the trend-tracking pair built on top of this.
+- **`_build_sector_position_table()`** — produces Section 6, the canonical
+  per-symbol table. See the Presentation principle below for when to use
+  this instead of a new per-ticker block.
 - **State-file pattern** (tier_cr_state.yaml precedent) — for anything that
   needs live web research judgment and can't run inside this Python
   pipeline: a Claude-driven skill writes a dated YAML state file to
@@ -42,6 +52,38 @@ do.**
   Alpha scan made originally, and it's silently lost on the next
   regeneration.
 
+## Presentation principle — table-first, not per-item text blocks
+
+Trader-requested 2026-09-01 across all four report types: favor one
+consolidated table over a multi-line text block repeated per ticker/sector.
+Confirmed and fixed multiple real instances of the anti-pattern this session
+(daily Section 2's conviction listing, the old Section 6 flat critical/
+monitor/healthy list, sector_analysis.py's per-sector "DETAILED SECTOR
+BREAKDOWN," monthly's Moat Recalibration Tier 1 block) — each was a
+2-5-line hand-formatted block repeated for every ticker/sector, and each
+was also substantially redundant with a table that already existed
+elsewhere in the same report (usually Section 6's sector position table,
+sometimes a compact summary table directly above the verbose block).
+
+**Before adding new per-ticker or per-sector output, ask:**
+1. Is this already shown in Section 6's table (ticker, put/call/total
+   value, heat, conviction, suggestion, grouped by sector)? If yes, don't
+   repeat it — reference "see Section 6" and show only what's genuinely new
+   (e.g. a $ contribution figure Section 6 doesn't carry).
+2. Does this need to be per-item at all, or does a name-list + one
+   aggregate number communicate the same decision (e.g. "Names: X, Y, Z
+   +2 more" instead of a 3-line block per name)?
+3. Is there a real, repeating time series (crash probability, account
+   balance, premium pace)? Use an ASCII sparkline (`_render_macro_risk_trend`
+   is the reference implementation — `▁▂▃▄▅▆▇█` blocks, same visual
+   language as Section 5's existing `█` position-distribution bars) rather
+   than a wall of dated numbers.
+4. If it's genuinely tabular data (one row per ticker/sector/period, same
+   columns every row), render it as an actual aligned table with a header
+   row — not a `├─`/`└─` tree block per item. Tree formatting reads fine
+   for a single item's sub-detail (e.g. one account's equity list under
+   its row); it doesn't scale to N repeated items.
+
 ## Daily report (`generate_daily_report`)
 
 | # | Title | Purpose |
@@ -49,12 +91,13 @@ do.**
 | 0 | ACCOUNT HEALTH, FRAMEWORK STATUS & GAP ANALYSIS | Consolidated per-account table (via `_compute_account_status`) + 60% close-cost framework |
 | supp. | PRODUCTION FRAMEWORK — 60% CLOSE COST RATIO TARGETS | Regime-adjusted gross/net targets — cross-references Section 0's Target column, doesn't re-derive balance/status |
 | 1 | SYSTEM STATUS & PORTFOLIO SNAPSHOT | Headline counts |
-| 2 | CONVICTION UPDATES + FRAMEWORK CONTRIBUTION | Per-tier conviction contribution to the monthly gap |
+| 2 | CONVICTION UPDATES + FRAMEWORK CONTRIBUTION | Per-tier $ contribution table (ticker/conv/contribution/%target) — put/call detail lives in Section 6, not repeated here |
 | 3 | POSITION HEAT DISTRIBUTION | Green/yellow/red counts |
 | 4 | MARKET REGIME & SIGNALS | VIX/MA regime detection |
+| 4.5 | SECTOR ANALYSIS & ROTATION | Sector-level snapshot table + rotation-priority grouping — per-symbol drill-down is Section 6, not repeated |
 | 5 | POSITION DISTRIBUTION BY ACCOUNT | Position counts per account (not financial detail — that's Section 0) |
-| 6 | POSITION HEAT MATRIX & PRIORITY ACTION | Critical/monitor/healthy buckets by notional |
-| 6.5 | CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS | AI-capex crash-probability framework |
+| 6 | POSITION HEAT MATRIX BY SECTOR | **The** per-symbol table: sector → symbol, put/call/total value, heat, conviction, suggestion (put/call-directional, macro-exposure-tagged). Built by `_build_sector_position_table()`. Most other sections should reference this rather than re-listing tickers. |
+| 6.5 | CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS | Risk level, probability (30/60/90d), 90-day trend sparkline, historical magnitude reference, sector sensitivity (consumed by Section 6's macro-exposure tags via `_get_macro_risk_analysis()`) |
 | 6.6 | AI CAPEX RISK TRACKER — CIRCULAR FINANCING PLAYBOOK | Reads `tier_cr_state.yaml` |
 | 6.7 | ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE) | Per-position Black-Scholes probability + EXIT CANDIDATE flag |
 | 6.8 | QUARTERLY PLAN STATUS | Reads `us_quarterly_plan_2026_q4.yaml` |
