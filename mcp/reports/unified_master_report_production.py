@@ -2272,16 +2272,17 @@ class UnifiedReportProduction:
         output.append("")
 
         top_high = conviction_by_bucket.get('HIGH', [])[:5]
-        for ticker, m in top_high:
-            price = self.prices.get(ticker, 0)
-            contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
-            notional = price * contracts * 100
-            output.append(f"{ticker} (Moat Score: {m['conviction']:.1f}/10, Position Value: ${notional:,.0f})")
-            output.append(f"├─ Conviction: {m['conviction']:.1f} ({m['heat_status']} heat)")
-            output.append(f"├─ Current: ${price:.2f} | Contracts: {contracts} | 52-Week: ${m['week_52_low']:.2f} - ${m['week_52_high']:.2f}")
-            output.append(f"├─ Technical: RSI {m['rsi']:.1f}, Position {m['position_in_52w_range']:.0f}% of range")
-            output.append(f"└─ Moat verdict: STRONG ({m['heat_reason']})")
-            output.append("")
+        if top_high:
+            output.append(f"  {'Symbol':8} {'Conv':>5} {'Heat':>6} {'Price':>9} {'Value':>12} {'RSI':>5} {'52W Range':>10}  Verdict")
+            for ticker, m in top_high:
+                price = self.prices.get(ticker, 0)
+                contracts = int(self.position_summary.loc[ticker, 'total_open_contracts'])
+                notional = price * contracts * 100
+                output.append(
+                    f"  {ticker:8} {m['conviction']:>5.1f} {m['heat_status']:>6} ${price:>8.2f} ${notional:>11,.0f} "
+                    f"{m['rsi']:>5.1f} {m['position_in_52w_range']:>9.0f}%  STRONG ({m['heat_reason']})"
+                )
+        output.append("")
 
         output.append(f"TIER 1 SUMMARY: {len(top_high)} positions, quality improving")
         output.append("")
