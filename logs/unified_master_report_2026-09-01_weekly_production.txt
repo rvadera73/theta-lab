@@ -71,37 +71,40 @@ WHY THEY DIVERGE MONTH-TO-MONTH:
 
 PER-ACCOUNT BREAKDOWN:
 ------------------------------------------------------------------------------------------------------------------------
-Account                                Balance      %       Notional      Opt Req       Type          Status
+Account                              Balance     %      Notional     Opt Req      Type                 Status    Target       Gap
 ------------------------------------------------------------------------------------------------------------------------
-Account A (232)                $       403,000  17.2% $    4,533,403 $    816,013     Margin      🔴 OVER CAP
-  ├─ 161 option positions | Monthly target: $28,615 | Equity: ADBE 300sh, AXON 200sh, XYZ 200sh, COIN 100sh, ETSY 100sh +10 more
-Account B (275)                $       261,000  11.1% $      351,496 $    291,950   Cash-Sec      🔴 OVER CAP
-  ├─ 20 option positions | Monthly target: $10,669 | Equity: FMC 100sh, CRM 100sh
-Account C (634)                $       266,000  11.4% $      327,441 $    214,450   Cash-Sec     🔴 EMERGENCY
-  ├─ 22 option positions | Monthly target: $10,874 | Equity: ABNB 100sh, INMD 100sh, NKE 100sh, TWLO 524sh
-Fidelity (Rahul)               $       498,560  21.3% $      661,962 $    627,800   Cash-Sec      🔴 OVER CAP
+Account A (232)                $     403,000 17.2% $   4,533,403 $   816,013    Margin             🔴 OVER CAP $  25,753 ⚠️ $  4,407
+  ├─ 161 option positions | Monthly target: $28,615 | Equity: ADBE 400sh, APP 100sh, AXON 100sh, COIN 100sh, CRM 300sh +13 more
+Account B (275)                $     261,000 11.1% $     351,496 $   291,950  Cash-Sec         🔴 COVERAGE GAP $   9,602 ⚠️ $  1,643
+  ├─ 20 option positions | Monthly target: $10,669 | Equity: CRM 100sh, NVO 100sh
+Account C (634)                $     266,000 11.4% $     327,441 $   214,450  Cash-Sec               ⚠️ WATCH $   9,786 ⚠️ $  1,674
+  ├─ 22 option positions | Monthly target: $10,874 | Equity: ABNB 100sh, NKE 100sh, TWLO 324sh
+Fidelity (Rahul)               $     498,560 21.3% $     661,962 $   627,800  Cash-Sec         🔴 COVERAGE GAP $  18,342 ⚠️ $  3,139
   ├─ 41 option positions | Monthly target: $20,380 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, CRM 200sh
-Fidelity (Rajul — Roth IRA)    $        39,158   1.7% $       52,371 $     51,682   Cash-Sec      🔴 OVER CAP
+Fidelity (Rajul — Roth IRA)    $      39,158  1.7% $      52,371 $    51,682  Cash-Sec         🔴 COVERAGE GAP $   1,440 ⚠️ $    246
   ├─ 8 option positions | Monthly target: $1,601 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
-Fidelity (Rajul — Rollover IRA) $       128,081   5.5% $      170,855 $    161,150   Cash-Sec      🔴 OVER CAP
+Fidelity (Rajul — Rollover IRA) $     128,081  5.5% $     170,855 $   161,150  Cash-Sec         🔴 COVERAGE GAP $   4,712 ⚠️ $    806
   ├─ 13 option positions | Monthly target: $5,236
-Vanguard (Rahul)               $       320,492  13.7% $      493,955 $    428,733   Cash-Sec      🔴 OVER CAP
+Vanguard (Rahul)               $     320,492 13.7% $     493,955 $   428,733  Cash-Sec         🔴 COVERAGE GAP $  11,790 ⚠️ $  2,017
   ├─ 27 option positions | Monthly target: $13,101
-Robinhood (Individual)         $        13,000   0.6% $       23,759 $          0   Cash-Sec            ✅ OK
-  ├─ 4 option positions | Monthly target: $531
-Robinhood (Traditional IRA)    $       220,000   9.4% $      294,885 $          0   Cash-Sec            ✅ OK
+Robinhood (Individual)         $      13,000  0.6% $      23,759 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $     477 ⚠️ $     81
+  ├─ 4 option positions | Monthly target: $531 | Equity: RIOT 100sh, AAPL 0sh
+Robinhood (Traditional IRA)    $     220,000  9.4% $     294,885 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $   8,093 ⚠️ $  1,385
   ├─ 18 option positions | Monthly target: $8,993
-Fidelity 401K (Rahul)          $       192,200   8.2% $            0 $          0   Cash-Sec            ✅ OK
+Fidelity 401K (Rahul)          $     192,200  8.2% $           0 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $       0 ✅ $      0
   └─ No open positions | Monthly target: $0
-Fidelity (Rahul — Roth IRA Minor) $             3   0.0% $            0 $          0   Cash-Sec            ✅ OK
+Fidelity (Rahul — Roth IRA Minor) $           3  0.0% $           0 $         0  Cash-Sec ✅ FULLY COLLATERALIZED $       0 ✅ $      0
   └─ No open positions | Monthly target: $0
 ------------------------------------------------------------------------------------------------------------------------
-TOTAL                          $     2,341,494 100.0% $    6,910,127 $  2,591,778
+TOTAL                          $   2,341,494 100.0% $   6,910,127 $ 2,591,778
 
 DEFINITIONS:
   • Notional = Stock price × contracts × 100 (underlying value of options position)
   • Opt Req = Strike × contracts × 100 for short puts + current_price × contracts × 100 for naked calls (covered calls = $0)
-  • For margin accounts: verify Opt Req < 80% of account balance
+  • Margin accounts (Account A only): real Reg-T buffer -- OVER CAP/EMERGENCY means real margin-call risk
+  • Cash-secured accounts (everyone else): no leverage, no margin call possible -- COVERAGE GAP means the
+    requirement exceeds the account's own cash, a liquidity question answered in dollars, not a broker-enforced risk
+  • Target/Gap columns: same figures previously shown in a separate 'ACCOUNT-LEVEL GAP BREAKDOWN' block below this one
 
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -132,23 +135,10 @@ GAP CLOSURE PATH:
   Alternative: Scale existing OR exit 8 worst Tier 3 positions
   Capital required for 5 new positions: $50,000 (5 × $10K)
 
-ACCOUNT-LEVEL GAP BREAKDOWN:
-  ⚠️ Account A (232)                          Target $  25,753 | Actual $  21,346 | Gap $   4,407 ( 17.1%)
-  ⚠️ Account B (275)                          Target $   9,602 | Actual $   7,959 | Gap $   1,643 ( 17.1%)
-  ⚠️ Account C (634)                          Target $   9,786 | Actual $   8,112 | Gap $   1,674 ( 17.1%)
-  ✅ Fidelity (Rahul — Roth IRA Minor)        Target $       0 | Actual $       0 | Gap $       0 (  0.0%)
-  ⚠️ Fidelity (Rahul)                         Target $  18,342 | Actual $  15,203 | Gap $   3,139 ( 17.1%)
-  ⚠️ Fidelity (Rajul — Rollover IRA)          Target $   4,712 | Actual $   3,906 | Gap $     806 ( 17.1%)
-  ⚠️ Fidelity (Rajul — Roth IRA)              Target $   1,440 | Actual $   1,194 | Gap $     246 ( 17.1%)
-  ✅ Fidelity 401K (Rahul)                    Target $       0 | Actual $       0 | Gap $       0 (  0.0%)
-  ⚠️ Robinhood (Individual)                   Target $     477 | Actual $     396 | Gap $      81 ( 17.0%)
-  ⚠️ Robinhood (Traditional IRA)              Target $   8,093 | Actual $   6,708 | Gap $   1,385 ( 17.1%)
-  ⚠️ Vanguard (Rahul)                         Target $  11,790 | Actual $   9,773 | Gap $   2,017 ( 17.1%)
-
 RISK GUARDRAILS:
-├─ Margin floor (Account A only): 50% utilization
-├─ Margin alert: >75% utilization → review new entries
-├─ Margin emergency: >80% utilization → reduce positions
+├─ Margin account (Account A only): >75% alert, >80% emergency -- real broker margin-call risk
+├─ Cash-secured accounts (everyone else): >75% watch, >=100% coverage gap -- a liquidity
+│  question (does cash cover full assignment), not a leverage/margin-call risk
 ├─ Cash floor (all accounts): $75,000 minimum to trade
 ├─ Cash emergency: <$50,000 → deploy emergency fund
 └─ Current status: ⚠️ MONITOR
@@ -166,7 +156,9 @@ YTD Performance: $210,630 net (9 months)
 Monthly average: $23,403
 Annualized pace: $280,840 ⚠️ BELOW TARGET
 
-Account Targets (Regime-Adjusted):
+Account Targets (Regime-Adjusted) -- complements Section 0's PER-ACCOUNT
+BREAKDOWN 'Target' column: that one is the raw monthly_target; these are the
+same targets scaled by the current regime's adjustment factor, gross+net.
 ------------------------------------------------------------------------------------------------------------------------
   Account A (232)                               $    64,382 gross / $    25,753 net
   Account B (275)                               $    24,005 gross / $     9,602 net
@@ -406,10 +398,7 @@ WEEKLY EXECUTION PLAN  —  put/call + DTE aware
 🔻 REDUCE / MANAGE  (RED heat — RSI/trend/fundamentals all confirmed):
    short CALLS here → roll up+out for credit or close (delta risk, theta won't save them);
    short PUTS here → near max profit, fine to take.
-    CRM    RSI   84  conv 6.4
-    PFE    RSI   70  conv 6.2
-    OKTA   RSI   59  conv 6.6
-    CRWD   RSI   47  conv 6.5
+    (none overbought)
 
 ⏳ TAKE / ROLL  (<21 DTE — gamma zone, don't hold to expiry):
     ADBE   1 leg(s) @ DTE [17]
@@ -422,7 +411,7 @@ WEEKLY EXECUTION PLAN  —  put/call + DTE aware
     APP    1 leg(s) @ DTE [17]
 
 ✋ LET RUN  (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to 50-70%, DON'T close early = the leak):
-    PL, CRWV, RKLB, FSLR, JD, KTOS, ASTS, CCL, ONDS, NBIS, BABA, ISRG, WMT, GEV, NOC, AMKR, ALAB, LASR, VST, TWLO, BE, IONQ, VRT, QUBT, SHOP, AMZN, DKNG, NKE, UBER, TSM, GOOGL, HUT, BROS, LYFT, EXPE, BWXT, RBRK, IBM, ANET, NVDA, APP, SPCX, UNH, APH
+    PL, CRWV, RKLB, FSLR, JD, KTOS, ASTS, CCL, ONDS, NBIS, BABA, ISRG, WMT, GEV, NOC, AMKR, ALAB, LASR, VST, TWLO, BE, IONQ, VRT, QUBT, SHOP, AMZN, DKNG, NKE, UBER, TSM, GOOGL, HUT, BROS, LYFT, EXPE, BWXT, RBRK, IBM, ANET, NVDA, APP, SPCX, UNH, APH, CRWD
 
 ▶️ NEW ENTRIES  (redeploy freed collateral — 45-60 DTE CSP, delta 0.15-0.20, no new AI):
     🟢 BUY sectors now: Basic Materials, Consumer Cyclical, Communication Services, Industrials, Defense, Utilities, Consumer Defensive

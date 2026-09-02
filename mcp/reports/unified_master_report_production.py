@@ -269,6 +269,115 @@ class UnifiedReportProduction:
 
         return by_conviction
 
+    def _compute_account_status(self) -> Dict[str, Dict]:
+        """Single source of truth for per-account balance/requirement/status/
+        target/gap -- computed ONCE, cached, and consumed by every section
+        that used to independently re-iterate ACCOUNTS_CONFIG.items() with
+        its own copy of this logic (confirmed via audit: Section 0's
+        PER-ACCOUNT BREAKDOWN, its own ACCOUNT-LEVEL GAP BREAKDOWN, the
+        PRODUCTION FRAMEWORK Account Targets block, and a 4th monthly-only
+        loop -- four places, one underlying dataset, real risk of drift).
+
+        Status labeling is account-type-aware (the other confirmed bug):
+        margin accounts (config['margin'] is True -- only Account A) keep
+        real margin-call language (OVER CAP/EMERGENCY/ALERT/OK) since that
+        account can actually be forced-liquidated by the broker. Cash-secured
+        accounts get coverage language (FULLY COLLATERALIZED/COVERAGE GAP)
+        at the same numeric cutoffs -- they cannot be margin-called (no
+        leverage exists), so presenting the same crisis wording for both was
+        itself a bug, not just a style choice.
+        """
+        if hasattr(self, '_account_status_cache'):
+            return self._account_status_cache
+
+        gap_data = self._calculate_gap_to_target()
+        result = {}
+        for account_name, config in ACCOUNTS_CONFIG.items():
+            balance = config['balance']
+            pct = (balance / TOTAL_PORTFOLIO_BALANCE) * 100
+            is_margin = config['margin']
+            account_type = "Margin" if is_margin else "Cash-Sec"
+
+            acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
+            acct_opt_req = self.option_requirements.get(account_name, 0)
+            acct_notional = (
+                sum(self.prices.get(row['ticker'], 0) * row['net_quantity'] * 100
+                    for _, row in acct_positions.iterrows())
+                if not acct_positions.empty else 0.0
+            )
+
+            utilization_basis = config.get('capacity', balance)
+            utilization = (acct_opt_req / utilization_basis * 100) if utilization_basis else 0
+            if is_margin:
+                if utilization >= 80:
+                    status = "🔴 OVER CAP" if utilization >= 100 else "🔴 EMERGENCY"
+                elif utilization >= 75:
+                    status = "⚠️ ALERT"
+                else:
+                    status = "✅ MARGIN"
+            else:
+                # Cash-secured: no leverage, no margin call -- a real deficit
+                # here means the requirement (already covered-call-aware,
+                # see _calculate_option_requirements) exceeds the account's
+                # own cash. Same cutoffs as an early-warning signal, coverage
+                # language rather than crisis language.
+                if utilization >= 100:
+                    status = "🔴 COVERAGE GAP"
+                elif utilization >= 75:
+                    status = "⚠️ WATCH"
+                else:
+                    status = "✅ FULLY COLLATERALIZED"
+
+            acct_gap = gap_data['account_gaps'].get(account_name, {'target': 0, 'actual': 0, 'gap': 0, 'pct_gap': 0})
+
+            result[account_name] = {
+                'balance': balance, 'pct': pct, 'account_type': account_type,
+                'is_margin': is_margin, 'notional': acct_notional,
+                'opt_req': acct_opt_req, 'utilization': utilization, 'status': status,
+                'has_positions': not acct_positions.empty,
+                'position_count': len(acct_positions),
+                'target': acct_gap['target'], 'actual': acct_gap['actual'],
+                'gap': acct_gap['gap'], 'pct_gap': acct_gap['pct_gap'],
+            }
+
+        self._account_status_cache = result
+        return result
+
+    def _classify_positions_for_action(self) -> Dict[str, list]:
+        """Single shared classification pass over self.metrics, used by both
+        Section 3 (TOP-5 WEEKLY ACTION ITEMS) and the Weekly Execution Plan
+        tail block -- confirmed via audit that these previously used
+        DIFFERENT rules on the same data and could disagree on the same
+        ticker (a RED-heat, conviction>=6 name was skipped by Section 3's
+        conviction<6 filter but still caught by the Execution Plan's bare
+        "RED" in heat check, with no conviction gate at all). Uses Section
+        3's rule (the more complete one -- RED heat AND low conviction) as
+        the single source for both.
+
+        Returns dict with 'close' (conviction<5), 'trim' (5<=conviction<6),
+        both RED-heat; 'enter_short_put' (top-3 HIGH-conviction + GREEN
+        heat, matching Section 3's ENTER logic). LET-RUN (RSI-driven) stays
+        a separate, genuinely different signal -- not a duplicate of
+        close/trim/enter, so it isn't merged into this method.
+        """
+        if hasattr(self, '_action_classification_cache'):
+            return self._action_classification_cache
+
+        close_, trim_ = [], []
+        for ticker, m in self.metrics.items():
+            if m['heat_status'] == 'RED' and m['conviction'] < 6:
+                (close_ if m['conviction'] < 5 else trim_).append((ticker, m))
+
+        conviction_by_bucket = self._get_conviction_summary()
+        enter_short_put = [
+            (ticker, m) for ticker, m in conviction_by_bucket.get('HIGH', [])[:3]
+            if m['heat_status'] == 'GREEN'
+        ]
+
+        result = {'close': close_, 'trim': trim_, 'enter_short_put': enter_short_put}
+        self._action_classification_cache = result
+        return result
+
     def _generate_account_health_section(self) -> List[str]:
         """Generate account health and margin status section with 60% close cost ratio framework integrated"""
         output = []
@@ -310,67 +419,47 @@ class UnifiedReportProduction:
         output.append("")
         output.extend(_trend_lines)
 
-        # Per-account summary with option requirement
+        # Per-account summary -- single consolidated table (balance, opt req,
+        # status, AND target/actual/gap together; this used to be split
+        # across this table plus a separate "ACCOUNT-LEVEL GAP BREAKDOWN"
+        # block further down, both iterating ACCOUNTS_CONFIG independently).
+        acct_status = self._compute_account_status()
         output.append("PER-ACCOUNT BREAKDOWN:")
         output.append("-" * 120)
-        output.append(f"{'Account':<30} {'Balance':>15} {'%':>6} {'Notional':>14} {'Opt Req':>12} {'Type':>10} {'Status':>15}")
+        output.append(f"{'Account':<30} {'Balance':>13} {'%':>5} {'Notional':>13} {'Opt Req':>11} {'Type':>9} {'Status':>22} {'Target':>9} {'Gap':>9}")
         output.append("-" * 120)
 
         for account_name, config in ACCOUNTS_CONFIG.items():
-            balance = config['balance']
-            pct = (balance / TOTAL_PORTFOLIO_BALANCE) * 100
-            account_type = "Margin" if config['margin'] else "Cash-Sec"
-
-            # Calculate account-specific notional and option requirement
-            acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
-            acct_opt_req = self.option_requirements.get(account_name, 0)
-
-            # Status was cosmetic -- "✅ MARGIN" whenever config['margin'] was
-            # True, regardless of actual load. Confirmed live 2026-08-25:
-            # Account A showed a green "✅ MARGIN" badge here while its real
-            # option requirement ($708,874) was already OVER its documented
-            # $700K capacity ceiling -- the same fact the trader's own
-            # quarterly document flagged independently. Now computed from
-            # real utilization against the true weighting basis (capacity
-            # for Account A, balance for everyone else), using the same
-            # 75%/80% thresholds already stated in the Risk Guardrails block
-            # below rather than inventing a third set of numbers.
-            utilization_basis = config.get('capacity', balance)
-            utilization = (acct_opt_req / utilization_basis * 100) if utilization_basis else 0
-            if utilization >= 80:
-                status = "🔴 OVER CAP" if utilization >= 100 else "🔴 EMERGENCY"
-            elif utilization >= 75:
-                status = "⚠️ ALERT"
-            else:
-                status = "✅ MARGIN" if config['margin'] else "✅ OK"
-
-            if not acct_positions.empty:
-                acct_notional = sum(self.prices.get(row['ticker'], 0) * row['net_quantity'] * 100
-                                  for _, row in acct_positions.iterrows())
-                output.append(f"{account_name:<30} ${balance:>14,} {pct:>5.1f}% ${acct_notional:>13,.0f} ${acct_opt_req:>11,.0f} {account_type:>10} {status:>15}")
-
-                # Show equity positions if any
+            s = acct_status[account_name]
+            gap_icon = "✅" if s['gap'] <= 0 else "⚠️"
+            output.append(
+                f"{account_name:<30} ${s['balance']:>12,} {s['pct']:>4.1f}% ${s['notional']:>12,.0f} "
+                f"${s['opt_req']:>10,.0f} {s['account_type']:>9} {s['status']:>22} "
+                f"${s['target']:>8,} {gap_icon} ${s['gap']:>7,}"
+            )
+            if s['has_positions']:
                 equity = self.equity_positions.get(account_name, {})
                 equity_str = ""
                 if equity:
-                    equity_list = [f"{t} {s}sh" for t, s in list(equity.items())[:5]]
+                    equity_list = [f"{t} {sh}sh" for t, sh in list(equity.items())[:5]]
                     equity_str = f" | Equity: {', '.join(equity_list)}"
                     if len(equity) > 5:
                         equity_str += f" +{len(equity)-5} more"
-
-                output.append(f"  ├─ {len(acct_positions)} option positions | Monthly target: ${config['monthly_target']:,}{equity_str}")
+                output.append(f"  ├─ {s['position_count']} option positions | Monthly target: ${config['monthly_target']:,}{equity_str}")
             else:
-                output.append(f"{account_name:<30} ${balance:>14,} {pct:>5.1f}% ${'0':>13} ${'0':>11} {account_type:>10} {status:>15}")
                 output.append(f"  └─ No open positions | Monthly target: ${config['monthly_target']:,}")
 
         output.append("-" * 120)
-        output.append(f"{'TOTAL':<30} ${TOTAL_PORTFOLIO_BALANCE:>14,} {'100.0%':>6} ${total_notional:>13,.0f} ${total_option_req:>11,.0f}")
+        output.append(f"{'TOTAL':<30} ${TOTAL_PORTFOLIO_BALANCE:>12,} {'100.0%':>5} ${total_notional:>12,.0f} ${total_option_req:>10,.0f}")
         output.append("")
 
         output.append("DEFINITIONS:")
         output.append("  • Notional = Stock price × contracts × 100 (underlying value of options position)")
         output.append("  • Opt Req = Strike × contracts × 100 for short puts + current_price × contracts × 100 for naked calls (covered calls = $0)")
-        output.append("  • For margin accounts: verify Opt Req < 80% of account balance")
+        output.append("  • Margin accounts (Account A only): real Reg-T buffer -- OVER CAP/EMERGENCY means real margin-call risk")
+        output.append("  • Cash-secured accounts (everyone else): no leverage, no margin call possible -- COVERAGE GAP means the")
+        output.append("    requirement exceeds the account's own cash, a liquidity question answered in dollars, not a broker-enforced risk")
+        output.append("  • Target/Gap columns: same figures previously shown in a separate 'ACCOUNT-LEVEL GAP BREAKDOWN' block below this one")
         output.append("")
 
         # ═══════════════════════════════════════════════════════════════════
@@ -410,18 +499,10 @@ class UnifiedReportProduction:
         output.append(f"  Capital required for {gap_data['positions_needed']} new positions: ${gap_data['positions_needed'] * 10000:,} ({gap_data['positions_needed']} × $10K)")
         output.append("")
 
-        output.append("ACCOUNT-LEVEL GAP BREAKDOWN:")
-        for account_name in sorted(gap_data['account_gaps'].keys()):
-            acct_gap = gap_data['account_gaps'][account_name]
-            status_icon = "✅" if acct_gap['gap'] <= 0 else "⚠️"
-            output.append(f"  {status_icon} {account_name:40} Target ${acct_gap['target']:>8,} | Actual ${acct_gap['actual']:>8,} | Gap ${acct_gap['gap']:>8,} ({acct_gap['pct_gap']:>5.1f}%)")
-
-        output.append("")
-
         output.append("RISK GUARDRAILS:")
-        output.append("├─ Margin floor (Account A only): 50% utilization")
-        output.append("├─ Margin alert: >75% utilization → review new entries")
-        output.append("├─ Margin emergency: >80% utilization → reduce positions")
+        output.append("├─ Margin account (Account A only): >75% alert, >80% emergency -- real broker margin-call risk")
+        output.append("├─ Cash-secured accounts (everyone else): >75% watch, >=100% coverage gap -- a liquidity")
+        output.append("│  question (does cash cover full assignment), not a leverage/margin-call risk")
         output.append("├─ Cash floor (all accounts): $75,000 minimum to trade")
         output.append("├─ Cash emergency: <$50,000 → deploy emergency fund")
         output.append(f"└─ Current status: {'✅ SAFE' if total_option_req < TOTAL_PORTFOLIO_BALANCE * 0.3 else '⚠️ MONITOR'}")
@@ -491,7 +572,9 @@ class UnifiedReportProduction:
             output.append(f"Annualized pace: ${annual_pace:,.0f} {status}")
             output.append("")
 
-        output.append("Account Targets (Regime-Adjusted):")
+        output.append("Account Targets (Regime-Adjusted) -- complements Section 0's PER-ACCOUNT")
+        output.append("BREAKDOWN 'Target' column: that one is the raw monthly_target; these are the")
+        output.append("same targets scaled by the current regime's adjustment factor, gross+net.")
         output.append("-" * 120)
         total_gross = 0
         total_net = 0
@@ -1248,18 +1331,16 @@ class UnifiedReportProduction:
         # SECTION 3: TOP 5 ACTION ITEMS
         output.extend(self._format_section_header(3, "TOP-5 WEEKLY ACTION ITEMS"))
 
-        # Find positions needing action
+        # Find positions needing action -- classification now shared with the
+        # Weekly Execution Plan tail block via _classify_positions_for_action,
+        # so the two sections can no longer disagree on the same ticker.
         action_items = []
+        classified = self._classify_positions_for_action()
 
-        # Red heat positions. Was always labeled "POSITION REVIEW" regardless
-        # of severity -- not an action verb, just a name to go look at.
-        # Matches the CLOSE/TRIM split the daily report's Section 7 already
-        # uses (critical vs. monitor), so Section 3 stops inventing its own
-        # vaguer category.
-        for ticker, m in self.metrics.items():
-            if m['heat_status'] == 'RED' and m['conviction'] < 6:
-                verb = "CLOSE" if m['conviction'] < 5 else "TRIM / REVIEW"
-                action_items.append((f"{verb} {ticker}", f"Conv {m['conviction']:.1f}, Heat RED, RSI {m['rsi']:.1f} — {m['heat_reason']}"))
+        for ticker, m in classified['close']:
+            action_items.append((f"CLOSE {ticker}", f"Conv {m['conviction']:.1f}, Heat RED, RSI {m['rsi']:.1f} — {m['heat_reason']}"))
+        for ticker, m in classified['trim']:
+            action_items.append((f"TRIM / REVIEW {ticker}", f"Conv {m['conviction']:.1f}, Heat RED, RSI {m['rsi']:.1f} — {m['heat_reason']}"))
 
         # High conviction greens to enter. Was "ENTER {ticker} STRANGLE" --
         # contradicted the correction made this session: this book's own
@@ -1267,9 +1348,8 @@ class UnifiedReportProduction:
         # a BULL regime (the live regime as of 2026-08-25) structurally
         # punishes being short calls. Short put only, matching every other
         # entry recommendation in this report.
-        for ticker, m in conviction_by_bucket.get('HIGH', [])[:3]:
-            if m['heat_status'] == 'GREEN':
-                action_items.append((f"ENTER {ticker} SHORT PUT", f"Conv {m['conviction']:.1f}, RSI {m['rsi']:.1f}, Oversold"))
+        for ticker, m in classified['enter_short_put']:
+            action_items.append((f"ENTER {ticker} SHORT PUT", f"Conv {m['conviction']:.1f}, RSI {m['rsi']:.1f}, Oversold"))
 
         # IV gate opportunities. Was list(self.iv_ranks.keys())[:10] -- an
         # arbitrary dict-iteration-order slice, sorted only WITHIN that slice,
@@ -1511,25 +1591,22 @@ class UnifiedReportProduction:
         except Exception:
             pass
 
-        # Ticker-level RSI/conviction/heat drives manage-vs-hold. Was
-        # `rsi >= 65 or "RED" in heat` -- the raw RSI leg ran independently of
-        # heat_status, so it bypassed the 50/200MA + analyst-upside
-        # confirmation gates entirely and reproduced the exact bug those
-        # gates were built to fix. Confirmed live 2026-08-25: this block kept
-        # flagging CRCL/ALB/DIS/LLY/ELF for REDUCE via raw RSI>=65 in the same
-        # report where Section 3 (using the confirmed heat_status) correctly
-        # excluded all five -- a direct, visible contradiction between two
-        # sections of one report. heat_status already incorporates RSI (its
-        # own trigger is RSI>75 or range>90) plus the confirmation layers, so
-        # using it alone is strictly more correct, not just consistent.
-        reduce_, letrun = [], []
+        # REDUCE/MANAGE now reads from the SAME _classify_positions_for_action
+        # buckets Section 3 uses (close+trim -- RED heat AND conviction<6),
+        # not an independently-coded "RED in heat" check with no conviction
+        # gate. That mismatch was a confirmed, real contradiction: a RED-heat
+        # ticker with conviction>=6 was skipped by Section 3 but still landed
+        # here, disagreeing within the same report. LET-RUN stays a separate,
+        # genuinely different signal (RSI-driven, not a close/trim/enter
+        # variant) so it's computed independently, same as before.
+        classified = self._classify_positions_for_action()
+        reduce_ = [(tk, m.get("rsi") or 50, m.get("conviction") or 5)
+                   for tk, m in classified['close'] + classified['trim']]
+        letrun = []
         for tk, m in (self.metrics or {}).items():
             rsi = m.get("rsi") or 50
             conv = m.get("conviction") or 5
-            heat = str(m.get("heat_status", "")).upper()
-            if "RED" in heat:
-                reduce_.append((tk, rsi, conv))
-            elif rsi <= 48 and conv >= 6:
+            if rsi <= 48 and conv >= 6:
                 letrun.append((tk, rsi, conv))
 
         out.append("🔻 REDUCE / MANAGE  (RED heat — RSI/trend/fundamentals all confirmed):")
