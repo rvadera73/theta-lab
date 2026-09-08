@@ -12,7 +12,7 @@
   primary_risk: AD_RATIO critical
 - date: '2026-09-08'
   risk_level: YELLOW
-  prob_30d: 40.9
-  prob_60d: 69.2
+  prob_30d: 44.2
+  prob_60d: 74.6
   prob_90d: 95.0
   primary_risk: AD_RATIO critical

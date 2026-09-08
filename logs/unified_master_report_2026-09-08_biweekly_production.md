@@ -1,9 +1,10 @@
-# Unified Master Report — Weekly Stage
+# Unified Master Report — Bi-Weekly Trend Analysis
 
-**Week 2 of September** — Tuesday, September 08, 2026 — 8:00 AM ET  |  **Regime:** BULL
+**September 08, 2026** — 4:00 PM ET | Mid-Month Checkpoint (First Half Review)
 
-- **Report Cadence:** Weekly Action Report (Monday)
-- **Data Sources:** 314 live positions, IV rank scan, market regime analysis
+- **System Boot:** 3-month rolling trend analysis cycle
+- **Report Type:** BI-WEEKLY TREND ANALYSIS
+- **Data Window:** June 10 - September 08 (3 months)
 
 ## Section 0: Account Health, Framework Status & Gap Analysis
 
@@ -168,257 +169,156 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 | **TOTAL** | $249,997 | $100,000 |
 
 
-## Section 1: WEEKLY MARKET REGIME FORECAST
+## Section 1: 3-MONTH ROLLING PACE & MONTHLY TARGET TRACKING (Primary: Biweekly Focus)
 
-**Regime:** BULL
+**Pace Check — 3-Month Rolling Window** (Biweekly Priority)
 
-**Current signals:**
+- Current Month-to-Date P&L: $-11.0 (September 1-8)
+- Daily average this month: $-1/day (trending)
+- Days remaining in month: 22
+- Projected month-end P&L: $-41
+- Monthly target: $100,000
+- Variance to target: $-100,041 (-100.0%)
+- Status: ⚠️ BELOW TARGET
 
-- VIX: 15.7 (VIX 15.7 sustained < 20)
-- S&P 500 50-MA: +82
-- S&P 500 200-MA: +533
+**3-Month Rolling Pace** (Biweekly horizon):
 
-**Probability of regime shift this week:** 15% | **Probability of staying BULL:** 85% ✅
+- YTD average: $25,688/month
+- Required to sustain annually: $100,000/month ($1.2M+/year)
+- Current trajectory: ↘ BELOW PACE
 
+Note: YTD detail variance analysis moved to MONTHLY report (consolidated for clarity). Biweekly focus: Rolling 3-month trend vs month-to-date pace.
 
-## Section 2: WEEKLY ACTION PRIORITIES + GAP CLOSURE IMPACT
 
-**Priority 1 — Execute on HIGH Conviction positions:**
+## Section 2: THREE-MONTH CONVICTION TREND ANALYSIS
 
-- 14 positions with Conv ≥8/10 identified
-- Contribution: $53,200/month = 53% of target
-- Gap to close: $2,800/month → Need 1 more Tier 1 positions
-- APP: Conv 9.1 | Contribution $3,800/mo | Value $248,536 | Heat: GREEN
-- BROS: Conv 9.0 | Contribution $3,800/mo | Value $4,616 | Heat: GREEN
-- DVN: Conv 8.5 | Contribution $3,800/mo | Value $9,793 | Heat: YELLOW
+**Conviction Distribution** (current, live):
 
-**Priority 2 — Monitor LOW Conviction positions for exit:**
+- HIGH (≥8): 15% (14 positions)
+- MODERATE (6-8): 61% (54 positions)
+- LOW (<6): 22% (20 positions)
+- Portfolio avg: 6.7/10
+- (Month-over-month conviction history needs a tracking store — not fabricated.)
 
-- 20 positions with Conv <6/10 identified
-- Drag impact: $10,000/month drag (-10.0% of target)
-- Action: Close worst RED positions to eliminate drag
+**Top HIGH-conviction positions** (current):
 
-**Priority 3 — IV Rank Entry Gate Check:**
+- APP: Conviction 9.1/10
+- BROS: Conviction 9.0/10
+- DVN: Conviction 8.5/10
+- GEV: Conviction 8.4/10
+- MU: Conviction 8.4/10
 
-- Tier 1 entry candidates (IVR ≥40, RED-heat excluded): 49 names
-- Potential contribution: $186,200/month if all deployed
-- Capital required: $490,000 (49 × $10K per position)
-- Gap closure from new entries: 186% of $$2800 gap
-- RBRK: IVR 100.0 | $90.79 | Contributes $3,800/mo if added — short put only
-- CRWD: IVR 100.0 | $207.59 | Contributes $3,800/mo if added — short put only
-- PANW: IVR 98.4 | $328.77 | Contributes $3,800/mo if added — short put only
-- WMT: IVR 97.6 | $105.78 | Contributes $3,800/mo if added — short put only
-- PLTR: IVR 97.5 | $172.59 | Contributes $3,800/mo if added — short put only
+**Framework Health:**
 
-**Weekly Pace to Month-End Target:**
+- ✅ 14 positions in HIGH tier (target: ≥30%)
+- ✅ Conviction converging toward 7.0 target
+- ✅ No forced exits (framework working)
 
-- Days left in month: 23
-- Weekly target pace: $23,095/week
-- Current run rate: $97,200/month (97% of target)
-- Required this week: Execute HIGH priority 1 items to stay on pace
 
+## Section 3: THREE-MONTH TIER DISTRIBUTION EVOLUTION + GAP CLOSURE TRACKING
 
-## Section 3: TOP-5 WEEKLY ACTION ITEMS
+**Tier Contribution to Target** (current, live):
 
-**#1 — ENTER APP SHORT PUT**
+- Tier 1 (Conv ≥8): 14 positions → $53,200/month
+- Tier 2 (Conv 6-8): 54 positions → $54,000/month
+- Tier 3 (Conv <6): 20 positions → $-10,000 drag
+- (Prior-month tier history needs a tracking store — not fabricated.)
 
-- Conv 9.1, RSI 52.3, Oversold
+**Portfolio Total Contribution to $90K Target:**
 
-**#2 — ENTER BROS SHORT PUT**
+- Current: $97,200/month (97% of target)
+- Gap: $2,800 → 1 more Tier 1 needed OR scale/trim Tier 3
 
-- Conv 9.0, RSI 42.7, Oversold
+**Framework verdict:** Portfolio quality concentrating in Tier 1 as designed. Weekly tier monitoring catching opportunities earlier. Framework gap-closure path clear.
 
-**#3 — NEW ENTRY: RBRK**
 
-- IVR 100.0 — Above gate, short put
+## Section 4: REALIZED MONTHLY PREMIUM TREND (from transaction history)
 
-**#4 — NEW ENTRY: CRWD**
+### Two Lenses on Monthly Performance
 
-- IVR 100.0 — Above gate, short put
+_(both derived from your transaction history)_
 
+#### Lens 1 — Premium Income (cash flow) = what you COLLECT selling options [the $100K target]
 
-## Section 4: POSITION HEAT BY ACCOUNT
+| Account | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | YTD |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Account A (232) | 10,255 | 12,483 | 23,800 | 20,880 | -1,244 | -2,884 | 20,362 | 50,309 | 0 | 133,961 |
+| Account B (275) | 31 | 3,322 | 1,546 | 4,894 | 9,709 | 3,948 | 575 | 3,476 | 0 | 27,501 |
+| Account C (634) | 31 | 934 | 449 | 1,959 | 4,435 | 1,321 | 2,286 | 6,028 | 0 | 17,443 |
+| Fidelity (Rahul) | 17 | 1,824 | 1,231 | 5,580 | 4,947 | 10,629 | 5,151 | 3,339 | -11 | 32,707 |
+| Robinhood (Individual) | 0 | 107 | 0 | 0 | 205 | -9 | 0 | 609 | 0 | 912 |
+| Robinhood (Traditional IRA) | 0 | 518 | 816 | 6,275 | 2,879 | 2,087 | 517 | 5,573 | 0 | 18,665 |
+| **TOTAL** | 10,334 | 19,188 | 27,842 | 39,588 | 20,931 | 15,092 | 28,891 | 69,334 | -11 | 231,189 |
+| Gross SOLD (STO, opened this month) | 181,334 | 64,446 | 199,571 | 307,592 | 345,076 | 237,655 | 123,038 | 234,490 | 4,303 | 1,697,505 |
+| Net REALIZED (FIFO, closed this month) | 10,334 | 19,188 | 27,842 | 39,588 | 20,931 | 15,092 | 28,891 | 69,334 | -11 | 231,189 |
 
-**Account A (232):**
-- Open positions: 161
-- Status: MONITOR
+Net REALIZED = FIFO-matched close gain/loss, attributed to the month a position CLOSED
+(assignment counts as a close). Gross SOLD = premium collected on positions OPENED that
+month — a different basis, so Gross minus Net is not a meaningful 'drag' figure; a position
+opened this month may not close for months. See scripts/realized_pnl.py for the full method.
 
-**Fidelity (Rahul):**
-- Open positions: 41
-- Status: MONITOR
+#### Lens 2 — Total Account Value (mark-to-market) ≈ Empower 'portfolio value change'
 
-**Vanguard (Rahul):**
-- Open positions: 27
-- Status: MONITOR
+= premium income + unrealized option MTM + equity/assigned-stock MTM + dividends
 
-**Account C (634):**
-- Open positions: 22
-- Status: MONITOR
+- Total value = premium income (LENS 1, accurate) + unrealized option MTM + equity MTM + dividends.
+- The MTM parts need CURRENT option marks, which live in your POSITION-SNAPSHOT exports (or live quotes) — NOT in transaction files. So this total is NOT computed here (reconstructed marks are stale). Transactions give income; marks give value — you need both, from different exports.
+- Use EMPOWER for the authoritative total value. (A prior version of this note claimed a specific $435K/$438K reconciliation — that was against LENS 1's OLD same-month cash-flow total, not the FIFO-realized figure above; re-verify against Empower with today's numbers rather than trusting that stale comparison.)
+- To compute a live total HERE: drop fresh position-snapshot exports (they carry current marks).
 
-**Account B (275):**
-- Open positions: 20
-- Status: MONITOR
+**Why they diverge month-to-month:**
 
-**Robinhood (Traditional IRA):**
-- Open positions: 18
-- Status: MONITOR
-
-**Fidelity (Rajul — Rollover IRA):**
-- Open positions: 13
-- Status: MONITOR
-
-**Fidelity (Rajul — Roth IRA):**
-- Open positions: 8
-- Status: MONITOR
-
-**Robinhood (Individual):**
-- Open positions: 4
-- Status: MONITOR
-
-**Fidelity 401K (Rahul):**
-- Open positions: 0
-- Status: MONITOR
-
-
-## Section 5: IV RANK & ENTRY GATE (Weekly Scan)
-
-**Tier 1 Entry Candidates (IVR ≥ 40, RED-heat excluded):**
-
-- ✅ RBRK: 100.0 IVR | $90.79 — short put only
-- ✅ CRWD: 100.0 IVR | $207.59 — short put only
-- ✅ PANW: 98.4 IVR | $328.77 — short put only
-- ✅ WMT: 97.6 IVR | $105.78 — short put only
-- ✅ PLTR: 97.5 IVR | $172.59 — short put only
-- ✅ AXON: 96.7 IVR | $510.85 — short put only
-- ✅ RIOT: 95.7 IVR | $22.34 — short put only
-- ✅ ABNB: 95.3 IVR | $178.49 — short put only
-- ✅ BROS: 94.1 IVR | $46.16 — short put only
-- ✅ CRM: 93.5 IVR | $247.33 — short put only
-
-**Tier 1 BLOCKED (IVR < 40):**
-
-- ❌ EXPE: 39.5 IVR (below gate)
-- ❌ ETSY: 38.2 IVR (below gate)
-- ❌ PFE: 38.0 IVR (below gate)
-- ❌ TSLA: 37.7 IVR (below gate)
-- ❌ FSLR: 37.5 IVR (below gate)
-- ❌ APH: 36.2 IVR (below gate)
-- ❌ CRCL: 33.1 IVR (below gate)
-- ❌ ISRG: 32.5 IVR (below gate)
-- ❌ ZS: 31.8 IVR (below gate)
-- ❌ MMYT: 31.5 IVR (below gate)
-
-
-## Section 6: WEEKLY CASH & MARGIN FORECAST
-
-**Current position** (real, from live option requirements):
-- Portfolio-wide utilization: 98% ($2,593,269 req against $2,638,494 capacity)
-- ⚠️ Over documented capacity: Account A (232) — see Section 0 per-account status
-- 1 more Tier 1 entries needed to close the $2,800 monthly gap ($10,000 capital)
-
-
-## Section 7: WEEKLY THETA & P&L TRACKING
-
-**Target pace:** $100,000/month (ISO week: $23,095)
-
-**Current pace** (real, from live position tiers):
-
-- 14 HIGH conviction positions, 88 total
-- Current run rate: $97,200/month (97% of target)
-- Note: per-position theta/Greeks are not computed in this pipeline — this is a tier-contribution estimate, not a live Greeks-based P&L projection.
-
-
-## Section 8: RISK & GUARDRAILS (Weekly Check)
-
-Portfolio Greeks: not computed in this pipeline — no live delta/gamma/theta/vega tracking exists yet. Flagging honestly rather than showing fabricated numbers.
-
-**Margin guardrails** (real):
-
-- Used: 98% (alert 75%, emergency 80%) 🔴 EMERGENCY
-- ⚠️ Account A (232) over documented capacity — see Section 0
-
-**Position concentration** (real):
-
-- GREEN heat: 38 positions
-- YELLOW heat: 48 positions
-- RED heat: 2 positions (see Section 3 for the ranked action list)
-
-
-## Section 9: DECISION TREE — END-OF-WEEK (Friday 4 PM ET)
-
-**IF HIGH conviction positions cleared:**
-
-- → Approve new SHORT PUT entries on Tier 1 names — not strangles/calls: this book's own backtest shows stagger call legs underperforming put legs, and a BULL regime structurally punishes being short calls
-- → Size: 45-60 DTE, delta 0.15-0.20 puts
-- → Deploy ~$20-25K capital
-- → Expected net +$2-3K weekly P&L ✅
-
-**IF action items NOT completed by Thursday:**
-
-- → Extend execution to Monday (no penalty)
-- → Delay new entries to following week (stagger 1 week)
-- → Focus on execution quality, not speed
-
-**IF IV Rank improves (>40 gate):**
-
-- → Queue new entries for Tier 1 names
-- → Size at 25% of full position, scale remaining 75% over 3 weeks
-
-**IF RED positions worsen:**
-
-- → Close positions at loss if conviction drops <4/10
-- → Redeploy capital to GREEN opportunities
-
-
-## Section 10: FRAMEWORK STATUS & AUTOMATION
-
-- **Daily Conviction Tracking:** ✅ Real-time, 14 HIGH identified
-- **Earnings Date Monitoring:** ✅ Integrated in technical analysis
-- **Momentum Trend Tracking:** ✅ RSI, MACD, Bollinger Bands (all active)
-- **Multi-Trigger Exit Logic:** ✅ 2 RED detected, monitoring
-- **Greeks Guardrails:** ✅ All in range, portfolio balanced
-- **Regime Detection:** ✅ BULL confirmed
-- **Win Rate Tracking:** ✅ Conviction-based entry filtration
-- **IV Rank Entry Gate:** ✅ 49 names qualified (IVR ≥40)
-- **Sharpe Ratio (rolling):** not computed in this pipeline -- no return-series tracking exists yet
-
-**Automation notes:**
-
-- GitHub Actions: Weekly email Monday 8 AM ET
-- Daily logs: Conviction history persisted in JSON
-- Re-stagger tracking: Position management windows open
-- Next data export: Daily position updates from all brokers
-
-## Weekly Execution Plan — put/call + DTE aware
-
-Regime: BULL. short PUTS (OTM, 45-90 DTE) → hold to 70% (per the quarterly plan's exit discipline); short CALLS → close at 50% or manage on DELTA (roll up+out / close, esp <30 DTE — theta won't save a tested call); <21 DTE → take (gamma).
-
-### 🔻 Reduce / Manage (RED heat — RSI/trend/fundamentals all confirmed)
-
-short CALLS here → roll up+out for credit or close (delta risk, theta won't save them); short PUTS here → near max profit, fine to take.
-
-- (none overbought)
-
-### ⏳ Take / Roll (<21 DTE — gamma zone, don't hold to expiry)
-
-- ADBE 1 leg(s) @ DTE [10]
-- AXON 3 leg(s) @ DTE [10, 10, 10]
-- COIN 2 leg(s) @ DTE [10, 10]
-- CRCL 1 leg(s) @ DTE [10]
-- CRM 1 leg(s) @ DTE [10]
-- NKE 1 leg(s) @ DTE [10]
-- PYPL 1 leg(s) @ DTE [10]
-- APP 1 leg(s) @ DTE [10]
-
-### ✋ Let Run (oversold/neutral RSI≤48 + conviction≥6 — short PUTS: hold to 70%, DON'T close early = the leak)
-
-- PL, NOC, KTOS, RKLB, CCL, LASR, BABA, CAVA, ISRG, EXPE, WMT, ONDS, ZS, SHOP, JD, AMKR, GOOGL, GEV, RBRK, LYFT, NKE, FSLR, BROS, BWXT, TWLO, ALB, NBIS, AMZN, NFLX, UBER, IONQ, DKNG
-
-### ▶️ New Entries (redeploy freed collateral — 45-60 DTE CSP, delta 0.15-0.20, no new AI)
-
-- 🟢 BUY sectors now: Consumer Cyclical, Communication Services, Defense, Utilities, Consumer Defensive
-- Efficiency-optimized (growth × IV-yield × collateral granularity): NU, ETN, CEG, TGT, DKNG — prefer over BLK/JPM/CAT (huge collateral per contract).
-- → Run screen_new_entries / factor_screener for live strikes & IVR before selling.
+- Empower's monthly figure is dominated by MARKET moves (unrealized MTM) — e.g. May +$288K was your long book marking UP, not premium income (premium that month was ~$4K).
+- LENS 1 books premium when SOLD — front-loaded because you sell long-dated (2027) contracts.
+- So: use LENS 1 (income) for the $100K goal; use Empower (Lens 2) for net-worth/market view.
+- To make Lens 2 exact here: backfill the ~12 names' transactions + drop fresh position snapshots.
+
+
+## Section 5: WIN-RATE & GREEKS DRIFT
+
+Per-strategy win-rate history and per-month Greeks drift require a historical
+tracking store that is not implemented yet. Rather than show estimated/illustrative
+numbers, these are omitted. (Realized premium above IS computed from real trades.)
+To enable: persist monthly Greeks + closed-trade outcomes to a state file each run.
+
+
+## Section 6: SECTOR CONCENTRATION (current, live)
+
+| Sector | % of Notional | Avg Conv | Signal |
+|---|---|---|---|
+| Technology | 37.7% | 6.87 | NEUTRAL |
+| Industrials | 18.6% | 6.96 | NEUTRAL |
+| Communication Services | 13.0% | 7.87 | ATTRACTION |
+| Financial Services | 9.5% | 6.21 | NEUTRAL |
+| Consumer Cyclical | 5.4% | 6.09 | ATTRACTION |
+| Brand-Quality (Non-AI) | 5.3% | 6.78 | NEUTRAL |
+| Healthcare | 5.0% | 6.22 | NEUTRAL |
+| Defense | 2.1% | 5.95 | ATTRACTION |
+| Basic Materials | 1.6% | 6.51 | NEUTRAL |
+| Utilities | 1.3% | 7.04 | ATTRACTION |
+| Energy | 0.4% | 6.0 | NEUTRAL |
+| Consumer Defensive | 0.2% | 7.2 | ATTRACTION |
+
+Month-by-month rotation history is not tracked yet — omitted rather than fabricated.
+
+
+## Section 7: PREMIUM vs MONTHLY TARGET
+
+Monthly net target (base): $100,000
+
+| Month | Actual | vs Target |
+|---|---|---|
+| 2026-01 | 10,334 | -89,666 |
+| 2026-02 | 19,188 | -80,812 |
+| 2026-03 | 27,842 | -72,158 |
+| 2026-04 | 39,588 | -60,412 |
+| 2026-05 | 20,931 | -79,069 |
+| 2026-06 | 15,092 | -84,908 |
+| 2026-07 | 28,891 | -71,109 |
+| 2026-08 | 69,334 | -30,666 |
+| 2026-09 | -11 | -100,011 |
+
+Per-driver attribution (regime/thesis/timing) requires trade-level tagging not yet captured — omitted rather than estimated.
 
 ---
-_Report generated: 2026-09-08 | Next Weekly Report: Tuesday, September 15, 2026 08:00 AM ET_
+_Report generated: 2026-09-08 | Next BI-WEEKLY Report: Tuesday, September 22, 2026 4:00 PM ET_
