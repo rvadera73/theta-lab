@@ -522,6 +522,34 @@ class UnifiedReportProduction:
 
         return decisions
 
+    def _render_active_decisions(self) -> List[str]:
+        """Shared renderer for the Active Decision Tracker, called from
+        every report type so a tracked decision (a roll to execute, a
+        cleanup, an entry gate) is visible no matter which report the
+        trader reads next, not just the daily one."""
+        output = [""]
+        try:
+            decisions = self._check_active_decisions()
+            if not decisions:
+                output.append("- No active decisions on record.")
+            else:
+                for d in decisions:
+                    status = d.get('status', 'OPEN')
+                    icon = "✅" if status in ("RESOLVED", "CLEARED") else "⏳"
+                    output.append(f"**{icon} {d.get('id')}** — {status}" + (f" (as of {d['resolved_date']})" if d.get('resolved_date') else ""))
+                    output.append("")
+                    output.append(d.get('description', '').strip())
+                    if '_live_naked_itm' in d:
+                        output.append(f"  - Live check: {d['_live_naked_itm']:.0f} naked ITM contract(s) remaining (target: 0)")
+                    if '_live_values' in d:
+                        for k, v in d['_live_values'].items():
+                            output.append(f"  - Live: {k} = {v}")
+                    output.append("")
+        except Exception as e:
+            output.append(f"- ⚠️ Active decision tracker unavailable: {e}")
+        output.append("")
+        return output
+
     def _log_macro_risk_history(self, risk_analysis: dict) -> None:
         """Append today's crash-probability reading to data/macro_risk_history.yaml
         (one entry per calendar day, overwriting same-day re-runs rather than
@@ -1572,27 +1600,7 @@ class UnifiedReportProduction:
         # itself against live position/account data every run instead of
         # needing a manual re-confirmation.
         output.extend(self._format_section_header("6.9", "ACTIVE DECISION TRACKER"))
-        output.append("")
-        try:
-            decisions = self._check_active_decisions()
-            if not decisions:
-                output.append("- No active decisions on record.")
-            else:
-                for d in decisions:
-                    status = d.get('status', 'OPEN')
-                    icon = "✅" if status in ("RESOLVED", "CLEARED") else "⏳"
-                    output.append(f"**{icon} {d.get('id')}** — {status}" + (f" (as of {d['resolved_date']})" if d.get('resolved_date') else ""))
-                    output.append("")
-                    output.append(d.get('description', '').strip())
-                    if '_live_naked_itm' in d:
-                        output.append(f"  - Live check: {d['_live_naked_itm']:.0f} naked ITM contract(s) remaining (target: 0)")
-                    if '_live_values' in d:
-                        for k, v in d['_live_values'].items():
-                            output.append(f"  - Live: {k} = {v}")
-                    output.append("")
-        except Exception as e:
-            output.append(f"- ⚠️ Active decision tracker unavailable: {e}")
-        output.append("")
+        output.extend(self._render_active_decisions())
 
         # SECTION 7: ACTION FRAMEWORK WITH GAP CLOSURE IMPACT
         output.extend(self._format_section_header(7, "ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT"))
@@ -2041,6 +2049,13 @@ class UnifiedReportProduction:
         output.append("- Next data export: Daily position updates from all brokers")
         output.append("")
 
+        # SECTION 11: ACTIVE DECISION TRACKER -- same tracker as daily
+        # Section 6.9, rendered here too so it's visible whichever report
+        # type gets read next (trader-requested 2026-09-10: check these
+        # every time reports run, not just in the daily one).
+        output.extend(self._format_section_header(11, "ACTIVE DECISION TRACKER"))
+        output.extend(self._render_active_decisions())
+
         # WEEKLY EXECUTION PLAN (put/call + DTE aware — added per user request)
         output.extend(self._format_weekly_execution_plan())
 
@@ -2328,6 +2343,11 @@ class UnifiedReportProduction:
             output.append(f"(variance unavailable: {_e})")
         output.append("")
 
+        # SECTION 8: ACTIVE DECISION TRACKER -- same tracker as daily Section
+        # 6.9 (trader-requested 2026-09-10: check every time reports run).
+        output.extend(self._format_section_header(8, "ACTIVE DECISION TRACKER"))
+        output.extend(self._render_active_decisions())
+
         # FOOTER
         output.append("---")
         output.append(f"_Report generated: {today.isoformat()} | Next BI-WEEKLY Report: {(today + timedelta(days=14)).strftime('%A, %B %d, %Y')} 4:00 PM ET_")
@@ -2521,6 +2541,12 @@ class UnifiedReportProduction:
             output.append("Note: The prior Citadel/peer comparison used fabricated P&L figures and has been removed. Benchmark against external estimates manually if you want that view.")
         except Exception as _e:
             output.append(f"(performance pace unavailable: {_e})")
+        output.append("")
+
+        # SECTION 6: ACTIVE DECISION TRACKER -- same tracker as daily Section
+        # 6.9 (trader-requested 2026-09-10: check every time reports run).
+        output.extend(self._format_section_header(6, "ACTIVE DECISION TRACKER"))
+        output.extend(self._render_active_decisions())
         output.append("")
 
         # FOOTER

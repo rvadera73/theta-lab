@@ -118,7 +118,10 @@ the same day. All 4 report types' output files are `.md`.
   Section 6.9. When you make a real decision in a session (a specific roll,
   a specific cleanup, an entry gate) that should be checked automatically
   going forward instead of re-derived from scratch next time, add an entry
-  here rather than only stating it in chat.
+  here rather than only stating it in chat. Rendered via the shared
+  `_render_active_decisions()` helper in all 4 report types (daily 6.9,
+  weekly 11, biweekly 8, monthly 6) so a tracked decision is visible no
+  matter which report gets read next.
 
 ## Presentation principle — table-first, not per-item text blocks
 
@@ -186,6 +189,7 @@ sometimes a compact summary table directly above the verbose block).
 | 8 | RISK & GUARDRAILS (Weekly Check) | |
 | 9 | DECISION TREE — END-OF-WEEK | |
 | 10 | FRAMEWORK STATUS & AUTOMATION | |
+| 11 | ACTIVE DECISION TRACKER | Same `_render_active_decisions()` as daily Section 6.9 |
 | tail | WEEKLY EXECUTION PLAN | Uses `_classify_positions_for_action()` for REDUCE/MANAGE; `_get_quarterly_plan_exit_discipline()` for the put/call % targets; LET-RUN (RSI-driven) and the DTE/sector blocks are genuinely separate signals, not required to unify further |
 
 ## Biweekly report (`generate_biweekly_report`)
@@ -196,6 +200,8 @@ Trend/history-focused — does not currently duplicate Section 0's account
 table; keep it that way (link to Section 0 rather than re-listing balances
 if a future addition needs per-account detail here).
 
+| 8 | ACTIVE DECISION TRACKER | Same `_render_active_decisions()` as daily Section 6.9 |
+
 ## Monthly report (`generate_monthly_report`)
 
 | # | Title | Purpose |
@@ -205,6 +211,7 @@ if a future addition needs per-account detail here).
 | 3 | MONTHLY PREMIUM vs TARGET (real) | |
 | 4 | MOAT RECALIBRATION & TIER ASSIGNMENTS | |
 | 5 | PERFORMANCE PACE (real) | |
+| 6 | ACTIVE DECISION TRACKER | Same `_render_active_decisions()` as daily Section 6.9 |
 
 ## Adding a new section — checklist
 

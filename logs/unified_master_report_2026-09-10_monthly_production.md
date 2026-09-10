@@ -11,8 +11,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,341,494
-- **Total notional exposure:** $7,389,297
-- **Total option requirement:** $2,659,365
+- **Total notional exposure:** $7,398,477
+- **Total option requirement:** $2,660,339
 - **Positions with short puts:** 91
 - **Positions with short calls:** 43
 - **YTD Net Premium:** $239,895 (live from transactions)
@@ -62,18 +62,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 17.2% | $4,960,523 | $892,894 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-5,952 |
-| Account B (275) | $261,000 | 11.1% | $359,056 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,219 |
-| Account C (634) | $266,000 | 11.4% | $328,694 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,262 |
-| Fidelity (Rahul) | $498,560 | 21.3% | $686,933 | $624,839 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,239 |
-| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,585 | $51,173 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-333 |
-| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $168,866 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,089 |
-| Vanguard (Rahul) | $320,492 | 13.7% | $510,952 | $422,609 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-2,725 |
-| Robinhood (Individual) | $13,000 | 0.6% | $27,506 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-111 |
-| Robinhood (Traditional IRA) | $220,000 | 9.4% | $296,181 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-1,870 |
+| Account A (232) | $403,000 | 17.2% | $4,963,415 | $893,415 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-6,381 |
+| Account B (275) | $261,000 | 11.1% | $360,132 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,379 |
+| Account C (634) | $266,000 | 11.4% | $328,976 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,425 |
+| Fidelity (Rahul) | $498,560 | 21.3% | $688,840 | $625,280 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,544 |
+| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,733 | $51,332 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-357 |
+| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $169,062 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,167 |
+| Vanguard (Rahul) | $320,492 | 13.7% | $512,266 | $422,463 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-2,922 |
+| Robinhood (Individual) | $13,000 | 0.6% | $27,478 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-119 |
+| Robinhood (Traditional IRA) | $220,000 | 9.4% | $297,575 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-2,005 |
 | Fidelity 401K (Rahul) | $192,200 | 8.2% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,341,494 | 100.0% | $7,389,297 | $2,659,365 |  |  |  |  |
+| **TOTAL** | $2,341,494 | 100.0% | $7,398,477 | $2,660,339 |  |  |  |  |
 
 - **Account A (232):** 173 option positions | Monthly target: $28,615 | Equity: ADBE 400sh, APP 100sh, AXON 100sh, COIN 100sh, CRM 300sh +13 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -121,14 +121,14 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 - Gap to close: $390,105.0 (61.9%)
 - Monthly average (YTD): $26,655
 - Monthly average needed: $70,000
-- Monthly gap: $-20,800
+- Monthly gap: $-22,300
 
 **Position tier distribution → gap closure:**
 
 - Tier 1 (11 positions): $41,800/month (60% of $70,000 target)
-- Tier 2 (60 positions): $60,000/month (86% of target)
-- Tier 3 (22 positions): $-11,000/month (-16% drag)
-- Current total: 93 positions = $90,800/month (130% of target)
+- Tier 2 (61 positions): $61,000/month (87% of target)
+- Tier 3 (21 positions): $-10,500/month (-15% drag)
+- Current total: 93 positions = $92,300/month (132% of target)
 
 **Gap closure path:**
 
@@ -225,19 +225,19 @@ Per-driver attribution (regime / thesis / timing / slippage) requires trade-leve
 
 | Symbol | Conv | Heat | Price | Value | RSI | 52W Range | Verdict |
 |---|---|---|---|---|---|---|---|
-| APP | 9.1 | GREEN | $308.98 | $247,184 | 50.1 | 3% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
-| MU | 8.8 | YELLOW | $987.76 | $197,552 | 52.0 | 76% | STRONG (Approaching extremes) |
-| APH | 8.5 | GREEN | $79.82 | $63,852 | 59.3 | 69% | STRONG (Neutral positioning) |
-| TSM | 8.5 | YELLOW | $425.18 | $255,108 | 55.3 | 76% | STRONG (Approaching extremes) |
-| AMKR | 8.4 | GREEN | $49.08 | $24,540 | 46.3 | 34% | STRONG (Neutral positioning) |
+| APP | 9.1 | GREEN | $310.50 | $248,400 | 51.1 | 3% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
+| MU | 8.8 | YELLOW | $991.18 | $198,236 | 52.6 | 76% | STRONG (Approaching extremes) |
+| APH | 8.5 | GREEN | $79.58 | $63,664 | 58.5 | 68% | STRONG (Neutral positioning) |
+| TSM | 8.5 | YELLOW | $425.19 | $255,114 | 55.8 | 76% | STRONG (Approaching extremes) |
+| AMKR | 8.4 | GREEN | $49.43 | $24,715 | 46.9 | 34% | STRONG (Neutral positioning) |
 
 Tier 1 summary: 5 positions, quality improving
 
 **Tier 2 — Moderate Moat** (Conviction 5-7)
 
-- LYFT: 7.8/10 (YELLOW) | Value $8,811 — Dropped -13% in 7 days but only -7% vs its 200-day average — pullback within trend, verify thesis before treating as an entry
-- HUT: 7.8/10 (YELLOW) | Value $8,964 — Spiked 14% in 7 days, 18% above its 200-day average, but analyst upside still +80% — may be fundamentally supported, watch rather than force a close
-- UNH: 7.7/10 (GREEN) | Value $119,163 — Neutral positioning
+- LYFT: 7.8/10 (YELLOW) | Value $8,835 — Dropped -13% in 7 days but only -7% vs its 200-day average — pullback within trend, verify thesis before treating as an entry
+- HUT: 7.8/10 (YELLOW) | Value $8,917 — Spiked 13% in 7 days, 17% above its 200-day average, but analyst upside still +81% — may be fundamentally supported, watch rather than force a close
+- UNH: 7.7/10 (GREEN) | Value $118,739 — Neutral positioning
 
 **Tier 3 & Exited:**
 
@@ -255,6 +255,32 @@ Tier 1 summary: 5 positions, quality improving
 - Monthly net target (base): $100,000
 
 Note: The prior Citadel/peer comparison used fabricated P&L figures and has been removed. Benchmark against external estimates manually if you want that view.
+
+
+## Section 6: ACTIVE DECISION TRACKER
+
+
+**⏳ axon_sept18_roll_450c** — OPEN
+
+Roll the AXON $450C (Sept 18 2026 expiry) out to a January 2027 call (~$560-580 strike, AXON's own missing rung in its Sept/Dec/March ladder) before Sept 18. Keep the $470C to settle against the 100 owned AXON shares as a clean covered assignment. Only 100 AXON shares exist to cover 2 ITM Sept-18 calls; rolling one removes the naked/short-stock risk that would otherwise be forced at expiry.
+
+**⏳ pypl_naked_calls_cleanup** — OPEN
+
+5 naked short call contracts on PYPL (0 shares owned), all ITM as of 2026-09-10: $45C x3 (Dec 18 2026), $47.5C x2 (Jan 15 2027). No shares exist to cover any of them. Lower urgency than the AXON Sept-18 pair (91-119 DTE at time of writing gives runway) but needs a roll-up/out or close before expiry approaches -- same structural risk as AXON, just further out.
+  - Live check: 12 naked ITM contract(s) remaining (target: 0)
+
+**⏳ crcl_naked_call_dec** — OPEN
+
+1 naked short call on CRCL (0 shares owned), ITM as of 2026-09-10: $90C (Dec 18 2026). Smaller version of the same AXON/PYPL issue.
+  - Live check: 2 naked ITM contract(s) remaining (target: 0)
+
+**⏳ march_strangle_entry_gate** — BLOCKED
+
+Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
+  - Live: account_a_margin_utilization_pct = 127.63065874917166
+  - Live: macro_risk_level = RED
+
+
 
 ---
 _Report generated: 2026-09-10 | Next Monthly Report: Thursday, October 01, 2026 8:00 AM ET_

@@ -11,8 +11,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,341,494
-- **Total notional exposure:** $7,389,297
-- **Total option requirement:** $2,659,365
+- **Total notional exposure:** $7,398,477
+- **Total option requirement:** $2,660,339
 - **Positions with short puts:** 91
 - **Positions with short calls:** 43
 - **YTD Net Premium:** $239,895 (live from transactions)
@@ -62,18 +62,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 17.2% | $4,960,523 | $892,894 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-5,952 |
-| Account B (275) | $261,000 | 11.1% | $359,056 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,219 |
-| Account C (634) | $266,000 | 11.4% | $328,694 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,262 |
-| Fidelity (Rahul) | $498,560 | 21.3% | $686,933 | $624,839 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,239 |
-| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,585 | $51,173 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-333 |
-| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $168,866 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,089 |
-| Vanguard (Rahul) | $320,492 | 13.7% | $510,952 | $422,609 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-2,725 |
-| Robinhood (Individual) | $13,000 | 0.6% | $27,506 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-111 |
-| Robinhood (Traditional IRA) | $220,000 | 9.4% | $296,181 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-1,870 |
+| Account A (232) | $403,000 | 17.2% | $4,963,415 | $893,415 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-6,381 |
+| Account B (275) | $261,000 | 11.1% | $360,132 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,379 |
+| Account C (634) | $266,000 | 11.4% | $328,976 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,425 |
+| Fidelity (Rahul) | $498,560 | 21.3% | $688,840 | $625,280 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,544 |
+| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,733 | $51,332 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-357 |
+| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $169,062 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,167 |
+| Vanguard (Rahul) | $320,492 | 13.7% | $512,266 | $422,463 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-2,922 |
+| Robinhood (Individual) | $13,000 | 0.6% | $27,478 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-119 |
+| Robinhood (Traditional IRA) | $220,000 | 9.4% | $297,575 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-2,005 |
 | Fidelity 401K (Rahul) | $192,200 | 8.2% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,341,494 | 100.0% | $7,389,297 | $2,659,365 |  |  |  |  |
+| **TOTAL** | $2,341,494 | 100.0% | $7,398,477 | $2,660,339 |  |  |  |  |
 
 - **Account A (232):** 173 option positions | Monthly target: $28,615 | Equity: ADBE 400sh, APP 100sh, AXON 100sh, COIN 100sh, CRM 300sh +13 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -121,14 +121,14 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 - Gap to close: $390,105.0 (61.9%)
 - Monthly average (YTD): $26,655
 - Monthly average needed: $70,000
-- Monthly gap: $-20,800
+- Monthly gap: $-22,300
 
 **Position tier distribution → gap closure:**
 
 - Tier 1 (11 positions): $41,800/month (60% of $70,000 target)
-- Tier 2 (60 positions): $60,000/month (86% of target)
-- Tier 3 (22 positions): $-11,000/month (-16% drag)
-- Current total: 93 positions = $90,800/month (130% of target)
+- Tier 2 (61 positions): $61,000/month (87% of target)
+- Tier 3 (21 positions): $-10,500/month (-15% drag)
+- Current total: 93 positions = $92,300/month (132% of target)
 
 **Gap closure path:**
 
@@ -195,8 +195,8 @@ Note: YTD detail variance analysis moved to MONTHLY report (consolidated for cla
 **Conviction Distribution** (current, live):
 
 - HIGH (≥8): 11% (11 positions)
-- MODERATE (6-8): 64% (60 positions)
-- LOW (<6): 23% (22 positions)
+- MODERATE (6-8): 65% (61 positions)
+- LOW (<6): 22% (21 positions)
 - Portfolio avg: 6.8/10
 - (Month-over-month conviction history needs a tracking store — not fabricated.)
 
@@ -220,14 +220,14 @@ Note: YTD detail variance analysis moved to MONTHLY report (consolidated for cla
 **Tier Contribution to Target** (current, live):
 
 - Tier 1 (Conv ≥8): 11 positions → $41,800/month
-- Tier 2 (Conv 6-8): 60 positions → $60,000/month
-- Tier 3 (Conv <6): 22 positions → $-11,000 drag
+- Tier 2 (Conv 6-8): 61 positions → $61,000/month
+- Tier 3 (Conv <6): 21 positions → $-10,500 drag
 - (Prior-month tier history needs a tracking store — not fabricated.)
 
 **Portfolio Total Contribution to $90K Target:**
 
-- Current: $90,800/month (130% of target)
-- Gap: $-20,800 → 0 more Tier 1 needed OR scale/trim Tier 3
+- Current: $92,300/month (132% of target)
+- Gap: $-22,300 → 0 more Tier 1 needed OR scale/trim Tier 3
 
 **Framework verdict:** Portfolio quality concentrating in Tier 1 as designed. Weekly tier monitoring catching opportunities earlier. Framework gap-closure path clear.
 
@@ -286,13 +286,13 @@ To enable: persist monthly Greeks + closed-trade outcomes to a state file each r
 
 | Sector | % of Notional | Avg Conv | Signal |
 |---|---|---|---|
-| Technology | 37.6% | 6.9 | NEUTRAL |
+| Technology | 37.5% | 6.89 | NEUTRAL |
 | Industrials | 17.1% | 7.18 | NEUTRAL |
-| Communication Services | 12.9% | 7.61 | ATTRACTION |
-| Financial Services | 8.5% | 6.13 | NEUTRAL |
+| Communication Services | 13.0% | 7.61 | ATTRACTION |
+| Financial Services | 8.5% | 6.23 | NEUTRAL |
 | Healthcare | 7.0% | 5.66 | NEUTRAL |
-| Consumer Cyclical | 6.0% | 6.35 | ATTRACTION |
-| Brand-Quality (Non-AI) | 4.9% | 6.63 | NEUTRAL |
+| Consumer Cyclical | 6.0% | 6.33 | ATTRACTION |
+| Brand-Quality (Non-AI) | 4.9% | 6.66 | NEUTRAL |
 | Defense | 2.7% | 6.12 | ATTRACTION |
 | Utilities | 1.6% | 6.98 | ATTRACTION |
 | Basic Materials | 1.5% | 6.83 | NEUTRAL |
@@ -319,6 +319,31 @@ Monthly net target (base): $100,000
 | 2026-09 | 8,695 | -91,305 |
 
 Per-driver attribution (regime/thesis/timing) requires trade-level tagging not yet captured — omitted rather than estimated.
+
+
+## Section 8: ACTIVE DECISION TRACKER
+
+
+**⏳ axon_sept18_roll_450c** — OPEN
+
+Roll the AXON $450C (Sept 18 2026 expiry) out to a January 2027 call (~$560-580 strike, AXON's own missing rung in its Sept/Dec/March ladder) before Sept 18. Keep the $470C to settle against the 100 owned AXON shares as a clean covered assignment. Only 100 AXON shares exist to cover 2 ITM Sept-18 calls; rolling one removes the naked/short-stock risk that would otherwise be forced at expiry.
+
+**⏳ pypl_naked_calls_cleanup** — OPEN
+
+5 naked short call contracts on PYPL (0 shares owned), all ITM as of 2026-09-10: $45C x3 (Dec 18 2026), $47.5C x2 (Jan 15 2027). No shares exist to cover any of them. Lower urgency than the AXON Sept-18 pair (91-119 DTE at time of writing gives runway) but needs a roll-up/out or close before expiry approaches -- same structural risk as AXON, just further out.
+  - Live check: 12 naked ITM contract(s) remaining (target: 0)
+
+**⏳ crcl_naked_call_dec** — OPEN
+
+1 naked short call on CRCL (0 shares owned), ITM as of 2026-09-10: $90C (Dec 18 2026). Smaller version of the same AXON/PYPL issue.
+  - Live check: 2 naked ITM contract(s) remaining (target: 0)
+
+**⏳ march_strangle_entry_gate** — BLOCKED
+
+Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
+  - Live: account_a_margin_utilization_pct = 127.63065874917166
+  - Live: macro_risk_level = RED
+
 
 ---
 _Report generated: 2026-09-10 | Next BI-WEEKLY Report: Thursday, September 24, 2026 4:00 PM ET_
