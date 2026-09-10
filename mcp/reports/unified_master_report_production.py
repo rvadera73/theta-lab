@@ -485,6 +485,20 @@ class UnifiedReportProduction:
                 d['_live_naked_itm'] = naked_itm  # surfaced in the render, not persisted
                 newly_resolved = naked_itm <= check.get('max_naked_itm', 0)
 
+            elif ctype == "leg_count_max":
+                t = check.get("ticker")
+                otype = check.get("option_type", "")[:1].upper()
+                sub = self.open_positions[
+                    (self.open_positions['ticker'] == t) &
+                    (self.open_positions['option_type'].astype(str).str.upper().str.startswith(otype))
+                ]
+                accounts = check.get("accounts")
+                if accounts:
+                    sub = sub[sub['account_name'].isin(accounts)]
+                live_count = int(len(sub))
+                d['_live_leg_count'] = live_count  # surfaced in the render, not persisted
+                newly_resolved = live_count <= check.get('max_count', 0)
+
             elif ctype == "metric_gate":
                 acct_status = self._compute_account_status()
                 risk = self._get_macro_risk_analysis()
@@ -541,6 +555,11 @@ class UnifiedReportProduction:
                     output.append(d.get('description', '').strip())
                     if '_live_naked_itm' in d:
                         output.append(f"  - Live check: {d['_live_naked_itm']:.0f} naked ITM contract(s) remaining (target: 0)")
+                    if '_live_leg_count' in d:
+                        baseline = d.get('check', {}).get('baseline_count')
+                        target = d.get('check', {}).get('max_count', 0)
+                        progress = f" (baseline was {baseline})" if baseline is not None else ""
+                        output.append(f"  - Live check: {d['_live_leg_count']} leg(s) open now{progress}, target: {target}")
                     if '_live_values' in d:
                         for k, v in d['_live_values'].items():
                             output.append(f"  - Live: {k} = {v}")

@@ -11,8 +11,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,341,494
-- **Total notional exposure:** $7,398,477
-- **Total option requirement:** $2,660,339
+- **Total notional exposure:** $7,388,769
+- **Total option requirement:** $2,658,071
 - **Positions with short puts:** 91
 - **Positions with short calls:** 43
 - **YTD Net Premium:** $239,895 (live from transactions)
@@ -62,18 +62,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 17.2% | $4,963,415 | $893,415 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-6,381 |
-| Account B (275) | $261,000 | 11.1% | $360,132 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,379 |
-| Account C (634) | $266,000 | 11.4% | $328,976 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,425 |
-| Fidelity (Rahul) | $498,560 | 21.3% | $688,840 | $625,280 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,544 |
-| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,733 | $51,332 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-357 |
-| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $169,062 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,167 |
-| Vanguard (Rahul) | $320,492 | 13.7% | $512,266 | $422,463 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-2,922 |
-| Robinhood (Individual) | $13,000 | 0.6% | $27,478 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-119 |
-| Robinhood (Traditional IRA) | $220,000 | 9.4% | $297,575 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-2,005 |
+| Account A (232) | $403,000 | 17.2% | $4,955,217 | $891,939 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-6,753 |
+| Account B (275) | $261,000 | 11.1% | $362,337 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,518 |
+| Account C (634) | $266,000 | 11.4% | $329,781 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,567 |
+| Fidelity (Rahul) | $498,560 | 21.3% | $689,049 | $624,624 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,809 |
+| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,536 | $51,237 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-378 |
+| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $169,657 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,235 |
+| Vanguard (Rahul) | $320,492 | 13.7% | $505,009 | $422,420 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-3,092 |
+| Robinhood (Individual) | $13,000 | 0.6% | $27,772 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-126 |
+| Robinhood (Traditional IRA) | $220,000 | 9.4% | $299,410 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-2,122 |
 | Fidelity 401K (Rahul) | $192,200 | 8.2% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,341,494 | 100.0% | $7,398,477 | $2,660,339 |  |  |  |  |
+| **TOTAL** | $2,341,494 | 100.0% | $7,388,769 | $2,658,071 |  |  |  |  |
 
 - **Account A (232):** 173 option positions | Monthly target: $28,615 | Equity: ADBE 400sh, APP 100sh, AXON 100sh, COIN 100sh, CRM 300sh +13 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -121,14 +121,14 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 - Gap to close: $390,105.0 (61.9%)
 - Monthly average (YTD): $26,655
 - Monthly average needed: $70,000
-- Monthly gap: $-22,300
+- Monthly gap: $-23,600
 
 **Position tier distribution → gap closure:**
 
-- Tier 1 (11 positions): $41,800/month (60% of $70,000 target)
-- Tier 2 (61 positions): $61,000/month (87% of target)
-- Tier 3 (21 positions): $-10,500/month (-15% drag)
-- Current total: 93 positions = $92,300/month (132% of target)
+- Tier 1 (12 positions): $45,600/month (65% of $70,000 target)
+- Tier 2 (59 positions): $59,000/month (84% of target)
+- Tier 3 (22 positions): $-11,000/month (-16% drag)
+- Current total: 93 positions = $93,600/month (134% of target)
 
 **Gap closure path:**
 
@@ -225,24 +225,24 @@ Per-driver attribution (regime / thesis / timing / slippage) requires trade-leve
 
 | Symbol | Conv | Heat | Price | Value | RSI | 52W Range | Verdict |
 |---|---|---|---|---|---|---|---|
-| APP | 9.1 | GREEN | $310.50 | $248,400 | 51.1 | 3% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
-| MU | 8.8 | YELLOW | $991.18 | $198,236 | 52.6 | 76% | STRONG (Approaching extremes) |
-| APH | 8.5 | GREEN | $79.58 | $63,664 | 58.5 | 68% | STRONG (Neutral positioning) |
-| TSM | 8.5 | YELLOW | $425.19 | $255,114 | 55.8 | 76% | STRONG (Approaching extremes) |
-| AMKR | 8.4 | GREEN | $49.43 | $24,715 | 46.9 | 34% | STRONG (Neutral positioning) |
+| APP | 9.1 | GREEN | $314.79 | $251,832 | 53.6 | 4% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
+| MU | 8.8 | YELLOW | $976.23 | $195,247 | 50.3 | 75% | STRONG (Approaching extremes) |
+| APH | 8.5 | GREEN | $79.57 | $63,656 | 58.5 | 68% | STRONG (Neutral positioning) |
+| TSM | 8.5 | YELLOW | $429.82 | $257,889 | 59.0 | 78% | STRONG (Approaching extremes) |
+| AMKR | 8.4 | GREEN | $49.56 | $24,780 | 47.2 | 34% | STRONG (Neutral positioning) |
 
 Tier 1 summary: 5 positions, quality improving
 
 **Tier 2 — Moderate Moat** (Conviction 5-7)
 
-- LYFT: 7.8/10 (YELLOW) | Value $8,835 — Dropped -13% in 7 days but only -7% vs its 200-day average — pullback within trend, verify thesis before treating as an entry
-- HUT: 7.8/10 (YELLOW) | Value $8,917 — Spiked 13% in 7 days, 17% above its 200-day average, but analyst upside still +81% — may be fundamentally supported, watch rather than force a close
-- UNH: 7.7/10 (GREEN) | Value $118,739 — Neutral positioning
+- LYFT: 7.8/10 (YELLOW) | Value $8,982 — Approaching extremes
+- LITE: 7.8/10 (YELLOW) | Value $375,420 — Approaching extremes
+- HUT: 7.8/10 (YELLOW) | Value $8,965 — Spiked 14% in 7 days, 18% above its 200-day average, but analyst upside still +80% — may be fundamentally supported, watch rather than force a close
 
 **Tier 3 & Exited:**
 
 - OKTA: 5.9/10 (RED) — Watch for exit
-- ABNB: 5.9/10 (GREEN) — Watch for exit
+- ABNB: 5.9/10 (YELLOW) — Watch for exit
 
 **Moat verdict:** Quality improving with framework. Tier 1 concentration rising.
 
@@ -277,8 +277,14 @@ Roll the AXON $450C (Sept 18 2026 expiry) out to a January 2027 call (~$560-580 
 **⏳ march_strangle_entry_gate** — BLOCKED
 
 Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
-  - Live: account_a_margin_utilization_pct = 127.63065874917166
-  - Live: macro_risk_level = RED
+  - Live: account_a_margin_utilization_pct = 127.41987235532488
+  - Live: macro_risk_level = YELLOW
+
+**⏳ be_puts_reduction** — OPEN
+
+Reduce BE put exposure to zero over the next ~10 days (target: 2026-09-20) by closing/rolling out of all 6 open BE put legs across every account. BE is RED heat, RSI 77-81 (overbought/extended), and is the most widely-held name in the book -- also carries a naked short-call pair against it in Account A/Fidelity Rahul (no BE shares owned anywhere). Baseline as of 2026-09-10: Account A $170P (Jan 15 2027) x2 [Jan+Feb], Account B $180P (Feb 19 2027), Fidelity (Rahul) $190P (Jan 15 2027), Fidelity (Rajul - Rollover IRA) $200P (Jun 17 2027), Robinhood (Traditional) $180P (Jun 17 2027). Trader confirmed 2026-09-10 this should cover ALL open BE puts (not just the near-dated ones) -- an initial "Dec 2026 and before" framing didn't match any real BE put, since the earliest is Jan 15 2027.
+KNOWN GAP: the automated check only sees 5 of these 6 legs -- the Robinhood (Traditional) $180P (Jun 17 2027) has an option-type parsing gap in that account's transaction reconstruction and won't count toward the live total below. This entry will show RESOLVED once the other 5 close even if that 6th one is still open -- manually confirm the Robinhood leg separately before treating BE exposure as fully closed.
+  - Live check: 5 leg(s) open now (baseline was 6), target: 0
 
 
 

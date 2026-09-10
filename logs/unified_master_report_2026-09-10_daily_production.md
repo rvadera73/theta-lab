@@ -8,8 +8,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,341,494
-- **Total notional exposure:** $7,398,477
-- **Total option requirement:** $2,660,339
+- **Total notional exposure:** $7,388,769
+- **Total option requirement:** $2,658,071
 - **Positions with short puts:** 91
 - **Positions with short calls:** 43
 - **YTD Net Premium:** $239,895 (live from transactions)
@@ -59,18 +59,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 17.2% | $4,963,415 | $893,415 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-6,381 |
-| Account B (275) | $261,000 | 11.1% | $360,132 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,379 |
-| Account C (634) | $266,000 | 11.4% | $328,976 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,425 |
-| Fidelity (Rahul) | $498,560 | 21.3% | $688,840 | $625,280 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,544 |
-| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,733 | $51,332 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-357 |
-| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $169,062 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,167 |
-| Vanguard (Rahul) | $320,492 | 13.7% | $512,266 | $422,463 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-2,922 |
-| Robinhood (Individual) | $13,000 | 0.6% | $27,478 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-119 |
-| Robinhood (Traditional IRA) | $220,000 | 9.4% | $297,575 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-2,005 |
+| Account A (232) | $403,000 | 17.2% | $4,955,217 | $891,939 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-6,753 |
+| Account B (275) | $261,000 | 11.1% | $362,337 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,518 |
+| Account C (634) | $266,000 | 11.4% | $329,781 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,567 |
+| Fidelity (Rahul) | $498,560 | 21.3% | $689,049 | $624,624 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,809 |
+| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,536 | $51,237 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-378 |
+| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $169,657 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,235 |
+| Vanguard (Rahul) | $320,492 | 13.7% | $505,009 | $422,420 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-3,092 |
+| Robinhood (Individual) | $13,000 | 0.6% | $27,772 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-126 |
+| Robinhood (Traditional IRA) | $220,000 | 9.4% | $299,410 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-2,122 |
 | Fidelity 401K (Rahul) | $192,200 | 8.2% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,341,494 | 100.0% | $7,398,477 | $2,660,339 |  |  |  |  |
+| **TOTAL** | $2,341,494 | 100.0% | $7,388,769 | $2,658,071 |  |  |  |  |
 
 - **Account A (232):** 173 option positions | Monthly target: $28,615 | Equity: ADBE 400sh, APP 100sh, AXON 100sh, COIN 100sh, CRM 300sh +13 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -118,14 +118,14 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 - Gap to close: $390,105.0 (61.9%)
 - Monthly average (YTD): $26,655
 - Monthly average needed: $70,000
-- Monthly gap: $-22,300
+- Monthly gap: $-23,600
 
 **Position tier distribution → gap closure:**
 
-- Tier 1 (11 positions): $41,800/month (60% of $70,000 target)
-- Tier 2 (61 positions): $61,000/month (87% of target)
-- Tier 3 (21 positions): $-10,500/month (-15% drag)
-- Current total: 93 positions = $92,300/month (132% of target)
+- Tier 1 (12 positions): $45,600/month (65% of $70,000 target)
+- Tier 2 (59 positions): $59,000/month (84% of target)
+- Tier 3 (22 positions): $-11,000/month (-16% drag)
+- Current total: 93 positions = $93,600/month (134% of target)
 
 **Gap closure path:**
 
@@ -179,87 +179,88 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 
 **Tier contribution to target:**
 
-- Tier 1 (11 positions): $41,800/month — each contributes $3,800/month (4.2% of $70,000)
-- Tier 2 (61 positions): $61,000/month — each contributes $1,000/month (1.1% of target)
-- Tier 3 (21 positions): $-10,500/month — each drags -$500/month (-0.6% of target)
-- Portfolio: 92,300/month (132% of target) — Need $-22,300 more
+- Tier 1 (12 positions): $45,600/month — each contributes $3,800/month (4.2% of $70,000)
+- Tier 2 (59 positions): $59,000/month — each contributes $1,000/month (1.1% of target)
+- Tier 3 (22 positions): $-11,000/month — each drags -$500/month (-0.6% of target)
+- Portfolio: 93,600/month (134% of target) — Need $-23,600 more
 
-**HIGH (Tier 1: 8-10) conviction** — 11 positions | Total contribution: $41,800/month (59.7% of target)
+**HIGH (Tier 1: 8-10) conviction** — 12 positions | Total contribution: $45,600/month (65.1% of target)
 
 | Heat | Symbol | Price | Conv | Contribution | % Target |
 |---|---|---|---|---|---|
-| 🟢 | APP | $310.50 | 9.1 | $3,800 | 5.4% |
-| 🟡 | MU | $991.18 | 8.8 | $3,800 | 5.4% |
-| 🟢 | APH | $79.58 | 8.5 | $3,800 | 5.4% |
-| 🟡 | TSM | $425.19 | 8.5 | $3,800 | 5.4% |
-| 🟢 | AMKR | $49.43 | 8.4 | $3,800 | 5.4% |
-| 🟢 | GEV | $929.52 | 8.4 | $3,800 | 5.4% |
-| 🟢 | VRT | $248.68 | 8.3 | $3,800 | 5.4% |
-| 🟡 | JD | $26.94 | 8.2 | $3,800 | 5.4% |
-| 🟡 | SKHY | $188.23 | 8.2 | $3,800 | 5.4% |
-| 🟡 | RBLX | $44.65 | 8.0 | $3,800 | 5.4% |
-| 🟡 | META | $644.88 | 8.0 | $3,800 | 5.4% |
+| 🟢 | APP | $314.79 | 9.1 | $3,800 | 5.4% |
+| 🟡 | MU | $976.23 | 8.8 | $3,800 | 5.4% |
+| 🟢 | APH | $79.57 | 8.5 | $3,800 | 5.4% |
+| 🟡 | TSM | $429.82 | 8.5 | $3,800 | 5.4% |
+| 🟢 | AMKR | $49.56 | 8.4 | $3,800 | 5.4% |
+| 🟢 | GEV | $919.75 | 8.4 | $3,800 | 5.4% |
+| 🟢 | VRT | $247.78 | 8.3 | $3,800 | 5.4% |
+| 🟡 | JD | $27.01 | 8.2 | $3,800 | 5.4% |
+| 🟡 | FSLR | $207.86 | 8.2 | $3,800 | 5.4% |
+| 🟡 | DVN | $49.56 | 8.1 | $3,800 | 5.4% |
+| 🟡 | RBLX | $45.47 | 8.0 | $3,800 | 5.4% |
+| 🟡 | META | $651.00 | 8.0 | $3,800 | 5.4% |
 _(put/call detail: Section 6)_
 
-**MODERATE (Tier 2: 6-8) conviction** — 61 positions | Total contribution: $61,000/month (87.1% of target)
+**MODERATE (Tier 2: 6-8) conviction** — 59 positions | Total contribution: $59,000/month (84.3% of target)
 
 | Heat | Symbol | Price | Conv | Contribution | % Target |
 |---|---|---|---|---|---|
-| 🟡 | LYFT | $14.73 | 7.8 | $1,000 | 1.4% |
-| 🟡 | HUT | $89.17 | 7.8 | $1,000 | 1.4% |
-| 🟢 | UNH | $395.80 | 7.7 | $1,000 | 1.4% |
-| 🟢 | BWXT | $155.18 | 7.7 | $1,000 | 1.4% |
-| 🟢 | ALAB | $283.75 | 7.6 | $1,000 | 1.4% |
-| 🟡 | NVDA | $217.97 | 7.6 | $1,000 | 1.4% |
-| 🟢 | CAVA | $55.45 | 7.6 | $1,000 | 1.4% |
-| 🟡 | SPCX | $152.52 | 7.6 | $1,000 | 1.4% |
-| 🟡 | UBER | $70.11 | 7.5 | $1,000 | 1.4% |
-| 🟡 | LASR | $40.29 | 7.5 | $1,000 | 1.4% |
-| 🟢 | NBIS | $230.50 | 7.5 | $1,000 | 1.4% |
-| 🟢 | BROS | $44.47 | 7.5 | $1,000 | 1.4% |
-| 🟢 | CRWV | $90.47 | 7.5 | $1,000 | 1.4% |
-| 🟡 | WMT | $106.30 | 7.5 | $1,000 | 1.4% |
-| 🟡 | IONQ | $37.33 | 7.4 | $1,000 | 1.4% |
-| 🟢 | RIOT | $21.00 | 7.4 | $1,000 | 1.4% |
-| 🟡 | MP | $52.92 | 7.4 | $1,000 | 1.4% |
-| 🟡 | DVN | $49.12 | 7.4 | $1,000 | 1.4% |
-| 🟢 | KTOS | $46.59 | 7.4 | $1,000 | 1.4% |
-| 🟢 | GOOGL | $328.54 | 7.3 | $1,000 | 1.4% |
+| 🟡 | LYFT | $14.97 | 7.8 | $1,000 | 1.4% |
+| 🟡 | LITE | $938.55 | 7.8 | $1,000 | 1.4% |
+| 🟡 | HUT | $89.65 | 7.8 | $1,000 | 1.4% |
+| 🟢 | UNH | $391.82 | 7.7 | $1,000 | 1.4% |
+| 🟢 | BWXT | $154.54 | 7.7 | $1,000 | 1.4% |
+| 🟡 | SKHY | $190.45 | 7.7 | $1,000 | 1.4% |
+| 🟢 | ALAB | $287.47 | 7.6 | $1,000 | 1.4% |
+| 🟡 | NVDA | $218.21 | 7.6 | $1,000 | 1.4% |
+| 🟢 | GOOGL | $330.95 | 7.6 | $1,000 | 1.4% |
+| 🟢 | CAVA | $54.71 | 7.6 | $1,000 | 1.4% |
+| 🟡 | LASR | $40.10 | 7.5 | $1,000 | 1.4% |
+| 🟢 | NBIS | $227.02 | 7.5 | $1,000 | 1.4% |
+| 🟢 | BROS | $43.79 | 7.5 | $1,000 | 1.4% |
+| 🟢 | CRWV | $89.73 | 7.5 | $1,000 | 1.4% |
+| 🟡 | WMT | $106.00 | 7.5 | $1,000 | 1.4% |
+| 🟡 | IONQ | $38.00 | 7.4 | $1,000 | 1.4% |
+| 🟢 | RIOT | $21.18 | 7.4 | $1,000 | 1.4% |
+| 🟡 | MP | $51.79 | 7.4 | $1,000 | 1.4% |
+| 🟢 | KTOS | $47.62 | 7.4 | $1,000 | 1.4% |
+| 🟢 | HOOD | $113.88 | 7.3 | $1,000 | 1.4% |
 _(put/call detail: Section 6)_
-_...and 41 more (see Section 6 for the full sector-grouped list)_
+_...and 39 more (see Section 6 for the full sector-grouped list)_
 
-**LOW (Tier 3: <6) conviction** — 21 positions | Total contribution: $-10,500/month (-15.0% of target)
+**LOW (Tier 3: <6) conviction** — 22 positions | Total contribution: $-11,000/month (-15.7% of target)
 
 | Heat | Symbol | Price | Conv | Contribution | % Target |
 |---|---|---|---|---|---|
-| 🔴 | OKTA | $177.32 | 5.9 | $-500 | 0.0% |
-| 🟢 | ABNB | $168.26 | 5.9 | $-500 | 0.0% |
-| 🟢 | ZBH | $92.56 | 5.9 | $-500 | 0.0% |
-| 🟡 | CRWD | $211.35 | 5.8 | $-500 | 0.0% |
-| 🟡 | PANW | $340.58 | 5.8 | $-500 | 0.0% |
-| 🟢 | SBUX | $100.39 | 5.8 | $-500 | 0.0% |
-| 🟡 | REGN | $800.17 | 5.6 | $-500 | 0.0% |
-| 🟡 | COIN | $173.32 | 5.5 | $-500 | 0.0% |
-| 🟡 | PFE | $27.53 | 5.4 | $-500 | 0.0% |
-| 🟢 | INFY | $10.85 | 5.4 | $-500 | 0.0% |
-| 🟢 | DIS | $104.23 | 5.3 | $-500 | 0.0% |
-| 🟢 | BA | $206.62 | 5.3 | $-500 | 0.0% |
+| 🔴 | OKTA | $173.54 | 5.9 | $-500 | 0.0% |
+| 🟡 | ABNB | $169.60 | 5.9 | $-500 | 0.0% |
+| 🟡 | COIN | $172.37 | 5.8 | $-500 | 0.0% |
+| 🟢 | CRCL | $90.85 | 5.8 | $-500 | 0.0% |
+| 🟡 | PANW | $342.63 | 5.8 | $-500 | 0.0% |
+| 🟡 | CRM | $244.62 | 5.7 | $-500 | 0.0% |
+| 🟡 | REGN | $794.45 | 5.6 | $-500 | 0.0% |
+| 🟢 | SBUX | $100.05 | 5.5 | $-500 | 0.0% |
+| 🟢 | PFE | $27.50 | 5.4 | $-500 | 0.0% |
+| 🟡 | CRWD | $213.62 | 5.4 | $-500 | 0.0% |
+| 🟢 | INFY | $10.86 | 5.4 | $-500 | 0.0% |
+| 🟢 | DIS | $105.02 | 5.3 | $-500 | 0.0% |
+| 🟢 | BA | $206.72 | 5.3 | $-500 | 0.0% |
 | 🟢 | BRKB | $0.00 | 5.3 | $-500 | 0.0% |
-| 🟡 | SONO | $14.55 | 5.2 | $-500 | 0.0% |
-| 🟡 | ETSY | $70.44 | 5.2 | $-500 | 0.0% |
-| 🟡 | PYPL | $52.04 | 5.1 | $-500 | 0.0% |
-| 🟡 | ADBE | $251.37 | 4.9 | $-500 | 0.0% |
-| 🟢 | MMYT | $49.06 | 4.9 | $-500 | 0.0% |
-| 🟡 | XYZ | $79.04 | 4.5 | $-500 | 0.0% |
-| 🟢 | CCJ | $98.50 | 3.9 | $-500 | 0.0% |
+| 🟢 | SONO | $14.69 | 5.2 | $-500 | 0.0% |
+| 🟢 | ETSY | $72.18 | 5.2 | $-500 | 0.0% |
+| 🟡 | PYPL | $53.22 | 5.1 | $-500 | 0.0% |
+| 🟡 | ADBE | $250.01 | 4.9 | $-500 | 0.0% |
+| 🟢 | MMYT | $48.85 | 4.9 | $-500 | 0.0% |
+| 🟡 | XYZ | $79.79 | 4.5 | $-500 | 0.0% |
 _(put/call detail: Section 6)_
-_...and 1 more (see Section 6 for the full sector-grouped list)_
+_...and 2 more (see Section 6 for the full sector-grouped list)_
 
 
 ## Section 3: POSITION HEAT DISTRIBUTION
 
-- 🟢 GREEN (Attractive/Oversold): 41 positions (44.1%)
-- 🟡 YELLOW (Neutral): 50 positions (53.8%)
+- 🟢 GREEN (Attractive/Oversold): 43 positions (46.2%)
+- 🟡 YELLOW (Neutral): 48 positions (51.6%)
 - 🔴 RED (Extended/Overbought): 2 positions (2.2%)
 
 
@@ -267,8 +268,8 @@ _...and 1 more (see Section 6 for the full sector-grouped list)_
 
 - **Current Regime:** BEAR_SIDEWAYS
 - **Note:** Regime auto-detected from data. No caution flags active.
-- **VIX:** 17.8 — VIX 17.8 sustained < 20
-- **S&P 500:** 7585 (50d MA: 7604, 200d MA: 7157)
+- **VIX:** 17.7 — VIX 17.7 sustained < 20
+- **S&P 500:** 7599 (50d MA: 7604, 200d MA: 7157)
   - Above 50d MA: False | Above 200d MA: True
 
 ## Section 4.5: Sector Analysis & Rotation Framework
@@ -277,18 +278,18 @@ _...and 1 more (see Section 6 for the full sector-grouped list)_
 
 | Sector | Positions | Avg Conv | Avg RSI | 52W %ile | Avg IVR | Signal |
 |---|---|---|---|---|---|---|
-| Technology | 121 | 6.89 | 49.4 | 52.2 | 59 | 🟡 NEUTRAL |
-| Healthcare | 18 | 5.66 | 41.3 | 42.2 | 25 | 🟡 NEUTRAL |
-| Consumer Cyclical | 33 | 6.33 | 26.5 | 36.6 | 58 | 🟢 BUY (rich premium) |
-| Industrials | 35 | 7.18 | 42.0 | 41.0 | 41 | 🟡 NEUTRAL |
-| Energy | 3 | 6.23 | 50.3 | 67.5 | 30 | 🟡 NEUTRAL |
-| Consumer Defensive | 1 | 7.5 | 58.7 | 20.5 | 95 | 🟢 BUY (rich premium) |
-| Utilities | 9 | 6.98 | 61.4 | 15.1 | 19 | 🟡 BUY stock/THIN premium |
-| Communication Services | 35 | 7.61 | 57.1 | 24.9 | 58 | 🟢 BUY (rich premium) |
-| Defense | 5 | 6.12 | 28.2 | 27.8 | 48 | 🟢 BUY (rich premium) |
-| Brand-Quality (Non-AI) | 20 | 6.66 | 46.5 | 42.6 | 31 | 🟡 NEUTRAL |
-| Basic Materials | 11 | 6.83 | 41.3 | 30.9 | 25 | 🟡 NEUTRAL |
-| Financial Services | 35 | 6.23 | 47.0 | 36.8 | 49 | 🟡 NEUTRAL |
+| Technology | 121 | 6.81 | 49.8 | 52.3 | 59 | 🟡 NEUTRAL |
+| Healthcare | 18 | 5.83 | 41.3 | 41.8 | 26 | 🟡 NEUTRAL |
+| Consumer Cyclical | 33 | 6.31 | 27.7 | 37.8 | 58 | 🟢 BUY (rich premium) |
+| Industrials | 35 | 7.17 | 41.1 | 40.4 | 42 | 🟡 NEUTRAL |
+| Energy | 3 | 6.7 | 52.5 | 68.7 | 30 | 🟡 NEUTRAL |
+| Consumer Defensive | 1 | 7.5 | 57.9 | 19.6 | 95 | 🟢 BUY (rich premium) |
+| Utilities | 9 | 6.98 | 59.5 | 14.3 | 19 | 🟡 BUY stock/THIN premium |
+| Communication Services | 35 | 7.64 | 58.8 | 25.9 | 58 | 🟢 BUY (rich premium) |
+| Defense | 5 | 6.12 | 29.6 | 28.5 | 49 | 🟢 BUY (rich premium) |
+| Brand-Quality (Non-AI) | 20 | 6.57 | 46.0 | 42.1 | 32 | 🟡 NEUTRAL |
+| Basic Materials | 11 | 6.83 | 40.8 | 30.5 | 25 | 🟡 NEUTRAL |
+| Financial Services | 35 | 6.13 | 47.5 | 37.1 | 49 | 🟡 NEUTRAL |
 | Unknown | 1 | 5.3 | 50.0 | 50.0 | 0 | 🟡 NEUTRAL |
 
 Per-symbol drill-down (put/call/total value, heat, suggestion, grouped by
@@ -299,11 +300,11 @@ same per-ticker/per-sector data going out of sync with each other.
 
 **Priority 1: Buy Signals** (Attractive pricing + conviction)
 
-- ✓ **Consumer Cyclical:** Conv 6.3/10, RSI 26.5, 52W %ile 36.6 — 🟢 BUY — Oversold + rich premium (avg IVR 58, good for selling)
-- ✓ **Communication Services:** Conv 7.6/10, RSI 57.1, 52W %ile 24.9 — 🟢 BUY — Oversold + rich premium (avg IVR 58, good for selling)
-- ✓ **Defense:** Conv 6.1/10, RSI 28.2, 52W %ile 27.8 — 🟢 BUY — Oversold + rich premium (avg IVR 48, good for selling)
-- ✓ **Utilities:** Conv 7.0/10, RSI 61.4, 52W %ile 15.1 — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 19 < 40) — not attractive for CSPs/CCs
-- ✓ **Consumer Defensive:** Conv 7.5/10, RSI 58.7, 52W %ile 20.5 — 🟢 BUY — Oversold + rich premium (avg IVR 95, good for selling)
+- ✓ **Consumer Cyclical:** Conv 6.3/10, RSI 27.7, 52W %ile 37.8 — 🟢 BUY — Oversold + rich premium (avg IVR 58, good for selling)
+- ✓ **Communication Services:** Conv 7.6/10, RSI 58.8, 52W %ile 25.9 — 🟢 BUY — High conviction + rich premium (avg IVR 58)
+- ✓ **Defense:** Conv 6.1/10, RSI 29.6, 52W %ile 28.5 — 🟢 BUY — Oversold + rich premium (avg IVR 49, good for selling)
+- ✓ **Utilities:** Conv 7.0/10, RSI 59.5, 52W %ile 14.3 — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 19 < 40) — not attractive for CSPs/CCs
+- ✓ **Consumer Defensive:** Conv 7.5/10, RSI 57.9, 52W %ile 19.6 — 🟢 BUY — Oversold + rich premium (avg IVR 95, good for selling)
 
 **Priority 2: Hold Signals** (Conviction intact but extended)
 
@@ -315,14 +316,14 @@ same per-ticker/per-sector data going out of sync with each other.
 
 **Priority 4: Monitor Signals** (Neutral or low conviction)
 
-- ◇ **Technology:** Conv 6.9/10, RSI 49.4, 52W %ile 52.2 — 🟡 MONITOR — Neutral positioning
-- ◇ **Basic Materials:** Conv 6.8/10, RSI 41.3, 52W %ile 30.9 — 🟡 MONITOR — Neutral positioning
-- ◇ **Brand-Quality (Non-AI):** Conv 6.7/10, RSI 46.5, 52W %ile 42.6 — 🟡 MONITOR — Neutral positioning
-- ◇ **Industrials:** Conv 7.2/10, RSI 42.0, 52W %ile 41.0 — 🟡 MONITOR — Neutral positioning
+- ◇ **Technology:** Conv 6.8/10, RSI 49.8, 52W %ile 52.3 — 🟡 MONITOR — Neutral positioning
+- ◇ **Basic Materials:** Conv 6.8/10, RSI 40.8, 52W %ile 30.5 — 🟡 MONITOR — Neutral positioning
+- ◇ **Brand-Quality (Non-AI):** Conv 6.6/10, RSI 46.0, 52W %ile 42.1 — 🟡 MONITOR — Neutral positioning
+- ◇ **Industrials:** Conv 7.2/10, RSI 41.1, 52W %ile 40.4 — 🟡 MONITOR — Neutral positioning
 - ◇ **Unknown:** Conv 5.3/10, RSI 50.0, 52W %ile 50.0 — 🟡 MONITOR — Neutral positioning
-- ◇ **Financial Services:** Conv 6.2/10, RSI 47.0, 52W %ile 36.8 — 🟡 MONITOR — Neutral positioning
-- ◇ **Healthcare:** Conv 5.7/10, RSI 41.3, 52W %ile 42.2 — 🟡 MONITOR — Neutral positioning
-- ◇ **Energy:** Conv 6.2/10, RSI 50.3, 52W %ile 67.5 — 🟡 MONITOR — Neutral positioning
+- ◇ **Financial Services:** Conv 6.1/10, RSI 47.5, 52W %ile 37.1 — 🟡 MONITOR — Neutral positioning
+- ◇ **Healthcare:** Conv 5.8/10, RSI 41.3, 52W %ile 41.8 — 🟡 MONITOR — Neutral positioning
+- ◇ **Energy:** Conv 6.7/10, RSI 52.5, 52W %ile 68.7 — 🟡 MONITOR — Neutral positioning
 
 
 ## Section 5: POSITION DISTRIBUTION BY ACCOUNT
@@ -342,157 +343,157 @@ same per-ticker/per-sector data going out of sync with each other.
 ## Section 6: POSITION HEAT MATRIX BY SECTOR — Sector -> Symbol, Put/Call/Total Value, Heat, Suggestion
 
 
-### Technology (34 positions, $2,777,619) — 🟡 MONITOR — Neutral positioning 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
+### Technology (34 positions, $2,763,681) — 🟡 MONITOR — Neutral positioning 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
 |---|---|---|---|---|---|---|
-| LITE | $391,379 | $0 | $391,379 | 🟡 | 7.0 | 🟡 MONITOR |
-| TSM | $212,595 | $42,519 | $255,114 | 🟡 | 8.5 | 🟡 MONITOR |
-| CRM | $73,878 | $172,382 | $246,260 | 🟡 | 6.8 | 🟡 MONITOR |
-| ALAB | $170,250 | $56,750 | $227,000 | 🟢 | 7.6 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| ADBE | $75,410 | $150,819 | $226,229 | 🟡 | 4.9 | 🟡 MONITOR |
-| MU | $198,236 | $0 | $198,236 | 🟡 | 8.8 | 🟡 MONITOR |
-| OKTA | $35,464 | $124,125 | $159,590 | 🔴 | 5.9 | 🔴 TRIM CALL (delta/assignment risk); 🟢 HOLD PUT (near max profit, unaffected — a short call gains protection in a decline, don't close it purely on crash fears) |
-| IBM | $94,884 | $23,721 | $118,605 | 🟡 | 6.5 | 🟡 MONITOR |
-| PANW | $102,175 | $0 | $102,175 | 🟡 | 5.8 | 🟡 MONITOR |
-| MSFT | $48,924 | $48,924 | $97,848 | 🟢 | 7.0 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| TWLO | $23,092 | $69,276 | $92,368 | 🟡 | 6.6 | 🟡 MONITOR |
-| NVDA | $87,189 | $0 | $87,189 | 🟡 | 7.6 | 🟡 MONITOR |
-| CRWD | $63,405 | $21,135 | $84,540 | 🟡 | 5.8 | 🟡 MONITOR |
-| ZS | $50,380 | $16,793 | $67,174 | 🟡 | 7.0 | 🟡 MONITOR |
-| APH | $47,748 | $15,916 | $63,664 | 🟢 | 8.5 | 🟢 ENTER (short put) ⚠️ HIGH macro exposure |
-| SHOP | $50,918 | $0 | $50,918 | 🟡 | 6.5 | 🟡 MONITOR |
-| XYZ | $31,616 | $15,808 | $47,424 | 🟡 | 4.5 | 🟡 MONITOR |
-| UBER | $42,063 | $0 | $42,063 | 🟡 | 7.5 | 🟡 MONITOR |
-| FSLR | $40,084 | $0 | $40,084 | 🟡 | 6.7 | 🟡 MONITOR |
-| SKHY | $37,646 | $0 | $37,646 | 🟡 | 8.2 | 🟡 MONITOR |
-| IONQ | $18,665 | $7,466 | $26,131 | 🟡 | 7.4 | 🟡 MONITOR |
-| AMKR | $24,715 | $0 | $24,715 | 🟢 | 8.4 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| RBRK | $18,396 | $0 | $18,396 | 🟡 | 6.7 | 🟡 MONITOR |
-| PLTR | $16,810 | $0 | $16,810 | 🟢 | 6.8 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| ASTS | $12,730 | $0 | $12,730 | 🟡 | 6.9 | 🟡 MONITOR |
-| CRWV | $9,047 | $0 | $9,047 | 🟢 | 7.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| LYFT | $1,473 | $7,363 | $8,835 | 🟡 | 7.8 | 🟡 MONITOR |
-| LASR | $8,059 | $0 | $8,059 | 🟡 | 7.5 | 🟡 MONITOR |
-| CIFR | $6,194 | $0 | $6,194 | 🟡 | 6.7 | 🟡 MONITOR |
-| SONO | $0 | $5,820 | $5,820 | 🟡 | 5.2 | 🟡 MONITOR |
-| INFY | $1,085 | $1,085 | $2,170 | 🟢 | 5.4 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| QBTS | $1,675 | $0 | $1,675 | 🟡 | 6.7 | 🟡 MONITOR |
+| LITE | $375,420 | $0 | $375,420 | 🟡 | 7.8 | 🟡 MONITOR |
+| TSM | $214,908 | $42,982 | $257,889 | 🟡 | 8.5 | 🟡 MONITOR |
+| CRM | $73,386 | $171,234 | $244,620 | 🟡 | 5.7 | 🟡 MONITOR |
+| ALAB | $172,482 | $57,494 | $229,976 | 🟢 | 7.6 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| ADBE | $75,003 | $150,006 | $225,009 | 🟡 | 4.9 | 🟡 MONITOR |
+| MU | $195,247 | $0 | $195,247 | 🟡 | 8.8 | 🟡 MONITOR |
+| OKTA | $34,708 | $121,478 | $156,186 | 🔴 | 5.9 | 🔴 TRIM CALL (delta/assignment risk); 🟢 HOLD PUT (near max profit, unaffected — a short call gains protection in a decline, don't close it purely on crash fears) |
+| IBM | $94,796 | $23,699 | $118,495 | 🟡 | 6.5 | 🟡 MONITOR |
+| PANW | $102,789 | $0 | $102,789 | 🟡 | 5.8 | 🟡 MONITOR |
+| MSFT | $49,268 | $49,268 | $98,536 | 🟡 | 7.0 | 🟡 MONITOR |
+| TWLO | $23,283 | $69,849 | $93,132 | 🟡 | 6.6 | 🟡 MONITOR |
+| NVDA | $87,282 | $0 | $87,282 | 🟡 | 7.6 | 🟡 MONITOR |
+| CRWD | $64,088 | $21,362 | $85,450 | 🟡 | 5.4 | 🟡 MONITOR |
+| ZS | $50,019 | $16,673 | $66,692 | 🟡 | 7.0 | 🟡 MONITOR |
+| APH | $47,742 | $15,914 | $63,656 | 🟢 | 8.5 | 🟢 ENTER (short put) ⚠️ HIGH macro exposure |
+| SHOP | $50,602 | $0 | $50,602 | 🟡 | 6.5 | 🟡 MONITOR |
+| XYZ | $31,916 | $15,958 | $47,874 | 🟡 | 4.5 | 🟡 MONITOR |
+| UBER | $42,924 | $0 | $42,924 | 🟡 | 7.2 | 🟡 MONITOR |
+| FSLR | $41,572 | $0 | $41,572 | 🟡 | 8.2 | 🟡 MONITOR |
+| SKHY | $38,090 | $0 | $38,090 | 🟡 | 7.7 | 🟡 MONITOR |
+| IONQ | $19,000 | $7,600 | $26,600 | 🟡 | 7.4 | 🟡 MONITOR |
+| AMKR | $24,780 | $0 | $24,780 | 🟢 | 8.4 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| RBRK | $18,187 | $0 | $18,187 | 🟡 | 6.7 | 🟡 MONITOR |
+| PLTR | $16,676 | $0 | $16,676 | 🟢 | 6.8 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| ASTS | $12,393 | $0 | $12,393 | 🟡 | 6.9 | 🟡 MONITOR |
+| LYFT | $1,497 | $7,485 | $8,982 | 🟡 | 7.8 | 🟡 MONITOR |
+| CRWV | $8,973 | $0 | $8,973 | 🟢 | 7.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| LASR | $8,020 | $0 | $8,020 | 🟡 | 7.5 | 🟡 MONITOR |
+| CIFR | $6,374 | $0 | $6,374 | 🟡 | 6.7 | 🟡 MONITOR |
+| SONO | $0 | $5,874 | $5,874 | 🟢 | 5.2 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| INFY | $1,086 | $1,086 | $2,173 | 🟢 | 5.4 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| QBTS | $1,682 | $0 | $1,682 | 🟡 | 6.7 | 🟡 MONITOR |
 | QUBT | $791 | $0 | $791 | 🟢 | 7.0 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| ONDS | $739 | $0 | $739 | 🟡 | 7.0 | 🟡 MONITOR |
+| ONDS | $735 | $0 | $735 | 🟡 | 7.0 | 🟡 MONITOR |
 
-### Industrials (9 positions, $1,262,397) — 🟡 MONITOR — Neutral positioning
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
-|---|---|---|---|---|---|---|
-| AXON | $146,460 | $390,560 | $537,020 | 🟡 | 6.5 | 🟡 MONITOR |
-| GEV | $278,855 | $92,952 | $371,806 | 🟢 | 8.4 | 🟢 ATTRACTIVE — let run |
-| BE | $158,400 | $52,800 | $211,200 | 🔴 | 7.1 | 🟡 WATCH (RED, conv holds it back from CLOSE/TRIM) |
-| VRT | $49,737 | $0 | $49,737 | 🟢 | 8.3 | 🟢 ATTRACTIVE — let run |
-| RKLB | $38,214 | $0 | $38,214 | 🟡 | 7.0 | 🟡 MONITOR |
-| BWXT | $31,036 | $0 | $31,036 | 🟢 | 7.7 | 🟢 ATTRACTIVE — let run |
-| SPCX | $15,252 | $0 | $15,252 | 🟡 | 7.6 | 🟡 MONITOR |
-| KTOS | $4,659 | $0 | $4,659 | 🟢 | 7.4 | 🟢 ATTRACTIVE — let run |
-| PL | $3,472 | $0 | $3,472 | 🟢 | 7.0 | 🟢 ATTRACTIVE — let run |
-
-### Communication Services (7 positions, $958,560) — 🟢 BUY — Oversold + rich premium (avg IVR 58, good for selling) 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
+### Industrials (9 positions, $1,254,196) — 🟡 MONITOR — Neutral positioning
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
 |---|---|---|---|---|---|---|
-| META | $257,952 | $64,488 | $322,440 | 🟡 | 8.0 | 🟡 MONITOR |
-| APP | $186,300 | $62,100 | $248,400 | 🟢 | 9.1 | 🟢 ENTER (short put) ⚠️ HIGH macro exposure |
-| NFLX | $121,552 | $45,582 | $167,134 | 🟡 | 6.4 | 🟡 MONITOR |
-| GOOGL | $98,562 | $0 | $98,562 | 🟢 | 7.3 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| NBIS | $46,100 | $0 | $46,100 | 🟢 | 7.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| RBLX | $31,258 | $13,396 | $44,655 | 🟡 | 8.0 | 🟡 MONITOR |
-| DIS | $20,846 | $10,423 | $31,269 | 🟢 | 5.3 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| AXON | $145,927 | $389,140 | $535,067 | 🟡 | 6.5 | 🟡 MONITOR |
+| GEV | $275,925 | $91,975 | $367,900 | 🟢 | 8.4 | 🟢 ATTRACTIVE — let run |
+| BE | $157,260 | $52,420 | $209,680 | 🔴 | 7.1 | 🟡 WATCH (RED, conv holds it back from CLOSE/TRIM) |
+| VRT | $49,556 | $0 | $49,556 | 🟢 | 8.3 | 🟢 ATTRACTIVE — let run |
+| RKLB | $37,827 | $0 | $37,827 | 🟢 | 7.0 | 🟢 ATTRACTIVE — let run |
+| BWXT | $30,908 | $0 | $30,908 | 🟢 | 7.7 | 🟢 ATTRACTIVE — let run |
+| SPCX | $15,074 | $0 | $15,074 | 🟢 | 7.2 | 🟢 ATTRACTIVE — let run |
+| KTOS | $4,762 | $0 | $4,762 | 🟢 | 7.4 | 🟢 ATTRACTIVE — let run |
+| PL | $3,422 | $0 | $3,422 | 🟢 | 7.0 | 🟢 ATTRACTIVE — let run |
 
-### Financial Services (8 positions, $627,931) — 🟡 MONITOR — Neutral positioning
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
-|---|---|---|---|---|---|---|
-| COIN | $69,328 | $138,656 | $207,984 | 🟡 | 5.5 | 🟡 MONITOR |
-| MA | $169,536 | $0 | $169,536 | 🟡 | 6.9 | 🟡 MONITOR |
-| PYPL | $31,224 | $62,448 | $93,672 | 🟡 | 5.1 | 🟡 MONITOR |
-| JPM | $70,330 | $0 | $70,330 | 🟡 | 7.0 | 🟡 MONITOR |
-| CRCL | $36,924 | $18,462 | $55,386 | 🟢 | 7.0 | 🟢 ATTRACTIVE — let run |
-| HOOD | $11,606 | $0 | $11,606 | 🟢 | 7.3 | 🟢 ATTRACTIVE — let run |
-| RIOT | $8,400 | $2,100 | $10,500 | 🟢 | 7.4 | 🟢 ATTRACTIVE — let run |
-| HUT | $8,917 | $0 | $8,917 | 🟡 | 7.8 | 🟡 MONITOR |
-
-### Healthcare (7 positions, $517,732) — 🟡 MONITOR — Neutral positioning
+### Communication Services (7 positions, $966,522) — 🟢 BUY — High conviction + rich premium (avg IVR 58) 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
 |---|---|---|---|---|---|---|
-| ISRG | $142,984 | $0 | $142,984 | 🟡 | 6.7 | 🟡 MONITOR |
-| UNH | $79,159 | $39,580 | $118,739 | 🟢 | 7.7 | 🟢 ATTRACTIVE — let run |
-| LLY | $112,553 | $0 | $112,553 | 🟡 | 7.0 | 🟡 MONITOR |
-| REGN | $80,017 | $0 | $80,017 | 🟡 | 5.6 | 🟡 MONITOR |
-| NVO | $22,257 | $8,903 | $31,160 | 🟢 | 3.7 | 🟢 ATTRACTIVE — let run |
-| ZBH | $9,256 | $9,256 | $18,511 | 🟢 | 5.9 | 🟢 ATTRACTIVE — let run |
-| PFE | $13,767 | $0 | $13,767 | 🟡 | 5.4 | 🟡 MONITOR |
+| META | $260,400 | $65,100 | $325,500 | 🟡 | 8.0 | 🟡 MONITOR |
+| APP | $188,874 | $62,958 | $251,832 | 🟢 | 9.1 | 🟢 ENTER (short put) ⚠️ HIGH macro exposure |
+| NFLX | $121,840 | $45,690 | $167,530 | 🟡 | 6.4 | 🟡 MONITOR |
+| GOOGL | $99,285 | $0 | $99,285 | 🟢 | 7.6 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| RBLX | $31,826 | $13,640 | $45,465 | 🟡 | 8.0 | 🟡 MONITOR |
+| NBIS | $45,404 | $0 | $45,404 | 🟢 | 7.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| DIS | $21,004 | $10,502 | $31,506 | 🟢 | 5.3 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
 
-### Consumer Cyclical (12 positions, $442,940) — 🟢 BUY — Oversold + rich premium (avg IVR 58, good for selling) 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
-|---|---|---|---|---|---|---|
-| EXPE | $110,000 | $27,500 | $137,500 | 🟡 | 6.8 | 🟡 MONITOR |
-| AMZN | $50,314 | $25,157 | $75,471 | 🟢 | 7.2 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| ABNB | $16,826 | $50,479 | $67,306 | 🟢 | 5.9 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| BABA | $54,082 | $0 | $54,082 | 🟢 | 6.0 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| TSLA | $36,841 | $0 | $36,841 | 🟢 | 6.7 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| MMYT | $19,624 | $4,906 | $24,530 | 🟢 | 4.9 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| JD | $8,083 | $8,083 | $16,167 | 🟡 | 8.2 | 🟡 MONITOR |
-| ETSY | $7,044 | $7,044 | $14,088 | 🟡 | 5.2 | 🟡 MONITOR |
-| CAVA | $5,545 | $0 | $5,545 | 🟢 | 7.6 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| DKNG | $4,710 | $0 | $4,710 | 🟡 | 6.0 | 🟡 MONITOR |
-| BROS | $4,447 | $0 | $4,447 | 🟢 | 7.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| CCL | $2,253 | $0 | $2,253 | 🟢 | 6.4 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-
-### Brand-Quality (Non-AI) (4 positions, $359,966) — 🟡 MONITOR — Neutral positioning
+### Financial Services (8 positions, $628,345) — 🟡 MONITOR — Neutral positioning
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
 |---|---|---|---|---|---|---|
-| ULTA | $107,496 | $53,748 | $161,244 | 🟢 | 6.4 | 🟢 ATTRACTIVE — let run |
-| ANET | $95,555 | $57,333 | $152,888 | 🟡 | 7.2 | 🟡 MONITOR |
-| NKE | $0 | $25,756 | $25,756 | 🟢 | 6.4 | 🟢 ATTRACTIVE — let run |
-| SBUX | $20,078 | $0 | $20,078 | 🟢 | 5.8 | 🟢 ATTRACTIVE — let run |
+| COIN | $68,948 | $137,896 | $206,844 | 🟡 | 5.8 | 🟡 MONITOR |
+| MA | $169,704 | $0 | $169,704 | 🟡 | 6.9 | 🟡 MONITOR |
+| PYPL | $31,931 | $63,862 | $95,794 | 🟡 | 5.1 | 🟡 MONITOR |
+| JPM | $70,546 | $0 | $70,546 | 🟡 | 7.0 | 🟡 MONITOR |
+| CRCL | $36,341 | $18,171 | $54,512 | 🟢 | 5.8 | 🟢 ATTRACTIVE — let run |
+| HOOD | $11,388 | $0 | $11,388 | 🟢 | 7.3 | 🟢 ATTRACTIVE — let run |
+| RIOT | $8,474 | $2,118 | $10,592 | 🟢 | 7.4 | 🟢 ATTRACTIVE — let run |
+| HUT | $8,965 | $0 | $8,965 | 🟡 | 7.8 | 🟡 MONITOR |
 
-### Defense (3 positions, $197,825) — 🟢 BUY — Oversold + rich premium (avg IVR 48, good for selling)
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
-|---|---|---|---|---|---|---|
-| NOC | $104,002 | $0 | $104,002 | 🟢 | 6.6 | 🟢 ATTRACTIVE — let run |
-| LMT | $52,500 | $0 | $52,500 | 🟡 | 6.8 | 🟡 MONITOR |
-| BA | $41,323 | $0 | $41,323 | 🟢 | 5.3 | 🟢 ATTRACTIVE — let run |
-
-### Utilities (3 positions, $115,761) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 19 < 40) — not attractive for CSPs/CCs
+### Healthcare (7 positions, $517,485) — 🟡 MONITOR — Neutral positioning
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
 |---|---|---|---|---|---|---|
-| VST | $59,658 | $14,915 | $74,573 | 🟡 | 7.0 | 🟡 MONITOR |
-| CEG | $28,903 | $0 | $28,903 | 🟢 | 6.2 | 🟢 ATTRACTIVE — let run |
-| OKLO | $12,285 | $0 | $12,285 | 🟢 | 7.2 | 🟢 ATTRACTIVE — let run |
+| ISRG | $144,554 | $0 | $144,554 | 🟡 | 7.0 | 🟡 MONITOR |
+| UNH | $78,363 | $39,182 | $117,545 | 🟢 | 7.7 | 🟢 ATTRACTIVE — let run |
+| LLY | $112,680 | $0 | $112,680 | 🟡 | 7.0 | 🟡 MONITOR |
+| REGN | $79,445 | $0 | $79,445 | 🟡 | 5.6 | 🟡 MONITOR |
+| NVO | $22,202 | $8,881 | $31,083 | 🟢 | 3.7 | 🟢 ATTRACTIVE — let run |
+| ZBH | $9,215 | $9,215 | $18,430 | 🟡 | 6.8 | 🟡 MONITOR |
+| PFE | $13,748 | $0 | $13,748 | 🟢 | 5.4 | 🟢 ATTRACTIVE — let run |
 
-### Basic Materials (2 positions, $107,443) — 🟡 MONITOR — Neutral positioning 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
-|---|---|---|---|---|---|---|
-| ALB | $73,950 | $12,325 | $86,275 | 🟢 | 6.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
-| MP | $15,876 | $5,292 | $21,168 | 🟡 | 7.4 | 🟡 MONITOR |
-
-### Energy (2 positions, $19,674) — 🟡 MONITOR — Neutral positioning
+### Consumer Cyclical (12 positions, $447,699) — 🟢 BUY — Oversold + rich premium (avg IVR 58, good for selling) 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
 |---|---|---|---|---|---|---|
-| CCJ | $9,850 | $0 | $9,850 | 🟢 | 3.9 | 🟢 ATTRACTIVE — let run |
-| DVN | $9,824 | $0 | $9,824 | 🟡 | 7.4 | 🟡 MONITOR |
+| EXPE | $112,986 | $28,246 | $141,232 | 🟢 | 6.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| AMZN | $50,516 | $25,258 | $75,774 | 🟢 | 7.2 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| ABNB | $16,960 | $50,879 | $67,838 | 🟡 | 5.9 | 🟡 MONITOR |
+| BABA | $54,310 | $0 | $54,310 | 🟢 | 6.0 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| TSLA | $36,639 | $0 | $36,639 | 🟢 | 6.7 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| MMYT | $19,542 | $4,885 | $24,427 | 🟢 | 4.9 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| JD | $8,104 | $8,104 | $16,209 | 🟡 | 8.2 | 🟡 MONITOR |
+| ETSY | $7,218 | $7,218 | $14,435 | 🟢 | 5.2 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| CAVA | $5,471 | $0 | $5,471 | 🟢 | 7.6 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| DKNG | $4,743 | $0 | $4,743 | 🟡 | 6.4 | 🟡 MONITOR |
+| BROS | $4,379 | $0 | $4,379 | 🟢 | 7.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| CCL | $2,242 | $0 | $2,242 | 🟢 | 6.4 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
 
-### Consumer Defensive (1 positions, $10,630) — 🟢 BUY — Oversold + rich premium (avg IVR 95, good for selling)
+### Brand-Quality (Non-AI) (4 positions, $359,574) — 🟡 MONITOR — Neutral positioning
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
 |---|---|---|---|---|---|---|
-| WMT | $10,630 | $0 | $10,630 | 🟡 | 7.5 | 🟡 MONITOR |
+| ULTA | $108,228 | $54,114 | $162,342 | 🟢 | 6.0 | 🟢 ATTRACTIVE — let run |
+| ANET | $94,600 | $56,760 | $151,360 | 🟡 | 7.2 | 🟡 MONITOR |
+| NKE | $0 | $25,861 | $25,861 | 🟢 | 6.4 | 🟢 ATTRACTIVE — let run |
+| SBUX | $20,010 | $0 | $20,010 | 🟢 | 5.5 | 🟢 ATTRACTIVE — let run |
+
+### Defense (3 positions, $198,580) — 🟢 BUY — Oversold + rich premium (avg IVR 49, good for selling)
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
+|---|---|---|---|---|---|---|
+| NOC | $104,212 | $0 | $104,212 | 🟡 | 6.6 | 🟡 MONITOR |
+| LMT | $53,024 | $0 | $53,024 | 🟡 | 6.8 | 🟡 MONITOR |
+| BA | $41,344 | $0 | $41,344 | 🟢 | 5.3 | 🟢 ATTRACTIVE — let run |
+
+### Utilities (3 positions, $114,961) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 19 < 40) — not attractive for CSPs/CCs
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
+|---|---|---|---|---|---|---|
+| VST | $59,320 | $14,830 | $74,150 | 🟡 | 7.0 | 🟡 MONITOR |
+| CEG | $28,661 | $0 | $28,661 | 🟢 | 6.2 | 🟢 ATTRACTIVE — let run |
+| OKLO | $12,150 | $0 | $12,150 | 🟢 | 7.2 | 🟢 ATTRACTIVE — let run |
+
+### Basic Materials (2 positions, $107,399) — 🟡 MONITOR — Neutral positioning 🔴 HIGH MACRO EXPOSURE (see Section 6.5)
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
+|---|---|---|---|---|---|---|
+| ALB | $74,298 | $12,383 | $86,681 | 🟢 | 6.5 | 🟢 ATTRACTIVE — let run ⚠️ HIGH macro exposure |
+| MP | $15,538 | $5,179 | $20,718 | 🟡 | 7.4 | 🟡 MONITOR |
+
+### Energy (2 positions, $19,727) — 🟡 MONITOR — Neutral positioning
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
+|---|---|---|---|---|---|---|
+| DVN | $9,912 | $0 | $9,912 | 🟡 | 8.1 | 🟡 MONITOR |
+| CCJ | $9,815 | $0 | $9,815 | 🟢 | 3.9 | 🟢 ATTRACTIVE — let run |
+
+### Consumer Defensive (1 positions, $10,600) — 🟢 BUY — Oversold + rich premium (avg IVR 95, good for selling)
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Suggestion |
+|---|---|---|---|---|---|---|
+| WMT | $10,600 | $0 | $10,600 | 🟡 | 7.5 | 🟡 MONITOR |
 
 ### Unknown (1 positions, $0) — 🟡 MONITOR — Neutral positioning
 
@@ -502,38 +503,38 @@ same per-ticker/per-sector data going out of sync with each other.
 
 **Portfolio Heat Allocation:**
 
-- 🔴 CRITICAL: 8.7% ($644,442)
-- 🟡 MONITOR: 59.8% ($4,420,854)
-- 🟢 HEALTHY: 31.5% ($2,333,181)
+- 🔴 CRITICAL: 8.6% ($638,749)
+- 🟡 MONITOR: 60.6% ($4,475,003)
+- 🟢 HEALTHY: 30.8% ($2,275,017)
 
 
 ## Section 6.5: CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS
 
 
-**Risk Level:** 🔴 RED
+**Risk Level:** 🟡 YELLOW
 
-**Summary:** 🔴 ALERT — 2 indicators critical. Market fragility rising.
+**Summary:** ⚠️ CAUTION — 1 indicators turning yellow. Watch for deterioration.
 
 **Indicator Status:**
 
 |  | Indicator | Value | Status | Threshold |
 |---|---|---|---|---|
-| 🔴 | BREADTH | 44.871794871794876 | RED | 60% (caution), 50% (alert) |
-| 🔴 | AD_RATIO | 0.42857142857142855 | RED | 1.0 (caution), 0.8 (alert) |
+| 🔴 | BREADTH | 47.43589743589743 | RED | 60% (caution), 50% (alert) |
+| ⚠️ | AD_RATIO | 0.8518518518518519 | YELLOW | 1.0 (caution), 0.8 (alert) |
 | ✅ | VIX_TERM | CONTANGO | GREEN | Contango (normal) → Flat (caution) → Backwardation (alert) |
-| ✅ | HYOAS | 267 bps | GREEN | 400 (caution), 450 (alert) |
+| ✅ | HYOAS | 271 bps | GREEN | 400 (caution), 450 (alert) |
 | ✅ | PCR | 0.75 | GREEN | 1.0 (caution), 1.2 (alert) |
 | ✅ | YIELD_CURVE | 0.40% | GREEN | Inverted (alert), <0.1% (caution), >0.5% (normal) |
 
 **Crash Probability Forecast (Probabilistic):**
 
-- 🟠 30-day crash probability: 53.8% — Action: 🟠 HIGH RISK: Reduce gross exposure by 30-40%
-- 🔴 60-day crash probability: 90.6%
-- 🔴 90-day crash probability: 95.0%
-- 📌 Primary risk factor: AD_RATIO critical
+- 🟡 30-day crash probability: 34.0% — Action: 🟡 CAUTION: Reduce overbought positions by 20-25%
+- 🟠 60-day crash probability: 57.7%
+- 🔴 90-day crash probability: 81.4%
+- 📌 Primary risk factor: BREADTH critical
 
-- **90-day trend** (30-day crash probability, one reading per day with data): `▄▄▄▄`
-  - 2026-09-01: 48% → 2026-09-10: 54% (rising, +6pp)
+- **90-day trend** (30-day crash probability, one reading per day with data): `▄▄▄▃`
+  - 2026-09-01: 48% → 2026-09-10: 34% (falling, -14pp)
 
 **Historical magnitude reference** (real, verified past events — NOT a prediction of this specific reading's outcome):
 
@@ -547,7 +548,7 @@ same per-ticker/per-sector data going out of sync with each other.
 
 See logs/circular_financing_playbook.html for the full framework this session's AI-capex risk analysis is built on.
 
-**Sector Sensitivity to Primary Risk Driver** (AD_RATIO):
+**Sector Sensitivity to Primary Risk Driver** (BREADTH):
 
 - 🔴 HIGH exposure: Technology, Consumer Cyclical, Communication Services, Basic Materials
 - 🟢 LOW exposure: Utilities, Healthcare, Consumer Defensive, Energy, Defense
@@ -556,54 +557,49 @@ New entries in HIGH-exposure sectors compound the exact risk this driver is flag
 
 **Recommended Actions:**
 
-- 🔴 Stage 2-3 Rotation (Crash risk rising)
-- Close 50% of remaining overbought positions
-- Reduce naked call exposure by 30% more
-- Rotate proceeds to: Cash (40%), Defensive (30%)
-- Stop entering new GROWTH positions
-- Prepare for potential Stage 3 (emergency)
+- ⚠️ Stage 1 Rotation (6-8 week advance warning)
+- Close 30% of overbought positions (RSI > 75)
+- Reduce naked call exposure by 20%
+- Shift new entries to DEFENSIVE sectors
+- Keep short puts (they profit on dips)
 
 **Rotation Playbook:**
 
 ```
-RED FLAG — Stage 2-3 Rotation (CRASH RISK: 54% prob in 30d)
-  ⚠️ EMERGENCY PROTOCOL ACTIVATED
-
-  Probability-Driven Threshold: 54% crash risk in next 30 days
-  → Cut 35% of gross exposure immediately
-  → Raise cash to 75% of portfolio
-  → 60-day outlook: 91% probability (heightened vigilance)
+YELLOW FLAG — Stage 1 Rotation (Crash prob: 34% in 30d | 58% in 60d)
+  PROBABILITY-DRIVEN ACTIONS:
+    • Position reduction: Cut 20% of notional exposure
+    • Focus: Close low-conviction positions first (Conv <6/10)
+    • New entries: PAUSE or reduce to 25% of normal size
 
   Account A Actions:
-    1. Close ALL overbought positions (RSI >70) — don't wait for 70% profit
-    2. Close remaining naked calls (or hedge heavily with long puts)
-    3. Reduce notional from 100% → 65% of normal
-    4. Increase cash to 40-50% (emergency fund)
-    5. Consider long puts on SPY/QQQ for crash protection
-    6. HALT all new strangle entries — CSPs/CCs only on defensive names
+    1. Close CRWD, LLY, OKTA (low conviction + overbought) at 40-50%
+    2. Reduce AXON, NFLX from max to 75% of current size (20% total)
+    3. Buy protective puts on remaining naked calls (20% of notional)
+    4. Shift new entries: Only DEFENSIVE (Healthcare, Utilities, Staples)
+    5. Increase cash from 10% → 20%
 
   Account B Actions:
-    1. Close all CSP new entries for Tier 1/2 names
-    2. Exit assigned positions (harvest remaining CCs quickly)
-    3. Go to 60% cash, 40% defensive covered calls (Healthcare, Staples)
-    4. Stand ready to deploy cash on 95% probability dips
+    1. Trim COIN, HOOD CSPs by 20%
+    2. Add healthcare/staples CSPs if opportunity
+    3. Build cash reserve to 25-30%
 
-  CIRCUIT BREAKER:
-    • IF VIX spikes >30 AND prob stays >60% → FULL CASH (100% defensive)
-    • IF regime breaks (S&P below 200-MA) → Redeploy cash on 5%+ dips ONLY
+  DECISION GATE:
+    • IF prob increases to >50% in next 3 days → Move to Stage 2
+    • IF prob decreases to <20% → Resume normal sizing
 ```
 
 ### AI Capex Risk Tracker (Circular Financing Playbook — the scriptable half of the same macro picture above)
 
-- **Technology concentration:** 37.5% of notional (121 positions, $2,777,619)
+- **Technology concentration:** 37.4% of notional (121 positions, $2,763,681)
   - Reference: top-10 S&P 500 concentration is 41.2%, a record — this line tracks your own book against that same structural risk, not just the index's.
 
 **90-day capital plan tracking** (target 30% high-risk / 70% quality, $700K base):
 
-- High-risk (ALAB/LITE/MU/PLTR): $833,425 live — 72% of tracked pair vs. 30% target
-- Quality-AI (TSM/ASML/APH): $318,778 live
+- High-risk (ALAB/LITE/MU/PLTR): $817,319 live — 72% of tracked pair vs. 30% target
+- Quality-AI (TSM/ASML/APH): $321,545 live
 - ⚠️ Drift >10pp from the 30/70 target — check whether a tier fired to justify it before rebalancing.
-- ⚠️ Avoid-list exposure still open: $140,316 across NBIS, CRWV, RKLB, OKLO, SPCX, HUT, RIOT
+- ⚠️ Avoid-list exposure still open: $138,986 across NBIS, CRWV, RKLB, OKLO, SPCX, HUT, RIOT
 
 Qualitative Tier 1/2 check (credit news, IPO status, private-credit gating) is NOT computed here — run /ai-capex-risk-review for the live dial state. This section tracks only the scriptable half.
 
@@ -621,40 +617,40 @@ Underperformance proxy: no tracked name diverging >10pp from SPX over 7 days.
 
 | Account | Ticker | T | Strike | DTE | Prob | Cash-at-Risk | Flag |
 |---|---|---|---|---|---|---|---|
-| Account A (232) | IBM | P | 270.0 | 36 | 100% | $27,000 |  |
-| Account C (634) | PL | P | 32.0 | 36 | 97% | $3,200 |  |
-| Account A (232) | AXON | P | 570.0 | 8 | 97% | $57,000 |  |
+| Account A (232) | CRM | C | 175.0 | 8 | 98% | $17,500 |  |
+| Account C (634) | PL | P | 32.0 | 36 | 95% | $3,200 |  |
 | Account A (232) | COIN | P | 250.0 | 8 | 95% | $25,000 |  |
-| Account A (232) | CRM | C | 175.0 | 8 | 93% | $17,500 |  |
-| Account C (634) | ABNB | C | 145.0 | 36 | 86% | $14,500 |  |
+| Account A (232) | AXON | P | 570.0 | 8 | 93% | $57,000 |  |
+| Account A (232) | CRCL | P | 105.0 | 8 | 91% | $10,500 |  |
+| Account A (232) | IBM | P | 270.0 | 36 | 88% | $27,000 |  |
 | Account A (232) | CRM | C | 185.0 | 71 | 85% | $18,500 |  |
 | Account B (275) | CRM | C | 175.0 | 99 | 83% | $17,500 |  |
-| Account A (232) | CRCL | P | 105.0 | 8 | 82% | $10,500 |  |
-| Account A (232) | OKTA | C | 140.0 | 71 | 81% | $14,000 | 🔴 EXIT CANDIDATE |
+| Account C (634) | ABNB | C | 145.0 | 36 | 82% | $14,500 |  |
 | Account A (232) | AXON | C | 450.0 | 8 | 80% | $45,000 |  |
-| Account A (232) | NVO | P | 50.0 | 99 | 77% | $5,000 |  |
+| Account A (232) | NVO | P | 50.0 | 99 | 78% | $5,000 |  |
+| Account A (232) | OKTA | C | 140.0 | 71 | 76% | $14,000 | 🔴 EXIT CANDIDATE |
+| Account A (232) | PYPL | C | 42.5 | 71 | 75% | $21,250 |  |
 | Account A (232) | ADBE | C | 230.0 | 8 | 74% | $23,000 |  |
+| Account A (232) | MP | P | 60.0 | 99 | 73% | $6,000 |  |
+| Account A (232) | RBLX | C | 40.0 | 36 | 73% | $8,000 |  |
 | Account A (232) | AXON | P | 560.0 | 99 | 72% | $56,000 |  |
-| Account A (232) | MP | P | 60.0 | 99 | 70% | $6,000 |  |
-| Account A (232) | XYZ | C | 65.0 | 99 | 70% | $13,000 |  |
-| Account A (232) | PYPL | C | 45.0 | 71 | 70% | $9,000 |  |
-| Account A (232) | PYPL | C | 42.5 | 71 | 69% | $21,250 |  |
-| Account A (232) | CRM | C | 210.0 | 99 | 68% | $21,000 |  |
+| Account A (232) | PYPL | C | 45.0 | 71 | 72% | $9,000 |  |
+| Account A (232) | XYZ | C | 65.0 | 99 | 71% | $13,000 |  |
+| Account A (232) | ETSY | C | 60.0 | 99 | 70% | $6,000 |  |
+| Account A (232) | PYPL | C | 45.0 | 99 | 70% | $13,500 |  |
 | Account A (232) | AXON | P | 540.0 | 99 | 68% | $54,000 |  |
-| Account A (232) | RBLX | C | 40.0 | 36 | 68% | $8,000 |  |
-| Account A (232) | PYPL | C | 45.0 | 99 | 68% | $13,500 |  |
-| Account A (232) | AXON | C | 470.0 | 8 | 67% | $47,000 |  |
-| Account A (232) | DIS | P | 110.0 | 99 | 66% | $22,000 |  |
-| Account A (232) | ZS | P | 180.0 | 99 | 65% | $18,000 |  |
+| Account A (232) | CRM | C | 210.0 | 99 | 67% | $21,000 |  |
+| Account A (232) | ZS | P | 180.0 | 99 | 66% | $18,000 |  |
+| Account A (232) | DIS | P | 110.0 | 99 | 65% | $22,000 |  |
 _...and 61 more within 120 DTE (not shown)_
 
 - **Worst case (all shown):** $2,164,450 across 86 positions
 - **Realistic (>=30% prob):** $1,503,450 across 65 positions
-- **Likely (>=50% prob):** $848,950 across 41 positions
+- **Likely (>=50% prob):** $831,950 across 40 positions
 
 **🔴 Exit Candidates** (>=50% probability AND RED heat — both signals agree): 1
 
-- OKTA C 140.0 (Account A (232)) — 81% probability, RED heat
+- OKTA C 140.0 (Account A (232)) — 76% probability, RED heat
 
 
 ## Section 6.7: QUARTERLY PLAN STATUS
@@ -697,8 +693,14 @@ Roll the AXON $450C (Sept 18 2026 expiry) out to a January 2027 call (~$560-580 
 **⏳ march_strangle_entry_gate** — BLOCKED
 
 Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
-  - Live: account_a_margin_utilization_pct = 127.63065874917166
-  - Live: macro_risk_level = RED
+  - Live: account_a_margin_utilization_pct = 127.41987235532488
+  - Live: macro_risk_level = YELLOW
+
+**⏳ be_puts_reduction** — OPEN
+
+Reduce BE put exposure to zero over the next ~10 days (target: 2026-09-20) by closing/rolling out of all 6 open BE put legs across every account. BE is RED heat, RSI 77-81 (overbought/extended), and is the most widely-held name in the book -- also carries a naked short-call pair against it in Account A/Fidelity Rahul (no BE shares owned anywhere). Baseline as of 2026-09-10: Account A $170P (Jan 15 2027) x2 [Jan+Feb], Account B $180P (Feb 19 2027), Fidelity (Rahul) $190P (Jan 15 2027), Fidelity (Rajul - Rollover IRA) $200P (Jun 17 2027), Robinhood (Traditional) $180P (Jun 17 2027). Trader confirmed 2026-09-10 this should cover ALL open BE puts (not just the near-dated ones) -- an initial "Dec 2026 and before" framing didn't match any real BE put, since the earliest is Jan 15 2027.
+KNOWN GAP: the automated check only sees 5 of these 6 legs -- the Robinhood (Traditional) $180P (Jun 17 2027) has an option-type parsing gap in that account's transaction reconstruction and won't count toward the live total below. This entry will show RESOLVED once the other 5 close even if that 6th one is still open -- manually confirm the Robinhood leg separately before treating BE exposure as fully closed.
+  - Live check: 5 leg(s) open now (baseline was 6), target: 0
 
 
 
@@ -710,7 +712,7 @@ Hold off on new March-2027-expiry strangle entries (including adding to AXON's e
 #### 1. Close Now 🔴 (0 positions)
 
 - Why: Extended/overbought + structural risk. Act before deterioration.
-- Gap Impact: Closing 0 RED positions saves ~$0/month drag; moves gap from $-22,300 to $-22,300 (0.0% improvement)
+- Gap Impact: Closing 0 RED positions saves ~$0/month drag; moves gap from $-23,600 to $-23,600 (0.0% improvement)
 - ✅ None needed — no RED + high conviction conflicts
 
 #### 2. Monitor for Rolls 🟡 (1 positions at risk)
@@ -719,35 +721,35 @@ Hold off on new March-2027-expiry strangle entries (including adding to AXON's e
 - Gap Impact: Preserve existing $1,000/month contribution from MODERATE conviction positions
 - Names: OKTA (full detail in Section 6)
 
-#### 3. Let Run — Nothing Needed 🟢 (41 positions)
+#### 3. Let Run — Nothing Needed 🟢 (43 positions)
 
 - Why: Attractive pricing (oversold) + adequate conviction. No action required.
-- Gap Impact: 41 healthy positions contribute $41,000/month baseline (expected)
-- ✅ 41 positions: Continue monitoring weekly
+- Gap Impact: 43 healthy positions contribute $43,000/month baseline (expected)
+- ✅ 43 positions: Continue monitoring weekly
 
 #### 4. Opportunity — High Conviction Entries 🟢 (5 names)
 
 - Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.
-- Gap Impact: Adding 5 Tier 1 entries = $19,000/month; closes gap from $-22,300 to $-41,300 (27.1% closure)
-  - APP: Conv 9.1/10 | RSI 51.1 | Value $248,400 ⚠️ Communication Services is HIGH-exposure to today's primary risk driver — adding here compounds it
-  - APH: Conv 8.5/10 | RSI 58.5 | Value $63,664 ⚠️ Technology is HIGH-exposure to today's primary risk driver — adding here compounds it
-  - GEV: Conv 8.4/10 | RSI 42.2 | Value $371,806
-  - AMKR: Conv 8.4/10 | RSI 46.9 | Value $24,715 ⚠️ Technology is HIGH-exposure to today's primary risk driver — adding here compounds it
-  - VRT: Conv 8.3/10 | RSI 43.3 | Value $49,737
+- Gap Impact: Adding 5 Tier 1 entries = $19,000/month; closes gap from $-23,600 to $-42,600 (27.1% closure)
+  - APP: Conv 9.1/10 | RSI 53.6 | Value $251,832 ⚠️ Communication Services is HIGH-exposure to today's primary risk driver — adding here compounds it
+  - APH: Conv 8.5/10 | RSI 58.5 | Value $63,656 ⚠️ Technology is HIGH-exposure to today's primary risk driver — adding here compounds it
+  - GEV: Conv 8.4/10 | RSI 40.6 | Value $367,900
+  - AMKR: Conv 8.4/10 | RSI 47.2 | Value $24,780 ⚠️ Technology is HIGH-exposure to today's primary risk driver — adding here compounds it
+  - VRT: Conv 8.3/10 | RSI 42.7 | Value $49,556
 
 **Portfolio Status & Gap Trajectory:**
 
 - ✅ Total positions scanned: 93
 - 🔴 Critical actions: 0 closes + 1 monitors
-- 🟡 Yellow cautions: 48
-- 🟢 Green healthy: 41
+- 🟡 Yellow cautions: 46
+- 🟢 Green healthy: 43
 - 📊 Market regime: BEAR_SIDEWAYS
 
 **Gap Closure Summary:**
 
-- Current gap: $-22,300 (-31.9% below target)
-- After closes: $-22,300 (saves ~0.0%)
-- After new Tier 1 entries: $-41,300 (27.1% to gap closure)
+- Current gap: $-23,600 (-33.7% below target)
+- After closes: $-23,600 (saves ~0.0%)
+- After new Tier 1 entries: $-42,600 (27.1% to gap closure)
 - Path to target: Execute closes → add HIGH conviction Tier 1 → scale over 2-3 weeks
 
 ---

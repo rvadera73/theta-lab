@@ -17,6 +17,11 @@
 #                        named account's open positions (closed or rolled).
 #   naked_call_count -- RESOLVED once the ticker's naked (shares-uncovered)
 #                        AND currently-ITM short call count is <= max_naked_itm.
+#   leg_count_max    -- RESOLVED once the total open leg count for a ticker +
+#                        option_type, across ALL accounts (or a given account
+#                        list), is <= max_count. Tracks progress toward the
+#                        target (baseline_count -> current -> max_count), not
+#                        just a single leg like leg_absent.
 #   metric_gate      -- CLEARED once ALL listed conditions are true.
 
 decisions:
@@ -90,4 +95,37 @@ decisions:
           operator: "in"
           value: ["GREEN", "YELLOW"]
     status: BLOCKED
+    resolved_date: null
+
+  - id: be_puts_reduction
+    created: "2026-09-10"
+    account: "all"
+    description: >
+      Reduce BE put exposure to zero over the next ~10 days (target:
+      2026-09-20) by closing/rolling out of all 6 open BE put legs across
+      every account. BE is RED heat, RSI 77-81 (overbought/extended), and
+      is the most widely-held name in the book -- also carries a naked
+      short-call pair against it in Account A/Fidelity Rahul (no BE shares
+      owned anywhere). Baseline as of 2026-09-10: Account A $170P (Jan 15
+      2027) x2 [Jan+Feb], Account B $180P (Feb 19 2027), Fidelity (Rahul)
+      $190P (Jan 15 2027), Fidelity (Rajul - Rollover IRA) $200P (Jun 17
+      2027), Robinhood (Traditional) $180P (Jun 17 2027). Trader confirmed
+      2026-09-10 this should cover ALL open BE puts (not just the near-dated
+      ones) -- an initial "Dec 2026 and before" framing didn't match any
+      real BE put, since the earliest is Jan 15 2027.
+
+      KNOWN GAP: the automated check only sees 5 of these 6 legs -- the
+      Robinhood (Traditional) $180P (Jun 17 2027) has an option-type
+      parsing gap in that account's transaction reconstruction and won't
+      count toward the live total below. This entry will show RESOLVED
+      once the other 5 close even if that 6th one is still open --
+      manually confirm the Robinhood leg separately before treating BE
+      exposure as fully closed.
+    check:
+      type: leg_count_max
+      ticker: BE
+      option_type: P
+      max_count: 0
+      baseline_count: 6  # 5 auto-tracked + 1 known-gap (see description)
+    status: OPEN
     resolved_date: null
