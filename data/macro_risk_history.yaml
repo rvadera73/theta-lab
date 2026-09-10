@@ -16,3 +16,9 @@
   prob_60d: 74.6
   prob_90d: 95.0
   primary_risk: AD_RATIO critical
+- date: '2026-09-10'
+  risk_level: RED
+  prob_30d: 53.9
+  prob_60d: 90.8
+  prob_90d: 95.0
+  primary_risk: AD_RATIO critical
