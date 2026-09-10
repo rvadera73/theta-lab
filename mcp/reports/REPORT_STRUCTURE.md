@@ -97,11 +97,28 @@ the same day. All 4 report types' output files are `.md`.
   pipeline: a Claude-driven skill writes a dated YAML state file to
   `data/`, this report reads it every run and self-flags staleness past a
   threshold. Three examples: `tier_cr_state.yaml` (Section 6.6),
-  `us_quarterly_plan_2026_q4.yaml` (Section 6.8),
-  `seekingalpha_theme_state.yaml` (Section 6.9). **Don't manually append
+  `us_quarterly_plan_2026_q4.yaml` (Section 6.7),
+  `seekingalpha_theme_state.yaml` (Section 6.8). **Don't manually append
   findings into a dated log file instead** — that's the mistake the Seeking
   Alpha scan made originally, and it's silently lost on the next
   regeneration.
+- **`_check_active_decisions()`** — a self-resolving variant of the
+  state-file pattern above, added 2026-09-10 (trader-requested: "track
+  these decisions and get them answered every time we ingest data and run
+  the reports"). Unlike tier_cr_state.yaml/quarterly-plan/Seeking-Alpha
+  (which need a Claude-driven web-research pass to refresh), the entries in
+  `data/active_decisions.yaml` are checked against LIVE position/account
+  data every run — no manual refresh step. Three `check.type`s: `leg_absent`
+  (a specific option leg no longer open — a roll or close happened),
+  `naked_call_count` (a ticker's naked-and-currently-ITM short call count
+  dropped to the target), `metric_gate` (account/macro metrics, e.g. margin
+  utilization + macro risk level, all cross a threshold). Status flips
+  OPEN/BLOCKED → RESOLVED/CLEARED get written back into the YAML so it's a
+  durable record; resolved entries are kept as history, never deleted. Feeds
+  Section 6.9. When you make a real decision in a session (a specific roll,
+  a specific cleanup, an entry gate) that should be checked automatically
+  going forward instead of re-derived from scratch next time, add an entry
+  here rather than only stating it in chat.
 
 ## Presentation principle — table-first, not per-item text blocks
 
@@ -152,6 +169,7 @@ sometimes a compact summary table directly above the verbose block).
 | 6.6 | ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE) | Per-position Black-Scholes probability + EXIT CANDIDATE flag |
 | 6.7 | QUARTERLY PLAN STATUS | Reads `us_quarterly_plan_2026_q4.yaml` |
 | 6.8 | SEEKING ALPHA WEEKLY THEMES | Reads `seekingalpha_theme_state.yaml` |
+| 6.9 | ACTIVE DECISION TRACKER | Reads + self-checks `data/active_decisions.yaml` via `_check_active_decisions()` — no manual refresh needed, unlike 6.6/6.7/6.8 |
 | 7 | ACTION FRAMEWORK — PRIORITIZED EXECUTION + GAP CLOSURE IMPACT | Uses `_classify_positions_for_action()` |
 
 ## Weekly report (`generate_weekly_report`)

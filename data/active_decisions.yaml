@@ -1,0 +1,93 @@
+# Active trading decisions tracker.
+#
+# Each entry here is a real decision made in a session (a roll to execute, a
+# cleanup to do, a gate to wait for) that should NOT require re-deriving from
+# scratch or re-asking the trader every time reports run. unified_master_
+# report_production.py's Section 6.9 reads this file every run and
+# auto-checks each entry's `check` block against LIVE position/account data
+# (self.open_positions, _compute_account_status(), _get_macro_risk_analysis())
+# -- status flips from OPEN/BLOCKED to RESOLVED/CLEARED automatically the
+# moment the underlying position or metric actually changes, and the report
+# writes that flip back into this file so it's a durable record, not just a
+# once-off answer in a chat turn. Resolved entries are kept (not deleted) as
+# history -- same "don't lose findings" precedent as tier_cr_state.yaml.
+#
+# check.type values implemented in _check_active_decisions():
+#   leg_absent       -- RESOLVED once the named leg no longer appears in the
+#                        named account's open positions (closed or rolled).
+#   naked_call_count -- RESOLVED once the ticker's naked (shares-uncovered)
+#                        AND currently-ITM short call count is <= max_naked_itm.
+#   metric_gate      -- CLEARED once ALL listed conditions are true.
+
+decisions:
+  - id: axon_sept18_roll_450c
+    created: "2026-09-10"
+    account: "Account A (232)"
+    description: >
+      Roll the AXON $450C (Sept 18 2026 expiry) out to a January 2027 call
+      (~$560-580 strike, AXON's own missing rung in its Sept/Dec/March
+      ladder) before Sept 18. Keep the $470C to settle against the 100
+      owned AXON shares as a clean covered assignment. Only 100 AXON
+      shares exist to cover 2 ITM Sept-18 calls; rolling one removes the
+      naked/short-stock risk that would otherwise be forced at expiry.
+    check:
+      type: leg_absent
+      ticker: AXON
+      option_type: C
+      strike: 450.0
+      expiry: "2026-09-18"
+    status: OPEN
+    resolved_date: null
+
+  - id: pypl_naked_calls_cleanup
+    created: "2026-09-10"
+    account: "Account A (232)"
+    description: >
+      5 naked short call contracts on PYPL (0 shares owned), all ITM as of
+      2026-09-10: $45C x3 (Dec 18 2026), $47.5C x2 (Jan 15 2027). No shares
+      exist to cover any of them. Lower urgency than the AXON Sept-18 pair
+      (91-119 DTE at time of writing gives runway) but needs a roll-up/out
+      or close before expiry approaches -- same structural risk as AXON,
+      just further out.
+    check:
+      type: naked_call_count
+      ticker: PYPL
+      max_naked_itm: 0
+    status: OPEN
+    resolved_date: null
+
+  - id: crcl_naked_call_dec
+    created: "2026-09-10"
+    account: "Account A (232)"
+    description: >
+      1 naked short call on CRCL (0 shares owned), ITM as of 2026-09-10:
+      $90C (Dec 18 2026). Smaller version of the same AXON/PYPL issue.
+    check:
+      type: naked_call_count
+      ticker: CRCL
+      max_naked_itm: 0
+    status: OPEN
+    resolved_date: null
+
+  - id: march_strangle_entry_gate
+    created: "2026-09-10"
+    account: "Account A (232)"
+    description: >
+      Hold off on new March-2027-expiry strangle entries (including adding
+      to AXON's existing March legs) until BOTH: (1) Account A margin
+      utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and
+      (2) portfolio crash-risk level back to YELLOW or better (was RED,
+      53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and
+      pypl_naked_calls_cleanup first -- don't stack a third naked-call
+      layer while those two are still open.
+    check:
+      type: metric_gate
+      conditions:
+        - metric: account_a_margin_utilization_pct
+          operator: "<"
+          value: 85
+        - metric: macro_risk_level
+          operator: "in"
+          value: ["GREEN", "YELLOW"]
+    status: BLOCKED
+    resolved_date: null

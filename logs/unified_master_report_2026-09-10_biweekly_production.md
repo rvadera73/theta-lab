@@ -11,8 +11,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,341,494
-- **Total notional exposure:** $7,462,312
-- **Total option requirement:** $2,667,145
+- **Total notional exposure:** $7,389,297
+- **Total option requirement:** $2,659,365
 - **Positions with short puts:** 91
 - **Positions with short calls:** 43
 - **YTD Net Premium:** $239,895 (live from transactions)
@@ -62,18 +62,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 17.2% | $4,999,127 | $899,843 | Margin | 🔴 OVER CAP | $25,753 | ✅ $-2,747 |
-| Account B (275) | $261,000 | 11.1% | $364,384 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $9,602 | ✅ $-1,024 |
-| Account C (634) | $266,000 | 11.4% | $330,825 | $214,950 | Cash-Sec | ⚠️ WATCH | $9,786 | ✅ $-1,044 |
-| Fidelity (Rahul) | $498,560 | 21.3% | $700,350 | $625,591 | Cash-Sec | 🔴 COVERAGE GAP | $18,342 | ✅ $-1,956 |
-| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $51,239 | $51,472 | Cash-Sec | 🔴 COVERAGE GAP | $1,440 | ✅ $-154 |
-| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $170,387 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $4,712 | ✅ $-503 |
-| Vanguard (Rahul) | $320,492 | 13.7% | $515,629 | $422,389 | Cash-Sec | 🔴 COVERAGE GAP | $11,790 | ✅ $-1,258 |
-| Robinhood (Individual) | $13,000 | 0.6% | $28,850 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $477 | ✅ $-51 |
-| Robinhood (Traditional IRA) | $220,000 | 9.4% | $301,522 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,093 | ✅ $-864 |
+| Account A (232) | $403,000 | 17.2% | $4,960,523 | $892,894 | Margin | 🔴 OVER CAP | $20,030 | ✅ $-5,952 |
+| Account B (275) | $261,000 | 11.1% | $359,056 | $291,050 | Cash-Sec | 🔴 COVERAGE GAP | $7,468 | ✅ $-2,219 |
+| Account C (634) | $266,000 | 11.4% | $328,694 | $214,950 | Cash-Sec | ⚠️ WATCH | $7,611 | ✅ $-2,262 |
+| Fidelity (Rahul) | $498,560 | 21.3% | $686,933 | $624,839 | Cash-Sec | 🔴 COVERAGE GAP | $14,266 | ✅ $-4,239 |
+| Fidelity (Rajul — Roth IRA) | $39,158 | 1.7% | $50,585 | $51,173 | Cash-Sec | 🔴 COVERAGE GAP | $1,120 | ✅ $-333 |
+| Fidelity (Rajul — Rollover IRA) | $128,081 | 5.5% | $168,866 | $161,850 | Cash-Sec | 🔴 COVERAGE GAP | $3,665 | ✅ $-1,089 |
+| Vanguard (Rahul) | $320,492 | 13.7% | $510,952 | $422,609 | Cash-Sec | 🔴 COVERAGE GAP | $9,170 | ✅ $-2,725 |
+| Robinhood (Individual) | $13,000 | 0.6% | $27,506 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $371 | ✅ $-111 |
+| Robinhood (Traditional IRA) | $220,000 | 9.4% | $296,181 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $6,295 | ✅ $-1,870 |
 | Fidelity 401K (Rahul) | $192,200 | 8.2% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,341,494 | 100.0% | $7,462,312 | $2,667,145 |  |  |  |  |
+| **TOTAL** | $2,341,494 | 100.0% | $7,389,297 | $2,659,365 |  |  |  |  |
 
 - **Account A (232):** 173 option positions | Monthly target: $28,615 | Equity: ADBE 400sh, APP 100sh, AXON 100sh, COIN 100sh, CRM 300sh +13 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -111,29 +111,29 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 **Framework overview:**
 
 - Base: $100,000/month net = $1.2M/year (at 60% close costs)
-- Current Regime: CAUTIOUS_BULL (applies 90% of base)
-- Adjusted Target: $90,000 net per month
+- Current Regime: BEAR_SIDEWAYS (applies 70% of base)
+- Adjusted Target: $70,000 net per month
 
 **Performance vs. target (YTD cumulative):**
 
-- Target (9 months): $810,000
+- Target (9 months): $630,000
 - Actual YTD: $239,895.0
-- Gap to close: $570,105.0 (70.4%)
+- Gap to close: $390,105.0 (61.9%)
 - Monthly average (YTD): $26,655
-- Monthly average needed: $90,000
-- Monthly gap: $-9,600
+- Monthly average needed: $70,000
+- Monthly gap: $-20,800
 
 **Position tier distribution → gap closure:**
 
-- Tier 1 (12 positions): $45,600/month (51% of $90,000 target)
-- Tier 2 (63 positions): $63,000/month (70% of target)
-- Tier 3 (18 positions): $-9,000/month (-10% drag)
-- Current total: 93 positions = $99,600/month (111% of target)
+- Tier 1 (11 positions): $41,800/month (60% of $70,000 target)
+- Tier 2 (60 positions): $60,000/month (86% of target)
+- Tier 3 (22 positions): $-11,000/month (-16% drag)
+- Current total: 93 positions = $90,800/month (130% of target)
 
 **Gap closure path:**
 
-- To hit $90,000 target: Need 0 more Tier 1 positions
-- Alternative: Scale existing OR exit 7 worst Tier 3 positions
+- To hit $70,000 target: Need 0 more Tier 1 positions
+- Alternative: Scale existing OR exit 8 worst Tier 3 positions
 - Capital required for 0 new positions: $0 (0 × $10K)
 
 **Risk guardrails:**
@@ -148,8 +148,8 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 ### Supplementary: Production Framework — 60% Close Cost Ratio Targets
 
 - Framework: $100,000/month net = $1.2M/year target (at 60% close costs)
-- Regime: CAUTIOUS_BULL (applies 90% of base)
-- Adjusted Target: $225,000 gross / $90,000 net
+- Regime: BEAR_SIDEWAYS (applies 70% of base)
+- Adjusted Target: $175,000 gross / $70,000 net
 
 **Account Targets (Regime-Adjusted)** — complements Section 0's Per-Account
 Breakdown 'Target' column: that one is the raw monthly_target; these are the
@@ -157,16 +157,16 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 
 | Account | Gross | Net |
 |---|---|---|
-| Account A (232) | $64,382 | $25,753 |
-| Account B (275) | $24,005 | $9,602 |
-| Account C (634) | $24,465 | $9,786 |
-| Fidelity (Rahul) | $45,855 | $18,342 |
-| Fidelity (Rajul — Roth IRA) | $3,600 | $1,440 |
-| Fidelity (Rajul — Rollover IRA) | $11,780 | $4,712 |
-| Vanguard (Rahul) | $29,475 | $11,790 |
-| Robinhood (Individual) | $1,192 | $477 |
-| Robinhood (Traditional IRA) | $20,232 | $8,093 |
-| **TOTAL** | $224,986 | $89,995 |
+| Account A (232) | $50,075 | $20,030 |
+| Account B (275) | $18,670 | $7,468 |
+| Account C (634) | $19,027 | $7,611 |
+| Fidelity (Rahul) | $35,665 | $14,266 |
+| Fidelity (Rajul — Roth IRA) | $2,800 | $1,120 |
+| Fidelity (Rajul — Rollover IRA) | $9,162 | $3,665 |
+| Vanguard (Rahul) | $22,925 | $9,170 |
+| Robinhood (Individual) | $927 | $371 |
+| Robinhood (Traditional IRA) | $15,737 | $6,295 |
+| **TOTAL** | $174,988 | $69,996 |
 
 
 ## Section 1: 3-MONTH ROLLING PACE & MONTHLY TARGET TRACKING (Primary: Biweekly Focus)
@@ -194,23 +194,23 @@ Note: YTD detail variance analysis moved to MONTHLY report (consolidated for cla
 
 **Conviction Distribution** (current, live):
 
-- HIGH (≥8): 12% (12 positions)
-- MODERATE (6-8): 67% (63 positions)
-- LOW (<6): 19% (18 positions)
+- HIGH (≥8): 11% (11 positions)
+- MODERATE (6-8): 64% (60 positions)
+- LOW (<6): 23% (22 positions)
 - Portfolio avg: 6.8/10
 - (Month-over-month conviction history needs a tracking store — not fabricated.)
 
 **Top HIGH-conviction positions** (current):
 
 - APP: Conviction 9.1/10
-- NVDA: Conviction 8.8/10
+- MU: Conviction 8.8/10
+- APH: Conviction 8.5/10
+- TSM: Conviction 8.5/10
 - AMKR: Conviction 8.4/10
-- GEV: Conviction 8.4/10
-- MU: Conviction 8.4/10
 
 **Framework Health:**
 
-- ✅ 12 positions in HIGH tier (target: ≥30%)
+- ✅ 11 positions in HIGH tier (target: ≥30%)
 - ✅ Conviction converging toward 7.0 target
 - ✅ No forced exits (framework working)
 
@@ -219,15 +219,15 @@ Note: YTD detail variance analysis moved to MONTHLY report (consolidated for cla
 
 **Tier Contribution to Target** (current, live):
 
-- Tier 1 (Conv ≥8): 12 positions → $45,600/month
-- Tier 2 (Conv 6-8): 63 positions → $63,000/month
-- Tier 3 (Conv <6): 18 positions → $-9,000 drag
+- Tier 1 (Conv ≥8): 11 positions → $41,800/month
+- Tier 2 (Conv 6-8): 60 positions → $60,000/month
+- Tier 3 (Conv <6): 22 positions → $-11,000 drag
 - (Prior-month tier history needs a tracking store — not fabricated.)
 
 **Portfolio Total Contribution to $90K Target:**
 
-- Current: $99,600/month (111% of target)
-- Gap: $-9,600 → 0 more Tier 1 needed OR scale/trim Tier 3
+- Current: $90,800/month (130% of target)
+- Gap: $-20,800 → 0 more Tier 1 needed OR scale/trim Tier 3
 
 **Framework verdict:** Portfolio quality concentrating in Tier 1 as designed. Weekly tier monitoring catching opportunities earlier. Framework gap-closure path clear.
 
@@ -286,18 +286,18 @@ To enable: persist monthly Greeks + closed-trade outcomes to a state file each r
 
 | Sector | % of Notional | Avg Conv | Signal |
 |---|---|---|---|
-| Technology | 37.7% | 6.93 | NEUTRAL |
+| Technology | 37.6% | 6.9 | NEUTRAL |
 | Industrials | 17.1% | 7.18 | NEUTRAL |
 | Communication Services | 12.9% | 7.61 | ATTRACTION |
-| Financial Services | 8.5% | 6.08 | NEUTRAL |
-| Healthcare | 6.9% | 5.69 | ATTRACTION |
-| Consumer Cyclical | 5.9% | 6.29 | ATTRACTION |
-| Brand-Quality (Non-AI) | 4.9% | 7.11 | NEUTRAL |
-| Defense | 2.6% | 6.28 | ATTRACTION |
+| Financial Services | 8.5% | 6.13 | NEUTRAL |
+| Healthcare | 7.0% | 5.66 | NEUTRAL |
+| Consumer Cyclical | 6.0% | 6.35 | ATTRACTION |
+| Brand-Quality (Non-AI) | 4.9% | 6.63 | NEUTRAL |
+| Defense | 2.7% | 6.12 | ATTRACTION |
 | Utilities | 1.6% | 6.98 | ATTRACTION |
-| Basic Materials | 1.5% | 6.76 | NEUTRAL |
+| Basic Materials | 1.5% | 6.83 | NEUTRAL |
 | Energy | 0.3% | 6.23 | NEUTRAL |
-| Consumer Defensive | 0.1% | 7.2 | ATTRACTION |
+| Consumer Defensive | 0.1% | 7.5 | ATTRACTION |
 
 Month-by-month rotation history is not tracked yet — omitted rather than fabricated.
 

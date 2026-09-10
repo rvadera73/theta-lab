@@ -423,6 +423,105 @@ class UnifiedReportProduction:
         self._macro_risk_cache = result
         return result
 
+    def _check_active_decisions(self) -> list:
+        """Reads data/active_decisions.yaml and auto-checks each entry's
+        `check` block against LIVE position/account data -- trader-requested
+        2026-09-10 ("track these decisions and get them answered every time
+        we ingest data and run the reports") so a roll/cleanup/entry-gate
+        decision made in one session doesn't need to be manually re-verified
+        or re-asked about in the next. Same state-file precedent as
+        tier_cr_state.yaml, but self-resolving: this one checks itself
+        against real data instead of needing a Claude-driven web-research
+        pass, since "is this leg still open" and "is margin under 85%" are
+        both directly computable here.
+
+        Writes any status changes (OPEN/BLOCKED -> RESOLVED/CLEARED) back to
+        the file so it's a durable record, not just a once-off report line --
+        resolved entries are kept, never deleted, matching the "don't lose
+        findings" precedent from the Seeking Alpha state file.
+        """
+        import yaml as _yaml
+        path = "/home/rahulvadera/projects/theta-lab/data/active_decisions.yaml"
+        try:
+            with open(path) as f:
+                state = _yaml.safe_load(f) or {}
+        except Exception:
+            return []
+
+        decisions = state.get("decisions", [])
+        changed = False
+
+        for d in decisions:
+            if d.get("status") in ("RESOLVED", "CLEARED"):
+                continue  # already resolved -- leave as history, don't re-check
+            check = d.get("check", {})
+            ctype = check.get("type")
+            newly_resolved = False
+
+            if ctype == "leg_absent":
+                acct = d.get("account")
+                sub = self.open_positions[
+                    (self.open_positions['account_name'] == acct) &
+                    (self.open_positions['ticker'] == check.get('ticker')) &
+                    (self.open_positions['option_type'].astype(str).str.upper().str.startswith(check.get('option_type', '')[:1])) &
+                    (self.open_positions['strike'] == check.get('strike')) &
+                    (self.open_positions['expiry_date'].astype(str) == check.get('expiry'))
+                ]
+                newly_resolved = sub.empty
+
+            elif ctype == "naked_call_count":
+                acct = d.get("account")
+                t = check.get("ticker")
+                sub = self.open_positions[
+                    (self.open_positions['account_name'] == acct) &
+                    (self.open_positions['ticker'] == t) &
+                    (self.open_positions['option_type'].astype(str).str.upper().str.startswith('C'))
+                ]
+                price = self.prices.get(t, 0)
+                itm_qty = sum(abs(r['net_quantity']) for _, r in sub.iterrows()
+                              if r.get('strike') is not None and price > r['strike'])
+                shares = self.equity_positions.get(acct, {}).get(t, 0)
+                naked_itm = max(0, itm_qty - shares / 100)
+                d['_live_naked_itm'] = naked_itm  # surfaced in the render, not persisted
+                newly_resolved = naked_itm <= check.get('max_naked_itm', 0)
+
+            elif ctype == "metric_gate":
+                acct_status = self._compute_account_status()
+                risk = self._get_macro_risk_analysis()
+                live_values = {
+                    "account_a_margin_utilization_pct": acct_status.get("Account A (232)", {}).get("utilization"),
+                    "macro_risk_level": risk.get("risk_level"),
+                }
+                all_pass = True
+                for cond in check.get("conditions", []):
+                    val = live_values.get(cond["metric"])
+                    op, target = cond["operator"], cond["value"]
+                    if val is None:
+                        all_pass = False
+                    elif op == "<": all_pass &= val < target
+                    elif op == "<=": all_pass &= val <= target
+                    elif op == ">": all_pass &= val > target
+                    elif op == ">=": all_pass &= val >= target
+                    elif op == "==": all_pass &= val == target
+                    elif op == "in": all_pass &= val in target
+                    else: all_pass = False
+                d['_live_values'] = live_values
+                newly_resolved = all_pass
+
+            if newly_resolved:
+                d['status'] = 'CLEARED' if ctype == 'metric_gate' else 'RESOLVED'
+                d['resolved_date'] = date.today().isoformat()
+                changed = True
+
+        if changed:
+            try:
+                with open(path, 'w') as f:
+                    _yaml.safe_dump(state, f, sort_keys=False, allow_unicode=True)
+            except Exception:
+                pass
+
+        return decisions
+
     def _log_macro_risk_history(self, risk_analysis: dict) -> None:
         """Append today's crash-probability reading to data/macro_risk_history.yaml
         (one entry per calendar day, overwriting same-day re-runs rather than
@@ -1466,6 +1565,33 @@ class UnifiedReportProduction:
                 output.append("- ⚠️ Over 10 days since the last Seeking Alpha scan — run the weekly theme-scan skill.")
         except Exception as e:
             output.append(f"- ⚠️ No Seeking Alpha scan on record ({e}) — run the weekly theme-scan skill to establish a baseline.")
+        output.append("")
+
+        # SECTION 6.9: ACTIVE DECISION TRACKER -- trader-requested 2026-09-10,
+        # same state-file precedent as 6.6/6.7/6.8 but self-resolving: checks
+        # itself against live position/account data every run instead of
+        # needing a manual re-confirmation.
+        output.extend(self._format_section_header("6.9", "ACTIVE DECISION TRACKER"))
+        output.append("")
+        try:
+            decisions = self._check_active_decisions()
+            if not decisions:
+                output.append("- No active decisions on record.")
+            else:
+                for d in decisions:
+                    status = d.get('status', 'OPEN')
+                    icon = "✅" if status in ("RESOLVED", "CLEARED") else "⏳"
+                    output.append(f"**{icon} {d.get('id')}** — {status}" + (f" (as of {d['resolved_date']})" if d.get('resolved_date') else ""))
+                    output.append("")
+                    output.append(d.get('description', '').strip())
+                    if '_live_naked_itm' in d:
+                        output.append(f"  - Live check: {d['_live_naked_itm']:.0f} naked ITM contract(s) remaining (target: 0)")
+                    if '_live_values' in d:
+                        for k, v in d['_live_values'].items():
+                            output.append(f"  - Live: {k} = {v}")
+                    output.append("")
+        except Exception as e:
+            output.append(f"- ⚠️ Active decision tracker unavailable: {e}")
         output.append("")
 
         # SECTION 7: ACTION FRAMEWORK WITH GAP CLOSURE IMPACT
