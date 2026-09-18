@@ -22,3 +22,9 @@
   prob_60d: 57.7
   prob_90d: 81.4
   primary_risk: BREADTH critical
+- date: '2026-09-18'
+  risk_level: RED
+  prob_30d: 45.9
+  prob_60d: 77.4
+  prob_90d: 95.0
+  primary_risk: AD_RATIO critical
