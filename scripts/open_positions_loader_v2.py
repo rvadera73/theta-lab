@@ -642,7 +642,18 @@ class OpenPositionsLoaderV2:
                 if not ticker or pd.isna(qty):
                     continue
                 try:
-                    self.equity_from_position_files[row['account_name']][ticker] += int(float(qty))
+                    # Schwab formats quantities >=1,000 with a thousands
+                    # separator (e.g. "1,100") -- float() rejects that comma
+                    # outright, and the broad except below silently dropped
+                    # the whole row as a result. Confirmed 2026-09-21: this
+                    # silently zeroed Account A's real 1,100-share PYPL
+                    # position across every naked-call coverage check in this
+                    # system (active_decisions.yaml's pypl_naked_calls_cleanup
+                    # showed "12 naked" instead of the real ~1) -- every other
+                    # Account A equity holding is under 1,000 shares, which is
+                    # exactly why only PYPL hit this.
+                    qty_str = str(qty).replace(',', '').strip()
+                    self.equity_from_position_files[row['account_name']][ticker] += int(float(qty_str))
                 except (ValueError, TypeError):
                     continue
 

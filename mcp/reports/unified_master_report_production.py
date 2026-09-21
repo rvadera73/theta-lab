@@ -1968,6 +1968,107 @@ class UnifiedReportProduction:
         output.append(f"- {gap_data['positions_needed']} more Tier 1 entries needed to close the ${gap_data['monthly_gap']:,} monthly gap (${gap_data['positions_needed']*10000:,} capital)")
         output.append("")
 
+        # CRASH-SCENARIO CASH REQUIREMENT -- trader-requested 2026-09-21, after
+        # a live discussion of the $700-800K Account A risk plan. Account A is
+        # the ONLY margin account (confirmed by the trader 2026-09-21 -- every
+        # other account is cash-secured, so this margin-call-risk analysis
+        # doesn't apply there). Uses the SAME 18%-of-notional formula
+        # open_positions_loader_v2 already computes for Account A's real Opt
+        # Req (verified 2026-09-21 to match the live report to the dollar).
+        # That formula scales roughly linearly with price -- no Reg-T-style
+        # nonlinear jump as a position goes ITM -- so a broad X% adverse move
+        # raises Account A's notional, and therefore this Opt Req figure, by
+        # roughly the same X%. This is a MODEL proxy, not Schwab's real Reg-T
+        # math -- treat the range as illustrative, not precise.
+        acct_a_name = "Account A (232)"
+        acct_a_notional = 0.0
+        if self.open_positions is not None and len(self.open_positions) > 0:
+            aa_df = self.open_positions[
+                (self.open_positions['account_name'] == acct_a_name) &
+                (self.open_positions['option_type'].isin(['C', 'P']))
+            ]
+            for _, r in aa_df.iterrows():
+                px = self.prices.get(r['ticker'], 0) or 0
+                acct_a_notional += px * abs(r['net_quantity']) * 100
+        acct_a_opt_req = self.option_requirements.get(acct_a_name, 0)
+        stress_low = acct_a_notional * 0.15 * 0.18
+        stress_high = acct_a_notional * 0.20 * 0.18
+        emergency_reserve = 200000  # trader-confirmed 2026-09-21, held separate from Account A
+        operating_cash_target = 100000  # trader discussion 2026-09-21
+        adequate = emergency_reserve >= stress_high
+
+        output.append("**Crash-scenario cash requirement (Account A only — the only margin account):**")
+        output.append("")
+        output.append(f"- Account A total option notional: ${acct_a_notional:,.0f} | Current Opt Req (18% model): ${acct_a_opt_req:,.0f}")
+        output.append(f"- Modeled stress case (15-20% broad market move): +${stress_low:,.0f} to +${stress_high:,.0f} incremental Opt Req")
+        output.append(f"- Operating cash target (Account A, day-to-day): ${operating_cash_target:,.0f}")
+        output.append(f"- Emergency reserve (held separate, trader-confirmed): ${emergency_reserve:,.0f}")
+        if adequate:
+            output.append(f"- ✅ Emergency reserve covers the modeled stress case (${emergency_reserve:,.0f} ≥ ${stress_high:,.0f} high end) — no additional emergency cash indicated by this model.")
+        else:
+            output.append(f"- ⚠️ Emergency reserve BELOW the modeled stress high end (${emergency_reserve:,.0f} < ${stress_high:,.0f}) — re-check sizing.")
+        output.append("- Open items (re-confirm directly with Schwab, not from this model): (1) whether Account A's real capacity is still $700K or has grown toward the ~$1M margin-equity figure reported 2026-09-21; (2) that the emergency reserve is genuinely liquid and same/next-day movable into Account A specifically.")
+        output.append("")
+
+        # EXPIRY-CURVE CONCENTRATION -- trader-requested 2026-09-21. The core
+        # strategy is 90/120-day strangles, so the bulk of the book being in
+        # that window is BY DESIGN -- but a single expiration DATE holding an
+        # outsized share is a real single-day cliff risk independent of that
+        # thesis (decisions, margin marks, and gamma all land on one day).
+        # Target bands agreed with the trader 2026-09-21: near (<60 DTE)
+        # 10-15%, core (60-135 DTE, the 90/120-day window) 35-40% combined
+        # with no SINGLE expiration date over ~20-25%, mid (135-195 DTE)
+        # 20-24%, far (195+ DTE) 10-15%.
+        output.append("**Expiry-curve concentration (Account A, vs. the 90/120-day strategy target):**")
+        output.append("")
+        aa_opt_df = self.open_positions[
+            (self.open_positions['account_name'] == acct_a_name) &
+            (self.open_positions['option_type'].isin(['C', 'P']))
+        ].copy() if self.open_positions is not None and len(self.open_positions) > 0 else None
+        if aa_opt_df is not None and len(aa_opt_df) > 0:
+            aa_opt_df['px'] = aa_opt_df['ticker'].map(self.prices).fillna(0)
+            aa_opt_df['notional'] = aa_opt_df['px'] * aa_opt_df['net_quantity'].abs() * 100
+            aa_opt_df['expiry_dt'] = pd.to_datetime(aa_opt_df['expiry_date'], errors='coerce')
+            aa_opt_df['dte'] = (aa_opt_df['expiry_dt'] - pd.Timestamp(today)).dt.days
+            total_n = aa_opt_df['notional'].sum()
+
+            def bucket(dte):
+                if pd.isna(dte):
+                    return 'unknown'
+                if dte < 60:
+                    return 'near'
+                if dte < 135:
+                    return 'core'
+                if dte < 195:
+                    return 'mid'
+                return 'far'
+
+            aa_opt_df['bucket'] = aa_opt_df['dte'].apply(bucket)
+            by_bucket = aa_opt_df.groupby('bucket')['notional'].sum()
+            targets = {'near': (10, 15), 'core': (35, 40), 'mid': (20, 24), 'far': (10, 15)}
+            labels = {'near': 'Near (<60 DTE)', 'core': 'Core (60-135 DTE — the 90/120-day window)',
+                      'mid': 'Mid (135-195 DTE)', 'far': 'Far (195+ DTE)'}
+            for b in ['near', 'core', 'mid', 'far']:
+                pct = (by_bucket.get(b, 0) / total_n * 100) if total_n else 0
+                lo, hi = targets[b]
+                flag = "✅" if lo <= pct <= hi else ("⚠️ light" if pct < lo else "⚠️ heavy")
+                output.append(f"- {labels[b]}: {pct:.1f}% (target {lo}-{hi}%) {flag}")
+
+            # Single-expiration-date cliff check, independent of the bucket shape.
+            by_date = aa_opt_df.groupby(aa_opt_df['expiry_dt'].dt.date)['notional'].sum().sort_values(ascending=False)
+            if len(by_date) > 0 and total_n:
+                top_date, top_notional = by_date.index[0], by_date.iloc[0]
+                top_pct = top_notional / total_n * 100
+                if top_pct > 25:
+                    output.append(f"- 🔴 Single-date concentration: {top_date} holds {top_pct:.1f}% of total notional — above the ~20-25% single-cycle ceiling. Redirect new capital to adjacent dates rather than adding here.")
+                elif top_pct > 20:
+                    output.append(f"- ⚠️ Single-date concentration: {top_date} holds {top_pct:.1f}% of total notional — at the edge of the ~20-25% single-cycle ceiling.")
+                else:
+                    output.append(f"- ✅ No single expiration date exceeds the ~20-25% single-cycle ceiling (largest: {top_date} at {top_pct:.1f}%).")
+        else:
+            output.append("- No Account A option positions found for this check.")
+        output.append("")
+
         # SECTION 7: THETA & P&L TRACKING. "Target pace: $122.7K/month" was a
         # stale hardcoded constant -- the biweekly report's own code comment
         # documents this exact number as already fixed there (replaced with

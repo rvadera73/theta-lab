@@ -26,13 +26,32 @@ needs realized_pnl.py's numbers) — this module has no dependency on either.
 # Roth are passive/empty (per persona: "passive accounts... excluded from
 # these caps") and get weighting_basis=0, never billed against the target.
 #
-# Account A is the ONLY margin-enabled account. Confirmed by the trader
-# (2026-08) that its real, lockable margin buying power is $700,000 — not
-# its $403,000 cash/net-liq balance. `capacity` overrides `balance` as the
-# weighting basis for exactly this reason: every other account's target
-# shifts down slightly as a result, since it's one shared $100K pool.
-# `balance` itself stays at the true $403,000 net-liq figure for display
-# and margin-utilization purposes — only the TARGET weighting uses capacity.
+# Account A is the ONLY margin-enabled account. The $700,000 figure below
+# WAS the trader-confirmed (2026-08) real capacity, but that's now stale —
+# superseded 2026-09-21 after a live walk-through of the account's actual
+# Schwab "Margin Details" / "Available Funds" screen:
+#   - Margin Equity: $1,000,000 | SMA (Reg-T initial-margin buying power): $1,600,000
+#   - Cash + Borrowing available: $102,000 | Balance subject to interest: $0
+#   - No margin/maintenance requirement violation showing, no call active.
+# "Equity Percent" also read 29% that session -- confirmed NOT the binding
+# constraint here: that ratio governs traditional debit-balance maintenance
+# calls, and this account carries $0 debit balance (zero margin interest),
+# so that mechanism doesn't apply. The real constraint for an options-heavy,
+# no-stock-loan margin account is the options margin requirement itself
+# (Opt Req, computed live from real positions) against SMA/equity headroom
+# -- not a stock-margin equity ratio. Capacity set to $900,000 as the
+# YELLOW-macro-regime working ceiling (SMA showed real room for more; this
+# is deliberately short of maxing it out given the still-elevated 30-day
+# crash probability at the time). Regime dial agreed with the trader
+# 2026-09-21: RED -> $700-750K, YELLOW -> $900K-$1M (this value), GREEN ->
+# $1.1-1.2M. Re-derive this figure directly from a fresh Schwab SMA/Equity
+# read periodically -- it is not a fixed constant, it moves with the
+# account's real market value the same way SMA does.
+# `capacity` overrides `balance` as the weighting basis for exactly this
+# reason: every other account's target shifts down slightly as a result,
+# since it's one shared $100K pool. `balance` itself stays at the true
+# $403,000 net-liq figure for display and margin-utilization purposes —
+# only the TARGET weighting uses capacity.
 #
 # monthly_target is now COMPUTED below, not hand-maintained. Previously this
 # was a hardcoded literal per account (e.g. Account A: 28615) that a second,
@@ -52,7 +71,7 @@ needs realized_pnl.py's numbers) — this module has no dependency on either.
 # position export has no cash/NLV line at all, so there is currently no way
 # to derive these live; they need a direct re-confirmation from the trader.
 ACCOUNTS_CONFIG = {
-    'Account A (232)': {'balance': 403000, 'margin': True, 'capacity': 700000, 'balance_as_of': None},
+    'Account A (232)': {'balance': 403000, 'margin': True, 'capacity': 900000, 'balance_as_of': None, 'capacity_as_of': '2026-09-21'},
     'Account B (275)': {'balance': 261000, 'margin': False, 'balance_as_of': None},
     'Account C (634)': {'balance': 266000, 'margin': False, 'balance_as_of': None},
     'Fidelity (Rahul)': {'balance': 498560, 'margin': False, 'balance_as_of': '2026-07-31'},
