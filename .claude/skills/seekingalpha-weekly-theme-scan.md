@@ -88,3 +88,38 @@ Python report pipeline.
   file could be similarly stale; this was only caught because the trader
   spot-checked one name. Treat every equity-derived finding from before
   2026-09-01 (covered-call gap scans, coverage checks) with that in mind.
+
+### 2026-09-18 (second run -- 17 days late, missed the 09-08/09-15 cadence)
+
+- **NFLX** -- Wells Fargo downgraded to Underweight, PT $80 -> $57, citing
+  engagement decline (-8% viewing hours) and a weak content slate (-21% YoY
+  top-100-originals hours). Real, credible catalyst -- 4th straight down
+  session, 3rd consecutive weekly decline. **Concrete action, sized:**
+  Account A's 2 ITM cash-secured NFLX puts ($77.50P x2 Nov 20, $80P x3 Nov
+  20) -- already flagged separately this week as low-premium (<$500/contract)
+  -- now carry a real fresh bearish catalyst on top of already-poor
+  risk/reward. Recommended an early close/roll review rather than waiting
+  for expiry. The naked NFLX calls in the same account move further OTM on
+  this news, not worse.
+- **MU** -- confirms and strengthens the 09-01 flag: HBM4 capacity sold out
+  through 2027 (likely 2028), $100B+ logged orders, demand ~50% over
+  capacity per the CEO. Stock +~200% YTD, $1.1T market cap. Q4 earnings
+  2026-09-30 is a real near-term event. **Flag for next quarterly bucket
+  review (HIGH_RISK_BUCKET -> QUALITY_AI_BUCKET), conviction now stronger.**
+- **AVGO** -- the $370B AI-chip debt-financing risk flagged 08-14 (BofA) is
+  now reported with real mechanical detail: an SPV buying chips and leasing
+  them back to customers (incl. Anthropic), ~$30B junior + $60-70B
+  Broadcom-guaranteed senior debt, guaranteed exposure to ~$370B by 2029.
+  Stock actually rose on the financing/optimism news this week despite
+  broader semi weakness. **No Tier CR trigger -- confirmation with detail,
+  not escalation. Fold the SPV mechanics into the Circular Financing
+  Playbook's Tier CR section at its next full review.**
+- **ALB** -- JPMorgan cut its lithium price forecast (PT $140 Dec-2027,
+  down from $160 Dec-2026), Neutral maintained -- short-term commodity
+  pricing (China lithium carbonate prices down Q3 vs Q2), not a structural
+  call. Q2 revenue +31.1% YoY, EPS beat intact. Stock -3.51% on 09-17,
+  in line with the broader lithium-sector pullback. **No action -- existing
+  ITM $120P already prices in the known downside; JPMorgan's own long-term
+  target still implies recovery above current spot.**
+- **CRM** -- not re-checked this pass; 09-01 finding (Claudeforce
+  partnership) carried forward with no new contradicting headline.
