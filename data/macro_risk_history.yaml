@@ -28,3 +28,9 @@
   prob_60d: 77.4
   prob_90d: 95.0
   primary_risk: AD_RATIO critical
+- date: '2026-09-21'
+  risk_level: GREEN
+  prob_30d: 19.1
+  prob_60d: 32.8
+  prob_90d: 46.5
+  primary_risk: BREADTH elevated

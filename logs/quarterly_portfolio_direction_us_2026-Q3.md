@@ -7,10 +7,11 @@ with its own market, regime, objective, and strategy shape — see the companion
 `logs/quarterly_portfolio_direction_india_2026-Q3.md`. The two are not blended anywhere in
 this document; a candidate or action appearing here is a US-account decision only.
 
-**Generated:** 2026-08-22. Data currency: live regime/crash/sector figures as of today;
-P&L figures reflect the most recent brokerage exports (dated 2026-08-14 — re-run
-`scripts/update_snapshot.py` after dropping fresher statements to update this
-before acting on the P&L numbers specifically).
+**Generated:** 2026-08-22. **Refreshed 2026-09-18** (Section 1 and 2 below updated
+against fresh Sept 18 brokerage exports across Schwab/Fidelity/Vanguard — Robinhood
+excluded from this ingest cycle per standing instruction; Sections 3-6 are carried
+forward from the Aug-22 version and re-checked for anything materially outdated,
+noted inline where it was).
 
 This is the first of what should become a standing quarterly artifact — a forward-looking
 3-month direction, not a backward-looking report. Sources: `mcp/analysis/macro_risk_analyzer.py`
@@ -23,69 +24,92 @@ plus external research on institutional multi-strategy risk practices (sources a
 
 ## 1. Market Direction Call — Next 3 Months
 
-**Current read: 90-day crash probability 28.6%, risk level GREEN, primary driver "BREADTH elevated."**
+**🔴 Updated 2026-09-18 read: 30-day crash probability 45.9%, risk level RED (2 indicators
+critical), primary driver "AD_RATIO critical."** This is a real deterioration from the
+Aug-22 read below (28.6%/GREEN) — kept for the record, not overwritten:
 
-This has genuinely improved since the acute reading two weeks ago (AD_RATIO was critical,
-90-day probability 72-76%). Breadth (the % of S&P 500 above its 50-day MA) is now the lead
-signal, at a YELLOW/elevated level rather than RED — meaning the earlier concern (a narrow
-set of leaders propping up the index while most stocks lag) has partially resolved, not
-disappeared.
+> _As of 2026-08-22: 90-day crash probability 28.6%, risk level GREEN, primary driver
+> "BREADTH elevated."_
 
-**How much to trust this number:** the crash-probability model was rebuilt this session to
-scale continuously with how far an indicator is past its threshold (it used to freeze at a
-flat number regardless of severity — confirmed empirically on this same AD_RATIO signal).
-It is still a single-model, heuristic read of 6 technical/macro indicators, not a calibrated
-statistical forecast — treat 28.6% as "meaningfully lower risk than two weeks ago," not as a
-precise probability.
+**What actually changed:** AD_RATIO (advance/decline ratio) flipped from the lead signal's
+backup to RED/critical at 0.5625 (threshold: 0.8 = alert), and BREADTH itself slid further,
+to 48.7% (RED, below the 50% alert line — Aug 22 had it YELLOW/elevated, not yet RED). VIX
+term structure, credit spreads (270bps), put/call ratio, and yield curve are all still
+GREEN — this is a breadth/participation deterioration specifically, not a broad-based
+flight from every signal at once. The model's own 30-day trend line shows this has been
+roughly flat over the last two-plus weeks (2026-09-01: 48% → 2026-09-18: 46%), i.e. the
+RED reading isn't a sudden spike today, it's a level that's held since before this
+document's original Aug-22 draft caught up to it.
 
-**Base case for the quarter:** continuation of a choppy-but-not-broken bull tape — VIX
-contango, credit spreads and put/call ratio both green, yield curve normal. The one real
-soft spot is breadth: index-level strength sitting on top of a market where participation is
-narrower than the headline suggests. That pattern historically resolves one of two ways —
-broadens back out (the bullish resolution) or the leaders roll over and drag the index down
-with them (the bearish resolution) — and it's genuinely a coin-flip which one happens first
-without a clearer signal.
+**A real internal inconsistency in the model, flagged rather than silently resolved:** at
+this same 45.9% 30-day reading, the model's own `action_trigger` text says "🟡 CAUTION:
+reduce overbought positions by 20-25%," while its separate Rotation Playbook text says
+"🔴 Stage 2-3 Rotation — close 50% of remaining overbought positions, reduce naked call
+exposure 30% more, prepare for potential Stage 3 (emergency)." Two different severity
+framings from the same model run. Treat the RED risk-level classification and the specific
+indicator values (AD_RATIO/BREADTH critical, everything else green) as the reliable part;
+treat the prescribed action text as advisory only until this gets reconciled in the model
+itself.
 
-**Sector-level exposure to this specific risk:** Technology, Consumer Cyclical, Communication
-Services, and Basic Materials are the sectors most exposed if the bearish resolution plays
-out (concentrated, high-beta, momentum-sensitive names). Utilities, Healthcare, Consumer
-Defensive, Energy, and Defense are comparatively insulated.
+**How much to trust this number:** still a single-model, heuristic read of 6 technical/macro
+indicators, not a calibrated statistical forecast. 45.9%/RED means "breadth/participation
+has meaningfully worsened since Aug 22," not a precise probability of an actual crash.
+
+**Base case for the quarter, updated:** the "coin-flip" framing from Aug 22 has resolved
+partway toward the bearish side — breadth has not broadened back out, it's worsened. The
+credit side of the book (Tier CR / circular-financing complex, tracked separately in
+`logs/circular_financing_playbook.html`) shows the same pattern independently: CoreWeave
+-15.4% and Nebius -10.8% over the last 7 days, both now diverging >10 percentage points
+from the S&P 500 — a genuine change from earlier in the quarter, when credit spreads were
+already stressed (Oracle CDS 145→215bps) but the underlying equities hadn't cracked yet.
+No confirmed rating-agency action beyond the known Oracle downgrade, so the Tier CR gate
+itself has still not fired — but two independent signals (price-breadth internals, and
+credit-adjacent equity underperformance) are now pointing the same direction at the same
+time, which wasn't true on Aug 22.
+
+**Sector-level exposure to this specific risk (unchanged in composition):** Technology,
+Consumer Cyclical, Communication Services, and Basic Materials remain the sectors most
+exposed if the bearish resolution plays out. Utilities, Healthcare, Consumer Defensive,
+Energy, and Defense remain comparatively insulated.
 
 ---
 
 ## 2. Portfolio Current State
 
-**Objective tracking:** $210,631 YTD realized (as of the 08-14 statement window) = **17.6%
-of the $1.2M objective**, on pace for ~$316K/year at the current rate — well below target,
-consistent with every prior check this quarter. This is a volume/capacity problem more than
-a strategy problem (see §4).
+**Objective tracking, updated:** $274,245 YTD realized (live, from transactions, as of
+2026-09-18) = **22.9% of the $1.2M objective** through ~8.5 months, on pace for ~$366K/year
+at the current rate. Real improvement from the Aug-22 read ($210,631 / 17.6% / ~$316K/yr
+pace) — the run-rate has picked up, but is still well below the $100K/month target. Still a
+volume/capacity problem more than a strategy problem (see §4).
 
-**Account A capacity — still the binding constraint:** option requirement $720,280 against
-your agreed $700K ceiling. Marginally improved from $728,746 two weeks ago, but still over.
-This is the single most important number to fix before adding any new exposure anywhere in
-that account.
+**Account A capacity — worse, not better, and now the single most urgent number in the
+whole book:** option requirement **$934,203** against the $700K ceiling this document
+originally used — **133.5% margin utilization, EMERGENCY level**, up from 99% on 2026-09-10
+and 127.6% on the prior check. This has moved in the wrong direction over the exact window
+this document was meant to track. The Active Decision Tracker's `march_strangle_entry_gate`
+(BLOCKED — requires margin <85% AND macro risk ≤YELLOW) reflects this; both conditions are
+currently failing, and the macro side got worse in the same window (§1).
 
-**Sector concentration (real, all accounts):**
+**Sector concentration — high/low-sensitivity view (all accounts, live 2026-09-18):**
 
-| Sector | Notional | Signal | Crash-sensitive? |
+| Bucket | Sectors | Notional | % of ~$7.64M total |
 |---|---|---|---|
-| Technology | $2,262,808 (35.9% of book) | Neutral | 🔴 Yes |
-| Industrials | $1,455,706 (23.1%) | Neutral | No |
-| Communication Services | $696,537 (11.1%) | 🟢 BUY, rich premium | 🔴 Yes |
-| Financial Services | $532,660 (8.5%) | 🔴 REDUCE | No |
-| Healthcare | $408,000 (6.5%) | Neutral | No |
-| Consumer Cyclical | $404,262 (6.4%) | Neutral | 🔴 Yes |
-| Brand-Quality (Non-AI) | $252,732 (4.0%) | Neutral | No |
-| Defense | $131,626 (2.1%) | Neutral | No |
-| Basic Materials | $81,320 (1.3%) | 🔴 REDUCE | 🔴 Yes |
-| Energy | $57,084 (0.9%) | 🔴 REDUCE | No |
-| Utilities | $35,660 (0.6%) | Thin premium | No |
-| Consumer Defensive | $10,370 (0.2%) | 🟢 BUY, rich premium | No |
+| 🔴 HIGH exposure (crash-sensitive) | Technology, Communication Services, Consumer Cyclical, Basic Materials | $4,381,110 | 57.3% |
+| 🟢 LOW exposure (defensive) | Utilities, Healthcare, Consumer Defensive, Energy, Defense | ~$1,090,000 | 14.3% |
+| Everything else (Industrials, Financials, etc.) | not re-broken-out this pass | ~$2,171,750 | ~28.4% (residual) |
 
-Technology at 36% of the book, sitting in the crash-sensitive bucket, remains the single
-largest concentration risk — unchanged in character from two weeks ago even as the acute
-signal has calmed. Financial Services newly shows REDUCE this cycle (RSI 65.9, wasn't
-flagged before) — worth a look, not yet urgent.
+_Not a re-run of the full 12-row Aug-22 sector table — that would need `sector_analysis.py`
+re-invoked directly, not yet done this pass. The high/low-sensitivity split above is the
+more decision-relevant cut anyway (it's what §1's AD_RATIO/breadth risk actually maps to),
+and it shows the same story: Technology-led HIGH exposure is now 57.3% of the book, not 36%
+— a materially larger share than the Aug-22 snapshot showed under the old 12-sector framing
+(which measured Technology alone at 35.9%; the 57.3% here also folds in Communication
+Services/Consumer Cyclical/Basic Materials, so the two numbers aren't directly comparable,
+but the concentration point stands either way)._
+
+The concentration risk flagged on Aug 22 hasn't been addressed — if anything the picture
+is less granular right now, not better. Re-running the full sector breakdown for a clean
+apples-to-apples comparison is a real open item, not done in this refresh.
 
 ---
 
@@ -147,6 +171,16 @@ VIX crossing 25 or 30) rather than deciding in the moment.
 ---
 
 ## 5. The 3-Month Phased Plan
+
+**🔴 Status check, 2026-09-18: Month 1's core objective — fix Account A capacity — has not
+been achieved and has moved the wrong way.** Option requirement went from $720,280 (Aug 22)
+to $934,203 (Sept 18); margin utilization is 133.5%/EMERGENCY, not under the $700K ceiling.
+The Active Decision Tracker (`data/active_decisions.yaml`) is now carrying this as a live,
+self-checking gate (`march_strangle_entry_gate`) rather than a plan bullet — it re-evaluates
+against real position data on every report run instead of waiting for the next quarterly
+check-in. Separately, the naked-call cleanup items below (PYPL 12 contracts, CRCL 1
+contract) are Account A's own naked-call exposure directly contributing to that capacity
+number — closing those is now the same task as "fix capacity," not a separate one.
 
 **Month 1 (August–September): fix capacity, don't add exposure.**
 - Reduce Account A's option requirement below $700K before opening anything new there —

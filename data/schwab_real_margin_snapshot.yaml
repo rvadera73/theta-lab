@@ -1,0 +1,69 @@
+# Real, trader-reported Schwab Account A margin figures -- read directly off
+# the Schwab account details page, not derived from position files. This is
+# the ground truth check against this system's own 18%-of-notional Opt Req
+# model (mcp/reports/unified_master_report_production.py's "Crash-scenario
+# cash requirement" block in the weekly report, and open_positions_loader_v2's
+# get_option_requirements()). Update this file whenever the trader reports a
+# fresh read from Schwab directly.
+
+last_updated: '2026-09-21'
+account: Account A (232)
+source: trader-reported, read directly from Schwab account details page
+
+option_requirement_usd: 831000
+margin_equity_usd: 1000000
+margin_equity_pct: 29  # corrected from an earlier 89% transcription error -- see notes
+debit_balance_usd: 0   # "balance subject to interest" -- zero, no margin loan outstanding
+active_margin_call: false
+active_requirement_violation: false
+cash_and_borrowing_available_usd: 102000
+sma_usd: 1600000  # Special Memorandum Account -- real Schwab-reported buying-power
+                   # line under "funds available". Governs Reg-T INITIAL margin room
+                   # for new purchases, not maintenance health -- do not read this as
+                   # "safe to deploy all of it" on its own.
+
+# Prior reads, kept for trend:
+history:
+  - date: '2026-09-21'
+    option_requirement_usd: 780000
+    cash_and_borrowing_available_usd: 85000
+  - date: '2026-09-21 (later same day)'
+    option_requirement_usd: 831000
+    margin_equity_usd: 1000000
+    margin_equity_pct: 89
+    cash_and_borrowing_available_usd: 102000
+
+notes: >
+  RESOLVED, 2026-09-21 (corrected twice in the same session -- see history):
+  Equity Percent actually reads 29%, not the 89% first recorded (a
+  transcription error on my part, not a second real number). That triggered
+  a real scare -- 29% is close to a typical 25-30% house/Reg-T MAINTENANCE
+  floor -- but the trader confirmed directly: NO margin/maintenance
+  requirement is currently showing, NO call is active, and balance subject
+  to interest is $0 (no debit/margin loan at all). The traditional
+  "Equity%-vs-maintenance-floor" call mechanism is built around a broker
+  protecting an actual cash LOAN against securities -- with zero debit
+  balance, that mechanism doesn't apply here, so the low Equity% reading is
+  NOT the binding constraint for this account. The real constraint for an
+  options-heavy, no-stock-loan margin account is the OPTIONS margin
+  requirement itself (Opt Req, $831K real) against SMA/equity headroom, not
+  a stock-margin equity ratio -- confirmed by the simple fact that Schwab
+  itself shows no requirement violation despite the "low" 29% reading.
+  accounts_config.py's Account A capacity updated 2026-09-21 from $700K to
+  $900K (YELLOW-regime working ceiling) on this basis -- see that file's own
+  comment for the full regime-dial (RED $700-750K / YELLOW $900K-$1M / GREEN
+  $1.1-1.2M). Re-derive periodically from a fresh SMA/Equity read; this is
+  not a fixed constant. Real gap vs this system's own model: $831K real vs
+  $950,579 modeled (18% of notional) -- closer than the earlier
+  $780K-vs-$934K gap, still not fully reconciled.
+
+recalculated_utilization:
+  vs_700k_ceiling_pct: 118.7   # 831000 / 700000 -- the now-superseded old ceiling
+  vs_800k_target_pct: 103.9    # 831000 / 800000 -- the trader's proposed 4-week plan
+  vs_900k_yellow_regime_ceiling_pct: 92.3   # 831000 / 900000 -- the new working ceiling
+
+recalculated_crash_stress_using_real_figure:
+  stress_low_15pct: 124650     # 831000 * 0.15
+  stress_high_20pct: 166200    # 831000 * 0.20
+  emergency_reserve_usd: 200000
+  adequate: true               # 200000 > 166200, more comfortable than the modeled-notional version

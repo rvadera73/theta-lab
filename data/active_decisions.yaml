@@ -1,4 +1,40 @@
 decisions:
+- id: account_a_800k_4week_plan
+  created: '2026-09-21'
+  account: Account A (232)
+  description: 'RESOLVED 2026-09-21 after a full walk-through of Account A''s real
+    Schwab Margin Details / Available Funds: Margin Equity $1,000,000, SMA
+    (Reg-T initial-margin room) $1,600,000, Cash+Borrowing $102,000, debit balance
+    $0 (zero margin interest -- no loan outstanding), no margin/maintenance
+    requirement violation, no active call. Equity Percent read 29% at one point
+    in the conversation (down from an earlier, WRONG 89% transcription) which
+    triggered a real scare, but 29% is NOT the binding constraint here: that ratio
+    governs a traditional debit-balance maintenance call, and this account carries
+    zero debit balance, so that mechanism doesn''t apply. The real constraint for
+    an options-heavy, no-stock-loan margin account is the options margin
+    requirement itself (Opt Req $831,000 real) against SMA/equity headroom.
+    Conclusion: the trader''s $800K/4-week plan is CONSERVATIVE, not aggressive,
+    against real current capacity. `accounts_config.py`''s Account A capacity
+    updated from $700K to $900K (a YELLOW-macro-regime working ceiling; see that
+    file''s comment for the full RED/YELLOW/GREEN regime dial: $700-750K /
+    $900K-$1M / $1.1-1.2M). The $800K plan sits comfortably under the new $900K
+    ceiling with room to spare.
+
+    '
+  check:
+    type: metric_gate
+    conditions:
+    - metric: account_a_margin_utilization_pct
+      operator: '>'
+      value: 0
+  status: CLEARED
+  resolved_date: '2026-09-21'
+  _note: Tracking only -- not a pass/fail gate like march_strangle_entry_gate. Capacity
+    is not a fixed constant -- re-derive it periodically from a fresh Schwab SMA/Equity
+    read, not from this conversation's numbers indefinitely.
+  _live_values:
+    account_a_margin_utilization_pct: 135.7969639124189
+    macro_risk_level: GREEN
 - id: axon_sept18_roll_450c
   created: '2026-09-10'
   account: Account A (232)
@@ -20,20 +56,32 @@ decisions:
 - id: pypl_naked_calls_cleanup
   created: '2026-09-10'
   account: Account A (232)
-  description: '5 naked short call contracts on PYPL (0 shares owned), all ITM as
-    of 2026-09-10: $45C x3 (Dec 18 2026), $47.5C x2 (Jan 15 2027). No shares exist
-    to cover any of them. Lower urgency than the AXON Sept-18 pair (91-119 DTE at
-    time of writing gives runway) but needs a roll-up/out or close before expiry approaches
-    -- same structural risk as AXON, just further out.
+  description: 'CORRECTED 2026-09-21 -- this was wrong. The account actually owns
+    1,100 PYPL shares (confirmed directly against the raw schwab_rahul_individual.csv:
+    cost basis $132,985.05, avg $120.90/share, current value $57,926 at ~$52.66, -56.44%
+    unrealized -- a real, large embedded loss the trader is running covered calls
+    against, not a fresh naked-call build). 1,100 shares covers 11 of the 12 open
+    PYPL calls ($42.50C x5 Nov 20, $45C x2 Nov 20, $45C x3 Dec 18, $47.50C x2 Jan
+    15) -- only ~1 contract is genuinely naked, not all 12. Root cause: `open_positions_loader_v2.py`''s
+    `get_equity_summary()` returns 0 shares for PYPL/Account A despite the raw position
+    file showing 1,100 directly -- same failure pattern already confirmed on FMC and
+    NKE this session (2026-09-18). Do not trust this loader''s equity summary for
+    naked-call coverage checks without a raw-file cross-check; a real code fix is
+    still open, not yet done. Trader''s stated plan: sell additional puts near $52
+    to generate premium and, if assigned, use the resulting shares to further cover/resolve
+    the calls as they roll forward -- a deliberate wheel strategy against the underwater
+    long position, not an oversight.
 
     '
   check:
     type: naked_call_count
     ticker: PYPL
-    max_naked_itm: 0
-  status: OPEN
-  resolved_date: null
-  _live_naked_itm: 12.0
+    max_naked_itm: 1
+  status: RESOLVED
+  resolved_date: '2026-09-21'
+  _live_naked_itm: 1.0
+  _note: max_naked_itm raised from 0 to 1 to reflect the corrected 1,100-share coverage
+    -- this is now a low-priority monitoring item, not an urgent cleanup.
 - id: crcl_naked_call_dec
   created: '2026-09-10'
   account: Account A (232)
@@ -73,8 +121,8 @@ decisions:
   status: BLOCKED
   resolved_date: null
   _live_values:
-    account_a_margin_utilization_pct: 133.45761587251937
-    macro_risk_level: RED
+    account_a_margin_utilization_pct: 135.79180499758039
+    macro_risk_level: GREEN
 - id: be_puts_reduction
   created: '2026-09-10'
   account: all
