@@ -1,0 +1,73 @@
+# India 6-month portfolio roadmap -- created 2026-09-24 after the F&O
+# drawdown review (NIFSEL/NIFTY Sep-29 cluster, real net loss -₹2,73,632
+# once realized+unrealized were correctly combined). Tracked automatically
+# in the India weekly report from here on -- re-read this file every run,
+# don't re-ask the trader to restate the plan each week.
+#
+# Also published as an interactive dashboard:
+# https://claude.ai/artifact/Xg7Akk1Agxvk4kQedjEYtX (Six-Month Portfolio
+# Roadmap) -- the YAML here is the source of truth; update the artifact's
+# embedded JS data to match if this file changes materially.
+
+plan_start_date: "2026-09-24"
+baseline_source: "2026-09-24 ICICI Direct exports (7500069840_PortFolioEqtSummary.csv, 7510078170_FNOPortfolioDetails (3).csv)"
+
+# Real F&O margin blocked, confirmed by the trader 2026-09-24 -- NOT the
+# small per-leg "Open Position Value" (premium) figures in the F&O
+# statement, which is a different number (confirmed confused once already
+# this session -- don't re-derive this from the statement's Value column).
+fno_margin_glide_path:
+  today: 2600000
+  month_1_target: 1950000   # -₹6,50,000 (close the 5 broken Sep-29 legs)
+  month_2_target: 1625000   # -₹3,25,000
+  month_3_target: 1300000   # -₹3,25,000 -- 50% of today, the floor
+  month_4_target: 1300000   # hold, pending return-gate
+  month_5_target: 1625000   # only if gate cleared by start of M4
+  month_6_target: 1950000   # only if gate still holding by start of M5
+
+return_gate_conditions:
+  - "Nifty closes above its 50-day MA for 5+ consecutive sessions"
+  - "India VIX settles back toward ~11-12, not still climbing"
+  - "US 10-year yield stabilizes or pulls back off the 5%+ level"
+  - "FII outflow data shows 2+ consecutive weeks of slowing or reversing"
+
+fno_legs_to_close_month_1:
+  - {contract: "NIFSEL 14500P (Sep 29)", pnl: -91822}
+  - {contract: "NIFSEL 14700P (Sep 29)", pnl: -67458}
+  - {contract: "NIFTY 23500P (Sep 29)", pnl: -45473}
+  - {contract: "NIFTY 23600P (Sep 29)", pnl: -27925}
+  - {contract: "NIFTY 23800P (Sep 29)", pnl: -40954}
+  # Total realized loss if closed as planned: -₹2,73,632
+
+etf_tranches:
+  # Sized to the margin actually freed by the glide path above -- 65% Nifty
+  # 50 / 35% Bank Nifty every tranche.
+  month_1: {nifty50: 422500, banknifty: 227500}
+  month_2: {nifty50: 211250, banknifty: 113750}
+  month_3: {nifty50: 211250, banknifty: 113750}
+
+equity_adds:
+  # symbol: {month: amount_inr}. Conditional entries only fire if the note holds.
+  ADAGRE:
+    name: "Adani Green Energy"
+    adds: {1: 10000, 2: 8000, 3: 7000}
+  ONE97:
+    name: "Paytm"
+    adds: {1: 12500, 2: 7500, 3: 5000}
+  BILGAR:
+    name: "Groww"
+    adds: {2: 8000, 3: 7000}
+  HIMFUT:
+    name: "HFCL"
+    adds: {3: 10000}
+    condition: "Only if price has held ~₹210 or gone lower by Month 3 -- do not chase if it's run back up."
+
+equity_exits:
+  IDECEL:
+    name: "Vodafone Idea"
+    month: 1
+    note: "Confirm sale proceeds against the ₹4,236 pre-sale value."
+
+# Baseline equity book (2026-09-24, no planned change -- hold through the
+# FII-driven financials pressure specifically on HDFBAN/STABAN/TCS/RELIND).
+equity_baseline_inr: 2849152

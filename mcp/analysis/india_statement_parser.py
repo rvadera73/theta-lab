@@ -100,23 +100,55 @@ def _dte(expiry: date) -> int:
 
 def parse_equity_positions(csv_path: str | None = None) -> dict[str, dict]:
     """
-    Reads ICICI equity transaction CSV and returns net holdings dict:
+    Reads an ICICI equity export and returns net holdings dict:
         {symbol: {"qty": int, "avg_cost": float, "name": str}}
     Only symbols with qty > 0 are returned.
+
+    ICICI Direct exports equity data in two genuinely different formats from
+    the same "Portfolio" download flow, and confirmed live 2026-09-24 that
+    ICICI can hand back either one on a given day without warning:
+    - "PortFolioEqtAll" — full transaction history (Action/Quantity/
+      Transaction Price columns); net holdings must be reconstructed by
+      summing Buy/Sell rows, which is what this function always did.
+    - "PortFolioEqtSummary" — pre-computed net holdings directly (Qty/
+      Average Cost Price/Current Market Price columns), no Action column
+      at all. Feeding this format through the transaction-reconstruction
+      path above silently returns an EMPTY dict (every row's Action lookup
+      is "", so the Buy/Sell filter drops every row with no error) --
+      caught before this ever reached a live report. Detect the format
+      from the header and branch instead of assuming one.
     """
     if csv_path is None:
         csv_path = _find_statement_file(EQUITY_ACCOUNT) or EQUITY_CSV
-    holdings: dict[str, dict[str, Any]] = defaultdict(
-        lambda: {"qty": 0, "cost_total": 0.0, "name": ""}
-    )
 
     try:
         with open(csv_path, newline="", encoding="utf-8-sig") as f:
-            # ICICI exports as tab-separated .xls or comma-separated .csv — auto-detect
             sample = f.read(2048)
             f.seek(0)
             delimiter = "\t" if sample.count("\t") > sample.count(",") else ","
             reader = csv.DictReader(f, delimiter=delimiter)
+            fieldnames = reader.fieldnames or []
+
+            if "Average Cost Price" in fieldnames:
+                # Summary format -- net holdings are already computed per row.
+                result = {}
+                for row in reader:
+                    sym = row.get("Stock Symbol", "").strip()
+                    name = row.get("Company Name", "").strip()
+                    try:
+                        qty = int(float(row.get("Qty", 0) or 0))
+                        avg_cost = float(row.get("Average Cost Price", 0) or 0)
+                    except (ValueError, TypeError):
+                        continue
+                    if not sym or qty <= 0:
+                        continue
+                    result[sym] = {"qty": qty, "avg_cost": avg_cost, "name": name}
+                return result
+
+            # All/transaction-history format -- reconstruct from Buy/Sell rows.
+            holdings: dict[str, dict[str, Any]] = defaultdict(
+                lambda: {"qty": 0, "cost_total": 0.0, "name": ""}
+            )
             for row in reader:
                 sym    = row.get("Stock Symbol", "").strip()
                 action = row.get("Action", "").strip()

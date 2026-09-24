@@ -42,6 +42,13 @@ _INDEX_TICKERS = {
     "BANKNIFTY": "^NSEBANK",
     "FINNIFTY": "NIFTY_FIN_SERVICE.NS",
     "MIDCPNIFTY": "NIFTY_MIDCAP_100.NS",
+    # NIFSEL = Nifty Midcap SELECT, a different index from Midcap 100 above --
+    # was missing entirely (confirmed live 2026-09-21: this is why NIFSEL kept
+    # showing price ₹0.00 in the weekly report). Verified ticker via direct
+    # yfinance test: NIFTY_MID_SELECT.NS returned 14,504.25, matching the
+    # NIFSEL contract strikes (14,000-14,700) -- MIDCPNIFTY/NIFTY_MIDCAP_100.NS
+    # trades in a completely different range and would have been silently wrong.
+    "NIFSEL": "NIFTY_MID_SELECT.NS",
 }
 
 # Strangle-alternative suggestion, added 2026-08-25 per direct request to
@@ -650,6 +657,9 @@ async def generate_india_weekly_report(
                     lines.append(f"- {tag} **{sym}**: {action_note}")
                 lines.append("")
 
+    # --- 6-month plan tracking ---
+    lines += _check_6month_plan(positions, sigs)
+
     # --- P&L tracker ---
     lines += [
         "## WEEKLY P&L TRACKER",
@@ -664,6 +674,91 @@ async def generate_india_weekly_report(
     ]
 
     return "\n".join(lines)
+
+
+def _check_6month_plan(positions: list, regime_signals: dict) -> list[str]:
+    """Checks live data against data/india_6month_plan.yaml every run --
+    trader-requested 2026-09-24, same self-checking pattern as the US book's
+    active_decisions.yaml, so the plan built after the NIFSEL/NIFTY Sep-29
+    drawdown review doesn't need to be manually re-verified each week.
+
+    Real F&O margin (the ₹26L figure and its glide path) can't be checked
+    live from these statement files -- that needs the trader's own
+    Margin Details screen, same as the US side's SMA/Equity-percent figures.
+    This renders the target and asks for a live confirmation rather than
+    silently guessing a number that was already confirmed wrong twice this
+    session before landing on ₹26L.
+    """
+    import yaml as _yaml
+
+    path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "data", "india_6month_plan.yaml",
+    )
+    try:
+        with open(path) as f:
+            plan = _yaml.safe_load(f) or {}
+    except Exception as e:
+        return ["## 6-MONTH PLAN TRACKING", "", f"⚠️ Could not load {path}: {e}", ""]
+
+    start = datetime.strptime(plan["plan_start_date"], "%Y-%m-%d").date()
+    days_elapsed = (date.today() - start).days
+    month_idx = max(1, min(6, days_elapsed // 30 + 1))
+
+    out = ["## 6-MONTH PLAN TRACKING", "", f"**Month {month_idx} of 6** (plan started {start.isoformat()}, {days_elapsed} days ago)", ""]
+
+    # F&O margin glide path -- needs a live confirmation, can't be derived
+    # from the statement files.
+    glide = plan.get("fno_margin_glide_path", {})
+    target = glide.get(f"month_{month_idx}_target")
+    out.append(f"**F&O margin target this month: ₹{target:,}** (today's confirmed baseline: ₹{glide.get('today', 0):,}) — confirm live against your Margin Details screen, not derivable from the statement export.")
+    out.append("")
+
+    # Return-gate conditions -- 2 of 4 checkable live from this report's own signals.
+    out.append("**F&O return-gate status:**")
+    vix = regime_signals.get("india_vix", {}).get("value")
+    ma = regime_signals.get("nifty50_ma", {})
+    above_50d = ma.get("above_50d")
+    cond1 = "✅" if above_50d else ("❌" if above_50d is not None else "❓ no data")
+    cond2 = "✅" if (vix is not None and vix <= 12.5) else ("❌" if vix is not None else "❓ no data")
+    out.append(f"- {cond1} Nifty above 50-day MA (live: {ma.get('current', '?')} vs MA {ma.get('ma50', '?')})")
+    out.append(f"- {cond2} India VIX back toward ~11-12 (live: {vix})")
+    out.append("- ❓ US 10-year yield off the 5%+ level — check manually")
+    out.append("- ❓ FII outflows slowing 2+ weeks — check manually")
+    out.append("")
+
+    # Equity adds due this month, checked against live position values.
+    adds = plan.get("equity_adds", {})
+    due_this_month = {sym: cfg for sym, cfg in adds.items() if month_idx in cfg.get("adds", {})}
+    if due_this_month:
+        out.append("**Equity adds planned for this month:**")
+        by_symbol = {p.symbol: p for p in positions} if positions else {}
+        for sym, cfg in due_this_month.items():
+            amt = cfg["adds"][month_idx]
+            cond_note = f" — {cfg['condition']}" if cfg.get("condition") else ""
+            live = by_symbol.get(sym)
+            live_note = f"live value ₹{live.shares * live.current_price:,.0f}" if live and live.shares else "not found in live positions"
+            out.append(f"- **{sym}** ({cfg.get('name', sym)}): +₹{amt:,} planned — {live_note}{cond_note}")
+        out.append("")
+
+    # Equity exits due this month.
+    exits = plan.get("equity_exits", {})
+    for sym, cfg in exits.items():
+        if cfg.get("month") == month_idx:
+            still_held = any(p.symbol == sym and p.shares for p in positions) if positions else False
+            status = "⚠️ still showing in live positions — exit not confirmed" if still_held else "✅ confirmed exited"
+            out.append(f"**Exit check — {sym}** ({cfg.get('name', sym)}): {status}. {cfg.get('note', '')}")
+            out.append("")
+
+    # ETF tranche due this month.
+    etf = plan.get("etf_tranches", {}).get(f"month_{month_idx}")
+    if etf:
+        out.append(f"**ETF tranche this month:** Nifty 50 ₹{etf.get('nifty50', 0):,} + Bank Nifty ₹{etf.get('banknifty', 0):,} — not tracked live (ETF holdings aren't in the F&O/equity statement symbol set); confirm execution manually.")
+        out.append("")
+
+    out.append(f"_Full plan: `data/india_6month_plan.yaml`. Dashboard: https://claude.ai/artifact/Xg7Akk1Agxvk4kQedjEYtX_")
+    out.append("")
+    return out
 
 
 def _no_breeze_credentials_message() -> str:
