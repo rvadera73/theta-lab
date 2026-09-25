@@ -29,16 +29,18 @@
   .rendered-md h1, .rendered-md h2, .rendered-md h3, .rendered-md h4 { margin-top: 20px; }
   .empty { color: #757575; font-style: italic; }
   .usa-alert { margin-top: 8px; }
-  details.admin-block summary { cursor: pointer; font-weight: 600; padding: 8px 0; list-style: none; }
-  details.admin-block summary::-webkit-details-marker { display: none; }
-  details.admin-block summary::before { content: "▸ "; }
-  details.admin-block[open] summary::before { content: "▾ "; }
+  details summary { cursor: pointer; font-weight: 600; padding: 8px 0; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: "▸ "; }
+  details[open] summary::before { content: "▾ "; }
+  .action-summary-link { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #8b2b2b; font-weight: 600; font-size: 15px; }
+  .qtr-summary { font-size: 15px; line-height: 1.6; }
 </style>
 </head>
 <body>
 <div class="topbar">
   <strong>theta-lab — India dashboard</strong>
-  <span class="crumbs"><a href="/">&larr; both markets</a> &nbsp;|&nbsp; <a href="us">US dashboard</a></span>
+  <span class="crumbs"><a href="/">&larr; both markets</a><a href="us">US</a><a href="actions">Action Tracker</a></span>
 </div>
 <main>
 
@@ -51,34 +53,33 @@
   <section class="panel" aria-labelledby="h-plan">
     <span class="customer-label">Customer</span>
     <h2 id="h-plan">6-Month Plan Tracking</h2>
-    <div id="six-month-check" class="rendered-md"><p class="empty">Loading...</p></div>
+    <details open>
+      <summary>Show plan-vs-live status</summary>
+      <div id="six-month-check" class="rendered-md"><p class="empty">Loading...</p></div>
+    </details>
   </section>
 
   <section class="panel" aria-labelledby="h-quarterly">
     <span class="customer-label">Customer</span>
     <h2 id="h-quarterly">Quarterly Portfolio Direction</h2>
-    <div id="quarterly-direction" class="rendered-md"><p class="empty">Loading...</p></div>
+    <div id="quarterly-summary" class="qtr-summary"><p class="empty">Loading...</p></div>
+    <details style="margin-top:12px;">
+      <summary>Read the full quarterly review</summary>
+      <div id="quarterly-full" class="rendered-md"></div>
+    </details>
   </section>
 
   <section class="panel" aria-labelledby="h-actions">
     <span class="customer-label">Customer</span>
     <h2 id="h-actions">Action Tracker</h2>
-    <div class="usa-alert usa-alert--info usa-alert--slim">
-      <div class="usa-alert__body">
-        <p class="usa-alert__text">
-          India has no decision ledger yet (the US side's <code>active_decisions.yaml</code>
-          equivalent) — this is docs/DASHBOARD_PLAN.md Phase B. Until then, open items
-          live in the Quarterly Portfolio Direction doc's "Open Items" section above
-          and in the 6-Month Plan Tracking panel.
-        </p>
-      </div>
-    </div>
+    <p id="action-summary"><span class="empty">Loading...</span></p>
+    <a class="action-summary-link" href="actions">Open the full Action Tracker (both markets) &rarr;</a>
   </section>
 
   <section class="panel">
     <span class="admin-label">Admin</span>
     <h2 style="border:none; margin-bottom:0;">Full report / data source detail</h2>
-    <details class="admin-block">
+    <details>
       <summary>Show full India weekly report (raw, for anything not yet broken into a section above)</summary>
       <div id="full-report" class="rendered-md"><p class="empty">Loading...</p></div>
     </details>
@@ -96,11 +97,30 @@
     document.getElementById(elementId).innerHTML = marked.parse(text);
   }
 
+  async function loadQuarterly() {
+    const resp = await fetch("api/india/quarterly-direction");
+    const text = resp.ok ? await resp.text() : "_Failed to load_";
+    document.getElementById("quarterly-full").innerHTML = marked.parse(text);
+    const directionSection = text.split("## 2.")[0].split("## 1.")[1] || text.slice(0, 600);
+    document.getElementById("quarterly-summary").innerHTML =
+      "<strong>Market Direction Call:</strong>" + marked.parse(directionSection.slice(0, 700) + "…");
+  }
+
+  async function loadActionSummary() {
+    const resp = await fetch("api/actions?market=India&sync=true");
+    const items = await resp.json();
+    const open = items.filter(i => i.status !== "RESOLVED");
+    document.getElementById("action-summary").innerHTML = open.length
+      ? `<strong>${open.length}</strong> open/blocked item${open.length === 1 ? "" : "s"} for India.`
+      : `<span class="empty">No open items.</span>`;
+  }
+
   async function loadAll() {
     await Promise.all([
       loadMarkdownInto("api/india/market-signals", "market-signals"),
       loadMarkdownInto("api/india/6month-check", "six-month-check"),
-      loadMarkdownInto("api/india/quarterly-direction", "quarterly-direction"),
+      loadQuarterly(),
+      loadActionSummary(),
       loadMarkdownInto("api/india/report", "full-report"),
     ]);
   }

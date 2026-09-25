@@ -3,8 +3,10 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse
+from pydantic import BaseModel
 
 from . import services
+from . import ledger
 
 app = FastAPI(title="theta-lab dashboards")
 
@@ -28,6 +30,47 @@ def us_dashboard():
 @app.get("/india")
 def india_dashboard():
     return FileResponse(os.path.join(STATIC_DIR, "india.html"))
+
+
+@app.get("/actions")
+def actions_dashboard():
+    return FileResponse(os.path.join(STATIC_DIR, "actions.html"))
+
+
+# ------------------------------------------------------ Action Tracker API --
+# ONE consolidated, cross-market ledger (docs/DASHBOARD_PLAN.md Phase B) --
+# replaces the separate per-dashboard action panels.
+
+class StatusUpdate(BaseModel):
+    status: str
+    note: str = ""
+
+
+@app.get("/api/actions")
+def actions_list(market: str = "all", sync: bool = True):
+    if sync:
+        ledger.sync_all()
+    return ledger.list_action_items(market)
+
+
+@app.post("/api/actions/sync")
+def actions_sync():
+    ledger.sync_all()
+    return {"status": "synced"}
+
+
+@app.post("/api/actions/{item_id}/status")
+def actions_set_status(item_id: str, body: StatusUpdate):
+    try:
+        ledger.set_status(item_id, body.status, body.note)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "ok"}
+
+
+@app.get("/api/actions/{item_id}/history")
+def actions_history(item_id: str):
+    return ledger.get_item_history(item_id)
 
 
 # ---------------------------------------------------------------- US API --

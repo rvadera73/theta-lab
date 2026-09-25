@@ -8,6 +8,10 @@ data/*.txt
 # Auto-generated snapshots with financial data
 data/portfolio_snapshot.yaml
 
+# Dashboard Action Tracker ledger -- runtime state (dashboard/ledger.py),
+# not source; would also bloat git history with every status click.
+data/dashboard_actions.db
+
 # Brokerage statements, tax docs, portfolios — stay local only
 *.PDF
 *.pdf

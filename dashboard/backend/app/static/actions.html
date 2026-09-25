@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>theta-lab — Action Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@uswds/uswds@3.14.0/dist/css/uswds.min.css">
+<style>
+  body { margin: 0; background: #f0f0f0; }
+  .topbar {
+    background: #2e2e38; color: #fff; padding: 12px 24px; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .topbar a { color: #fff; }
+  .topbar .crumbs a { color: #d3d3db; text-decoration: none; font-size: 13px; margin-left: 12px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn {
+    font-size: 13px; padding: 6px 14px; border: 1px solid #565c65; border-radius: 999px;
+    background: #fff; cursor: pointer; color: #1b1b1b;
+  }
+  .filter-btn[aria-pressed="true"] { background: #005ea2; color: #fff; border-color: #005ea2; }
+  table.usa-table { width: 100%; background: #fff; }
+  table.usa-table th { cursor: pointer; user-select: none; white-space: nowrap; }
+  table.usa-table th .arrow { font-size: 11px; opacity: .6; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .tag-open { background: #fef0c8; color: #936316; }
+  .tag-blocked { background: #f4e3db; color: #b50909; }
+  .tag-resolved { background: #d5f2d5; color: #1a7a1a; }
+  .market-us { color: #005ea2; font-weight: 600; }
+  .market-india { color: #8b2b2b; font-weight: 600; }
+  tr.item-row { cursor: pointer; }
+  tr.item-row:hover { background: #f4f8fc; }
+  tr.detail-row td { background: #fafafa; padding: 16px 20px; }
+  .detail-row .desc { white-space: pre-wrap; font-size: 13.5px; margin-bottom: 12px; }
+  .detail-row .btn-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .history-list { font-size: 12.5px; color: #444; }
+  .history-list li { margin-bottom: 4px; }
+  .empty { color: #757575; font-style: italic; padding: 24px; text-align: center; }
+  .count-badge { font-size: 12px; color: #565c65; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <strong>theta-lab — Action Tracker (both markets)</strong>
+  <span class="crumbs"><a href="/">&larr; both dashboards</a><a href="us">US</a><a href="india">India</a></span>
+</div>
+<main>
+  <div class="toolbar" role="group" aria-label="Filter by market">
+    <button class="filter-btn" data-market="all" aria-pressed="true">All</button>
+    <button class="filter-btn" data-market="US" aria-pressed="false">US</button>
+    <button class="filter-btn" data-market="India" aria-pressed="false">India</button>
+    <span class="count-badge" id="count-badge"></span>
+    <button class="usa-button usa-button--outline" id="sync-btn" type="button" style="margin-left:auto;">Re-sync from sources</button>
+  </div>
+  <div id="table-container"><p class="empty">Loading...</p></div>
+</main>
+<script>
+  let state = { items: [], market: "all", sortField: "status", sortDir: 1, expanded: null };
+
+  function tagClass(status) {
+    return "tag tag-" + status.toLowerCase();
+  }
+
+  async function loadItems(sync) {
+    const resp = await fetch(`api/actions?market=all&sync=${sync ? "true" : "false"}`);
+    state.items = await resp.json();
+    render();
+  }
+
+  function sortedFiltered() {
+    let items = state.items;
+    if (state.market !== "all") items = items.filter(i => i.market === state.market);
+    const statusOrder = { OPEN: 0, BLOCKED: 1, RESOLVED: 2 };
+    items = [...items].sort((a, b) => {
+      let av = a[state.sortField], bv = b[state.sortField];
+      if (state.sortField === "status") { av = statusOrder[av] ?? 9; bv = statusOrder[bv] ?? 9; }
+      if (av < bv) return -1 * state.sortDir;
+      if (av > bv) return 1 * state.sortDir;
+      return 0;
+    });
+    return items;
+  }
+
+  function headerCell(label, field) {
+    const arrow = state.sortField === field ? (state.sortDir === 1 ? "▲" : "▼") : "";
+    return `<th scope="col" data-field="${field}">${label} <span class="arrow">${arrow}</span></th>`;
+  }
+
+  async function renderDetail(item) {
+    const historyResp = await fetch(`api/actions/${item.id}/history`);
+    const history = await historyResp.json();
+    const historyHtml = history.map(h => {
+      const t = new Date(h.timestamp).toLocaleString();
+      return `<li>${t} — <strong>${h.event_type}</strong>${h.detail ? ": " + h.detail : ""}</li>`;
+    }).join("");
+    return `
+      <div class="desc">${item.description || "(no further detail)"}</div>
+      <div class="btn-row">
+        ${item.status !== "RESOLVED" ? `<button class="usa-button usa-button--secondary" data-action="resolve" data-id="${item.id}">Mark resolved</button>` : ""}
+        ${item.status !== "BLOCKED" ? `<button class="usa-button usa-button--outline" data-action="block" data-id="${item.id}">Mark blocked</button>` : ""}
+        ${item.status !== "OPEN" ? `<button class="usa-button usa-button--outline" data-action="reopen" data-id="${item.id}">Reopen</button>` : ""}
+      </div>
+      <div class="history-list"><strong>History:</strong><ul>${historyHtml || "<li>No events yet.</li>"}</ul></div>
+    `;
+  }
+
+  async function render() {
+    const items = sortedFiltered();
+    document.getElementById("count-badge").textContent =
+      `${items.length} item${items.length === 1 ? "" : "s"} (${items.filter(i => i.status !== "RESOLVED").length} open/blocked)`;
+
+    if (!items.length) {
+      document.getElementById("table-container").innerHTML = '<p class="empty">No action items for this filter.</p>';
+      return;
+    }
+
+    let rows = "";
+    for (const item of items) {
+      const marketClass = item.market === "US" ? "market-us" : "market-india";
+      rows += `
+        <tr class="item-row" data-id="${item.id}">
+          <td class="${marketClass}">${item.market}</td>
+          <td>${item.category || ""}</td>
+          <td>${item.title}</td>
+          <td><span class="${tagClass(item.status)}">${item.status}</span></td>
+          <td>${new Date(item.updated_at).toLocaleDateString()}</td>
+        </tr>`;
+      if (state.expanded === item.id) {
+        rows += `<tr class="detail-row"><td colspan="5"><div id="detail-${item.id}">Loading...</div></td></tr>`;
+      }
+    }
+
+    document.getElementById("table-container").innerHTML = `
+      <table class="usa-table usa-table--borderless">
+        <thead><tr>
+          ${headerCell("Market", "market")}
+          ${headerCell("Category", "category")}
+          ${headerCell("Title", "title")}
+          ${headerCell("Status", "status")}
+          ${headerCell("Updated", "updated_at")}
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+
+    if (state.expanded) {
+      const item = items.find(i => i.id === state.expanded);
+      if (item) {
+        const html = await renderDetail(item);
+        const el = document.getElementById(`detail-${item.id}`);
+        if (el) el.innerHTML = html;
+      }
+    }
+
+    document.querySelectorAll("th[data-field]").forEach(th => {
+      th.addEventListener("click", () => {
+        const field = th.dataset.field;
+        if (state.sortField === field) state.sortDir *= -1;
+        else { state.sortField = field; state.sortDir = 1; }
+        render();
+      });
+    });
+
+    document.querySelectorAll("tr.item-row").forEach(tr => {
+      tr.addEventListener("click", () => {
+        const id = tr.dataset.id;
+        state.expanded = state.expanded === id ? null : id;
+        render();
+      });
+    });
+
+    document.querySelectorAll("[data-action]").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        const statusMap = { resolve: "RESOLVED", block: "BLOCKED", reopen: "OPEN" };
+        await fetch(`api/actions/${id}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: statusMap[action] }),
+        });
+        await loadItems(false);
+      });
+    });
+  }
+
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+      state.market = btn.dataset.market;
+      state.expanded = null;
+      render();
+    });
+  });
+
+  document.getElementById("sync-btn").addEventListener("click", () => loadItems(true));
+
+  loadItems(true);
+</script>
+</body>
+</html>
