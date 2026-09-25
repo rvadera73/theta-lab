@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>theta-lab — US dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@uswds/uswds@3.14.0/dist/css/uswds.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<style>
+  body { margin: 0; background: #f0f0f0; }
+  .topbar {
+    background: #1a4480; color: #fff; padding: 12px 24px; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .topbar a { color: #fff; }
+  .topbar .crumbs a { color: #dfe8f6; text-decoration: none; font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  section.panel {
+    background: #fff; border: 1px solid #dfe1e2; border-radius: 4px;
+    padding: 20px 24px; margin-bottom: 20px;
+  }
+  section.panel h2 { margin-top: 0; font-size: 18px; border-bottom: 2px solid #005ea2; padding-bottom: 8px; }
+  .customer-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #00a91c; font-weight: 700; }
+  .admin-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #757575; font-weight: 700; }
+  .kpi-row { display: flex; gap: 24px; flex-wrap: wrap; margin: 12px 0; }
+  .kpi { min-width: 140px; }
+  .kpi .value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .kpi .label { font-size: 12px; color: #565c65; }
+  .status-ok, .status-good { color: #00a91c; }
+  .status-heavy, .status-over, .status-warn { color: #d54309; }
+  .status-light, .status-edge { color: #c05600; }
+  table.usa-table caption { text-align: left; font-weight: 600; margin-bottom: 6px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .rendered-md table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  .rendered-md th, .rendered-md td { border: 1px solid #dfe1e2; padding: 6px 10px; font-size: 13.5px; text-align: left; }
+  .rendered-md th { background: #f0f0f0; }
+  .rendered-md { font-size: 14.5px; line-height: 1.6; }
+  .rendered-md h1, .rendered-md h2, .rendered-md h3, .rendered-md h4 { margin-top: 20px; }
+  details.admin-block { margin-top: 8px; }
+  details.admin-block summary {
+    cursor: pointer; font-weight: 600; padding: 8px 0; list-style: none;
+  }
+  details.admin-block summary::-webkit-details-marker { display: none; }
+  details.admin-block summary::before { content: "▸ "; }
+  details.admin-block[open] summary::before { content: "▾ "; }
+  .empty { color: #757575; font-style: italic; }
+  .period-select { margin-left: auto; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <strong>theta-lab — US dashboard</strong>
+  <span class="crumbs"><a href="/">&larr; both markets</a> &nbsp;|&nbsp; <a href="india">India dashboard</a></span>
+</div>
+<main>
+
+  <section class="panel" aria-labelledby="h-account">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-account">Account Health</h2>
+    <div id="account-status"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-pnl">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-pnl">P&amp;L vs Target</h2>
+    <div id="pnl-trend"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-cash">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-cash">Cash &amp; Margin Forecast (Account A)</h2>
+    <div id="cash-margin"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-sector">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-sector">Sector Heat</h2>
+    <div id="sector-heat" class="rendered-md"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-risk">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-risk">Risk &amp; Macro</h2>
+    <div id="risk-macro" class="rendered-md"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-quarterly">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-quarterly">Quarterly Portfolio Direction</h2>
+    <div id="quarterly-direction" class="rendered-md"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-actions">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-actions">Action Tracker</h2>
+    <div id="active-decisions"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel">
+    <span class="admin-label">Admin</span>
+    <h2 style="border:none; margin-bottom:0;">Framework &amp; automation detail</h2>
+    <details class="admin-block">
+      <summary>Show framework status (automation mechanics, not decision content)</summary>
+      <div id="framework-status" class="rendered-md"><p class="empty">Loading...</p></div>
+    </details>
+    <p style="margin-top:16px;">
+      <button class="usa-button usa-button--outline" id="refresh-btn" type="button">Refresh live data</button>
+      <span id="refresh-note" style="font-size:12px;color:#565c65;"></span>
+    </p>
+  </section>
+
+</main>
+<script>
+  function fmt(n) {
+    if (n === null || n === undefined) return "-";
+    return "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  }
+  function pct(n) { return n === null || n === undefined ? "-" : Number(n).toFixed(1) + "%"; }
+
+  async function loadAccountStatus() {
+    const resp = await fetch("api/us/account-status");
+    const rows = await resp.json();
+    const body = rows.map(r => `
+      <tr>
+        <th scope="row">${r.account}</th>
+        <td>${r.account_type ?? ""}</td>
+        <td class="num">${fmt(r.balance)}</td>
+        <td class="num">${pct(r.utilization)}</td>
+        <td>${r.status ?? ""}</td>
+      </tr>`).join("");
+    document.getElementById("account-status").innerHTML = `
+      <table class="usa-table usa-table--borderless" style="width:100%;">
+        <thead><tr><th scope="col">Account</th><th scope="col">Type</th><th scope="col">Balance</th><th scope="col">Utilization</th><th scope="col">Status</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>`;
+  }
+
+  async function loadPnlTrend() {
+    const resp = await fetch("api/us/pnl-trend");
+    const data = await resp.json();
+    const rows = Object.entries(data.per_account).map(([label, v]) => {
+      const qtd = data.per_account_qtd[label] ?? 0;
+      return `<tr>
+        <th scope="row">${label}</th>
+        <td class="num">${fmt(v.mtd_realized)}</td>
+        <td class="num">${fmt(qtd)}</td>
+        <td class="num">${fmt(v.ytd_realized)}</td>
+        <td class="num">${fmt(v.annual_target)}</td>
+      </tr>`;
+    }).join("");
+    document.getElementById("pnl-trend").innerHTML = `
+      <div class="kpi-row">
+        <div class="kpi"><div class="value">${fmt(data.portfolio_mtd_realized)}</div><div class="label">Portfolio MTD</div></div>
+        <div class="kpi"><div class="value">${fmt(data.portfolio_qtd_realized)}</div><div class="label">Portfolio QTD</div></div>
+        <div class="kpi"><div class="value">${fmt(data.portfolio_ytd_realized)}</div><div class="label">Portfolio YTD</div></div>
+        <div class="kpi"><div class="value">${fmt(data.objective_annual)}</div><div class="label">Annual objective</div></div>
+      </div>
+      <table class="usa-table usa-table--borderless" style="width:100%;">
+        <thead><tr><th scope="col">Account</th><th scope="col">MTD</th><th scope="col">QTD</th><th scope="col">YTD</th><th scope="col">Annual target</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  async function loadCashMargin() {
+    const resp = await fetch("api/us/cash-margin-forecast");
+    const d = await resp.json();
+    const buckets = d.dte_buckets.map(b => `
+      <tr>
+        <th scope="row">${b.label}</th>
+        <td class="num">${b.pct}%</td>
+        <td>${b.target_lo}-${b.target_hi}%</td>
+        <td class="status-${b.status}">${b.status.toUpperCase()}</td>
+      </tr>`).join("");
+    const dates = d.top_expiry_dates.map(t => `
+      <tr>
+        <th scope="row">${t.date}</th>
+        <td class="num">${fmt(t.notional)}</td>
+        <td class="num">${t.pct}%</td>
+        <td class="status-${t.status === 'ok' ? 'ok' : t.status}">${t.status === 'ok' ? 'OK' : t.status.toUpperCase()}</td>
+      </tr>`).join("");
+    document.getElementById("cash-margin").innerHTML = `
+      <div class="kpi-row">
+        <div class="kpi"><div class="value">${fmt(d.total_notional)}</div><div class="label">Total notional</div></div>
+        <div class="kpi"><div class="value">${fmt(d.opt_req)}</div><div class="label">Current Opt Req</div></div>
+        <div class="kpi"><div class="value">${fmt(d.stress_low)} - ${fmt(d.stress_high)}</div><div class="label">Stress-case incremental (15-20% move)</div></div>
+        <div class="kpi"><div class="value ${d.reserve_covers_stress ? 'status-ok' : 'status-over'}">${fmt(d.emergency_reserve)}</div><div class="label">Emergency reserve ${d.reserve_covers_stress ? '(covers stress)' : '(BELOW stress high)'}</div></div>
+      </div>
+      <h3>DTE bucket concentration</h3>
+      <table class="usa-table usa-table--borderless" style="width:100%;">
+        <thead><tr><th scope="col">Bucket</th><th scope="col">% of notional</th><th scope="col">Target</th><th scope="col">Status</th></tr></thead>
+        <tbody>${buckets}</tbody>
+      </table>
+      <h3>Top expiry-date concentration</h3>
+      <table class="usa-table usa-table--borderless" style="width:100%;">
+        <thead><tr><th scope="col">Expiry</th><th scope="col">Notional</th><th scope="col">% of Account A</th><th scope="col">Status</th></tr></thead>
+        <tbody>${dates}</tbody>
+      </table>`;
+  }
+
+  async function loadMarkdownInto(url, elementId) {
+    const resp = await fetch(url);
+    const text = resp.ok ? await resp.text() : `_Failed to load (${resp.status})_`;
+    document.getElementById(elementId).innerHTML = marked.parse(text);
+  }
+
+  async function loadActiveDecisions() {
+    const resp = await fetch("api/us/active-decisions");
+    const items = await resp.json();
+    if (!items.length) {
+      document.getElementById("active-decisions").innerHTML = '<p class="empty">No tracked decisions.</p>';
+      return;
+    }
+    const open = items.filter(d => (d.status || "").toUpperCase() === "OPEN" || (d.status || "").toUpperCase() === "BLOCKED");
+    const done = items.filter(d => !open.includes(d));
+    const rowFor = d => {
+      const desc = (d.description || "").split("\n")[0].slice(0, 160);
+      return `<tr>
+        <th scope="row">${d.id}</th>
+        <td class="status-${(d.status||'').toLowerCase()==='blocked' ? 'over' : 'warn'}">${d.status || ""}</td>
+        <td>${d.account || ""}</td>
+        <td>${desc}${desc.length === 160 ? "..." : ""}</td>
+      </tr>`;
+    };
+    let html = `<table class="usa-table usa-table--borderless" style="width:100%;">
+      <caption>Open / blocked (${open.length})</caption>
+      <thead><tr><th scope="col">ID</th><th scope="col">Status</th><th scope="col">Account</th><th scope="col">Summary</th></tr></thead>
+      <tbody>${open.map(rowFor).join("") || '<tr><td colspan="4" class="empty">None open</td></tr>'}</tbody>
+    </table>`;
+    if (done.length) {
+      html += `<details class="admin-block"><summary>Resolved / cleared (${done.length})</summary>
+        <table class="usa-table usa-table--borderless" style="width:100%;">
+          <tbody>${done.map(d => `<tr><th scope="row">${d.id}</th><td class="status-ok">${d.status}</td></tr>`).join("")}</tbody>
+        </table></details>`;
+    }
+    document.getElementById("active-decisions").innerHTML = html;
+  }
+
+  async function loadAll() {
+    await Promise.all([
+      loadAccountStatus(),
+      loadPnlTrend(),
+      loadCashMargin(),
+      loadMarkdownInto("api/us/sector-heat", "sector-heat"),
+      loadMarkdownInto("api/us/risk-macro", "risk-macro"),
+      loadMarkdownInto("api/us/quarterly-direction", "quarterly-direction"),
+      loadActiveDecisions(),
+      loadMarkdownInto("api/us/framework-status", "framework-status"),
+    ]);
+  }
+
+  document.getElementById("refresh-btn").addEventListener("click", async () => {
+    document.getElementById("refresh-note").textContent = "Refreshing (live price fetch, ~90s)...";
+    await fetch("api/us/refresh", { method: "POST" });
+    await loadAll();
+    document.getElementById("refresh-note").textContent = "Refreshed.";
+  });
+
+  loadAll();
+</script>
+</body>
+</html>

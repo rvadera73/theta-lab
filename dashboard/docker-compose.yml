@@ -11,16 +11,22 @@ services:
     ports:
       - "8020:8000"
     volumes:
-      # Mounted at the SAME absolute host path the report engine hardcodes
-      # (open_positions_loader_v2.py's OpenPositionsLoaderV2.__init__
-      # default, plus 4 other files under mcp/reports/) rather than
-      # /app/data -- confirmed live (2026-09-25) that those modules build
-      # `/home/rahulvadera/projects/theta-lab/data/...` directly, not a
-      # CWD-relative path, so a differently-located mount silently fails
-      # with "No objects to concatenate" instead of finding any files.
-      # Read-write since the report engine's own tooling (outside this
-      # container) writes here too; this container only reads for now
-      # (Phase 1).
+      # This codebase has TWO different path-resolution conventions, both
+      # real, confirmed live 2026-09-25 -- mount the same host dirs at
+      # BOTH locations rather than picking one and breaking the other:
+      #   1. open_positions_loader_v2.py's OpenPositionsLoaderV2.__init__
+      #      default (+ 4 files under mcp/reports/) hardcodes the absolute
+      #      HOST path literally: /home/rahulvadera/projects/theta-lab/data
+      #   2. scripts/update_snapshot.py (used by realized_pnl.py) and
+      #      india_weekly_report.py's _check_6month_plan derive ROOT from
+      #      os.path.dirname(...__file__...) -- since those files are
+      #      COPYed to /app/scripts and /app/mcp/reports in the image,
+      #      that resolves to /app/data, not the host path.
+      # Missing either one fails silently/wrong instead of erroring loudly
+      # (a "no objects to concatenate" crash for #1; a quiet
+      # portfolio_ytd_realized: 0.0 for #2 -- both found live, not assumed).
       - ../data:/home/rahulvadera/projects/theta-lab/data
       - ../logs:/home/rahulvadera/projects/theta-lab/logs
+      - ../data:/app/data
+      - ../logs:/app/logs
     restart: unless-stopped

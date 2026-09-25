@@ -1,118 +1,180 @@
-# Local Dashboard + Action Planner — Build Plan
+# Local Dashboards — Build Plan (US + India, separate)
 
-## Objective
+## Objective (revised after real usage feedback)
 
-Replace the weekly/biweekly/monthly report trio's overlapping, disconnected
-action lists (Section 2 vs. 4 vs. 11 disagreement, no real week-over-week
-delta) with one local dashboard: a YTD panel, a single Action Planner with
-full history per item, and searchable past reports. Coexists with
-`personal-assistant` behind the shared gateway (`~/local-gateway`, port
-9000) as the second tool in a growing local-tools set — same port for the
-*set*, this app gets its own internal port like personal-assistant does.
+Two separate dashboards — US and India — not one merged view. Confirmed
+by real section-header analysis (below) that the underlying report
+engines already produce mostly duplicated content per market: the fix is
+consolidation into ONE real section per concept, not a report-type
+selector that just moves the duplication into a dropdown (which is what
+Phase 1 shipped and was correctly rejected).
 
-**No existing data is discarded.** `active_decisions.yaml`,
-`macro_risk_history.yaml`, `seekingalpha_theme_state.yaml`,
-`tier_cr_state.yaml`, `india_6month_plan.yaml`, and every historical
-`logs/*.md`/`.txt` report stay exactly where they are and keep being
-written by the existing report engine. The dashboard reads them; it does
-not replace them until a later phase explicitly says so.
+Each dashboard must cover everything currently spread across that
+market's report cadence AND its standalone portfolio-analysis document —
+nothing dropped, nothing re-shown twice. Sections are labeled **customer**
+(the actual decision content: what to do, current state, risk) or
+**admin** (framework mechanics, automation status, staleness/technical
+notes) — customer sections are the default view; admin is a secondary,
+clearly separated area, not interleaved.
 
-## Architecture decisions
+Built with USWDS (matching personal-assistant's ADR 0025 exactly —
+CDN-pinned `@uswds/uswds@3.14.0`) and real semantic/accessible HTML — real
+`<table>`s, heading hierarchy, ARIA where needed — not a `<pre>` dump of
+markdown source. That was tried (see "Rejected approaches" below) and
+correctly called out as not a real dashboard.
 
-- **Lives in this repo**, `theta-lab/dashboard/` — not a new repo. The
-  report engine, data files, and YAMLs it reads are all here already;
-  splitting it out buys nothing and adds a second place to keep in sync.
-- **FastAPI + SQLite**, same stack as `personal-assistant` — known-good,
-  no new tooling to learn, and the two projects can eventually share
-  patterns (not code) without fighting different frameworks.
-- **Container name `theta-lab-web`, internal port 8000**, host port 8020
-  (checked against every port already in use on this machine — 8000,
-  8004, 8005, 8007, 8010, 8080, 8100, 3001, 5433, 9000 are all taken).
-  Reachable directly at `localhost:8020/` and, once wired into
-  `~/local-gateway/Caddyfile` (Phase 1 exit), at
-  `localhost:9000/theta-lab/` — same `container_name` + optional
-  `docker-compose.gateway.yml` overlay + relative-`fetch()` convention
-  ADR 0018 established for personal-assistant.
-- **No new report-generation logic.** The dashboard calls the existing
-  `UnifiedReportProduction`/`realized_pnl.py`/`india_weekly_report.py`
-  functions directly (same process or a thin subprocess call) rather than
-  reimplementing anything they already compute correctly.
+## Real duplication found (grounds for consolidation, not a guess)
 
-## Data model — the actual gap being fixed
+Pulled and diffed the actual `generate_{daily,weekly,biweekly,monthly}
+_report()` output on 2026-09-25:
 
-`active_decisions.yaml` (and the India equivalents) store *current status
-only* — no history of how an item got there. The dashboard's core new
-piece is an append-only ledger:
+- **"Section 0: Account Health, Framework Status & Gap Analysis"** — byte-
+  for-byte the same structure (Portfolio Snapshot, Per-Account Breakdown,
+  Close-Cost-Ratio Framework) in all 4 US reports.
+- **"Active Decision Tracker"** — same `active_decisions.yaml` content,
+  rendered identically in all 4 (daily §6.9, weekly §11, biweekly §8,
+  monthly §6).
+- **Competing action lists** (the real Section 2/4/11 problem): daily §7
+  (Close Now/Monitor/Let Run/Opportunity) and weekly §2 (Action
+  Priorities), §3 (Top-5 Actions), §9 (Decision Tree) are four
+  independently-computed "what to do" views that can disagree.
+- **One metric, three cadences**: premium-vs-target appears in weekly §7,
+  biweekly §4+§7, monthly §3 — same underlying number, re-rendered per
+  cadence instead of one real-time trend with a period selector.
+- **Sector data**: daily §4.5+§6 (live) and biweekly §6 ("current, live")
+  — the biweekly version is redundant with daily's.
 
-- `action_items`: id, source (`active_decisions` / `india_6month_plan` /
-  manual), category, title, status (open/blocked/resolved), created_at.
-- `action_item_events`: id, action_item_id, event_type (created /
-  status_change / note / resolved), timestamp, detail (free text +
-  whatever live values triggered it, e.g. a metric_gate's computed %).
+## Consolidated section model
 
-A one-time, read-only migration script seeds this from the existing YAMLs
-(one `created` event per item, backdated to its earliest known mention
-where derivable). The YAMLs remain the system of record for the report
-engine; the dashboard's DB is additive until a later phase (not this one)
-considers flipping that.
+### US Dashboard (`/theta-lab/us/`)
 
-## Phases
+**Customer:**
+1. **Account Health** — dedup of Section 0 across all 4 reports.
+   Live via `_compute_account_status()` (already wired).
+2. **Today's Actions** — ONE reconciled action list (Close Now / Roll /
+   Let Run / New Entries), replacing daily §7 + weekly §2/§3/§9's four
+   separate computations. **Not yet built** — needs real reconciliation
+   logic, the single biggest remaining piece (see Phase A below).
+3. **Cash & Margin Forecast** — real-time, not report-gated. The
+   crash-scenario cash requirement + expiry-curve concentration tables
+   already computed ad hoc this session (weekly §6) — promote to a live
+   endpoint.
+4. **P&L vs Target** — one trend view (MTD/QTD/YTD selector) replacing
+   weekly §7 + biweekly §4/§7 + monthly §3. Backed by
+   `realized_pnl.get_realized_summary()`/`get_realized_monthly_by_account()`
+   (already wired).
+5. **Sector Heat** — dedup of daily §4.5/§6 + biweekly §6, one live view.
+6. **Risk & Macro** — daily §6.5 (Crash Early Warning, AI Capex/Circular
+   Financing Tracker) + weekly §8 (Risk & Guardrails).
+7. **Quarterly Portfolio Direction** — the standalone strategic doc
+   (`logs/quarterly_portfolio_direction_us_2026-Q3.md`, hand-authored per
+   quarter, not auto-regenerated like the 4 cadence reports). Rendered in
+   full; its "Open Items / Not Yet Built" section feeds the Action
+   Tracker (#8) instead of living only in a static file.
+8. **Action Tracker** — dedup of "Active Decision Tracker" (all 4
+   reports) into the real append-only ledger from the original plan
+   (Phase 2, still needed, now scoped under Phase B).
 
-### Phase 1: Read-only dashboard (MVP)
-**Objective:** One page showing YTD P&L (via `realized_pnl.py`), today's
-account-health snapshot (via `_compute_account_status`), and the current
-`active_decisions.yaml` items — no new data entry yet.
-- FastAPI skeleton, SQLite file, Dockerfile, `docker-compose.yml` (+
-  optional gateway overlay, matching ADR 0018's pattern).
-- Wire into `~/local-gateway/Caddyfile` (`/theta-lab/` block, template
-  already left there as a comment).
-- **Exit criteria:** page loads real live data, both directly on 8020 and
-  through the gateway on 9000; no report-generation code duplicated.
+**Admin:**
+- Framework Status & Automation (weekly §10).
+- Production Framework technical sub-block (Section 0's supplementary
+  detail — the customer view keeps the summary numbers, this keeps the
+  full computation).
+- Moat Recalibration & Tier Assignment mechanics (monthly §4) — the
+  *result* (current tier per position) surfaces in Today's Actions/Sector
+  Heat; the recalibration mechanics stay admin.
+- Win-Rate & Greeks Drift raw diagnostics (biweekly §5).
+- Data staleness warnings, IV Rank/Entry Gate raw screen (weekly §5 —
+  feeds Today's Actions' "Opportunity" bucket as an input, not a
+  standalone customer section).
 
-### Phase 2: Action ledger + migration
-**Objective:** The append-only ledger above, backed by a real migration
-of every existing YAML's current items.
-- Migration script (one-off, re-runnable, idempotent — re-running never
-  duplicates an already-migrated item).
-- Dashboard can mark an item resolved/blocked with a note; write goes to
-  the ledger, not back to the YAML (one-way for now).
-- **Exit criteria:** every currently-open item from `active_decisions.yaml`
-  + `india_6month_plan.yaml` visible with correct status; resolving one in
-  the dashboard doesn't affect the YAML-driven reports at all (no
-  regression in the existing report engine).
+### India Dashboard (`/theta-lab/india/`)
 
-### Phase 3: History + search
-**Objective:** Browse past reports and past ledger events, matching
-personal-assistant's `/history` pattern (SQLite `LIKE`, not FTS5 — same
-proportionate choice, not over-built for a single-user tool).
-- Index `logs/*.md`/`.txt` by date + report type at ingest time (a
-  filesystem watch or a scan-on-startup, whichever is simpler to get right
-  first).
-- **Exit criteria:** can find "what did the weekly report say about AXON
-  on 2026-09-10" without opening a file by hand.
+**Customer:**
+1. **Portfolio Snapshot** — equity + F&O positions, current values.
+2. **6-Month Plan Tracker** — already built (`_check_6month_plan`),
+   promote to a live panel instead of report-text-only.
+3. **Regime & Risk Signals** — Nifty/India VIX/sector regime.
+4. **Quarterly Portfolio Direction** —
+   `logs/quarterly_portfolio_direction_india_2026-Q3.md`, same treatment
+   as the US version; its Open Items feed the India Action Tracker.
+5. **Action Tracker** — India has no `active_decisions.yaml`-style ledger
+   today (confirmed gap from earlier this session) — this dashboard is
+   what finally gives India the same tracked-decision discipline the US
+   side has had since this session's earlier work.
 
-### Phase 4: Schedulers
-**Objective:** Two independent triggers, matching the two real cadences
-this project already has:
-- **File-drop detection**: watch `data/positions/`, `data/statements/`
-  for new exports → auto-regenerate reports (replaces "the user manually
-  says 'I've downloaded fresh files, regenerate everything'").
-- **Market-hours refresh**: periodic price/status refresh on the dashboard
-  itself (not a full report regen) during trading hours only.
-- **Exit criteria:** dropping a fresh Schwab export into `data/positions/`
-  updates the dashboard without a manual regenerate request.
+**Admin:**
+- Breeze API credential/session status (inert-until-configured, matching
+  `_no_breeze_credentials_message()`'s existing convention).
+- Data source notes (statement-derived vs. live Breeze).
 
-### Phase 5 (not scoped yet): Section 2/4/11 consolidation
-Real fix for the weekly/monthly redundancy and the three-independent-
-action-list problem — deliberately deferred past the dashboard's first
-working version. Revisit once Phases 1-4 are live and it's clear whether
-the dashboard itself makes the redundancy moot (single Action Planner
-replacing all three) or whether the report engine's own Section
-generation still needs surgery independent of the dashboard.
+## Rejected approaches (so this isn't re-tried)
+
+- **Report-type dropdown showing raw report text** (what Phase 1 shipped
+  as a stopgap): rejected — moves the duplication into a dropdown instead
+  of removing it, and unformatted markdown-as-`<pre>` isn't a dashboard.
+- **One merged US+India dashboard**: rejected — no shared data model
+  (different brokers, currencies, account structures, strategies); a
+  merged view would force artificial parallels that don't exist.
+
+## No existing data is discarded
+
+`active_decisions.yaml`, `macro_risk_history.yaml`,
+`seekingalpha_theme_state.yaml`, `tier_cr_state.yaml`,
+`india_6month_plan.yaml`, both quarterly portfolio-direction docs, and
+every historical `logs/*.md`/`.txt`/`.html` report stay exactly where they
+are. The report engine keeps writing them exactly as today; the
+dashboards are additive consumers, not a replacement, until a later phase
+explicitly says otherwise.
+
+## Phases (revised)
+
+### Phase A: US customer dashboard, real sections (in progress)
+USWDS-based rebuild of `/theta-lab/us/`: Account Health, Cash & Margin
+Forecast, P&L vs Target, Sector Heat, Risk & Macro, Quarterly Portfolio
+Direction — all real structured HTML, not raw text. Today's Actions
+reconciliation and the Action Tracker ledger are the two pieces requiring
+new logic (not just new UI) and are called out separately below rather
+than rushed into this phase.
+- **Exit criteria:** every customer section above renders as real USWDS
+  components with correct live data; zero raw markdown/`<pre>` dumps for
+  US content; admin content present but visually separated (e.g. a
+  collapsed/secondary tab).
+
+### Phase B: Action Tracker (ledger) + Today's Actions reconciliation
+The two hardest, most valuable pieces:
+- Append-only ledger (`action_items`/`action_item_events`, as originally
+  scoped) seeded from `active_decisions.yaml` (US) — India gets a ledger
+  from day one, not a migration, since it never had one.
+- A single reconciliation function replacing daily §7 + weekly §2/§3/§9:
+  needs an explicit tie-breaking rule set (which existing computation
+  wins when two disagree) — written up as its own short design note
+  before coding, since "which list is authoritative" is a real decision,
+  not a UI question.
+- **Exit criteria:** one action list, one ledger, per market; no
+  dashboard section still computing its own independent "what to do"
+  view.
+
+### Phase C: India dashboard (real sections)
+Same USWDS treatment as Phase A, applied to India's section model above.
+Requires wrapping `india_weekly_report.py`'s existing functions
+(`_check_6month_plan`, position/regime loading) the same read-only way
+Phase 1 wrapped the US report engine.
+- **Exit criteria:** India dashboard live at `/theta-lab/india/` with the
+  same real-section standard as Phase A, no raw-text fallback.
+
+### Phase D: History + search (both markets)
+Browse past reports/quarterly docs and past ledger events, matching
+personal-assistant's `/history` pattern (SQLite `LIKE`).
+
+### Phase E: Schedulers (both markets)
+File-drop detection (new Schwab/Fidelity/ICICI exports trigger a
+refresh) + market-hours live-price refresh, per market's own trading
+hours.
 
 ## Explicitly out of scope for now
 
-- No rewrite of `unified_master_report_production.py`'s report text.
-- No change to how `active_decisions.yaml` etc. are written today.
-- No attempt to make the dashboard the system of record before Phase 2's
-  migration is proven correct on real data.
+- No rewrite of the underlying report engines' text output — the
+  dashboards consume the same functions, they don't replace them.
+- No attempt to unify US and India into shared UI beyond the common
+  USWDS/WCAG shell and navigation between the two.

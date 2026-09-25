@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>theta-lab — India dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@uswds/uswds@3.14.0/dist/css/uswds.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<style>
+  body { margin: 0; background: #f0f0f0; }
+  .topbar {
+    background: #8b2b2b; color: #fff; padding: 12px 24px; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .topbar a { color: #fff; }
+  .topbar .crumbs a { color: #f6dfdf; text-decoration: none; font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  section.panel {
+    background: #fff; border: 1px solid #dfe1e2; border-radius: 4px;
+    padding: 20px 24px; margin-bottom: 20px;
+  }
+  section.panel h2 { margin-top: 0; font-size: 18px; border-bottom: 2px solid #8b2b2b; padding-bottom: 8px; }
+  .customer-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #00a91c; font-weight: 700; }
+  .admin-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #757575; font-weight: 700; }
+  .rendered-md table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  .rendered-md th, .rendered-md td { border: 1px solid #dfe1e2; padding: 6px 10px; font-size: 13.5px; text-align: left; }
+  .rendered-md th { background: #f0f0f0; }
+  .rendered-md { font-size: 14.5px; line-height: 1.6; }
+  .rendered-md h1, .rendered-md h2, .rendered-md h3, .rendered-md h4 { margin-top: 20px; }
+  .empty { color: #757575; font-style: italic; }
+  .usa-alert { margin-top: 8px; }
+  details.admin-block summary { cursor: pointer; font-weight: 600; padding: 8px 0; list-style: none; }
+  details.admin-block summary::-webkit-details-marker { display: none; }
+  details.admin-block summary::before { content: "▸ "; }
+  details.admin-block[open] summary::before { content: "▾ "; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <strong>theta-lab — India dashboard</strong>
+  <span class="crumbs"><a href="/">&larr; both markets</a> &nbsp;|&nbsp; <a href="us">US dashboard</a></span>
+</div>
+<main>
+
+  <section class="panel" aria-labelledby="h-signals">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-signals">Market Signals</h2>
+    <div id="market-signals" class="rendered-md"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-plan">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-plan">6-Month Plan Tracking</h2>
+    <div id="six-month-check" class="rendered-md"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-quarterly">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-quarterly">Quarterly Portfolio Direction</h2>
+    <div id="quarterly-direction" class="rendered-md"><p class="empty">Loading...</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-actions">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-actions">Action Tracker</h2>
+    <div class="usa-alert usa-alert--info usa-alert--slim">
+      <div class="usa-alert__body">
+        <p class="usa-alert__text">
+          India has no decision ledger yet (the US side's <code>active_decisions.yaml</code>
+          equivalent) — this is docs/DASHBOARD_PLAN.md Phase B. Until then, open items
+          live in the Quarterly Portfolio Direction doc's "Open Items" section above
+          and in the 6-Month Plan Tracking panel.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <span class="admin-label">Admin</span>
+    <h2 style="border:none; margin-bottom:0;">Full report / data source detail</h2>
+    <details class="admin-block">
+      <summary>Show full India weekly report (raw, for anything not yet broken into a section above)</summary>
+      <div id="full-report" class="rendered-md"><p class="empty">Loading...</p></div>
+    </details>
+    <p style="margin-top:16px;">
+      <button class="usa-button usa-button--outline" id="refresh-btn" type="button">Refresh live data</button>
+      <span id="refresh-note" style="font-size:12px;color:#565c65;"></span>
+    </p>
+  </section>
+
+</main>
+<script>
+  async function loadMarkdownInto(url, elementId) {
+    const resp = await fetch(url);
+    const text = resp.ok ? await resp.text() : `_Failed to load (${resp.status})_`;
+    document.getElementById(elementId).innerHTML = marked.parse(text);
+  }
+
+  async function loadAll() {
+    await Promise.all([
+      loadMarkdownInto("api/india/market-signals", "market-signals"),
+      loadMarkdownInto("api/india/6month-check", "six-month-check"),
+      loadMarkdownInto("api/india/quarterly-direction", "quarterly-direction"),
+      loadMarkdownInto("api/india/report", "full-report"),
+    ]);
+  }
+
+  document.getElementById("refresh-btn").addEventListener("click", async () => {
+    document.getElementById("refresh-note").textContent = "Refreshing...";
+    await fetch("api/india/refresh", { method: "POST" });
+    await loadAll();
+    document.getElementById("refresh-note").textContent = "Refreshed.";
+  });
+
+  loadAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>theta-lab dashboards</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@uswds/uswds@3.14.0/dist/css/uswds.min.css">
+<style>
+  body { margin: 0; }
+  main { max-width: 700px; margin: 60px auto; padding: 0 16px; }
+  .market-links { display: grid; gap: 16px; margin-top: 24px; }
+  .market-card {
+    display: block; padding: 24px; border: 1px solid #dfe1e2; border-radius: 4px;
+    text-decoration: none; color: inherit; background: #fff;
+  }
+  .market-card:hover { border-color: #005ea2; }
+  .market-card h2 { margin: 0 0 4px; font-size: 20px; color: #005ea2; }
+  .market-card p { margin: 0; color: #565c65; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>theta-lab</h1>
+  <p>Two separate portfolios, two separate dashboards — no shared data model between them.</p>
+  <nav class="market-links" aria-label="Market dashboards">
+    <a class="market-card" href="us">
+      <h2>US Markets</h2>
+      <p>Schwab / Fidelity / Vanguard / Robinhood — options income portfolio, $1.2M annual objective.</p>
+    </a>
+    <a class="market-card" href="india">
+      <h2>India Markets</h2>
+      <p>ICICI Direct — equity + F&amp;O portfolio, 6-month rebalancing plan.</p>
+    </a>
+  </nav>
+</main>
+</body>
+</html>
