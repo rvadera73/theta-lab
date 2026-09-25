@@ -579,24 +579,28 @@ class OpenPositionsLoaderV2:
                     # Sell to close for equity (negative qty)
                     is_equity = True
                     qty = -abs(qty)
-                elif action == 'ASSIGNED':
-                    # Assignment: parse symbol to determine Put vs Call
-                    symbol = str(row.get('symbol', '')).upper()
-                    # Extract strike and option type
-                    strike, opt_type = None, None
-                    import re
-                    # Schwab format: "TICKER MM/DD/YYYY STRIKE.00 P/C"
-                    match = re.search(r'([A-Z]+)\s+\d{2}/\d{2}/\d{4}\s+[\d.]+\s+([PC])', symbol)
-                    if match:
-                        opt_type = match.group(2)
-                        if opt_type == 'P':
-                            # Put assignment: we RECEIVE shares (positive)
-                            is_equity = True
-                            qty = abs(qty)
-                        elif opt_type == 'C':
-                            # Call assignment: we GIVE UP shares (negative)
-                            is_equity = True
-                            qty = -abs(qty)
+                elif action == 'BUY':
+                    # Plain stock buy (real quantity is share count, e.g. 100 --
+                    # unlike an option row, which never uses a bare "Buy"/"Sell"
+                    # action; those are always "Buy/Sell to Open/Close"). Found
+                    # live 2026-09-25: the resulting share purchase from a put
+                    # assignment (AXON, 09/16/2026) has this exact bare "Buy"
+                    # action and was silently skipped -- no branch here matched
+                    # it, so a real, currently-held 100-share position wasn't
+                    # tracked, making a genuinely covered call look naked.
+                    is_equity = True
+                elif action == 'SELL':
+                    is_equity = True
+                    qty = -abs(qty)
+                # NOTE: the "Assigned" notice row itself (e.g. "Assigned" / "PUT
+                # AXON ... $570 EXP ...") is deliberately NOT treated as an
+                # equity event here, even though it looks like one -- its own
+                # quantity field is the OPTION's contract count (e.g. "1"), not
+                # a share count, and using it directly would add 1 share
+                # instead of the real 100. Schwab always logs the actual
+                # resulting share change as a separate, correctly-scaled bare
+                # "Buy"/"Sell" row (handled above) immediately alongside it --
+                # confirmed on the real AXON assignment, not assumed.
 
             # Fidelity equity keywords (assigned puts/calls create equity positions)
             if account_type == 'Fidelity' and ('ASSIGNED' in action and ('PUT' in action or 'CALL' in action)):
