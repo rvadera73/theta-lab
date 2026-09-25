@@ -91,6 +91,22 @@ class StatusUpdate(BaseModel):
     note: str = ""
 
 
+class ManualItem(BaseModel):
+    market: str
+    category: str
+    title: str
+    description: str = ""
+
+
+@app.post("/api/actions/track")
+def actions_track(body: ManualItem):
+    """Backs every dashboard "Track as action" button -- turns a flagged
+    indicator row into a real ledger item. See ledger.create_manual_item.
+    """
+    item_id = ledger.create_manual_item(body.market, body.category, body.title, body.description)
+    return {"id": item_id}
+
+
 @app.get("/api/actions")
 def actions_list(market: str = "all", sync: bool = True):
     if sync:

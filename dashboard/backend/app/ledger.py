@@ -167,6 +167,27 @@ def sync_all():
         conn.close()
 
 
+def create_manual_item(market: str, category: str, title: str, description: str = "") -> str:
+    """Backs the dashboard's "Track as action" buttons -- turns a flagged
+    table row (a DTE bucket over target, an expiry-date over the cliff
+    ceiling, a sector at HIGH MACRO EXPOSURE, ...) into a real tracked
+    item instead of leaving it as an observation the trader has to
+    remember. This is the direct fix for the recurring "I see mostly
+    observations, not actions" feedback from earlier in this project.
+    Idempotent on (market, source='manual', title): re-clicking the same
+    row's button doesn't create a duplicate, it just returns the existing
+    item's id.
+    """
+    item_id = f"manual_{_short_id(market, title)}"
+    conn = _conn()
+    try:
+        _upsert_new_only(conn, item_id, market, "manual", category, title, description, "OPEN")
+        conn.commit()
+        return item_id
+    finally:
+        conn.close()
+
+
 def list_action_items(market: str = None):
     conn = _conn()
     try:

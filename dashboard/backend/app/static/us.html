@@ -55,6 +55,35 @@
   }
   .as-of-badge.stale { background: #f4e3db; color: #b50909; }
   section.panel h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+
+  /* Top scorecard -- one at-a-glance summary before any detail panel */
+  .scorecard {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;
+    margin-bottom: 20px;
+  }
+  .score-tile {
+    background: #fff; border: 1px solid #dfe1e2; border-radius: 4px; padding: 16px 18px;
+    border-left: 5px solid #dfe1e2;
+  }
+  .score-tile.risk-green { border-left-color: #00a91c; }
+  .score-tile.risk-yellow { border-left-color: #ffbe2e; }
+  .score-tile.risk-red, .score-tile.risk-orange { border-left-color: #d54309; }
+  .score-tile .score-label { font-size: 12px; color: #565c65; text-transform: uppercase; letter-spacing: .04em; }
+  .score-tile .score-value { font-size: 24px; font-weight: 700; margin: 4px 0; }
+  .score-tile .score-explain { font-size: 12px; color: #565c65; line-height: 1.4; }
+  .gauge-track { background: #eee; border-radius: 999px; height: 8px; margin: 8px 0 4px; overflow: hidden; }
+  .gauge-fill { height: 100%; border-radius: 999px; }
+  .gauge-fill.ok { background: #00a91c; }
+  .gauge-fill.warn { background: #ffbe2e; }
+  .gauge-fill.over { background: #d54309; }
+
+  /* Actionable table rows */
+  .track-btn {
+    font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid #005ea2;
+    background: #fff; color: #005ea2; cursor: pointer;
+  }
+  .track-btn:disabled { border-color: #adadad; color: #adadad; cursor: default; }
+  .indicator-explain { font-size: 11.5px; color: #565c65; display: block; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -63,6 +92,10 @@
   <span class="crumbs"><a href="/">&larr; both markets</a><a href="india">India</a><a href="actions">Action Tracker</a></span>
 </div>
 <main>
+
+  <div class="scorecard" id="scorecard">
+    <div class="score-tile"><div class="score-label">Loading scorecard...</div></div>
+  </div>
 
   <section class="panel" aria-labelledby="h-account">
     <span class="customer-label">Customer</span>
@@ -135,15 +168,74 @@
 
   let cashMarginData = null;
   let expandedAccount = null;
+  let lastRiskText = "";
+  let lastPnlJson = null;
+
+  // Event delegation: content under these buttons gets replaced by
+  // innerHTML re-renders constantly, so one document-level listener
+  // (rather than re-attaching per render) is what actually stays wired.
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".track-btn");
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = "Tracking...";
+    const resp = await fetch("api/actions/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        market: btn.dataset.market,
+        category: btn.dataset.category,
+        title: btn.dataset.title,
+        description: btn.dataset.description || "",
+      }),
+    });
+    if (resp.ok) {
+      btn.textContent = "✓ Tracked";
+    } else {
+      btn.disabled = false;
+      btn.textContent = "Track as action";
+    }
+  });
+
+  function trackBtn(market, category, title, description) {
+    const esc = s => (s || "").replace(/"/g, "&quot;");
+    return `<button class="track-btn" data-market="${market}" data-category="${esc(category)}" data-title="${esc(title)}" data-description="${esc(description)}">Track as action</button>`;
+  }
 
   function cashMarginDetailHtml(d) {
     if (!d) return "<p class=\"empty\">No forecast data.</p>";
-    const buckets = d.dte_buckets.map(b => `
-      <tr><th scope="row">${b.label}</th><td class="num">${b.pct}%</td><td>${b.target_lo}-${b.target_hi}%</td>
-      <td class="status-${b.status}">${b.status.toUpperCase()}</td></tr>`).join("");
-    const dates = d.top_expiry_dates.map(t => `
-      <tr><th scope="row">${t.date}</th><td class="num">${fmt(t.notional)}</td><td class="num">${t.pct}%</td>
-      <td class="status-${t.status}">${t.status === 'ok' ? 'OK' : t.status.toUpperCase()}</td></tr>`).join("");
+    const bucketExplain = {
+      near: "Target 10-15% of notional in <60 DTE -- currently light means fewer near-term rolls due, not urgent on its own.",
+      core: "Target 35-40% (the strategy's own 90/120-day window) -- above target means new capital should go elsewhere for now.",
+      mid: "Target 20-24% (135-195 DTE) -- above target compounds with a heavy core bucket into two crowded cycles.",
+      far: "Target 10-15% (195+ DTE) -- healthy range provides ballast against the near/core cycles.",
+    };
+    const buckets = d.dte_buckets.map(b => {
+      const key = b.label.toLowerCase().split(" ")[0];
+      const actionable = b.status === "heavy" || b.status === "light";
+      const gaugeClass = b.status === "ok" ? "ok" : b.status === "heavy" ? "over" : "warn";
+      return `
+      <tr>
+        <th scope="row">${b.label}</th>
+        <td class="num">${b.pct}%<div class="gauge-track" style="width:80px;"><div class="gauge-fill ${gaugeClass}" style="width:${Math.min(100, b.pct)}%"></div></div></td>
+        <td>${b.target_lo}-${b.target_hi}%</td>
+        <td class="status-${b.status}">${b.status.toUpperCase()}
+          <span class="indicator-explain">${bucketExplain[key] || ""}</span>
+        </td>
+        <td>${actionable ? trackBtn("US", "Portfolio Construction", `Rebalance ${b.label} bucket (${b.pct}% vs ${b.target_lo}-${b.target_hi}% target)`, bucketExplain[key] || "") : ""}</td>
+      </tr>`;
+    }).join("");
+    const dates = d.top_expiry_dates.map(t => {
+      const actionable = t.status === "over" || t.status === "edge";
+      return `
+      <tr>
+        <th scope="row">${t.date}</th><td class="num">${fmt(t.notional)}</td><td class="num">${t.pct}%</td>
+        <td class="status-${t.status}">${t.status === 'ok' ? 'OK' : t.status.toUpperCase()}
+          ${actionable ? '<span class="indicator-explain">Above the ~20-25% single-cycle ceiling -- redirect new capital to adjacent dates.</span>' : ''}
+        </td>
+        <td>${actionable ? trackBtn("US", "Expiry Concentration", `Reduce ${t.date} concentration (${t.pct}% of Account A)`, `Notional ${fmt(t.notional)} on this single date.`) : ""}</td>
+      </tr>`;
+    }).join("");
     return `
       <div class="kpi-row">
         <div class="kpi"><div class="value">${fmt(d.total_notional)}</div><div class="label">Total notional</div></div>
@@ -153,12 +245,12 @@
       </div>
       <table class="usa-table usa-table--borderless" style="width:100%;">
         <caption>DTE bucket concentration</caption>
-        <thead><tr><th scope="col">Bucket</th><th scope="col">% of notional</th><th scope="col">Target</th><th scope="col">Status</th></tr></thead>
+        <thead><tr><th scope="col">Bucket</th><th scope="col">% of notional</th><th scope="col">Target</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
         <tbody>${buckets}</tbody>
       </table>
       <table class="usa-table usa-table--borderless" style="width:100%; margin-top:12px;">
         <caption>Top expiry-date concentration</caption>
-        <thead><tr><th scope="col">Expiry</th><th scope="col">Notional</th><th scope="col">% of Account A</th><th scope="col">Status</th></tr></thead>
+        <thead><tr><th scope="col">Expiry</th><th scope="col">Notional</th><th scope="col">% of Account A</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
         <tbody>${dates}</tbody>
       </table>`;
   }
@@ -173,6 +265,8 @@
     el.classList.toggle("stale", ageMin > staleAfterMinutes);
   }
 
+  let lastAccountRows = null;
+
   async function loadAccountStatus() {
     const [statusResp, cashResp] = await Promise.all([
       fetch("api/us/account-status"),
@@ -181,29 +275,35 @@
     const statusJson = await statusResp.json();
     const cashJson = await cashResp.json();
     cashMarginData = cashJson.data;
+    lastAccountRows = statusJson.data;
     setAsOf("as-of-account", statusJson.as_of);
     renderAccountTable(statusJson.data);
+    renderScorecard();
   }
 
   function renderAccountTable(rows) {
     let body = "";
     for (const r of rows) {
       const isMargin = r.account_type === "Margin";
+      const concerning = /OVER CAP|EMERGENCY|COVERAGE GAP/.test(r.status || "");
       body += `
         <tr class="${isMargin ? 'expandable-row' : ''}" ${isMargin ? `data-account="${r.account}"` : ''}>
           <th scope="row">${r.account}${isMargin ? " 🔎" : ""}</th>
           <td>${r.account_type ?? ""}</td>
           <td class="num">${fmt(r.balance)}</td>
-          <td class="num">${pct(r.utilization)}</td>
+          <td class="num">${pct(r.utilization)}
+            <div class="gauge-track" style="width:70px;"><div class="gauge-fill ${r.utilization >= 100 ? 'over' : r.utilization >= 75 ? 'warn' : 'ok'}" style="width:${Math.min(100, r.utilization)}%"></div></div>
+          </td>
           <td>${r.status ?? ""}</td>
+          <td>${concerning ? trackBtn("US", "Account Health", `${r.account} at ${r.status} (${pct(r.utilization)} utilization)`, `Balance ${fmt(r.balance)}, Opt Req ${fmt(r.opt_req)}.`) : ""}</td>
         </tr>`;
       if (isMargin && expandedAccount === r.account) {
-        body += `<tr class="expand-detail"><td colspan="5">${cashMarginDetailHtml(cashMarginData)}</td></tr>`;
+        body += `<tr class="expand-detail"><td colspan="6">${cashMarginDetailHtml(cashMarginData)}</td></tr>`;
       }
     }
     document.getElementById("account-status").innerHTML = `
       <table class="usa-table usa-table--borderless" style="width:100%;">
-        <thead><tr><th scope="col">Account</th><th scope="col">Type</th><th scope="col">Balance</th><th scope="col">Utilization</th><th scope="col">Status</th></tr></thead>
+        <thead><tr><th scope="col">Account</th><th scope="col">Type</th><th scope="col">Balance</th><th scope="col">Utilization</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
         <tbody>${body}</tbody>
       </table>`;
     document.querySelectorAll("tr.expandable-row").forEach(tr => {
@@ -219,7 +319,9 @@
     const resp = await fetch("api/us/pnl-trend");
     const json = await resp.json();
     const data = json.data;
+    lastPnlJson = data;
     setAsOf("as-of-pnl", json.as_of);
+    renderScorecard();
     const rows = Object.entries(data.per_account).map(([label, v]) => {
       const qtd = data.per_account_qtd[label] ?? 0;
       return `<tr>
@@ -252,6 +354,64 @@
     const json = await resp.json();
     document.getElementById(elementId).innerHTML = marked.parse(json.text);
     if (asOfId) setAsOf(asOfId, json.as_of);
+    if (elementId === "risk-macro") { lastRiskText = json.text; renderScorecard(); }
+  }
+
+  let lastOpenActionCount = null;
+
+  function renderScorecard() {
+    const el = document.getElementById("scorecard");
+    const acctA = (lastAccountRows || []).find(r => r.account_type === "Margin");
+    const riskMatch = lastRiskText.match(/\*\*Risk Level:\*\*\s*(\S+)\s*(\w+)/);
+    const riskWord = riskMatch ? riskMatch[2].toUpperCase() : null;
+    const riskEmoji = riskMatch ? riskMatch[1] : "";
+    const riskClass = riskWord ? `risk-${riskWord.toLowerCase()}` : "";
+
+    const tiles = [];
+
+    if (acctA) {
+      const u = acctA.utilization;
+      const gClass = u >= 100 ? "over" : u >= 75 ? "warn" : "ok";
+      tiles.push(`
+        <div class="score-tile ${gClass === 'over' ? 'risk-red' : gClass === 'warn' ? 'risk-yellow' : 'risk-green'}">
+          <div class="score-label">Account A Margin Utilization</div>
+          <div class="score-value">${pct(u)}</div>
+          <div class="gauge-track"><div class="gauge-fill ${gClass}" style="width:${Math.min(100, u)}%"></div></div>
+          <div class="score-explain">${acctA.status} — healthy is &lt;75%, 75-99% is an early warning, 100%+ means Opt Req exceeds capacity.</div>
+        </div>`);
+    }
+
+    if (lastPnlJson) {
+      const p = lastPnlJson;
+      const progressPct = p.objective_annual ? (p.portfolio_ytd_realized / p.objective_annual * 100) : 0;
+      tiles.push(`
+        <div class="score-tile">
+          <div class="score-label">YTD vs $1.2M Objective</div>
+          <div class="score-value">${fmt(p.portfolio_ytd_realized)}</div>
+          <div class="gauge-track"><div class="gauge-fill ${progressPct >= 75 ? 'ok' : progressPct >= 50 ? 'warn' : 'over'}" style="width:${Math.min(100, progressPct)}%"></div></div>
+          <div class="score-explain">${progressPct.toFixed(1)}% of annual objective realized (MTD ${fmt(p.portfolio_mtd_realized)}).</div>
+        </div>`);
+    }
+
+    if (riskWord) {
+      tiles.push(`
+        <div class="score-tile ${riskClass}">
+          <div class="score-label">Macro Risk Level</div>
+          <div class="score-value">${riskEmoji} ${riskWord}</div>
+          <div class="score-explain">7-layer crash early-warning read (breadth, credit, vol, macro) -- see Risk &amp; Macro panel for the indicator-by-indicator detail.</div>
+        </div>`);
+    }
+
+    if (lastOpenActionCount !== null) {
+      tiles.push(`
+        <div class="score-tile ${lastOpenActionCount > 0 ? 'risk-yellow' : 'risk-green'}">
+          <div class="score-label">Open Action Items (US)</div>
+          <div class="score-value">${lastOpenActionCount}</div>
+          <div class="score-explain"><a href="actions">View the Action Tracker &rarr;</a></div>
+        </div>`);
+    }
+
+    if (tiles.length) el.innerHTML = tiles.join("");
   }
 
   // The quarterly doc is a hand-authored periodic review, not a live
@@ -296,9 +456,11 @@
     const resp = await fetch("api/actions?market=US&sync=true");
     const items = await resp.json();
     const open = items.filter(i => i.status !== "RESOLVED");
+    lastOpenActionCount = open.length;
     document.getElementById("action-summary").innerHTML = open.length
       ? `<strong>${open.length}</strong> open/blocked item${open.length === 1 ? "" : "s"} for US.`
       : `<span class="empty">No open items.</span>`;
+    renderScorecard();
   }
 
   async function loadAll() {
