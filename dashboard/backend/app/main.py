@@ -1,8 +1,8 @@
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 
 from . import services
 
@@ -44,6 +44,14 @@ def active_decisions():
 def india_plan():
     plan = services.get_india_plan()
     return plan if plan is not None else {}
+
+
+@app.get("/api/report/{report_type}", response_class=PlainTextResponse)
+def report_text(report_type: str):
+    try:
+        return services.get_report_text(report_type)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @app.post("/api/refresh")

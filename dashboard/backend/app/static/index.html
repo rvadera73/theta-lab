@@ -19,7 +19,14 @@
   .status-blocked { color: #b91c1c; }
   .status-resolved, .status-cleared { color: #15803d; }
   .empty { color: #999; font-size: 13px; }
-  .refresh-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
+  .refresh-btn, .report-select { font-size: 12px; padding: 4px 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; }
+  .report-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .report-header h2 { margin: 0; }
+  pre.report-body {
+    background: #0d1117; color: #c9d1d9; font-family: "SF Mono", Consolas, "Courier New", monospace;
+    font-size: 12.5px; line-height: 1.5; padding: 16px; border-radius: 6px;
+    overflow-x: auto; white-space: pre-wrap; word-break: break-word; max-height: 80vh; overflow-y: auto;
+  }
 </style>
 </head>
 <body>
@@ -41,6 +48,19 @@
   <div class="card">
     <h2>Active decisions</h2>
     <div id="active-decisions"><p class="empty">Loading...</p></div>
+  </div>
+
+  <div class="card" style="margin-top: 16px;">
+    <div class="report-header">
+      <h2>Full report (the actual report text -- same as logs/*.md)</h2>
+      <select id="report-type" class="report-select">
+        <option value="weekly" selected>Weekly</option>
+        <option value="daily">Daily</option>
+        <option value="biweekly">Biweekly</option>
+        <option value="monthly">Monthly</option>
+      </select>
+    </div>
+    <pre class="report-body" id="report-body">Loading...</pre>
   </div>
 
   <script>
@@ -112,14 +132,24 @@
         </table>`;
     }
 
+    async function loadReport() {
+      const reportType = document.getElementById("report-type").value;
+      const body = document.getElementById("report-body");
+      body.textContent = "Loading (first load after a refresh can take ~90s -- live price fetch)...";
+      const resp = await fetch(`api/report/${reportType}`);
+      body.textContent = resp.ok ? await resp.text() : `Failed to load ${reportType} report (${resp.status}).`;
+    }
+
     async function loadAll() {
-      await Promise.all([loadYtd(), loadAccountStatus(), loadActiveDecisions()]);
+      await Promise.all([loadYtd(), loadAccountStatus(), loadActiveDecisions(), loadReport()]);
     }
 
     document.getElementById("refresh-btn").addEventListener("click", async () => {
       await fetch("api/refresh", { method: "POST" });
       await loadAll();
     });
+
+    document.getElementById("report-type").addEventListener("change", loadReport);
 
     loadAll();
   </script>

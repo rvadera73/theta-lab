@@ -91,3 +91,28 @@ def get_active_decisions():
 
 def get_india_plan():
     return _load_yaml("data/india_6month_plan.yaml")
+
+
+_REPORT_METHODS = {
+    "daily": "generate_daily_report",
+    "weekly": "generate_weekly_report",
+    "biweekly": "generate_biweekly_report",
+    "monthly": "generate_monthly_report",
+}
+
+
+def get_report_text(report_type: str) -> str:
+    """Returns the SAME full report text generate_all_reports() writes to
+    logs/*.md|*.txt -- the actual thing the trader reads today, not a
+    dashboard-specific summary of it. This is the direct answer to "I see
+    nothing closer to what is in reports": the Phase 1 panels (YTD/account
+    status/active decisions) were always meant as a quick-glance layer on
+    top of this, never a replacement for it -- this endpoint surfaces the
+    real report itself so nothing the report engine already computes has to
+    be re-built as a second, thinner version in the dashboard.
+    """
+    method_name = _REPORT_METHODS.get(report_type)
+    if not method_name:
+        raise ValueError(f"Unknown report_type '{report_type}' (expected one of {list(_REPORT_METHODS)})")
+    gen = _get_generator()
+    return getattr(gen, method_name)()
