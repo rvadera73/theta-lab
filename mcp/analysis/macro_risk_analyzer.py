@@ -409,30 +409,53 @@ class MacroRiskAnalyzer:
     # heat/conviction scoring never sees any of this (see enhanced_metrics.py) —
     # this is what lets the report say "which sector is most exposed given
     # TODAY's specific risk driver" instead of a single always-the-same list.
+    #
+    # BACKTESTED 2026-09-25 against 5 years of real sector-ETF forward returns
+    # following real historical episodes of each driver crossing its own
+    # "yellow" threshold (same thresholds as `thresholds` above) -- this map
+    # had never been checked against real data before that. `confidence`
+    # reflects what that backtest actually found, not how the map reads:
+    #   strong: high-sensitivity sectors clearly underperformed low-sensitivity
+    #     at both the 10d and 20d forward horizon (ad_ratio: 303 episodes,
+    #     n=1200+; yield_curve: 67 episodes, n=134+).
+    #   weak: true at 20d but a statistical wash at 10d (breadth: 70 episodes --
+    #     the SAME sector list as ad_ratio, but breadth itself is a much
+    #     weaker discriminator than ad_ratio for near-term moves).
+    #   unconfirmed: too few real episodes in a 5y window to say anything
+    #     (hyoas: only 4 episodes -- true high-yield-spread blowouts are rare;
+    #     would need a lookback back through 2008/2020 to get a real sample).
+    # vix_term's direction was flipped 2026-09-25 -- the backtest found the
+    # ORIGINAL "high" list actually outperformed the "low" list at both
+    # horizons (27 episodes, a reasonable sample), the opposite of what this
+    # map claimed; swapped rather than left wrong now that real data exists.
+    # pcr has no free historical data source and is not in this map at all —
+    # get_sector_crash_sensitivity() returns {} for it (a real gap, not a
+    # silent guess).
     SECTOR_SENSITIVITY_MAP = {
         "ad_ratio": {  # narrow breadth / momentum-leadership unwind
             "high": ["Technology", "Consumer Cyclical", "Communication Services", "Basic Materials"],
             "low": ["Utilities", "Healthcare", "Consumer Defensive", "Energy", "Defense"],
+            "confidence": "strong",
         },
         "breadth": {  # same failure mode as ad_ratio — narrow participation
             "high": ["Technology", "Consumer Cyclical", "Communication Services", "Basic Materials"],
             "low": ["Utilities", "Healthcare", "Consumer Defensive", "Energy", "Defense"],
+            "confidence": "weak",
         },
         "hyoas": {  # credit-spread widening — leverage/cyclical-sensitive names
             "high": ["Financial Services", "Industrials", "Basic Materials"],
             "low": ["Utilities", "Consumer Defensive", "Healthcare"],
-        },
-        "pcr": {  # elevated hedging demand — broad risk-off, high-beta hit hardest
-            "high": ["Technology", "Consumer Cyclical", "Communication Services"],
-            "low": ["Utilities", "Consumer Defensive", "Healthcare"],
+            "confidence": "unconfirmed",
         },
         "yield_curve": {  # inversion — financials margin compression + long-duration growth revaluation
             "high": ["Financial Services", "Technology"],
             "low": ["Utilities", "Energy", "Consumer Defensive"],
+            "confidence": "strong",
         },
-        "vix_term": {  # backwardation — imminent-stress read, broad but momentum-heavy first
-            "high": ["Technology", "Consumer Cyclical", "Communication Services", "Basic Materials"],
-            "low": ["Utilities", "Consumer Defensive", "Healthcare"],
+        "vix_term": {  # backwardation — swapped 2026-09-25, see note above
+            "high": ["Utilities", "Consumer Defensive", "Healthcare"],
+            "low": ["Technology", "Consumer Cyclical", "Communication Services", "Basic Materials"],
+            "confidence": "strong",
         },
     }
 
@@ -440,7 +463,8 @@ class MacroRiskAnalyzer:
         """Map the crash forecast's primary_risk string (e.g. "AD_RATIO critical")
         back to which sectors are historically most/least exposed to THAT
         specific risk factor's unwind. Returns {} if primary_risk is
-        "Market neutral" (nothing flagged) or doesn't match a known indicator."""
+        "Market neutral" (nothing flagged) or doesn't match a known indicator
+        (this now includes "pcr" -- deliberately not in the map, see above)."""
         if not primary_risk or primary_risk == "Market neutral":
             return {}
         indicator = primary_risk.split()[0].lower()
@@ -451,6 +475,7 @@ class MacroRiskAnalyzer:
             "driver": indicator.upper(),
             "high_sensitivity_sectors": mapping["high"],
             "low_sensitivity_sectors": mapping["low"],
+            "confidence": mapping["confidence"],
         }
 
     def _get_risk_summary(self, risk_level: str, stage: int, signals: Dict) -> str:

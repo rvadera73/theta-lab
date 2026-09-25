@@ -685,13 +685,26 @@ class UnifiedReportProduction:
         risk_analysis = self._get_macro_risk_analysis()
         sensitivity = risk_analysis.get('sector_sensitivity') or {}
         high_exposure_sectors = set(sensitivity.get('high_sensitivity_sectors', []))
+        # Confidence in the CURRENT driver's sector grouping, per the real
+        # 2026-09-25 backtest (see SECTOR_SENSITIVITY_MAP's own comment) --
+        # "strong" (ad_ratio/yield_curve/vix_term) reads as a real flag;
+        # "weak" (breadth) or "unconfirmed" (hyoas) reads as a softer
+        # possibility rather than an equally-confident red flag, so a
+        # breadth-driven tag doesn't carry the same weight as an
+        # ad_ratio-driven one just because both happen to fire today.
+        sensitivity_confidence = sensitivity.get('confidence', 'unconfirmed')
 
         by_heat = {}
         for pos in critical + monitor + healthy:
             by_heat[pos['ticker']] = pos
 
         def suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason):
-            macro_flag = " ⚠️ HIGH macro exposure" if sector in high_exposure_sectors else ""
+            if sector not in high_exposure_sectors:
+                macro_flag = ""
+            elif sensitivity_confidence == 'strong':
+                macro_flag = " ⚠️ HIGH macro exposure"
+            else:
+                macro_flag = " ⚠️ possible macro exposure (weak/unconfirmed historical signal)"
             has_put, has_call = put_val > 0, call_val > 0
 
             if ticker in close_tickers or ticker in trim_tickers:
@@ -743,7 +756,12 @@ class UnifiedReportProduction:
             signal = s_data.get('signal', '🟡 MONITOR — Neutral positioning')
             s_notional = sector_total(sector)
 
-            macro_tag = " 🔴 HIGH MACRO EXPOSURE (see Section 6.5)" if sector in high_exposure_sectors else ""
+            if sector not in high_exposure_sectors:
+                macro_tag = ""
+            elif sensitivity_confidence == 'strong':
+                macro_tag = " 🔴 HIGH MACRO EXPOSURE (see Section 6.5)"
+            else:
+                macro_tag = f" 🟡 possible macro exposure ({sensitivity_confidence} historical signal, see Section 6.5)"
             output.append(f"### {sector} ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}{macro_tag}")
             output.append("")
 
