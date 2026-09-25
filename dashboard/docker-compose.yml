@@ -1,0 +1,26 @@
+services:
+  dashboard:
+    # Fixed, unique name so the shared local-gateway (~/local-gateway,
+    # personal-assistant's ADR 0018 pattern) can target this container by
+    # hostname regardless of what other local projects call their own
+    # compose service. Set unconditionally (harmless without the gateway).
+    container_name: theta-lab-web
+    build:
+      context: ..
+      dockerfile: dashboard/backend/Dockerfile
+    ports:
+      - "8020:8000"
+    volumes:
+      # Mounted at the SAME absolute host path the report engine hardcodes
+      # (open_positions_loader_v2.py's OpenPositionsLoaderV2.__init__
+      # default, plus 4 other files under mcp/reports/) rather than
+      # /app/data -- confirmed live (2026-09-25) that those modules build
+      # `/home/rahulvadera/projects/theta-lab/data/...` directly, not a
+      # CWD-relative path, so a differently-located mount silently fails
+      # with "No objects to concatenate" instead of finding any files.
+      # Read-write since the report engine's own tooling (outside this
+      # container) writes here too; this container only reads for now
+      # (Phase 1).
+      - ../data:/home/rahulvadera/projects/theta-lab/data
+      - ../logs:/home/rahulvadera/projects/theta-lab/logs
+    restart: unless-stopped

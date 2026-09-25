@@ -501,6 +501,26 @@ class OpenPositionsLoaderV2:
 
         return (None, None)
 
+    @staticmethod
+    def _safe_qty_float(val):
+        """Some broker exports use a literal placeholder ('--', 'N/A', blank)
+        for a quantity cell instead of leaving it genuinely null -- pd.notna()
+        still returns True for these (they're non-null strings), so the raw
+        float(val) below crashed the whole load with "could not convert
+        string to float: '--'" the first time a real export happened to
+        contain one (found live 2026-09-25, same root cause as the PYPL
+        comma-formatting fix a few lines below: an unguarded float() assuming
+        every non-null cell is numeric). Returns None (treated as "no
+        quantity", same as an actually-blank cell) rather than crashing.
+        """
+        s = str(val).replace(',', '').strip()
+        if s in ('', '--', 'N/A', 'n/a'):
+            return None
+        try:
+            return float(s)
+        except ValueError:
+            return None
+
     def _track_equity_positions(self) -> Dict[str, Dict[str, int]]:
         """Track net equity shares owned per account per ticker from all transactions.
         Returns Dict[account_name, Dict[ticker, net_shares]]"""
@@ -522,22 +542,24 @@ class OpenPositionsLoaderV2:
             if account_type == 'Robinhood':
                 for col in ['quantity_1', 'quantity', 'shares']:
                     if col in row.index and pd.notna(row.get(col)):
-                        qty = float(row.get(col))
-                        break
+                        qty = self._safe_qty_float(row.get(col))
+                        if qty is not None:
+                            break
             elif account_type == 'Vanguard':
                 # Vanguard is positions snapshot - read Shares column directly for equity
                 for col in ['shares', 'quantity_1', 'quantity']:
                     if col in row.index and pd.notna(row.get(col)):
-                        shares_val = row.get(col)
+                        shares_val = self._safe_qty_float(row.get(col))
                         # Skip if it's an option (negative shares)
-                        if float(shares_val) > 0:
-                            qty = float(shares_val)
+                        if shares_val is not None and shares_val > 0:
+                            qty = shares_val
                             break
             else:  # Schwab, Fidelity
                 for col in ['quantity', 'shares', 'quantity_1']:
                     if col in row.index and pd.notna(row.get(col)):
-                        qty = float(row.get(col))
-                        break
+                        qty = self._safe_qty_float(row.get(col))
+                        if qty is not None:
+                            break
 
             if qty is None:
                 continue

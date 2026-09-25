@@ -1,0 +1,22 @@
+# Optional overlay: joins the shared local-gateway proxy's network so this
+# dashboard is also reachable at http://localhost:9000/theta-lab/, same
+# pattern as personal-assistant's ADR 0018 (docs/DASHBOARD_PLAN.md).
+#
+# Not part of the base docker-compose.yml -- `local-gateway-net` is
+# `external: true` (owned by the separate ~/local-gateway project), so
+# Compose fails outright if it doesn't exist yet. Use both files together
+# only once the gateway is already running:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gateway.yml up -d --build
+#
+# Without this overlay, the dashboard works exactly as before (host port
+# 8020) -- the gateway is purely additive.
+services:
+  dashboard:
+    networks:
+      - default
+      - local-gateway-net
+
+networks:
+  local-gateway-net:
+    external: true

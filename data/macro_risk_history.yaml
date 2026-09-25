@@ -34,3 +34,9 @@
   prob_60d: 32.8
   prob_90d: 46.5
   primary_risk: BREADTH elevated
+- date: '2026-09-25'
+  risk_level: GREEN
+  prob_30d: 19.1
+  prob_60d: 32.8
+  prob_90d: 46.5
+  primary_risk: BREADTH elevated

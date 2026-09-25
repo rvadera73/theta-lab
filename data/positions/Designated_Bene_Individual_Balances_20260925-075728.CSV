@@ -1,0 +1,52 @@
+"Balances for account  XXXX-8634 as of 09/25/2026 07:57 AM ET"
+
+Account Value,"$256,066.97"
+Day Change,"-$3,414.60"
+Day Change %,"-1.32%"
+Cash & Cash Investments,"$213,202.94"
+Market Value,"$42,864.03"
+
+Cash & Cash Investments,
+Cash Balance,"$213,202.94"
+Cash & Cash Investments Total,"$213,202.94"
+
+Investments,
+Securities,"$67,874.03"
+Market Value,"$67,874.03"
+Non-Margin,"$0.00"
+Margin,"$67,874.03"
+Options,"-$71,109.00"
+Market Value Long,"$0.00"
+Market Value Short,"-$71,109.00"
+Non-Margin,"-$23,216.00"
+Margin,"-$47,893.00"
+Investments Total,"-$3,234.97"
+
+Pegged Option Market Value ,
+In-the-money Covered Calls,"$46,099.00"
+Pegged Option Market Value Total,"$46,099.00"
+
+Option Details
+Cash Secured Put Requirement,"$213,150.00"
+Option Requirement,"$0.00"
+
+Funds Available,
+To Trade,
+Cash & Cash Investments,"$52.94"
+Settled Funds,"$49,714.57"
+Intraday Margin Buying Power,"$198,858.28"
+Cash + Borrowing,"$198,857.84"
+SMA,"$80,597.00"
+To Withdraw,
+Cash & Cash Investments,"$52.94"
+Borrowing,"$49,661.00"
+Cash + Borrowing,"$49,713.94"
+Cash on Hold,"$213,150.00"
+
+Margin Details & Buying Power
+Balance Subject to Interest,"$0.00"
+Month to Date Interest Owed,"$0.00"
+Margin Equity,"$1,739.40"
+Equity Percent,"2%"
+Margin Rate,12.075%
+

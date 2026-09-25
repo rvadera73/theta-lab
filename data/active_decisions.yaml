@@ -20,6 +20,23 @@ decisions:
     $900K-$1M / $1.1-1.2M). The $800K plan sits comfortably under the new $900K
     ceiling with room to spare.
 
+    RE-CONFIRMED 2026-09-25: real Opt Req $819,000 against $900,000 capacity =
+    91% utilization -- real progress toward the march_strangle_entry_gate''s
+    85% threshold (not there yet, but much closer than the automated
+    tracker''s stuck 135.79% figure suggests -- that check has a known,
+    unfixed staleness bug, see march_strangle_entry_gate below). Cash Avail
+    for Trade (-$22K) and Cash+Borrowing (-$91K) both read negative this
+    check, which could look alarming in isolation -- but Balance Subject to
+    Interest is confirmed $0 again (same as 2026-09-21), so this is a
+    buying-power/settlement artifact on an active short-options margin
+    account, NOT a real debit balance. Second independent confirmation of
+    the same pattern -- treat a future negative cash-to-trade reading on
+    this account as routine unless Balance Subject to Interest actually
+    goes non-zero, rather than re-investigating from scratch each time.
+    SMA ($1.6M) and Margin Equity ($1.0M) both unchanged from the 21st.
+    In-the-money covered calls: $97K (safe -- shares already owned, will
+    just be called away).
+
     '
   check:
     type: metric_gate
