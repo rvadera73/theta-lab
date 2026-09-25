@@ -94,6 +94,17 @@ def get_india_plan():
     return _load_yaml("data/india_6month_plan.yaml")
 
 
+def get_us_priority_actions():
+    """The bottom-up CLOSE/TRIM/ENTER-only list (see
+    UnifiedReportProduction.get_priority_actions) -- deliberately NOT the
+    full 92-ticker Sector Heat table. ledger.sync_all() syncs only this
+    into the Action Tracker so it doesn't fill up with routine WATCH/HOLD
+    noise when the book is stable (verified live 2026-09-25: 3 items out
+    of 92 tickers on a normal day)."""
+    gen = _get_generator()
+    return _to_native(gen.get_priority_actions())
+
+
 def _get_symbol_sector(ticker: str) -> str:
     """Same CUSTOM_SECTOR_MAP-then-Yahoo-fallback logic sector_analysis.py
     uses for held positions, reused directly for a watchlist symbol that

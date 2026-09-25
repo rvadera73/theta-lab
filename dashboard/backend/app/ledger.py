@@ -131,8 +131,11 @@ def _title_from_description(description: str, fallback: str, max_len: int = 150)
 def sync_all():
     """Pulls every market's real open-item sources into the ledger. Call
     this before list_action_items() so a first-ever run isn't empty, and
-    optionally on a manual refresh -- cheap (no live price/report calls),
-    unlike the report-engine refresh endpoints.
+    optionally on a manual refresh -- mostly cheap (no live price/report
+    calls), EXCEPT the US priority-actions source below, which reuses
+    whatever report-engine instance is already warm in services.py's cache
+    (fast on the common case, only slow -- a real ~90s live compute -- on a
+    genuinely cold start with nothing cached yet).
 
     Deliberately does NOT sync the quarterly-direction docs' "Open Items /
     Not Yet Built" sections (removed 2026-09-25, was here in the first
@@ -143,11 +146,29 @@ def sync_all():
     this position" in the same tracker is what made the trader say this
     "doesn't look like actions at all" -- those belong in
     docs/DASHBOARD_PLAN.md's own phase backlog, not here.
+
+    Also deliberately does NOT sync every WATCH/HOLD position from the
+    Sector Heat table -- only the bottom-up CLOSE/TRIM/ENTER priority list
+    (services.get_us_priority_actions(), itself already gated to a real,
+    usually-small set: RED-heat-plus-low-conviction for close/trim, top-3
+    HIGH-conviction GREEN-heat for enter). Trader's own stated worry
+    2026-09-25: "hoping there are not 100 of trackable actions if
+    portfolio is stable" -- syncing the full ~92-ticker table would
+    guarantee exactly that; this list was 3 items out of 92 tickers on a
+    normal day, verified live.
     """
     from . import services  # local import: avoids a circular import at module load
 
     conn = _conn()
     try:
+        # -- US: bottom-up CLOSE/TRIM/ENTER priority list (Sector Heat's
+        # own real, gated classification -- never the routine WATCH/HOLD
+        # majority of the book).
+        for a in services.get_us_priority_actions():
+            item_id = f"us_priority_{_short_id(a['ticker'], a['verb'])}"
+            title = f"{a['verb']} {a['ticker']}: {a['label'].split(':', 1)[-1].strip() if ':' in a['label'] else a['label']}"
+            _upsert_new_only(conn, item_id, "US", "priority_actions", a['sector'], title, a['detail'], "OPEN")
+
         # -- US: active_decisions.yaml (only OPEN/BLOCKED items -- resolved
         # ones are historical, not something to re-track as an open action).
         for d in services.get_active_decisions():

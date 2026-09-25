@@ -745,15 +745,24 @@ class UnifiedReportProduction:
             """Real coverage math, not just notional -- shares owned (now
             correctly including assignment-created equity, see
             open_positions_loader_v2.py's 2026-09-25 fix) vs. total short
-            calls on this ticker, across all accounts."""
+            calls on this ticker, across all accounts. Also reports whether
+            this ticker has open short puts too -- a call with zero owned
+            shares is still technically "naked" (uncapped upside risk is
+            real regardless of what else is open; a short put doesn't cap
+            that), but if it's paired with short puts on the same name
+            that's a deliberate two-sided strangle -- this book's actual
+            core strategy -- not an accidental gap. Found live 2026-09-25:
+            IONQ showed "2 naked calls" with zero mention that 4 puts were
+            also open on the same name, making a by-design strangle read
+            as if it were an oversight.
+            """
             shares = sum(acct.get(ticker, 0) for acct in self.equity_positions.values())
-            calls = self.open_positions[
-                (self.open_positions['ticker'] == ticker) &
-                (self.open_positions['option_type'].astype(str).str.upper().str.startswith('C'))
-            ]['net_quantity'].sum()
+            ticker_opts = self.open_positions[self.open_positions['ticker'] == ticker]
+            calls = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('C')]['net_quantity'].sum()
+            puts = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('P')]['net_quantity'].sum()
             covered = min(calls, max(0, shares) / 100)
             naked = max(0, calls - covered)
-            return naked, covered, calls
+            return naked, covered, calls, puts
 
         def macro_note(sector):
             if sector not in high_exposure_sectors:
@@ -766,10 +775,17 @@ class UnifiedReportProduction:
             has_put, has_call = put_val > 0, call_val > 0
             macro_text, macro_conf = macro_note(sector)
             qual = qualitative_findings.get(ticker)
-            naked, covered, total_calls = naked_covered_calls(ticker)
+            naked, covered, total_calls, total_puts = naked_covered_calls(ticker)
+            is_strangle = naked > 0 and total_puts > 0
             detail_parts = [f"RSI/heat: {reason}." if reason else ""]
-            if total_calls > 0:
-                detail_parts.append(f"Calls: {int(covered)} covered ({int(covered*100)} sh owned), {naked:.0f} naked.")
+            if total_calls > 0 and is_strangle:
+                detail_parts.append(
+                    f"Two-sided position: {int(covered)} covered call(s) ({int(covered*100)} sh owned), "
+                    f"{naked:.0f} naked call(s) (uncapped upside if it rallies), AND {total_puts:.0f} short "
+                    f"put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call."
+                )
+            elif total_calls > 0:
+                detail_parts.append(f"Calls: {int(covered)} covered ({int(covered*100)} sh owned), {naked:.0f} naked. No offsetting put position on this name.")
             if macro_text:
                 detail_parts.append(macro_text.capitalize() + ".")
             if qual:
@@ -798,21 +814,70 @@ class UnifiedReportProduction:
                 else:
                     label = f"🔴 {verb}"
             elif ticker in enter_tickers and not blocking_flag:
-                label = "🟢 ENTER (short put)"
+                # Reuses the exact structure the Weekly Execution Plan's own
+                # "New Entries" block already specifies (45-60 DTE, delta
+                # 0.15-0.20 puts) -- trader-flagged 2026-09-25 that ENTER
+                # was not actionable without a real DTE/delta target, not
+                # a new convention invented here.
+                label = "🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20"
             elif ticker in enter_tickers and blocking_flag:
                 label = f"🟡 WATCH: technicals say enter, but {'a qualitative flag is' if qual else 'macro exposure is'} unresolved"
             elif heat == 'GREEN' and not blocking_flag:
                 label = "🟢 HOLD — let run"
             elif heat == 'GREEN' and blocking_flag:
                 label = f"🟡 WATCH: technicals attractive, but {'a qualitative flag is' if qual else 'macro exposure is'} unresolved"
+            elif naked > 0 and is_strangle:
+                label = f"🟡 WATCH: strangle ({naked:.0f}C/{total_puts:.0f}P) — call side uncapped if it rallies"
             elif naked > 0:
-                label = f"🟡 WATCH: {naked:.0f} naked call(s) — uncapped upside risk if it runs"
+                label = f"🟡 WATCH: {naked:.0f} isolated naked call(s), no offsetting puts — uncapped upside risk if it runs"
             elif heat == 'RED':
                 label = f"🟡 WATCH: RED heat, but conviction {conv:.1f} holds it back from CLOSE/TRIM"
             else:
                 label = "🟡 WATCH: no confirmed direction yet"
 
             return label, " ".join(p for p in detail_parts if p)
+
+        # Bottom-up priority list (trader-requested 2026-09-25): a single,
+        # short, top-of-section list of the tickers with a REAL forced or
+        # rare-opportunity verb (CLOSE/TRIM/ENTER), not the whole 92-ticker
+        # table. This is deliberately NOT re-filtered further here -- close_/
+        # trim_ already require RED heat AND conviction<6 (a real, fairly
+        # rare condition), and enter_tickers is already capped to the top-3
+        # HIGH-conviction GREEN-heat names -- so this list stays naturally
+        # small in a normal/stable portfolio state without needing an
+        # arbitrary extra cap. WATCH/HOLD tickers are never in this list --
+        # matching the trader's own stated worry about the Action Tracker
+        # filling up with routine noise if nothing is actually urgent.
+        priority_actions = []
+        for ticker in sorted(close_tickers | trim_tickers | enter_tickers):
+            sector = self.ticker_sector_map.get(ticker, "Other")
+            pc = put_call.get(ticker, {"put_notional": 0, "call_notional": 0})
+            pos = by_heat.get(ticker, {})
+            heat = pos.get('heat', self.metrics.get(ticker, {}).get('heat_status', 'YELLOW'))
+            conv = pos.get('conv', self.metrics.get(ticker, {}).get('conviction', 5.0))
+            reason = pos.get('reason', self.metrics.get(ticker, {}).get('heat_reason', ''))
+            label, detail = suggestion_for(ticker, heat, conv, sector, pc['put_notional'], pc['call_notional'], reason)
+            verb = "CLOSE" if ticker in close_tickers else "TRIM" if ticker in trim_tickers else "ENTER"
+            priority_actions.append({
+                "ticker": ticker, "verb": verb, "sector": sector,
+                "label": label, "detail": detail,
+                "notional": pc['put_notional'] + pc['call_notional'],
+            })
+        self._priority_actions_cache = priority_actions
+
+        if priority_actions:
+            output.append("### Priority Actions (bottom-up, CLOSE/TRIM/ENTER only)")
+            output.append("")
+            output.extend(self._md_table(
+                ["Symbol", "Verb", "Sector", "Action", "Detail"],
+                [[a["ticker"], a["verb"], a["sector"], a["label"], a["detail"]] for a in priority_actions]
+            ))
+            output.append("")
+        else:
+            output.append("### Priority Actions (bottom-up, CLOSE/TRIM/ENTER only)")
+            output.append("")
+            output.append("_None right now -- nothing forced (no RED-heat/low-conviction names) and no rare high-conviction entry opportunity. The book is in a WATCH/HOLD state._")
+            output.append("")
 
         # Group tickers by sector
         sector_tickers: Dict[str, list] = defaultdict(list)
@@ -862,6 +927,20 @@ class UnifiedReportProduction:
             output.append("")
 
         return output
+
+    def get_priority_actions(self) -> list:
+        """Public accessor for the bottom-up CLOSE/TRIM/ENTER priority list
+        _build_sector_position_table() computes as a side effect -- used by
+        dashboard/backend/app/ledger.py to sync ONLY these into the Action
+        Tracker (never WATCH/HOLD), so the tracker doesn't fill up with
+        routine noise when the book is genuinely stable. Triggers a daily
+        report generation if this hasn't run yet in this instance's
+        lifetime (the same live-data pass the dashboard's cache refresh
+        already does for Sector Heat/Risk & Macro -- not a second,
+        separate computation)."""
+        if not hasattr(self, '_priority_actions_cache'):
+            self.generate_daily_report()
+        return self._priority_actions_cache
 
     def _classify_positions_for_action(self) -> Dict[str, list]:
         """Single shared classification pass over self.metrics, used by both
