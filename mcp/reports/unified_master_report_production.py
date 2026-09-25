@@ -423,6 +423,38 @@ class UnifiedReportProduction:
         self._macro_risk_cache = result
         return result
 
+    def _load_seekingalpha_findings(self) -> Dict[str, dict]:
+        """Ticker -> {summary, action, as_of} from data/seekingalpha_theme_state.yaml
+        -- real, already-tracked qualitative catalysts (analyst downgrades,
+        credible bearish/bullish theses), previously only shown in Section
+        6.8 and never cross-referenced into the per-position suggestion the
+        way macro exposure now is. Same "real, not invented" bar: this file
+        is populated by a weekly research skill, not by this method -- an
+        empty findings list here means the scan hasn't found/logged
+        anything for that ticker, not that nothing could exist.
+        """
+        if hasattr(self, '_seekingalpha_cache'):
+            return self._seekingalpha_cache
+        import yaml as _yaml
+        path = "/home/rahulvadera/projects/theta-lab/data/seekingalpha_theme_state.yaml"
+        result = {}
+        try:
+            with open(path) as f:
+                state = _yaml.safe_load(f) or {}
+            as_of = state.get("last_check_date", "date unknown")
+            for finding in state.get("findings", []):
+                ticker = finding.get("ticker")
+                if ticker:
+                    result[ticker] = {
+                        "summary": (finding.get("summary") or "").strip().replace("\n", " ")[:300],
+                        "action": (finding.get("action") or "").strip().replace("\n", " ")[:300],
+                        "as_of": as_of,
+                    }
+        except Exception:
+            pass
+        self._seekingalpha_cache = result
+        return result
+
     def _check_active_decisions(self) -> list:
         """Reads data/active_decisions.yaml and auto-checks each entry's
         `check` block against LIVE position/account data -- trader-requested
@@ -698,47 +730,89 @@ class UnifiedReportProduction:
         for pos in critical + monitor + healthy:
             by_heat[pos['ticker']] = pos
 
-        def suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason):
+        # 5-verb model (trader-agreed 2026-09-25, replacing the old two-axis
+        # heat+suggestion scheme that could show contradictory badges like
+        # "ATTRACTIVE" next to a red macro flag, and a "MONITOR" bucket
+        # covering 90% of the book with no stated condition or direction).
+        # CLOSE/TRIM/ENTER/HOLD/WATCH are now mutually exclusive -- macro
+        # exposure and qualitative flags are INPUTS that pick the verb
+        # (a would-be ENTER with a real unresolved flag becomes WATCH, not
+        # "ENTER ⚠️"), never a second badge stapled onto a contradicting one.
+        # Every WATCH names the real condition and what it would trigger.
+        qualitative_findings = self._load_seekingalpha_findings()
+
+        def naked_covered_calls(ticker):
+            """Real coverage math, not just notional -- shares owned (now
+            correctly including assignment-created equity, see
+            open_positions_loader_v2.py's 2026-09-25 fix) vs. total short
+            calls on this ticker, across all accounts."""
+            shares = sum(acct.get(ticker, 0) for acct in self.equity_positions.values())
+            calls = self.open_positions[
+                (self.open_positions['ticker'] == ticker) &
+                (self.open_positions['option_type'].astype(str).str.upper().str.startswith('C'))
+            ]['net_quantity'].sum()
+            covered = min(calls, max(0, shares) / 100)
+            naked = max(0, calls - covered)
+            return naked, covered, calls
+
+        def macro_note(sector):
             if sector not in high_exposure_sectors:
-                macro_flag = ""
-            elif sensitivity_confidence == 'strong':
-                macro_flag = " ⚠️ HIGH macro exposure"
-            else:
-                macro_flag = " ⚠️ possible macro exposure (weak/unconfirmed historical signal)"
+                return None, None
+            if sensitivity_confidence == 'strong':
+                return f"HIGH macro exposure ({sensitivity.get('driver')}, backtested)", 'strong'
+            return f"possible macro exposure ({sensitivity.get('driver')}, {sensitivity_confidence} historical signal)", sensitivity_confidence
+
+        def suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason):
             has_put, has_call = put_val > 0, call_val > 0
+            macro_text, macro_conf = macro_note(sector)
+            qual = qualitative_findings.get(ticker)
+            naked, covered, total_calls = naked_covered_calls(ticker)
+            detail_parts = [f"RSI/heat: {reason}." if reason else ""]
+            if total_calls > 0:
+                detail_parts.append(f"Calls: {int(covered)} covered ({int(covered*100)} sh owned), {naked:.0f} naked.")
+            if macro_text:
+                detail_parts.append(macro_text.capitalize() + ".")
+            if qual:
+                detail_parts.append(f"Qualitative flag ({qual['as_of']}): {qual['summary']}")
+            else:
+                detail_parts.append("No qualitative flag on file.")
+
+            # A real, unresolved flag downgrades what would otherwise be a
+            # positive verb into WATCH, naming the actual condition --
+            # never a second contradicting badge next to ENTER/HOLD.
+            blocking_flag = qual is not None or macro_conf == 'strong'
 
             if ticker in close_tickers or ticker in trim_tickers:
                 verb = "CLOSE" if ticker in close_tickers else "TRIM"
-                # heat_status RED fires on extension in EITHER direction (see
-                # enhanced_metrics.py's heat_status logic) -- the leg actually
-                # at risk depends on which way, not on RED alone. A short
-                # CALL benefits from a decline (it's a natural crash/downside
-                # hedge, not a liability), so a blanket "CLOSE" that doesn't
-                # distinguish direction can tell you to close the one leg
-                # that's protecting you. Trader-flagged 2026-09-01: "how call
-                # should be exited as they will turn positive in case of crash."
                 reason_upper = str(reason).upper()
                 is_upside_extension = "OVERBOUGHT" in reason_upper or "EXTENDED" in reason_upper and "OVERSOLD" not in reason_upper
                 if has_put and has_call:
-                    # No literal "|" in these strings -- they land in a
-                    # Markdown table cell (Section 6) and "|" is the column
-                    # delimiter there, so it would silently break the table.
                     if is_upside_extension:
-                        return f"🔴 {verb} CALL (delta/assignment risk); 🟢 HOLD PUT (near max profit, unaffected — a short call gains protection in a decline, don't close it purely on crash fears)"
+                        label = f"🔴 {verb} CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected)"
                     else:
-                        return f"🔴 {verb} PUT (downside/assignment risk); 🟢 HOLD CALL (unaffected by this signal)"
+                        label = f"🔴 {verb} PUT / HOLD CALL (put has downside/assignment risk; call unaffected)"
                 elif has_call and not has_put:
-                    return f"🔴 {verb} CALL"
+                    label = f"🔴 {verb} CALL"
                 elif has_put and not has_call:
-                    return f"🔴 {verb} PUT"
-                return f"🔴 {verb}"
-            if ticker in enter_tickers:
-                return f"🟢 ENTER (short put){macro_flag}"
-            if heat == 'GREEN':
-                return f"🟢 ATTRACTIVE — let run{macro_flag}"
-            if heat == 'RED':
-                return "🟡 WATCH (RED, conv holds it back from CLOSE/TRIM)"
-            return "🟡 MONITOR"
+                    label = f"🔴 {verb} PUT"
+                else:
+                    label = f"🔴 {verb}"
+            elif ticker in enter_tickers and not blocking_flag:
+                label = "🟢 ENTER (short put)"
+            elif ticker in enter_tickers and blocking_flag:
+                label = f"🟡 WATCH: technicals say enter, but {'a qualitative flag is' if qual else 'macro exposure is'} unresolved"
+            elif heat == 'GREEN' and not blocking_flag:
+                label = "🟢 HOLD — let run"
+            elif heat == 'GREEN' and blocking_flag:
+                label = f"🟡 WATCH: technicals attractive, but {'a qualitative flag is' if qual else 'macro exposure is'} unresolved"
+            elif naked > 0:
+                label = f"🟡 WATCH: {naked:.0f} naked call(s) — uncapped upside risk if it runs"
+            elif heat == 'RED':
+                label = f"🟡 WATCH: RED heat, but conviction {conv:.1f} holds it back from CLOSE/TRIM"
+            else:
+                label = "🟡 WATCH: no confirmed direction yet"
+
+            return label, " ".join(p for p in detail_parts if p)
 
         # Group tickers by sector
         sector_tickers: Dict[str, list] = defaultdict(list)
@@ -778,11 +852,11 @@ class UnifiedReportProduction:
             table_rows = []
             for ticker, put_val, call_val, total_val, heat, conv, reason in sorted(rows, key=lambda r: -r[3]):
                 heat_icon = {"RED": "🔴", "YELLOW": "🟡", "GREEN": "🟢"}.get(heat, "🟡")
-                sugg = suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason)
+                label, detail = suggestion_for(ticker, heat, conv, sector, put_val, call_val, reason)
                 table_rows.append([ticker, f"${put_val:,.0f}", f"${call_val:,.0f}", f"${total_val:,.0f}",
-                                    heat_icon, f"{conv:.1f}", sugg])
+                                    heat_icon, f"{conv:.1f}", label, detail])
             output.extend(self._md_table(
-                ["Symbol", "Put Value", "Call Value", "Total Value", "Heat", "Conv", "Suggestion"],
+                ["Symbol", "Put Value", "Call Value", "Total Value", "Heat", "Conv", "Action", "Detail"],
                 table_rows
             ))
             output.append("")
