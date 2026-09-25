@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from . import services
 from . import ledger
 from . import cache
+from . import watchlist
 
 # Resolved from this file's own location, not the process's CWD -- the
 # report engine this app wraps (services.py) expects to run with the repo
@@ -82,6 +83,11 @@ def actions_dashboard():
     return FileResponse(os.path.join(STATIC_DIR, "actions.html"))
 
 
+@app.get("/watchlist")
+def watchlist_dashboard():
+    return FileResponse(os.path.join(STATIC_DIR, "watchlist.html"))
+
+
 # ------------------------------------------------------ Action Tracker API --
 # ONE consolidated, cross-market ledger (docs/DASHBOARD_PLAN.md Phase B) --
 # replaces the separate per-dashboard action panels.
@@ -132,6 +138,46 @@ def actions_set_status(item_id: str, body: StatusUpdate):
 @app.get("/api/actions/{item_id}/history")
 def actions_history(item_id: str):
     return ledger.get_item_history(item_id)
+
+
+# --------------------------------------------------------------- Watchlist --
+# Symbols NOT currently held, tracked persistently and analyzed through the
+# SAME heat/conviction/IV-Rank/yield-on-capital pipeline held positions get
+# -- the real gap flagged 2026-09-25: nothing upstream of this covered a
+# candidate that wasn't already in open_positions.
+
+class WatchlistAdd(BaseModel):
+    symbol: str
+    notes: str = ""
+
+
+class WatchlistTrack(BaseModel):
+    tracked: bool
+
+
+@app.get("/api/watchlist")
+def watchlist_list():
+    return watchlist.list_watchlist()
+
+
+@app.post("/api/watchlist")
+def watchlist_add(body: WatchlistAdd):
+    watchlist.add_symbol(body.symbol, body.notes)
+    return {"status": "added"}
+
+
+@app.post("/api/watchlist/{symbol}/tracked")
+def watchlist_set_tracked(symbol: str, body: WatchlistTrack):
+    watchlist.set_tracked(symbol, body.tracked)
+    return {"status": "ok"}
+
+
+@app.get("/api/watchlist/{symbol}/analysis")
+def watchlist_analysis(symbol: str):
+    """Live compute (not cached -- a deliberate "check this candidate"
+    action, not a page-load-critical path). A handful of real yfinance
+    calls, a few seconds, not the ~90s full report-engine refresh."""
+    return services.analyze_watchlist_symbol(symbol)
 
 
 # ---------------------------------------------------------------- US API --

@@ -24,6 +24,7 @@ def _to_native(obj):
 
 CODE_ROOT = "/app"
 sys.path.insert(0, os.path.join(CODE_ROOT, "mcp", "reports"))
+sys.path.insert(0, os.path.join(CODE_ROOT, "mcp", "analysis"))
 sys.path.insert(0, os.path.join(CODE_ROOT, "mcp"))
 sys.path.insert(0, os.path.join(CODE_ROOT, "scripts"))
 
@@ -91,6 +92,66 @@ def get_active_decisions():
 
 def get_india_plan():
     return _load_yaml("data/india_6month_plan.yaml")
+
+
+def _get_symbol_sector(ticker: str) -> str:
+    """Same CUSTOM_SECTOR_MAP-then-Yahoo-fallback logic sector_analysis.py
+    uses for held positions, reused directly for a watchlist symbol that
+    isn't in any open_positions DataFrame yet."""
+    from sector_analysis import SectorAnalyzer
+    if ticker in SectorAnalyzer.CUSTOM_SECTOR_MAP:
+        return SectorAnalyzer.CUSTOM_SECTOR_MAP[ticker]
+    import yfinance as yf
+    try:
+        return yf.Ticker(ticker).info.get('sector', 'Unknown')
+    except Exception:
+        return 'Unknown'
+
+
+def analyze_watchlist_symbol(ticker: str) -> dict:
+    """The combined view the trader asked for: heat/conviction (the SAME
+    enhanced_metrics.get_ticker_metrics real positions get -- no separate,
+    lesser treatment for a candidate not yet held), sector + trend-vertical
+    tags, IV Rank (richness relative to the stock's OWN history), and
+    annualized yield-on-capital (opportunity cost vs. other candidates for
+    the same capital) -- combined, per the trader's explicit direction,
+    not treated as two separate, disconnected checks.
+    """
+    from enhanced_metrics import get_ticker_metrics
+    from iv_rank import get_iv_rank
+    from premium_yield import get_yield_on_capital
+    from trend_verticals import get_verticals_for_ticker
+
+    ticker = ticker.upper().strip()
+
+    # Price first (from a cheap history call inside get_yield_on_capital's
+    # own fetch, but get_ticker_metrics needs it passed in) -- reuse
+    # premium_yield's own live fetch rather than a third separate call.
+    yield_data = get_yield_on_capital(ticker)
+    price = yield_data.get("price")
+    if price is None:
+        import yfinance as yf
+        hist = yf.Ticker(ticker).history(period="1d")
+        price = float(hist["Close"].iloc[-1]) if len(hist) else None
+
+    metrics = get_ticker_metrics(ticker, price, option_type=None) if price else {"error": "no_price"}
+    iv = get_iv_rank(ticker)
+    sector = _get_symbol_sector(ticker)
+    verticals = get_verticals_for_ticker(ticker)
+
+    return _to_native({
+        "symbol": ticker,
+        "price": price,
+        "sector": sector,
+        "verticals": verticals,
+        "heat_status": metrics.get("heat_status"),
+        "heat_reason": metrics.get("heat_reason"),
+        "conviction": metrics.get("conviction"),
+        "rsi": metrics.get("rsi"),
+        "iv_rank": iv.get("iv_rank"),
+        "iv_entry_signal": iv.get("entry_signal"),
+        "yield_on_capital": yield_data,
+    })
 
 
 _REPORT_METHODS = {

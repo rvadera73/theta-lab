@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>theta-lab — Watchlist</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@uswds/uswds@3.14.0/dist/css/uswds.min.css">
+<style>
+  body { margin: 0; background: #f0f0f0; }
+  .topbar {
+    background: #2e2e38; color: #fff; padding: 12px 24px; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .topbar a { color: #fff; }
+  .topbar .crumbs a { color: #d3d3db; text-decoration: none; font-size: 13px; margin-left: 12px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .add-row { display: flex; gap: 8px; margin-bottom: 20px; align-items: flex-end; }
+  .add-row input { padding: 8px; font-size: 14px; }
+  .add-row label { display: block; font-size: 12px; color: #565c65; margin-bottom: 4px; }
+  table.usa-table { width: 100%; background: #fff; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; margin-right: 3px; background: #e8f4f8; color: #205493; }
+  .tag-untracked { background: #eee; color: #757575; }
+  .heat-GREEN { color: #00a91c; font-weight: 700; }
+  .heat-YELLOW { color: #c05600; font-weight: 700; }
+  .heat-RED { color: #d54309; font-weight: 700; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .analysis-row td { background: #fafafa; padding: 16px 20px; }
+  .empty { color: #757575; font-style: italic; }
+  .track-toggle { font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid #565c65; background: #fff; cursor: pointer; }
+  .analyze-btn, .promote-btn { font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid #005ea2; background: #fff; color: #005ea2; cursor: pointer; margin-right: 4px; }
+  .promote-btn { border-color: #00a91c; color: #00a91c; }
+  .kpi-row { display: flex; gap: 24px; flex-wrap: wrap; margin: 8px 0; }
+  .kpi .value { font-size: 20px; font-weight: 700; }
+  .kpi .label { font-size: 11px; color: #565c65; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <strong>theta-lab — Watchlist</strong>
+  <span class="crumbs"><a href="/">&larr; both markets</a><a href="us">US</a><a href="actions">Action Tracker</a></span>
+</div>
+<main>
+  <p style="font-size:14px;color:#444;">
+    Track candidate symbols not yet in the portfolio. Each gets the same heat/conviction,
+    IV Rank, and yield-on-capital analysis a held position gets. A good candidate can be
+    promoted straight into the Action Tracker.
+  </p>
+
+  <div class="add-row">
+    <div>
+      <label for="new-symbol">Symbol</label>
+      <input type="text" id="new-symbol" placeholder="e.g. COST" style="width:120px;" />
+    </div>
+    <div style="flex:1;">
+      <label for="new-notes">Notes (why watching)</label>
+      <input type="text" id="new-notes" placeholder="optional" style="width:100%;" />
+    </div>
+    <button class="usa-button" id="add-btn" type="button">Add to watchlist</button>
+  </div>
+
+  <div id="watchlist-table"><p class="empty">Loading...</p></div>
+</main>
+<script>
+  let items = [];
+  let analysisCache = {};
+  let expanded = null;
+
+  function fmtPct(n) { return n === null || n === undefined ? "-" : Number(n).toFixed(1) + "%"; }
+  function fmtNum(n) { return n === null || n === undefined ? "-" : Number(n).toFixed(2); }
+
+  async function loadWatchlist() {
+    const resp = await fetch("api/watchlist");
+    items = await resp.json();
+    render();
+  }
+
+  function analysisHtml(symbol) {
+    const a = analysisCache[symbol];
+    if (!a) return '<p class="empty">Click Analyze to fetch live data.</p>';
+    if (a.error) return `<p class="empty">Error: ${a.error}</p>`;
+    const put = a.yield_on_capital?.put;
+    const call = a.yield_on_capital?.call;
+    const verticalTags = (a.verticals || []).map(v => `<span class="tag">${v}</span>`).join("") || '<span class="empty">none</span>';
+    return `
+      <div class="kpi-row">
+        <div class="kpi"><div class="value">$${fmtNum(a.price)}</div><div class="label">Price</div></div>
+        <div class="kpi"><div class="value heat-${a.heat_status}">${a.heat_status || "-"}</div><div class="label">Heat (conv ${fmtNum(a.conviction)}, RSI ${fmtNum(a.rsi)})</div></div>
+        <div class="kpi"><div class="value">${a.iv_rank !== null && a.iv_rank !== undefined ? a.iv_rank.toFixed(0) : "-"}</div><div class="label">IV Rank ${a.iv_entry_signal ? "✓ ≥40" : ""}</div></div>
+        <div class="kpi"><div class="value">${put ? put.annualized_yield_pct.toFixed(1) + "%" : "-"}</div><div class="label">Put yield-on-capital (ann.)</div></div>
+        <div class="kpi"><div class="value">${call ? call.annualized_yield_pct.toFixed(1) + "%" : "-"}</div><div class="label">Call yield-on-capital (ann.)</div></div>
+      </div>
+      <p style="font-size:12.5px;color:#565c65;">${a.heat_reason || ""}</p>
+      <p><strong>Sector:</strong> ${a.sector || "Unknown"} &nbsp; <strong>Verticals:</strong> ${verticalTags}</p>
+      ${put ? `<p style="font-size:12px;">Put: strike $${put.strike}, mid $${put.mid}, capital $${put.capital_required.toLocaleString()}, expiry ${a.yield_on_capital.expiry} (${a.yield_on_capital.dte} DTE)</p>` : ""}
+      <button class="promote-btn" data-symbol="${symbol}">Track as action (consider entry)</button>
+    `;
+  }
+
+  function render() {
+    if (!items.length) {
+      document.getElementById("watchlist-table").innerHTML = '<p class="empty">Nothing on the watchlist yet.</p>';
+      return;
+    }
+    let rows = "";
+    for (const item of items) {
+      rows += `
+        <tr>
+          <th scope="row">${item.symbol}</th>
+          <td>${item.tracked ? '<span class="tag">tracked</span>' : '<span class="tag tag-untracked">paused</span>'}</td>
+          <td>${item.notes || ""}</td>
+          <td>
+            <button class="analyze-btn" data-symbol="${item.symbol}">Analyze</button>
+            <button class="track-toggle" data-symbol="${item.symbol}" data-tracked="${item.tracked}">${item.tracked ? "Pause" : "Resume"}</button>
+          </td>
+        </tr>`;
+      if (expanded === item.symbol) {
+        rows += `<tr class="analysis-row"><td colspan="4">${analysisHtml(item.symbol)}</td></tr>`;
+      }
+    }
+    document.getElementById("watchlist-table").innerHTML = `
+      <table class="usa-table usa-table--borderless">
+        <thead><tr><th scope="col">Symbol</th><th scope="col">Status</th><th scope="col">Notes</th><th scope="col">Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+
+    document.querySelectorAll(".analyze-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const symbol = btn.dataset.symbol;
+        expanded = symbol;
+        btn.textContent = "Loading...";
+        render();
+        const resp = await fetch(`api/watchlist/${symbol}/analysis`);
+        analysisCache[symbol] = await resp.json();
+        render();
+      });
+    });
+
+    document.querySelectorAll(".track-toggle").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const symbol = btn.dataset.symbol;
+        const currentlyTracked = btn.dataset.tracked === "true";
+        await fetch(`api/watchlist/${symbol}/tracked`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tracked: !currentlyTracked }),
+        });
+        await loadWatchlist();
+      });
+    });
+
+    document.querySelectorAll(".promote-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const symbol = btn.dataset.symbol;
+        const a = analysisCache[symbol];
+        const put = a.yield_on_capital?.put;
+        btn.disabled = true;
+        btn.textContent = "Tracking...";
+        await fetch("api/actions/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            market: "US",
+            category: "Watchlist Entry",
+            title: `Consider entry: ${symbol} (${a.heat_status}, IVR ${a.iv_rank}, put yield ${put ? put.annualized_yield_pct.toFixed(1) : "-"}%)`,
+            description: a.heat_reason || "",
+          }),
+        });
+        btn.textContent = "✓ Tracked as action";
+      });
+    });
+  }
+
+  document.getElementById("add-btn").addEventListener("click", async () => {
+    const symbol = document.getElementById("new-symbol").value.trim().toUpperCase();
+    const notes = document.getElementById("new-notes").value.trim();
+    if (!symbol) return;
+    await fetch("api/watchlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol, notes }),
+    });
+    document.getElementById("new-symbol").value = "";
+    document.getElementById("new-notes").value = "";
+    await loadWatchlist();
+  });
+
+  loadWatchlist();
+</script>
+</body>
+</html>
