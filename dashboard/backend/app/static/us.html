@@ -420,15 +420,19 @@
   // file. Parsed directly so a 7-day-old call is labeled as such instead
   // of looking as current as the live panels above it.
   function parseQuarterlyDate(text) {
-    // "Refreshed" (a later partial update) wins over "Generated" (the
-    // original authoring date) when both are present -- checked in that
-    // priority order, not textual first-match order, since "Generated"
-    // always appears first in the doc even when a later "Refreshed" date
-    // is the real, more-current one (confirmed on the real US doc: dated
-    // "Generated 2026-08-22", "Refreshed 2026-09-18" -- the second is what
-    // matters for staleness).
-    const refreshed = text.match(/Refreshed\s+(\d{4}-\d{2}-\d{2})/);
-    if (refreshed) return refreshed[1];
+    // The MOST RECENT "Refreshed" date wins -- real bug found 2026-09-25:
+    // the doc can say "Refreshed 2026-09-18. Refreshed again 2026-09-25"
+    // (multiple refreshes over a quarter), and a non-global match() only
+    // ever returns the FIRST one in the text, silently showing the doc as
+    // 7 days staler than it actually was. Global-matches every
+    // "Refreshed <words> DATE" occurrence (not just an immediately-
+    // adjacent date -- "again" or similar filler in between must not
+    // break the match) and takes the maximum date found. Falls back to
+    // "Generated" only if there's no "Refreshed" at all.
+    const matches = [...text.matchAll(/Refreshed[^0-9]{0,20}(\d{4}-\d{2}-\d{2})/g)];
+    if (matches.length) {
+      return matches.map(m => m[1]).sort().at(-1);
+    }
     const generated = text.match(/Generated:?\*?\*?\s*(\d{4}-\d{2}-\d{2})/);
     return generated ? generated[1] : null;
   }

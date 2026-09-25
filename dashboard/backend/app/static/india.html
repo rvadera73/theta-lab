@@ -119,10 +119,13 @@
   }
 
   function parseQuarterlyDate(text) {
-    // Same priority as us.html: "Refreshed" (a later partial update) wins
-    // over "Generated" (original authoring date) when both are present.
-    const refreshed = text.match(/Refreshed\s+(\d{4}-\d{2}-\d{2})/);
-    if (refreshed) return refreshed[1];
+    // Same fix as us.html 2026-09-25: take the MOST RECENT "Refreshed"
+    // date (global match, tolerant of filler words like "again" between
+    // "Refreshed" and the date), not just the first one in the text.
+    const matches = [...text.matchAll(/Refreshed[^0-9]{0,20}(\d{4}-\d{2}-\d{2})/g)];
+    if (matches.length) {
+      return matches.map(m => m[1]).sort().at(-1);
+    }
     const generated = text.match(/Generated:?\*?\*?\s*(\d{4}-\d{2}-\d{2})/);
     return generated ? generated[1] : null;
   }
