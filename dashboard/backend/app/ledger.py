@@ -111,11 +111,38 @@ def _parse_open_items_bullets(markdown_text: str) -> list[str]:
     return bullets
 
 
+def _title_from_description(description: str, fallback: str, max_len: int = 150) -> str:
+    """A real, human title instead of a raw snake_case id -- active_decisions
+    .yaml's own description already opens with a clear imperative sentence
+    (e.g. "Reduce BE put exposure to zero over the next ~10 days...") that
+    is a far better title than the id it's filed under (e.g.
+    "be_puts_reduction"). Takes everything up to the first sentence-ending
+    period; falls back to the id only if there's truly no description.
+    """
+    description = (description or "").strip()
+    if not description:
+        return fallback
+    first_sentence = description.split(". ")[0].split(".\n")[0]
+    if len(first_sentence) > max_len:
+        first_sentence = first_sentence[:max_len].rsplit(" ", 1)[0] + "..."
+    return first_sentence.rstrip(".") + "." if not first_sentence.endswith(("...", ".")) else first_sentence
+
+
 def sync_all():
     """Pulls every market's real open-item sources into the ledger. Call
     this before list_action_items() so a first-ever run isn't empty, and
     optionally on a manual refresh -- cheap (no live price/report calls),
     unlike the report-engine refresh endpoints.
+
+    Deliberately does NOT sync the quarterly-direction docs' "Open Items /
+    Not Yet Built" sections (removed 2026-09-25, was here in the first
+    version of this ledger) -- checked their real content and every one of
+    them ("No India crash-probability model exists", "No single-name
+    concentration cap exists", ...) is a gap in the ANALYSIS SYSTEM itself,
+    not a trading decision. Mixing "build a new risk model" in with "close
+    this position" in the same tracker is what made the trader say this
+    "doesn't look like actions at all" -- those belong in
+    docs/DASHBOARD_PLAN.md's own phase backlog, not here.
     """
     from . import services  # local import: avoids a circular import at module load
 
@@ -129,25 +156,12 @@ def sync_all():
                 continue
             item_id = f"us_ad_{d.get('id')}"
             desc = (d.get("description") or "").strip()
+            title = _title_from_description(desc, d.get("id"))
             _upsert_new_only(
                 conn, item_id, "US", "active_decisions",
                 d.get("account") or "General",
-                d.get("id"), desc[:2000], status,
+                title, desc[:2000], status,
             )
-
-        # -- US: quarterly direction doc's Open Items
-        us_qtr = services.get_quarterly_direction("us")
-        us_open = services.extract_section_from_text(us_qtr, "## 6. Open Items")
-        for bullet in _parse_open_items_bullets(us_open):
-            item_id = f"us_qtr_{_short_id(bullet[:60])}"
-            _upsert_new_only(conn, item_id, "US", "quarterly_direction", "Strategic", bullet[:80], bullet, "OPEN")
-
-        # -- India: quarterly direction doc's Open Items
-        india_qtr = services.get_quarterly_direction("india")
-        india_open = services.extract_section_from_text(india_qtr, "## 5. Open Items")
-        for bullet in _parse_open_items_bullets(india_open):
-            item_id = f"india_qtr_{_short_id(bullet[:60])}"
-            _upsert_new_only(conn, item_id, "India", "quarterly_direction", "Strategic", bullet[:80], bullet, "OPEN")
 
         # -- India: 6-month plan's F&O legs flagged for closing + equity exits
         plan = services.get_india_plan() or {}
