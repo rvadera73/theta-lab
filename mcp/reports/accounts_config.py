@@ -73,10 +73,17 @@ needs realized_pnl.py's numbers) — this module has no dependency on either.
 ACCOUNTS_CONFIG = {
     'Account A (232)': {'balance': 403000, 'margin': True, 'capacity': 900000, 'balance_as_of': None, 'capacity_as_of': '2026-09-21'},
     'Account B (275)': {'balance': 261000, 'margin': False, 'balance_as_of': None},
-    'Account C (634)': {'balance': 266000, 'margin': False, 'balance_as_of': None},
-    'Fidelity (Rahul)': {'balance': 498560, 'margin': False, 'balance_as_of': '2026-07-31'},
-    'Fidelity (Rajul — Roth IRA)': {'balance': 39158, 'margin': False, 'balance_as_of': '2026-07-31'},
-    'Fidelity (Rajul — Rollover IRA)': {'balance': 128081, 'margin': False, 'balance_as_of': '2026-07-31'},
+    'Account C (634)': {'balance': 256067, 'margin': False, 'balance_as_of': '2026-09-25'},  # real Schwab balance export -- Cash Secured Put Requirement $213,150 against $213,203 cash, only $52.94 actually free to trade
+    # Fidelity balances derived from the position file's own money-market cash
+    # line + its "% of account" column (Cash / pct = total account value) --
+    # a real, live figure computable from every fresh export, not a manually
+    # re-confirmed number that goes stale. Fixed 2026-09-25 after the trader
+    # flagged reports still showing the 2026-07-31 balance_as_of date despite
+    # regular fresh ingests -- this field just wasn't being recomputed from
+    # data that was already sitting in the position files the whole time.
+    'Fidelity (Rahul)': {'balance': 563432, 'margin': False, 'balance_as_of': '2026-09-25'},  # $522,516.06 cash / 92.73%
+    'Fidelity (Rajul — Roth IRA)': {'balance': 44942, 'margin': False, 'balance_as_of': '2026-09-25'},  # $34,469.22 cash / 76.71%
+    'Fidelity (Rajul — Rollover IRA)': {'balance': 141349, 'margin': False, 'balance_as_of': '2026-09-25'},  # $163,364.18 cash / 115.58% (>100% because this account's naked-put book carries negative net option value, pulling the account total below the cash line)
     'Vanguard (Rahul)': {'balance': 320492, 'margin': False, 'balance_as_of': '2026-07-31'},
     'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'balance_as_of': None},
     'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'balance_as_of': None},

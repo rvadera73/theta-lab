@@ -540,17 +540,29 @@ class UnifiedReportProduction:
         """Shared renderer for the Active Decision Tracker, called from
         every report type so a tracked decision (a roll to execute, a
         cleanup, an entry gate) is visible no matter which report the
-        trader reads next, not just the daily one."""
+        trader reads next, not just the daily one.
+
+        RESOLVED/CLEARED entries collapse to a one-line summary (fixed
+        2026-09-25 -- trader flagged that already-resolved items were
+        still rendering their full original description paragraph in
+        every report, indefinitely, which is real clutter once a decision
+        is done: the underlying YAML still keeps the full record forever
+        per the original design intent, this only changes what gets
+        printed here). OPEN/BLOCKED entries keep full detail since those
+        are the ones that actually need the trader's attention today.
+        """
         output = [""]
         try:
             decisions = self._check_active_decisions()
             if not decisions:
                 output.append("- No active decisions on record.")
             else:
-                for d in decisions:
+                open_items = [d for d in decisions if d.get('status') not in ("RESOLVED", "CLEARED")]
+                done_items = [d for d in decisions if d.get('status') in ("RESOLVED", "CLEARED")]
+
+                for d in open_items:
                     status = d.get('status', 'OPEN')
-                    icon = "✅" if status in ("RESOLVED", "CLEARED") else "⏳"
-                    output.append(f"**{icon} {d.get('id')}** — {status}" + (f" (as of {d['resolved_date']})" if d.get('resolved_date') else ""))
+                    output.append(f"**⏳ {d.get('id')}** — {status}")
                     output.append("")
                     output.append(d.get('description', '').strip())
                     if '_live_naked_itm' in d:
@@ -563,6 +575,13 @@ class UnifiedReportProduction:
                     if '_live_values' in d:
                         for k, v in d['_live_values'].items():
                             output.append(f"  - Live: {k} = {v}")
+                    output.append("")
+
+                if done_items:
+                    output.append("**Resolved (collapsed — see `data/active_decisions.yaml` for full history):**")
+                    for d in done_items:
+                        when = f" ({d['resolved_date']})" if d.get('resolved_date') else ""
+                        output.append(f"  - ✅ {d.get('id')} — {d.get('status')}{when}")
                     output.append("")
         except Exception as e:
             output.append(f"- ⚠️ Active decision tracker unavailable: {e}")
@@ -1902,12 +1921,22 @@ class UnifiedReportProduction:
             output.append("")
 
         # SECTION 4: POSITION HEAT BY ACCOUNT
+        # Fixed 2026-09-25 -- "Status: MONITOR" was a hardcoded literal, never
+        # actually computed, so every account showed identically regardless
+        # of real state (Account A OVER CAP, Account C's cash fully committed,
+        # etc. all rendered as the same "MONITOR" here while Section 0 showed
+        # the real, differentiated status two sections earlier in the same
+        # report). Reuses the shared _compute_account_status() -- the same
+        # single source of truth Section 0's own per-account table already
+        # uses -- instead of a second, disconnected copy of this logic.
         output.extend(self._format_section_header(4, "POSITION HEAT BY ACCOUNT"))
+        acct_status = self._compute_account_status()
         for account, row in self.account_summary.iterrows():
             account_positions = self.open_positions[self.open_positions['account_name'] == account]
+            real_status = acct_status.get(account, {}).get('status', 'MONITOR')
             output.append(f"**{account}:**")
             output.append(f"- Open positions: {row['open_positions']}")
-            output.append(f"- Status: MONITOR")
+            output.append(f"- Status: {real_status}")
             output.append("")
 
         # SECTION 5: IV RANK & ENTRY GATE
