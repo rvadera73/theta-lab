@@ -1,0 +1,18 @@
+# Real bug found 2026-09-25: stale, months-old __pycache__/*.pyc files
+# (gitignored, but Docker's COPY doesn't honor .gitignore -- only
+# .dockerignore) were getting baked into the dashboard image on every
+# build. Python's import system doesn't always recompile a .pyc against a
+# freshly-COPYed .py source if their mtimes end up in an order that looks
+# up-to-date, so a real code fix (macro_risk_analyzer.py's
+# SECTOR_SENSITIVITY_MAP backtest correction) silently kept running the
+# OLD compiled bytecode after a full rebuild -- found by directly
+# comparing the running container's live output against a fresh direct
+# script run of the same code, which disagreed.
+__pycache__/
+*.pyc
+*.pyo
+
+.git/
+.venv/
+venv/
+*.log
