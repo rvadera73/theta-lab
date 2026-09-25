@@ -2,8 +2,15 @@
 sector_analysis.py's GICS-style sectors. A ticker keeps exactly ONE sector
 (unchanged) but can carry MULTIPLE vertical tags, since real thematic
 exposure cuts across sector boundaries: e.g. RKLB is both Space and
-Defense/Dual-Use; TSM is both AI/Pick-and-Shovel and Global/EM Exposure;
+Defense/Geopolitical; TSM is both AI/Pick-and-Shovel and Global Brand;
 AMZN is AI/Hyperscaler while sitting in the Consumer Cyclical sector.
+
+A vertical tag is informational context only, never a screening gate --
+confirmed with the trader 2026-09-25: a name stays in (or out of) the
+portfolio purely on real premium-vs-risk economics, regardless of whether
+it carries any trend tag at all. Most of this portfolio (39 of 92 tickers
+as of the same date) carries zero vertical tags, and that's expected, not
+a gap.
 
 V1, defined 2026-09-25 via a real, ticker-by-ticker review of the actual
 92-ticker portfolio (grep the live report engine's own ticker_sector_map,
@@ -46,10 +53,29 @@ TREND_VERTICALS: dict[str, list[str]] = {
     # ---- Other real hot trends, distinct from the AI theme ----
     'Space': ['ASTS', 'RKLB', 'PL'],
     'GLP-1': ['NVO', 'LLY'],
-    'Global Brand': ['NKE', 'SBUX'],
+    # Global Brand -- merged with the former standalone "Global/EM
+    # Exposure" bucket 2026-09-25 at the trader's direction (a globally
+    # recognized brand/franchise IS the global-exposure story for names
+    # like BABA/TSM, not a separate concern). Note: TSM/INFY/NU are more
+    # "global economic exposure" than "brand" in the classic consumer
+    # sense (TSM is a foundry, INFY is IT services, NU is a digital bank)
+    # -- kept together per the merge instruction, flagged here in case
+    # that distinction matters later.
+    'Global Brand': ['NKE', 'SBUX', 'BABA', 'JD', 'INFY', 'NU', 'MMYT', 'TSM'],
+    # US Brand -- split out 2026-09-25: strong brand/moat names without
+    # the international-exposure risk Global Brand carries.
+    'US Brand': ['ELF', 'ULTA'],
     'Crypto': ['COIN', 'CRCL', 'HUT', 'RIOT', 'CIFR'],
-    'Global/EM Exposure': ['BABA', 'JD', 'INFY', 'NU', 'MMYT', 'TSM'],
-    'Defense/Dual-Use': ['LMT', 'NOC', 'BA', 'KTOS', 'AXON', 'RKLB'],
+    # Defense split into two real, distinct trend drivers 2026-09-25 (was
+    # one "Defense/Dual-Use" bucket): geopolitical-tension/budget-driven
+    # traditional defense vs. AI/autonomy-driven defense-tech. LMT/NOC/BA
+    # are classic budget-and-tension-driven primes; RKLB's launch-vehicle
+    # business is the same driver (national-security payload demand), not
+    # an AI story. KTOS (autonomous drones) and AXON (AI-driven evidence/
+    # analytics products, not just tasers) have a real AI angle distinct
+    # from that geopolitical driver.
+    'Defense/Geopolitical': ['LMT', 'NOC', 'BA', 'RKLB'],
+    'Defense/AI': ['KTOS', 'AXON'],
 }
 
 
