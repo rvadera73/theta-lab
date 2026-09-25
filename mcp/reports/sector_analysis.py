@@ -31,6 +31,7 @@ class SectorAnalyzer:
         'Communication Services',
         'Defense',
         'Brand-Quality (Non-AI)',
+        'Crypto Mining',
     ]
 
     # Custom sector mapping for specific tickers
@@ -59,7 +60,27 @@ class SectorAnalyzer:
         'MCD': 'Brand-Quality (Non-AI)',
         'CMG': 'Brand-Quality (Non-AI)',
         'NKE': 'Brand-Quality (Non-AI)',
-        'ANET': 'Brand-Quality (Non-AI)',
+        # ANET (Arista Networks) REMOVED from here 2026-09-25 -- this was a
+        # real misclassification, not a judgment call: Arista sells
+        # high-speed Ethernet switches purpose-built for AI clusters, with
+        # Meta and Microsoft as anchor customers (externally confirmed via
+        # current market coverage naming Arista alongside Vertiv as the
+        # standard "AI picks-and-shovels" infrastructure pair) -- the
+        # opposite of "Non-AI". Falls through to its real Yahoo sector
+        # (Technology) below, and is tagged AI/Data-Center-Infra in
+        # trend_verticals.py.
+
+        # Crypto Mining -- Yahoo Finance's own taxonomy classifies Bitcoin
+        # miners under "Financial Services" (sub-industry "Capital
+        # Markets"), a real, well-documented Yahoo quirk applied to this
+        # whole peer group (also MARA, CLSK if ever held), not specific to
+        # this codebase. Found live 2026-09-25 when the trader asked why
+        # HUT/RIOT showed up under Financial Services in the Sector Heat
+        # table -- their real business (specialized compute/power
+        # infrastructure) has nothing to do with financial services.
+        'HUT': 'Crypto Mining',
+        'RIOT': 'Crypto Mining',
+        'CIFR': 'Crypto Mining',
     }
 
     def __init__(self, open_positions: pd.DataFrame, metrics: Dict, prices: Dict, iv_ranks: Dict = None):
