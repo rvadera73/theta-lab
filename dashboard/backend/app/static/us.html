@@ -49,6 +49,12 @@
     color: #005ea2; font-weight: 600; font-size: 15px;
   }
   .qtr-summary { font-size: 15px; line-height: 1.6; }
+  .as-of-badge {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 999px; background: #e8f4f8; color: #205493; margin-left: 8px; vertical-align: middle;
+  }
+  .as-of-badge.stale { background: #f4e3db; color: #b50909; }
+  section.panel h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 </style>
 </head>
 <body>
@@ -60,20 +66,20 @@
 
   <section class="panel" aria-labelledby="h-account">
     <span class="customer-label">Customer</span>
-    <h2 id="h-account">Account Health &amp; Margin</h2>
+    <h2 id="h-account">Account Health &amp; Margin <span class="as-of-badge" id="as-of-account"></span></h2>
     <p style="font-size:13px;color:#565c65;margin-top:-4px;">Click Account A's row for its cash &amp; margin forecast.</p>
     <div id="account-status"><p class="empty">Loading...</p></div>
   </section>
 
   <section class="panel" aria-labelledby="h-pnl">
     <span class="customer-label">Customer</span>
-    <h2 id="h-pnl">P&amp;L vs Target</h2>
+    <h2 id="h-pnl">P&amp;L vs Target <span class="as-of-badge" id="as-of-pnl"></span></h2>
     <div id="pnl-trend"><p class="empty">Loading...</p></div>
   </section>
 
   <section class="panel" aria-labelledby="h-sector">
     <span class="customer-label">Customer</span>
-    <h2 id="h-sector">Sector Heat</h2>
+    <h2 id="h-sector">Sector Heat <span class="as-of-badge" id="as-of-sector"></span></h2>
     <details id="sector-details">
       <summary>Show sector-by-sector position heat</summary>
       <div id="sector-heat" class="rendered-md"><p class="empty">Loading...</p></div>
@@ -82,7 +88,7 @@
 
   <section class="panel" aria-labelledby="h-risk">
     <span class="customer-label">Customer</span>
-    <h2 id="h-risk">Risk &amp; Macro</h2>
+    <h2 id="h-risk">Risk &amp; Macro <span class="as-of-badge" id="as-of-risk"></span></h2>
     <details id="risk-details">
       <summary>Show crash early-warning + risk guardrails detail</summary>
       <div id="risk-macro" class="rendered-md"><p class="empty">Loading...</p></div>
@@ -91,7 +97,7 @@
 
   <section class="panel" aria-labelledby="h-quarterly">
     <span class="customer-label">Customer</span>
-    <h2 id="h-quarterly">Quarterly Portfolio Direction</h2>
+    <h2 id="h-quarterly">Quarterly Portfolio Direction <span class="as-of-badge" id="as-of-quarterly"></span></h2>
     <div id="quarterly-summary" class="qtr-summary"><p class="empty">Loading...</p></div>
     <details style="margin-top:12px;">
       <summary>Read the full quarterly review</summary>
@@ -157,14 +163,26 @@
       </table>`;
   }
 
+  function setAsOf(elId, isoString, staleAfterMinutes = 45) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!isoString) { el.textContent = ""; return; }
+    const ageMin = (Date.now() - new Date(isoString).getTime()) / 60000;
+    const label = ageMin < 1 ? "just now" : ageMin < 60 ? `${Math.round(ageMin)}m ago` : `${(ageMin / 60).toFixed(1)}h ago`;
+    el.textContent = `as of ${label}`;
+    el.classList.toggle("stale", ageMin > staleAfterMinutes);
+  }
+
   async function loadAccountStatus() {
     const [statusResp, cashResp] = await Promise.all([
       fetch("api/us/account-status"),
       fetch("api/us/cash-margin-forecast"),
     ]);
-    const rows = await statusResp.json();
-    cashMarginData = await cashResp.json();
-    renderAccountTable(rows);
+    const statusJson = await statusResp.json();
+    const cashJson = await cashResp.json();
+    cashMarginData = cashJson.data;
+    setAsOf("as-of-account", statusJson.as_of);
+    renderAccountTable(statusJson.data);
   }
 
   function renderAccountTable(rows) {
@@ -199,7 +217,9 @@
 
   async function loadPnlTrend() {
     const resp = await fetch("api/us/pnl-trend");
-    const data = await resp.json();
+    const json = await resp.json();
+    const data = json.data;
+    setAsOf("as-of-pnl", json.as_of);
     const rows = Object.entries(data.per_account).map(([label, v]) => {
       const qtd = data.per_account_qtd[label] ?? 0;
       return `<tr>
@@ -223,11 +243,34 @@
       </table>`;
   }
 
-  async function loadMarkdownInto(url, elementId) {
+  async function loadJsonTextInto(url, elementId, asOfId) {
     const resp = await fetch(url);
-    const text = resp.ok ? await resp.text() : `_Failed to load (${resp.status})_`;
-    document.getElementById(elementId).innerHTML = marked.parse(text);
-    return text;
+    if (!resp.ok) {
+      document.getElementById(elementId).innerHTML = marked.parse(`_Failed to load (${resp.status})_`);
+      return;
+    }
+    const json = await resp.json();
+    document.getElementById(elementId).innerHTML = marked.parse(json.text);
+    if (asOfId) setAsOf(asOfId, json.as_of);
+  }
+
+  // The quarterly doc is a hand-authored periodic review, not a live
+  // computation -- its real staleness is its OWN "Generated"/"Refreshed"
+  // date embedded in the text, not when this container last read the
+  // file. Parsed directly so a 7-day-old call is labeled as such instead
+  // of looking as current as the live panels above it.
+  function parseQuarterlyDate(text) {
+    // "Refreshed" (a later partial update) wins over "Generated" (the
+    // original authoring date) when both are present -- checked in that
+    // priority order, not textual first-match order, since "Generated"
+    // always appears first in the doc even when a later "Refreshed" date
+    // is the real, more-current one (confirmed on the real US doc: dated
+    // "Generated 2026-08-22", "Refreshed 2026-09-18" -- the second is what
+    // matters for staleness).
+    const refreshed = text.match(/Refreshed\s+(\d{4}-\d{2}-\d{2})/);
+    if (refreshed) return refreshed[1];
+    const generated = text.match(/Generated:?\*?\*?\s*(\d{4}-\d{2}-\d{2})/);
+    return generated ? generated[1] : null;
   }
 
   async function loadQuarterly() {
@@ -237,6 +280,16 @@
     const directionSection = text.split("## 2.")[0].split("## 1.")[1] || text.slice(0, 600);
     document.getElementById("quarterly-summary").innerHTML =
       "<strong>Market Direction Call:</strong>" + marked.parse(directionSection.slice(0, 700) + "…");
+    const docDate = parseQuarterlyDate(text);
+    const badge = document.getElementById("as-of-quarterly");
+    if (docDate) {
+      const daysOld = Math.round((Date.now() - new Date(docDate).getTime()) / 86400000);
+      badge.textContent = `dated ${docDate} (${daysOld}d old)`;
+      badge.classList.toggle("stale", daysOld >= 7);
+    } else {
+      badge.textContent = "date unknown";
+      badge.classList.add("stale");
+    }
   }
 
   async function loadActionSummary() {
@@ -252,19 +305,18 @@
     await Promise.all([
       loadAccountStatus(),
       loadPnlTrend(),
-      loadMarkdownInto("api/us/sector-heat", "sector-heat"),
-      loadMarkdownInto("api/us/risk-macro", "risk-macro"),
+      loadJsonTextInto("api/us/sector-heat", "sector-heat", "as-of-sector"),
+      loadJsonTextInto("api/us/risk-macro", "risk-macro", "as-of-risk"),
       loadQuarterly(),
       loadActionSummary(),
-      loadMarkdownInto("api/us/framework-status", "framework-status"),
+      loadJsonTextInto("api/us/framework-status", "framework-status", null),
     ]);
   }
 
   document.getElementById("refresh-btn").addEventListener("click", async () => {
-    document.getElementById("refresh-note").textContent = "Refreshing (live price fetch, ~90s)...";
+    document.getElementById("refresh-note").textContent =
+      "Refresh started in the background (~90s) -- reload this page shortly to see fresh data.";
     await fetch("api/us/refresh", { method: "POST" });
-    await loadAll();
-    document.getElementById("refresh-note").textContent = "Refreshed.";
   });
 
   loadAll();

@@ -35,6 +35,12 @@
   details[open] summary::before { content: "▾ "; }
   .action-summary-link { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #8b2b2b; font-weight: 600; font-size: 15px; }
   .qtr-summary { font-size: 15px; line-height: 1.6; }
+  .as-of-badge {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 999px; background: #e8f4f8; color: #205493; margin-left: 8px; vertical-align: middle;
+  }
+  .as-of-badge.stale { background: #f4e3db; color: #b50909; }
+  section.panel h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 </style>
 </head>
 <body>
@@ -46,13 +52,13 @@
 
   <section class="panel" aria-labelledby="h-signals">
     <span class="customer-label">Customer</span>
-    <h2 id="h-signals">Market Signals</h2>
+    <h2 id="h-signals">Market Signals <span class="as-of-badge" id="as-of-signals"></span></h2>
     <div id="market-signals" class="rendered-md"><p class="empty">Loading...</p></div>
   </section>
 
   <section class="panel" aria-labelledby="h-plan">
     <span class="customer-label">Customer</span>
-    <h2 id="h-plan">6-Month Plan Tracking</h2>
+    <h2 id="h-plan">6-Month Plan Tracking <span class="as-of-badge" id="as-of-plan"></span></h2>
     <details open>
       <summary>Show plan-vs-live status</summary>
       <div id="six-month-check" class="rendered-md"><p class="empty">Loading...</p></div>
@@ -61,7 +67,7 @@
 
   <section class="panel" aria-labelledby="h-quarterly">
     <span class="customer-label">Customer</span>
-    <h2 id="h-quarterly">Quarterly Portfolio Direction</h2>
+    <h2 id="h-quarterly">Quarterly Portfolio Direction <span class="as-of-badge" id="as-of-quarterly"></span></h2>
     <div id="quarterly-summary" class="qtr-summary"><p class="empty">Loading...</p></div>
     <details style="margin-top:12px;">
       <summary>Read the full quarterly review</summary>
@@ -91,10 +97,34 @@
 
 </main>
 <script>
-  async function loadMarkdownInto(url, elementId) {
+  function setAsOf(elId, isoString, staleAfterMinutes = 45) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!isoString) { el.textContent = ""; return; }
+    const ageMin = (Date.now() - new Date(isoString).getTime()) / 60000;
+    const label = ageMin < 1 ? "just now" : ageMin < 60 ? `${Math.round(ageMin)}m ago` : `${(ageMin / 60).toFixed(1)}h ago`;
+    el.textContent = `as of ${label}`;
+    el.classList.toggle("stale", ageMin > staleAfterMinutes);
+  }
+
+  async function loadJsonTextInto(url, elementId, asOfId) {
     const resp = await fetch(url);
-    const text = resp.ok ? await resp.text() : `_Failed to load (${resp.status})_`;
-    document.getElementById(elementId).innerHTML = marked.parse(text);
+    if (!resp.ok) {
+      document.getElementById(elementId).innerHTML = marked.parse(`_Failed to load (${resp.status})_`);
+      return;
+    }
+    const json = await resp.json();
+    document.getElementById(elementId).innerHTML = marked.parse(json.text);
+    if (asOfId) setAsOf(asOfId, json.as_of);
+  }
+
+  function parseQuarterlyDate(text) {
+    // Same priority as us.html: "Refreshed" (a later partial update) wins
+    // over "Generated" (original authoring date) when both are present.
+    const refreshed = text.match(/Refreshed\s+(\d{4}-\d{2}-\d{2})/);
+    if (refreshed) return refreshed[1];
+    const generated = text.match(/Generated:?\*?\*?\s*(\d{4}-\d{2}-\d{2})/);
+    return generated ? generated[1] : null;
   }
 
   async function loadQuarterly() {
@@ -104,6 +134,16 @@
     const directionSection = text.split("## 2.")[0].split("## 1.")[1] || text.slice(0, 600);
     document.getElementById("quarterly-summary").innerHTML =
       "<strong>Market Direction Call:</strong>" + marked.parse(directionSection.slice(0, 700) + "…");
+    const docDate = parseQuarterlyDate(text);
+    const badge = document.getElementById("as-of-quarterly");
+    if (docDate) {
+      const daysOld = Math.round((Date.now() - new Date(docDate).getTime()) / 86400000);
+      badge.textContent = `dated ${docDate} (${daysOld}d old)`;
+      badge.classList.toggle("stale", daysOld >= 7);
+    } else {
+      badge.textContent = "date unknown";
+      badge.classList.add("stale");
+    }
   }
 
   async function loadActionSummary() {
@@ -117,19 +157,18 @@
 
   async function loadAll() {
     await Promise.all([
-      loadMarkdownInto("api/india/market-signals", "market-signals"),
-      loadMarkdownInto("api/india/6month-check", "six-month-check"),
+      loadJsonTextInto("api/india/market-signals", "market-signals", "as-of-signals"),
+      loadJsonTextInto("api/india/6month-check", "six-month-check", "as-of-plan"),
       loadQuarterly(),
       loadActionSummary(),
-      loadMarkdownInto("api/india/report", "full-report"),
+      loadJsonTextInto("api/india/report", "full-report", null),
     ]);
   }
 
   document.getElementById("refresh-btn").addEventListener("click", async () => {
-    document.getElementById("refresh-note").textContent = "Refreshing...";
+    document.getElementById("refresh-note").textContent =
+      "Refresh started in the background -- reload this page shortly to see fresh data.";
     await fetch("api/india/refresh", { method: "POST" });
-    await loadAll();
-    document.getElementById("refresh-note").textContent = "Refreshed.";
   });
 
   loadAll();
