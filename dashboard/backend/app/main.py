@@ -11,6 +11,8 @@ from . import services
 from . import ledger
 from . import cache
 from . import watchlist
+from . import file_watcher
+from . import quarterly_review_check
 
 # Resolved from this file's own location, not the process's CWD -- the
 # report engine this app wraps (services.py) expects to run with the repo
@@ -38,10 +40,19 @@ def _on_startup():
     threading.Thread(target=_initial_and_periodic_refresh, daemon=True).start()
     # Every 30 minutes -- proportionate to how often live prices/positions
     # actually change for a personal, non-HFT options book; not tied to
-    # market hours yet (see docs/DASHBOARD_PLAN.md Phase E for that
-    # refinement, which also needs India's very different trading hours).
+    # market hours yet (a further refinement, which also needs India's very
+    # different trading hours).
     _scheduler.add_job(cache.refresh_all, "interval", minutes=30, id="refresh_all", max_instances=1)
+    # Every 2 minutes -- Phase E, built 2026-09-25: checks data/positions/
+    # and data/statements/ for new files and triggers an immediate refresh
+    # (rather than waiting for the interval above) the moment one lands,
+    # plus the Quarterly Direction staleness/drift flag. Cheap on the
+    # common case (just an mtime scan) -- see file_watcher.py for why
+    # polling, not inotify/watchdog, in this real WSL/Docker environment.
+    _scheduler.add_job(file_watcher.check_for_new_files_and_refresh, "interval", minutes=2,
+                        id="file_watch", max_instances=1)
     _scheduler.start()
+    threading.Thread(target=quarterly_review_check.check_and_flag_if_due, daemon=True).start()
 
 
 @app.on_event("shutdown")
