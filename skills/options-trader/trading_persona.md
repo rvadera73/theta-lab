@@ -705,9 +705,11 @@ all — same corner-cutting pattern to check for anywhere else in this codebase.
   thematic tag shown in reports) — it no longer determines any verdict.
 
 **Known gaps (2026-07-20):**
-- NIFSEL F&O contracts aren't recognized by the Black-Scholes underlying-index map and get
-  silently dropped from the F&O table — cross-check against the raw ICICI statement's own
-  realized/unrealized P&L for that underlying if it's open.
+- ~~NIFSEL F&O contracts aren't recognized by the Black-Scholes underlying-index map~~ —
+  **fixed 2026-08-21**: `NIFSEL` maps to `NIFTY_MID_SELECT.NS` in `india_weekly_report.py`'s
+  `_INDEX_TICKERS` (a different index from Nifty Midcap 100 — was silently showing ₹0.00
+  before this). Still has its own gap, see the 2026-09-25 update below: too little Yahoo
+  price history for a realized-vol calc, so it falls back to a disclosed Nifty-50 vol proxy.
 - Hospitals has no clean standalone NSE sector index on Yahoo — theme validation for that
   bucket relies on stock-level conviction only (APOHOS, YATHOS), not a sector-momentum check.
 - `_format_research_card` in `mcp/server.py` was broken (function body present, `def` line
@@ -715,5 +717,102 @@ all — same corner-cutting pattern to check for anywhere else in this codebase.
   `scan_sector` for both US and India). Fixed and syntax-validated 2026-07-20, but the
   running MCP server process needs a restart to load it — check it actually works before
   trusting those three tools again.
+
+---
+
+## India F&O Risk Framework + Data-Source Parity — 2026-09-25 Update
+
+**Trigger:** the Sep-29 F&O cluster loss (5 documented legs, -₹2,73,632 real net once
+realized+unrealized were combined — see `data/india_6month_plan.yaml`, created after this
+review) plus a direct request to bring India up to the same analytical depth as the US book
+(sector classification, hot-trend verticals, premium-vs-risk economics) and to figure out a
+forward strategy so this doesn't recur.
+
+**Root cause, confirmed live 2026-09-25 (not what it looked like):** macro had NOT
+deteriorated — Nifty was only -3.96% below its own 50-day MA and -1.77% off its 2-week high,
+India VIX was 12.69 (barely above its own 50-day average). The real cause was structural:
+running the new concentration guard against the live book found **11** short legs (not just
+the 5 documented ones — CNXBAN had its own undocumented 5-leg cluster, including one already-
+ITM put) all sharing the Sep-29 expiry, with strikes stacked 0.4-2.0% apart. One routine ~4%
+pullback took the whole cluster out together instead of degrading strike-by-strike.
+
+**New India data-source modules** (mirrors the US book's sector_analysis.py/
+trend_verticals.py/premium_yield.py — same depth, different real sources since Yahoo carries
+almost no NSE fundamentals data):
+- `mcp/analysis/india_sector.py` — Screener.in "Broad Sector"/"Broad Industry" scrape.
+  **Real Position objects carry ICICI Direct's own internal short codes (BILGAR, HDFBAN,
+  STABAN, ...), not NSE tickers** — this module translates via
+  `report_utils.yf_symbol()`'s `_INDIA_SYMBOL_MAP` before querying. Five codes were missing
+  from that map and had to be traced through `data/india_6month_plan.yaml`'s own
+  `equity_adds` names + `data/india_config.yaml`'s watchlist, then confirmed live via
+  yfinance, not guessed: `ADAGRE`→Adani Green Energy, `BILGAR`→Groww (Billionbrains Garage
+  Ventures), `HIMFUT`→HFCL (Himachal Futuristic), `ONE97`→Paytm, `SOBDEV`→Sobha. Index-only
+  F&O codes (`NIFTY`/`NIFSEL`/`CNXBAN`/etc.) are excluded up front, not fetched and failed.
+- `mcp/analysis/india_verticals.py` — NSE Indices Limited's own real thematic-index
+  constituent CSVs (niftyindices.com): Digital, Defence, Manufacturing, Consumption, EV/New-
+  Age Auto. The 5 real CSV URLs don't follow one consistent pattern (two different base
+  paths — `/IndexConstituent/` vs `/Index_Statistics/` — and one irregular filename,
+  `ind_niftyconsumptionlist.csv` has no underscore before "list") — each had to be found by
+  fetching the index's own real page and reading its embedded download link, not guessed.
+- `mcp/analysis/india_premium_yield.py` — yield-on-capital for the index-only F&O universe
+  (Nifty/BankNifty/MidcapNifty — the trader's confirmed scope: India F&O is index-level risk
+  management, not individual-stock premium selling). No free LIVE India option chain exists
+  from this environment (NSE's live API is Akamai-blocked here; yfinance carries no NSE index
+  option chains at all — both confirmed live) — uses NSE's real EOD bhavcopy archive instead
+  (`nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_YYYYMMDD_F_0000.csv.zip`), so
+  this is end-of-day settlement data, not live bid/ask, and every result carries the leg's
+  real traded volume so an illiquid/theoretical settlement price is visible, not silently
+  trusted.
+
+**F&O concentration/OTM-buffer guard** (`india_weekly_report.py:_evaluate_fno_legs()`,
+thresholds in `data/india_6month_plan.yaml`'s `risk_rules` block), checked live every weekly
+report run against currently open index F&O legs:
+1. **Max short legs per expiry week** (default 3 — the Sep-29 cluster had 11): forces
+   diversification across dates.
+2. **Min strike spacing** (default 3% — Sep-29 legs were 0.4-2.0% apart): same
+   underlying+expiry+side strikes must sit apart, so one move can't breach two at once.
+3. **Expected-move buffer** (default 1.25x the underlying's realized vol, scaled to the
+   leg's DTE) — **not a flat floor**. First draft used a flat 6% minimum; reverted the same
+   day after trader pushback: FY-to-date realized F&O P&L is a real ₹5,48,819 on the ~₹26L
+   margin baseline (confirmed against the FNOPortfolioDetails export — ~44% annualized),
+   generated specifically by selling close enough to the money to collect real premium. A
+   flat floor would have blocked the trades that made that number. The vol-scaled version
+   only tightens automatically when realized volatility is actually elevated.
+4. **Delta-based defensive-roll flag** (default 0.35, using realized — not implied — vol,
+   since many open legs here show zero traded volume and can't support a reliable IV
+   back-solve) on **already-open** legs, not an entry filter — lets a trade be entered as
+   aggressively as before, but flags it once it's drifted into real directional risk so it
+   gets rolled/closed early instead of discovered deep ITM at 4 DTE.
+5. NIFSEL (`NIFTY_MID_SELECT.NS`) has too little Yahoo price history for its own realized-vol
+   window — falls back to Nifty 50's own realized vol as a disclosed proxy (flagged in the
+   output text, never silently substituted).
+
+**India's action framework — `get_india_priority_actions()`:** same 5-verb family as the US
+book (`CLOSE`/`TRIM`/`ENTER`/`HOLD`/`WATCH`), adapted for what's actually actionable here.
+**CLOSE, ROLL, WATCH, HOLD, ENTER** — `ROLL` plays `TRIM`'s role (there's no partial-exit
+equivalent for a single option leg; rolling out/down is the risk-reduction move instead).
+Classification: `CLOSE` = delta past the roll threshold AND ≤5 DTE (too late to roll
+productively — matches physically-settled reality: rolling a delta-≈1.0 put with 2 real
+trading sessions left just re-establishes similar risk elsewhere); `ROLL` = same delta
+breach with real runway left; `WATCH` = a buffer/spacing/cluster violation but delta still
+under threshold; `HOLD` = clean. `ENTER` pulls from `india_6month_plan.yaml`'s `equity_adds`
+(equity-only — F&O `ENTER` stays gated off until the return-gate conditions clear;
+conditional adds with a stated price condition are excluded from the blind list, the trader
+reads those in the existing 6-month-plan section instead). `equity_exits` due this month
+render as `CLOSE`. Deliberately excludes `HOLD`/clean `WATCH` from the list — same reasoning
+as the US side's priority actions, a stable book shouldn't flood the tracker.
+
+**Return-gate automation:** 3 of the plan's 4 conditions are now live-checked (Nifty vs
+50-day MA, India VIX, and — new this update — US 10-year yield via FRED's `DGS10` series,
+the same free no-key source `macro_risk_analyzer.py` already used for HYOAS/T10Y2Y). FII
+outflow data has **no free reliable source** (NSDL's real FPI portal TLS-fails, moneycontrol
+403s, NSE's own FII/FPI report path 404s — all confirmed live, a real negative finding, not
+a gap in effort) — stays a genuine manual check.
+
+**Calendar caution:** don't assume a holiday from memory — a claimed Sept 28, 2026 India
+market holiday was checked live (Zerodha + one other source) and found to be wrong; the only
+September 2026 holiday is Ganesh Chaturthi (Sept 14). Verify against a live source before it
+changes a close-vs-roll decision, the same discipline as any other "is this data available"
+claim in this codebase.
 
 ---
