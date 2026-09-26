@@ -71,3 +71,34 @@ equity_exits:
 # Baseline equity book (2026-09-24, no planned change -- hold through the
 # FII-driven financials pressure specifically on HDFBAN/STABAN/TCS/RELIND).
 equity_baseline_inr: 2849152
+
+# F&O structural risk rules -- added 2026-09-25 after tracing the Sep-29
+# cluster's real root cause: live-checked that day, Nifty was only -3.96%
+# below its own 50-day MA and just -1.77% off its 2-week high, and India VIX
+# was 12.69 (barely above its own 50-day average) -- a normal pullback, not a
+# macro/vol event. The actual cause was structural: 11 short legs across
+# CNXBAN/NIFSEL/NIFTY shared one expiry (Sep 29) and were stacked within a
+# narrow strike band per underlying (0.4-2.0% apart), so one routine ~4%
+# index move took out the whole cluster at once instead of degrading
+# strike-by-strike.
+#
+# Rule 3 (min_otm_buffer_pct, a flat 6% floor) was revised the same day
+# after trader pushback: a flat floor is reactive and caps the upside --
+# FY-to-date realized F&O P&L is ₹5,48,819 on this book's ~26L margin
+# baseline (confirmed against the FNOPortfolioDetails export, ~44%
+# annualized), generated specifically by selling close enough to the money
+# to collect real premium. A flat 6% floor would have blocked the trades
+# that made that number. Replaced with an expected-move buffer, scaled to
+# each underlying's own realized volatility and the leg's DTE -- it only
+# tightens automatically when volatility is actually elevated, not all the
+# time. delta_roll_threshold is a separate, new check on already-open legs
+# (not an entry filter) -- flags a leg once its estimated delta shows real
+# directional risk, so a trade that started fine and drifted gets caught
+# early regardless of DTE. Both use realized (historical) vol as a stand-in
+# for implied vol -- NSE's own EOD settlement price on many open legs here
+# has zero traded volume, so it can't support a reliable IV back-solve.
+risk_rules:
+  max_short_legs_per_expiry_week: 3    # the Sep-29 cluster had 11 -- cap forces real diversification across dates
+  min_strike_spacing_pct: 3.0          # same underlying+expiry+side strikes must sit >= 3% apart (Sep-29 legs were 0.4-2.0% apart)
+  expected_move_buffer_multiple: 1.25  # required buffer = 1.25x the underlying's realized-vol expected move over the leg's DTE
+  delta_roll_threshold: 0.35           # flag an open short leg once |delta| (est. from realized vol) exceeds this, independent of DTE

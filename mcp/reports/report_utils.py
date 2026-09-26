@@ -48,6 +48,7 @@ _EXCLUDED_FILE_STEMS = {
 }
 
 _INDIA_SYMBOL_MAP = {
+    "ADAGRE": "ADANIGREEN.NS",  # Adani Green Energy -- confirmed via india_6month_plan.yaml equity_adds + live yfinance 2026-09-25
     "ADAPOR": "ADANIPORTS.NS",
     "ADAPOW": "ADANIPOWER.NS",
     "ANARAJ": "ANANTRAJ.NS",
@@ -55,6 +56,7 @@ _INDIA_SYMBOL_MAP = {
     "AURPHA": "AUROPHARMA.NS",
     "BAJFI": "BAJFINANCE.NS",
     "BHAELE": "BEL.NS",
+    "BILGAR": "GROWW.NS",  # Billionbrains Garage Ventures (Groww) -- confirmed via india_6month_plan.yaml equity_adds + live yfinance 2026-09-25
     "BSE": "BSE.NS",
     "DIXTEC": "DIXON.NS",
     "DLFLIM": "DLF.NS",
@@ -63,6 +65,7 @@ _INDIA_SYMBOL_MAP = {
     "HCLTEC": "HCLTECH.NS",
     "HDFBAN": "HDFCBANK.NS",
     "HERHON": "HEROMOTOCO.NS",
+    "HIMFUT": "HFCL.NS",  # Himachal Futuristic Communications (HFCL) -- confirmed via india_6month_plan.yaml equity_adds + live yfinance 2026-09-25
     "HINAER": "HAL.NS",
     "IDECEL": "IDEA.NS",
     "LEMTRE": "LEMONTREE.NS",
@@ -70,9 +73,11 @@ _INDIA_SYMBOL_MAP = {
     "LUPIN": "LUPIN.NS",
     "MAZDOC": "MAZDOCK.NS",
     "NTPC": "NTPC.NS",
+    "ONE97": "PAYTM.NS",  # One97 Communications (Paytm) -- confirmed via india_config.yaml watchlist entry, real ticker already used there
     "PARDEF": "PARAS.NS",
     "POWGRI": "POWERGRID.NS",
     "RELIND": "RELIANCE.NS",
+    "SOBDEV": "SOBHA.NS",  # Sobha Developers/Limited -- confirmed via india_config.yaml watchlist entry + live yfinance 2026-09-25
     "SOLIN": "SOLARINDS.NS",
     "STABAN": "SBIN.NS",
     "SUZENE": "SUZLON.NS",

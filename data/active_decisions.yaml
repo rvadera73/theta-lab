@@ -3,39 +3,35 @@ decisions:
   created: '2026-09-21'
   account: Account A (232)
   description: 'RESOLVED 2026-09-21 after a full walk-through of Account A''s real
-    Schwab Margin Details / Available Funds: Margin Equity $1,000,000, SMA
-    (Reg-T initial-margin room) $1,600,000, Cash+Borrowing $102,000, debit balance
-    $0 (zero margin interest -- no loan outstanding), no margin/maintenance
-    requirement violation, no active call. Equity Percent read 29% at one point
-    in the conversation (down from an earlier, WRONG 89% transcription) which
-    triggered a real scare, but 29% is NOT the binding constraint here: that ratio
-    governs a traditional debit-balance maintenance call, and this account carries
-    zero debit balance, so that mechanism doesn''t apply. The real constraint for
-    an options-heavy, no-stock-loan margin account is the options margin
-    requirement itself (Opt Req $831,000 real) against SMA/equity headroom.
-    Conclusion: the trader''s $800K/4-week plan is CONSERVATIVE, not aggressive,
-    against real current capacity. `accounts_config.py`''s Account A capacity
-    updated from $700K to $900K (a YELLOW-macro-regime working ceiling; see that
-    file''s comment for the full RED/YELLOW/GREEN regime dial: $700-750K /
-    $900K-$1M / $1.1-1.2M). The $800K plan sits comfortably under the new $900K
+    Schwab Margin Details / Available Funds: Margin Equity $1,000,000, SMA (Reg-T
+    initial-margin room) $1,600,000, Cash+Borrowing $102,000, debit balance $0 (zero
+    margin interest -- no loan outstanding), no margin/maintenance requirement violation,
+    no active call. Equity Percent read 29% at one point in the conversation (down
+    from an earlier, WRONG 89% transcription) which triggered a real scare, but 29%
+    is NOT the binding constraint here: that ratio governs a traditional debit-balance
+    maintenance call, and this account carries zero debit balance, so that mechanism
+    doesn''t apply. The real constraint for an options-heavy, no-stock-loan margin
+    account is the options margin requirement itself (Opt Req $831,000 real) against
+    SMA/equity headroom. Conclusion: the trader''s $800K/4-week plan is CONSERVATIVE,
+    not aggressive, against real current capacity. `accounts_config.py`''s Account
+    A capacity updated from $700K to $900K (a YELLOW-macro-regime working ceiling;
+    see that file''s comment for the full RED/YELLOW/GREEN regime dial: $700-750K
+    / $900K-$1M / $1.1-1.2M). The $800K plan sits comfortably under the new $900K
     ceiling with room to spare.
 
-    RE-CONFIRMED 2026-09-25: real Opt Req $819,000 against $900,000 capacity =
-    91% utilization -- real progress toward the march_strangle_entry_gate''s
-    85% threshold (not there yet, but much closer than the automated
-    tracker''s stuck 135.79% figure suggests -- that check has a known,
-    unfixed staleness bug, see march_strangle_entry_gate below). Cash Avail
-    for Trade (-$22K) and Cash+Borrowing (-$91K) both read negative this
-    check, which could look alarming in isolation -- but Balance Subject to
-    Interest is confirmed $0 again (same as 2026-09-21), so this is a
-    buying-power/settlement artifact on an active short-options margin
-    account, NOT a real debit balance. Second independent confirmation of
-    the same pattern -- treat a future negative cash-to-trade reading on
-    this account as routine unless Balance Subject to Interest actually
-    goes non-zero, rather than re-investigating from scratch each time.
-    SMA ($1.6M) and Margin Equity ($1.0M) both unchanged from the 21st.
-    In-the-money covered calls: $97K (safe -- shares already owned, will
-    just be called away).
+    RE-CONFIRMED 2026-09-25: real Opt Req $819,000 against $900,000 capacity = 91%
+    utilization -- real progress toward the march_strangle_entry_gate''s 85% threshold
+    (not there yet, but much closer than the automated tracker''s stuck 135.79% figure
+    suggests -- that check has a known, unfixed staleness bug, see march_strangle_entry_gate
+    below). Cash Avail for Trade (-$22K) and Cash+Borrowing (-$91K) both read negative
+    this check, which could look alarming in isolation -- but Balance Subject to Interest
+    is confirmed $0 again (same as 2026-09-21), so this is a buying-power/settlement
+    artifact on an active short-options margin account, NOT a real debit balance.
+    Second independent confirmation of the same pattern -- treat a future negative
+    cash-to-trade reading on this account as routine unless Balance Subject to Interest
+    actually goes non-zero, rather than re-investigating from scratch each time. SMA
+    ($1.6M) and Margin Equity ($1.0M) both unchanged from the 21st. In-the-money covered
+    calls: $97K (safe -- shares already owned, will just be called away).
 
     '
   check:
@@ -110,9 +106,9 @@ decisions:
     type: naked_call_count
     ticker: CRCL
     max_naked_itm: 0
-  status: OPEN
-  resolved_date: null
-  _live_naked_itm: 1.0
+  status: RESOLVED
+  resolved_date: '2026-09-25'
+  _live_naked_itm: 0
 - id: march_strangle_entry_gate
   created: '2026-09-10'
   account: Account A (232)
@@ -138,7 +134,7 @@ decisions:
   status: BLOCKED
   resolved_date: null
   _live_values:
-    account_a_margin_utilization_pct: 135.79180499758039
+    account_a_margin_utilization_pct: 113.33879473876954
     macro_risk_level: GREEN
 - id: be_puts_reduction
   created: '2026-09-10'
@@ -169,4 +165,4 @@ decisions:
     baseline_count: 6
   status: OPEN
   resolved_date: null
-  _live_leg_count: 5
+  _live_leg_count: 4

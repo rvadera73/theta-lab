@@ -11,8 +11,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from collections import defaultdict
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import Any, Optional
 
 from analysis.pnl import Position, OptionLeg
 from analysis.india_regime import detect_india_regime
@@ -657,6 +658,23 @@ async def generate_india_weekly_report(
                     lines.append(f"- {tag} **{sym}**: {action_note}")
                 lines.append("")
 
+    # --- Priority actions (bottom-up, CLOSE/ROLL/ENTER only) ---
+    # Mirrors the US book's Priority Actions block -- same reasoning: a
+    # stable book shouldn't flood this with every WATCH/HOLD line, only the
+    # items that actually need a decision this week.
+    priority = get_india_priority_actions(positions, india_cfg)
+    if priority:
+        lines.append("## PRIORITY ACTIONS (India, bottom-up)")
+        lines.append("")
+        verb_icon = {"CLOSE": "🚨", "ROLL": "🔄", "ENTER": "🟢"}
+        for act in sorted(priority, key=lambda a: {"CLOSE": 0, "ROLL": 1, "ENTER": 2}.get(a["verb"], 3)):
+            pnl_note = f" | Net: {_fmt_inr(act['pnl'])}" if act.get("pnl") is not None else ""
+            lines.append(f"{verb_icon.get(act['verb'], '•')} **{act['verb']} — {act['symbol']}**: {act['reason']}{pnl_note}")
+        lines.append("")
+
+    # --- F&O concentration / OTM-buffer guard ---
+    lines += _check_fno_concentration_risk(positions)
+
     # --- 6-month plan tracking ---
     lines += _check_6month_plan(positions, sigs)
 
@@ -674,6 +692,358 @@ async def generate_india_weekly_report(
     ]
 
     return "\n".join(lines)
+
+
+def _fetch_us_10y_yield() -> float | None:
+    """Real US 10-Year Treasury yield from FRED's public fredgraph.csv feed
+    (series DGS10) -- no API key needed, same free endpoint pattern
+    macro_risk_analyzer.py already uses for HYOAS/T10Y2Y. Confirmed live
+    2026-09-25 this series is fetchable this exact way (real recent value:
+    5.18% on 2026-09-24) before wiring it in here, not assumed. Returns
+    None (never raises) on any failure -- callers already render "no data"
+    for that case, matching the india_vix/nifty50_ma checks above it.
+    """
+    try:
+        import requests
+        url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            return None
+        lines = [ln for ln in response.text.strip().splitlines() if ln]
+        for line in reversed(lines[1:]):  # skip header, walk back from latest
+            _, value = line.split(",")
+            if value and value != ".":
+                return float(value)
+    except Exception:
+        pass
+    return None
+
+
+def _realized_vol_annualized(yf_ticker: str, window: int = 20) -> Optional[float]:
+    """Annualized realized volatility from the last `window` daily log
+    returns -- used as a stand-in for implied vol. A real IV back-solve off
+    NSE's own EOD settlement price isn't reliable here: many open legs in
+    this book show zero traded volume (confirmed live 2026-09-25), meaning
+    SttlmPric is a theoretical mark, not a real fill -- solving for "IV"
+    against a synthetic price would just manufacture a precise-looking
+    number with no real information in it. Historical vol is honestly an
+    approximation of the market's expectation, not the market's own
+    expectation, but it's a real, computable number instead of a fabricated
+    one. Returns None on any failure (short history, network error).
+    """
+    try:
+        import numpy as np
+        import yfinance as yf
+        hist = yf.Ticker(yf_ticker).history(period="3mo")
+        closes = hist["Close"].dropna()
+        if len(closes) < window + 1:
+            return None
+        log_ret = np.log(closes / closes.shift(1)).dropna()
+        return float(log_ret.iloc[-window:].std() * (252 ** 0.5))
+    except Exception:
+        return None
+
+
+def _bs_delta(spot: float, strike: float, dte: int, vol: float, option_type: str, r: float = 0.065) -> Optional[float]:
+    """Standard Black-Scholes delta, using realized (not implied) vol as the
+    input -- see _realized_vol_annualized's own caveat on why. r=6.5% is
+    India's approximate risk-free short rate; delta is not very sensitive to
+    r at these DTEs so this doesn't need to be exact."""
+    import math
+    if not vol or vol <= 0 or dte <= 0 or spot <= 0 or strike <= 0:
+        return None
+    try:
+        T = dte / 365
+        d1 = (math.log(spot / strike) + (r + 0.5 * vol * vol) * T) / (vol * math.sqrt(T))
+    except (ValueError, ZeroDivisionError):
+        return None
+    n_d1 = 0.5 * (1 + math.erf(d1 / math.sqrt(2)))
+    return n_d1 if option_type.upper().startswith("C") else n_d1 - 1
+
+
+def _load_risk_rules() -> dict:
+    import yaml as _yaml
+    path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "data", "india_6month_plan.yaml",
+    )
+    try:
+        with open(path) as f:
+            plan = _yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+    return plan.get("risk_rules") or {}
+
+
+def _evaluate_fno_legs(positions: list) -> list[dict]:
+    """Single source of truth for every open index F&O short leg's risk
+    evaluation -- both the human-readable guard report and the priority-
+    actions verb classifier read from this, so the two never drift apart.
+    Returns one dict per short leg with underlying/leg/spot/vol/delta/
+    buffer_pct/expected_move_pct/spacing_violation/cluster_violation.
+    """
+    rules = _load_risk_rules()
+    if not rules:
+        return []
+    max_per_expiry = rules.get("max_short_legs_per_expiry_week", 3)
+    min_spacing_pct = rules.get("min_strike_spacing_pct", 3.0)
+    expected_move_multiple = rules.get("expected_move_buffer_multiple", 1.25)
+    delta_roll_threshold = rules.get("delta_roll_threshold", 0.35)
+
+    short_legs = []  # (underlying, spot, leg)
+    for pos in positions:
+        if pos.symbol not in _INDEX_TICKERS or not getattr(pos, "option_legs", None):
+            continue
+        spot = pos.current_price
+        for leg in pos.option_legs:
+            if leg.quantity < 0 and spot:
+                short_legs.append((pos.symbol, spot, leg))
+    if not short_legs:
+        return []
+
+    # Rule 1: same-expiry concentration.
+    by_expiry: dict[str, list] = defaultdict(list)
+    for underlying, spot, leg in short_legs:
+        by_expiry[leg.expiry].append((underlying, leg))
+    cluster_violation_expiries = {e for e, legs in by_expiry.items() if len(legs) > max_per_expiry}
+
+    # Rule 2: strike spacing -- mark which specific legs participate in a
+    # too-tight pair (a leg can be involved in more than one tight gap).
+    spacing_violation_legs: set[int] = set()
+    by_group: dict[tuple, list] = defaultdict(list)
+    for underlying, spot, leg in short_legs:
+        by_group[(underlying, leg.expiry, leg.option_type)].append((spot, leg))
+    for (underlying, expiry, opt_type), entries in by_group.items():
+        if len(entries) < 2:
+            continue
+        spot = entries[0][0]
+        ordered = sorted(entries, key=lambda e: e[1].strike)
+        for (_, leg_a), (_, leg_b) in zip(ordered, ordered[1:]):
+            gap_pct = abs(leg_b.strike - leg_a.strike) / spot * 100 if spot else 0
+            if gap_pct < min_spacing_pct:
+                spacing_violation_legs.add(id(leg_a))
+                spacing_violation_legs.add(id(leg_b))
+
+    # Rules 3 & 4: realized-vol expected-move buffer + BS delta, with the
+    # NIFSEL -> Nifty proxy fallback (see _realized_vol_annualized's own
+    # docstring for why a real IV back-solve isn't reliable here).
+    vol_cache: dict[str, Optional[float]] = {}
+    vol_is_proxy: dict[str, bool] = {}
+    for underlying, spot, leg in short_legs:
+        if underlying in vol_cache:
+            continue
+        vol = _realized_vol_annualized(_INDEX_TICKERS[underlying])
+        if vol is None and underlying != "NIFTY":
+            vol = _realized_vol_annualized(_INDEX_TICKERS["NIFTY"])
+            vol_is_proxy[underlying] = vol is not None
+        vol_cache[underlying] = vol
+
+    results = []
+    for underlying, spot, leg in short_legs:
+        vol = vol_cache.get(underlying)
+        expected_move_pct = vol * (leg.dte / 365) ** 0.5 * 100 * expected_move_multiple if vol else None
+        buffer_pct = abs(leg.strike - spot) / spot * 100 if spot else None
+        delta = _bs_delta(spot, leg.strike, leg.dte, vol, leg.option_type) if vol else None
+        results.append({
+            "underlying": underlying,
+            "leg": leg,
+            "spot": spot,
+            "vol": vol,
+            "vol_is_proxy": vol_is_proxy.get(underlying, False),
+            "buffer_pct": buffer_pct,
+            "expected_move_pct": expected_move_pct,
+            "buffer_violation": buffer_pct is not None and expected_move_pct is not None and buffer_pct < expected_move_pct,
+            "delta": delta,
+            "delta_violation": delta is not None and abs(delta) > delta_roll_threshold,
+            "spacing_violation": id(leg) in spacing_violation_legs,
+            "cluster_violation": leg.expiry in cluster_violation_expiries,
+            "expected_move_multiple": expected_move_multiple,
+            "delta_roll_threshold": delta_roll_threshold,
+            "max_per_expiry": max_per_expiry,
+            "min_spacing_pct": min_spacing_pct,
+        })
+    return results
+
+
+def _classify_fno_action(ev: dict, roll_cutoff_dte: int = 5) -> tuple[str, str]:
+    """India F&O verb classification -- CLOSE/ROLL/WATCH/HOLD, the same
+    5-verb family as the US book's CLOSE/TRIM/ENTER/HOLD/WATCH (TRIM has no
+    real equivalent for a single option leg -- ROLL is the risk-reduction
+    action that plays TRIM's role here). Added 2026-09-25 per direct
+    request to turn the concentration/buffer/delta guard into concrete
+    actions, not just flags to read.
+
+    roll_cutoff_dte=5 -- once a short leg is this close to expiry, rolling
+    a leg that's already at real directional delta mostly just defers the
+    same risk to a new strike/date rather than fixing anything; closing and
+    taking the loss is the cleaner action. Above that DTE there's enough
+    time value left for a roll-out-and-down to be a real credit, not just a
+    deferral.
+    """
+    leg = ev["leg"]
+    if ev["delta_violation"]:
+        if leg.dte <= roll_cutoff_dte:
+            return "CLOSE", f"delta ≈{ev['delta']:+.2f}, only {leg.dte}d left — too late to roll productively, close and take the loss"
+        return "ROLL", f"delta ≈{ev['delta']:+.2f} exceeds {ev['delta_roll_threshold']} threshold, {leg.dte}d left — roll out/down for a credit"
+    if ev["buffer_violation"] or ev["spacing_violation"] or ev["cluster_violation"]:
+        reasons = []
+        if ev["buffer_violation"]:
+            reasons.append(f"buffer {ev['buffer_pct']:.1f}% vs {ev['expected_move_pct']:.1f}% expected move")
+        if ev["spacing_violation"]:
+            reasons.append("strikes stacked too close to another same-side leg")
+        if ev["cluster_violation"]:
+            reasons.append(f"shares an over-crowded expiry ({ev['max_per_expiry']}+ legs)")
+        return "WATCH", "; ".join(reasons)
+    return "HOLD", "no rule violations"
+
+
+def get_india_priority_actions(positions: list, india_cfg: dict) -> list[dict]:
+    """Bottom-up India priority-action list -- F&O legs (CLOSE/ROLL/WATCH)
+    from the risk-rules evaluation above, plus equity ENTER/CLOSE items due
+    this month from data/india_6month_plan.yaml. Mirrors the US book's
+    get_priority_actions() (CLOSE/TRIM/ENTER only, bottom-up, not the full
+    heat table) -- HOLD legs are deliberately excluded from this list, same
+    reasoning as the US side: a stable book shouldn't flood the tracker.
+    """
+    import yaml as _yaml
+    actions = []
+
+    for ev in _evaluate_fno_legs(positions):
+        verb, reason = _classify_fno_action(ev)
+        if verb == "HOLD":
+            continue
+        leg = ev["leg"]
+        actions.append({
+            "market": "india", "asset": "fno",
+            "symbol": f"{ev['underlying']} {leg.option_type} {leg.strike:g} ({leg.expiry})",
+            "verb": verb, "reason": reason,
+            "pnl": leg.premium_received - leg.current_mark,
+        })
+
+    path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "data", "india_6month_plan.yaml",
+    )
+    try:
+        with open(path) as f:
+            plan = _yaml.safe_load(f) or {}
+    except Exception:
+        plan = {}
+
+    start = datetime.strptime(plan["plan_start_date"], "%Y-%m-%d").date() if plan.get("plan_start_date") else None
+    month_idx = max(1, min(6, (date.today() - start).days // 30 + 1)) if start else 1
+    by_symbol = {p.symbol: p for p in positions} if positions else {}
+
+    for sym, cfg in plan.get("equity_adds", {}).items():
+        if month_idx in cfg.get("adds", {}):
+            if cfg.get("condition"):
+                continue  # conditional adds need a live check the trader already reads in the 6-month-plan section, not a blind ENTER
+            actions.append({
+                "market": "india", "asset": "equity", "symbol": sym,
+                "verb": "ENTER",
+                "reason": f"₹{cfg['adds'][month_idx]:,} scheduled add, month {month_idx} ({cfg.get('name', sym)})",
+                "pnl": None,
+            })
+
+    for sym, cfg in plan.get("equity_exits", {}).items():
+        if cfg.get("month") == month_idx:
+            still_held = any(p.symbol == sym and p.shares for p in positions) if positions else False
+            if still_held:
+                actions.append({
+                    "market": "india", "asset": "equity", "symbol": sym,
+                    "verb": "CLOSE",
+                    "reason": f"scheduled exit, month {month_idx}: {cfg.get('note', '')}",
+                    "pnl": None,
+                })
+
+    return actions
+
+
+def _check_fno_concentration_risk(positions: list) -> list[str]:
+    """Checks currently open index F&O short legs against data/india_6month_
+    plan.yaml's risk_rules -- added 2026-09-25 after tracing the real root
+    cause of the Sep-29 cluster loss (-2,73,632): NOT macro deterioration
+    (live-checked that day: Nifty -3.96% vs its own 50-day MA, -1.77% off
+    its 2-week high, India VIX 12.69 -- a normal pullback), but a structural
+    concentration problem -- 5+ short legs, one shared expiry, strikes
+    stacked 0.4-1.4% apart, so one routine move took the whole cluster out
+    together.
+
+    Rule 3 was originally a flat min-OTM-buffer floor, revised the same day
+    after the trader's own pushback: a flat floor is reactive AND caps the
+    upside, since the FY-to-date realized F&O P&L (₹5,48,819 on this book's
+    ~₹26L margin baseline, confirmed live against the FNOPortfolioDetails
+    export) is generated specifically by selling close enough to the money
+    to collect real premium -- a flat 6% floor would have blocked the very
+    trades that made that number. Replaced with an expected-move buffer
+    (scaled to the underlying's own realized vol and the leg's DTE) so it
+    only tightens automatically when real volatility is actually elevated,
+    and a separate delta-based defensive-roll flag (Rule 4) on already-open
+    legs, so deteriorating trades get caught early without limiting how
+    aggressively a trade can be entered in the first place. Rules 1 and 2
+    are unchanged -- diversifying across expiry dates and strikes doesn't
+    reduce the total premium collected, it just stops one date from carrying
+    all the risk.
+    """
+    evaluations = _evaluate_fno_legs(positions)
+    if not evaluations:
+        return []
+
+    out = ["## F&O CONCENTRATION & OTM-BUFFER GUARD", ""]
+    flags = []
+    seen_cluster_expiries = set()
+
+    for ev in evaluations:
+        leg = ev["leg"]
+        underlying = ev["underlying"]
+
+        if ev["cluster_violation"] and leg.expiry not in seen_cluster_expiries:
+            seen_cluster_expiries.add(leg.expiry)
+            siblings = [e for e in evaluations if e["leg"].expiry == leg.expiry]
+            names = ", ".join(f"{e['underlying']} {e['leg'].strike:g}{e['leg'].option_type[0]}" for e in siblings)
+            flags.append(
+                f"🚨 **{len(siblings)} short legs share expiry {leg.expiry}** (cap: {ev['max_per_expiry']}) — "
+                f"this is the exact Sep-29 pattern. Legs: {names}"
+            )
+
+        if ev["spacing_violation"]:
+            flags.append(
+                f"⚠️ **{underlying} {leg.option_type} {leg.strike:g} ({leg.expiry}) sits within "
+                f"{ev['min_spacing_pct']}% of another same-side strike** — a single move can breach both together."
+            )
+
+        if ev["buffer_violation"]:
+            spot = ev["spot"]
+            direction = "ITM already" if (
+                (leg.option_type.upper().startswith("P") and spot < leg.strike) or
+                (leg.option_type.upper().startswith("C") and spot > leg.strike)
+            ) else "thin cushion"
+            vol_note = f"{ev['vol']*100:.1f}% realized vol" + (" (Nifty proxy — own history too short)" if ev["vol_is_proxy"] else "")
+            flags.append(
+                f"⚠️ **{underlying} {leg.option_type} {leg.strike:g} ({leg.expiry}): "
+                f"{ev['buffer_pct']:.1f}% buffer vs {ev['expected_move_pct']:.1f}% expected move** "
+                f"({direction}; {vol_note} × {ev['expected_move_multiple']}x over {leg.dte}d)"
+            )
+
+        if ev["delta_violation"]:
+            vol_note = f"{ev['vol']*100:.1f}% realized vol" + (" (Nifty proxy — own history too short)" if ev["vol_is_proxy"] else "")
+            flags.append(
+                f"🔻 **{underlying} {leg.option_type} {leg.strike:g} ({leg.expiry}): "
+                f"delta ≈{ev['delta']:+.2f} (est. from {vol_note}) exceeds "
+                f"{ev['delta_roll_threshold']} roll threshold** — consider rolling/closing regardless of DTE."
+            )
+
+    if flags:
+        out.extend(flags)
+    else:
+        r = evaluations[0]
+        out.append(
+            f"✅ No concentration/spacing/expected-move/delta violations against risk_rules "
+            f"({r['max_per_expiry']} legs/expiry cap, {r['min_spacing_pct']}% min spacing, "
+            f"{r['expected_move_multiple']}x expected-move buffer, {r['delta_roll_threshold']} delta roll threshold)."
+        )
+    out.append("")
+    return out
 
 
 def _check_6month_plan(positions: list, regime_signals: dict) -> list[str]:
@@ -714,17 +1084,26 @@ def _check_6month_plan(positions: list, regime_signals: dict) -> list[str]:
     out.append(f"**F&O margin target this month: ₹{target:,}** (today's confirmed baseline: ₹{glide.get('today', 0):,}) — confirm live against your Margin Details screen, not derivable from the statement export.")
     out.append("")
 
-    # Return-gate conditions -- 2 of 4 checkable live from this report's own signals.
+    # Return-gate conditions -- 3 of 4 now checkable live (was 2), trader-
+    # requested 2026-09-25 after confirming FRED's DGS10 series (real US
+    # 10-year Treasury yield) is fetchable the exact same free, no-key way
+    # macro_risk_analyzer.py already pulls HYOAS/T10Y2Y. FII flow data has
+    # no free, reliably-scrapeable source (checked live 2026-09-25: NSDL's
+    # real FPI portal TLS-fails, moneycontrol 403s, NSE's own FII/FPI report
+    # path 404s) -- stays a real, honest manual check, not a guess.
     out.append("**F&O return-gate status:**")
     vix = regime_signals.get("india_vix", {}).get("value")
     ma = regime_signals.get("nifty50_ma", {})
     above_50d = ma.get("above_50d")
+    us_10y = _fetch_us_10y_yield()
     cond1 = "✅" if above_50d else ("❌" if above_50d is not None else "❓ no data")
     cond2 = "✅" if (vix is not None and vix <= 12.5) else ("❌" if vix is not None else "❓ no data")
+    cond3 = "✅" if (us_10y is not None and us_10y < 5.0) else ("❌" if us_10y is not None else "❓ no data")
     out.append(f"- {cond1} Nifty above 50-day MA (live: {ma.get('current', '?')} vs MA {ma.get('ma50', '?')})")
     out.append(f"- {cond2} India VIX back toward ~11-12 (live: {vix})")
-    out.append("- ❓ US 10-year yield off the 5%+ level — check manually")
-    out.append("- ❓ FII outflows slowing 2+ weeks — check manually")
+    out.append(f"- {cond3} US 10-year yield off the 5%+ level (live: {us_10y}%, via FRED DGS10)")
+    out.append("- ❓ FII outflows slowing 2+ weeks — no free reliable data source exists (checked "
+                "NSDL/moneycontrol/NSE live 2026-09-25); check manually")
     out.append("")
 
     # Equity adds due this month, checked against live position values.

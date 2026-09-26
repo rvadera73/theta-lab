@@ -1,9 +1,10 @@
-- date: '2026-09-01'
-  risk_level: YELLOW
-  prob_30d: 48.0
-  prob_60d: 81.0
-  prob_90d: 95.0
-  primary_risk: AD_RATIO critical
+- date: '2026-09-25'
+  risk_level: GREEN
+  prob_30d: 6.0
+  prob_60d: 11.0
+  prob_90d: 16.0
+  primary_risk: Market neutral
+ical
 - date: '2026-09-02'
   risk_level: YELLOW
   prob_30d: 48.0
@@ -36,7 +37,7 @@
   primary_risk: BREADTH elevated
 - date: '2026-09-25'
   risk_level: GREEN
-  prob_30d: 19.1
-  prob_60d: 32.8
-  prob_90d: 46.5
-  primary_risk: BREADTH elevated
+  prob_30d: 6.0
+  prob_60d: 11.0
+  prob_90d: 16.0
+  primary_risk: Market neutral
