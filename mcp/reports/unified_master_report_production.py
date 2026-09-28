@@ -688,6 +688,39 @@ class UnifiedReportProduction:
         output.append(f"  - {first.get('date')}: {first.get('prob_30d', 0):.0f}% → {last.get('date')}: {last.get('prob_30d', 0):.0f}% ({trend_word}, {delta:+.0f}pp)")
         return output
 
+    def _naked_covered_calls(self, ticker):
+        """Real coverage math, not just notional -- shares owned (now
+        correctly including assignment-created equity, see
+        open_positions_loader_v2.py's 2026-09-25 fix) vs. total short
+        calls on this ticker, across all accounts. Also reports whether
+        this ticker has open short puts too -- a call with zero owned
+        shares is still technically "naked" (uncapped upside risk is
+        real regardless of what else is open; a short put doesn't cap
+        that), but if it's paired with short puts on the same name
+        that's a deliberate two-sided strangle -- this book's actual
+        core strategy -- not an accidental gap. Found live 2026-09-25:
+        IONQ showed "2 naked calls" with zero mention that 4 puts were
+        also open on the same name, making a by-design strangle read
+        as if it were an oversight.
+
+        Promoted from a local nested function to a shared method
+        2026-09-28 -- Section 6.6's "Exit Candidate" flag was using pure
+        assignment-probability + heat with no covered/naked/strangle
+        awareness, so it flagged a profitable covered call (TWLO, shares
+        already owned -- assignment IS the intended outcome) and a
+        strangle's call leg (META, 1 naked call + 4 short puts, already
+        correctly read as "WATCH" by THIS method's own logic in Section
+        6) as if both needed closing. Real bug, caught by direct trader
+        pushback, not a judgment call.
+        """
+        shares = sum(acct.get(ticker, 0) for acct in self.equity_positions.values())
+        ticker_opts = self.open_positions[self.open_positions['ticker'] == ticker]
+        calls = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('C')]['net_quantity'].sum()
+        puts = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('P')]['net_quantity'].sum()
+        covered = min(calls, max(0, shares) / 100)
+        naked = max(0, calls - covered)
+        return naked, covered, calls, puts
+
     def _build_sector_position_table(self, critical: list, monitor: list, healthy: list) -> List[str]:
         """Consolidated Sector -> Symbol table (trader-requested 2026-09-01):
         one row per SYMBOL (not per option leg), grouped by sector, with put
@@ -740,29 +773,7 @@ class UnifiedReportProduction:
         # "ENTER ⚠️"), never a second badge stapled onto a contradicting one.
         # Every WATCH names the real condition and what it would trigger.
         qualitative_findings = self._load_seekingalpha_findings()
-
-        def naked_covered_calls(ticker):
-            """Real coverage math, not just notional -- shares owned (now
-            correctly including assignment-created equity, see
-            open_positions_loader_v2.py's 2026-09-25 fix) vs. total short
-            calls on this ticker, across all accounts. Also reports whether
-            this ticker has open short puts too -- a call with zero owned
-            shares is still technically "naked" (uncapped upside risk is
-            real regardless of what else is open; a short put doesn't cap
-            that), but if it's paired with short puts on the same name
-            that's a deliberate two-sided strangle -- this book's actual
-            core strategy -- not an accidental gap. Found live 2026-09-25:
-            IONQ showed "2 naked calls" with zero mention that 4 puts were
-            also open on the same name, making a by-design strangle read
-            as if it were an oversight.
-            """
-            shares = sum(acct.get(ticker, 0) for acct in self.equity_positions.values())
-            ticker_opts = self.open_positions[self.open_positions['ticker'] == ticker]
-            calls = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('C')]['net_quantity'].sum()
-            puts = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('P')]['net_quantity'].sum()
-            covered = min(calls, max(0, shares) / 100)
-            naked = max(0, calls - covered)
-            return naked, covered, calls, puts
+        naked_covered_calls = self._naked_covered_calls  # local alias, see the shared method's docstring
 
         def macro_note(sector):
             if sector not in high_exposure_sectors:
@@ -1675,13 +1686,39 @@ class UnifiedReportProduction:
                     "heat": heat,
                 })
 
+            # Covered/naked/strangle-aware exit flag -- fixed 2026-09-28 after
+            # direct trader pushback: this used to be pure prob>=50%+RED-heat
+            # with no coverage awareness, so it flagged TWLO (a covered call,
+            # 300 sh owned -- 100% assignment probability just means it WILL
+            # get called away at a profit, the intended outcome) and META (a
+            # strangle's call leg, 1 naked call + 4 short puts, already
+            # correctly read as WATCH by _naked_covered_calls' own logic
+            # elsewhere in this report) as if both needed closing. Ticker-
+            # level, not per-leg -- matches how Section 6 already frames it.
+            covered_naked_cache: dict = {}
+            for row in rows:
+                if row["type"] != "C":
+                    row["exit_flag"] = "🔴 EXIT CANDIDATE" if row["prob"] >= 0.50 and "RED" in row["heat"] else ""
+                    continue
+                if row["ticker"] not in covered_naked_cache:
+                    covered_naked_cache[row["ticker"]] = self._naked_covered_calls(row["ticker"])
+                naked, covered, total_calls, total_puts = covered_naked_cache[row["ticker"]]
+                agrees = row["prob"] >= 0.50 and "RED" in row["heat"]
+                if not agrees:
+                    row["exit_flag"] = ""
+                elif naked <= 0:
+                    row["exit_flag"] = "✅ COVERED — assignment is the intended outcome, not an exit"
+                elif total_puts > 0:
+                    row["exit_flag"] = "🔄 STRANGLE LEG — roll to rebalance, don't close in isolation"
+                else:
+                    row["exit_flag"] = "🔴 EXIT CANDIDATE"
+
             rows.sort(key=lambda x: -x["prob"])
             if rows:
                 table_rows = []
                 for row in rows[:25]:
-                    exit_flag = "🔴 EXIT CANDIDATE" if row["prob"] >= 0.50 and "RED" in row["heat"] else ""
                     table_rows.append([row['account'], row['ticker'], row['type'], f"{row['strike']:.1f}",
-                                        str(row['dte']), f"{row['prob']*100:.0f}%", f"${row['cash']:,.0f}", exit_flag])
+                                        str(row['dte']), f"{row['prob']*100:.0f}%", f"${row['cash']:,.0f}", row["exit_flag"]])
                 output.extend(self._md_table(
                     ["Account", "Ticker", "T", "Strike", "DTE", "Prob", "Cash-at-Risk", "Flag"], table_rows
                 ))
@@ -1693,14 +1730,21 @@ class UnifiedReportProduction:
                     total = sum(row["cash"] for row in rows if row["prob"] >= lo)
                     output.append(f"- **{label}:** ${total:,.0f} across {sum(1 for row in rows if row['prob'] >= lo)} positions")
                 output.append("")
-                exit_candidates = [row for row in rows if row["prob"] >= 0.50 and "RED" in row["heat"]]
+                exit_candidates = [row for row in rows if row["exit_flag"] == "🔴 EXIT CANDIDATE"]
+                strangle_legs = [row for row in rows if row["exit_flag"].startswith("🔄")]
                 if exit_candidates:
-                    output.append(f"**🔴 Exit Candidates** (>=50% probability AND RED heat — both signals agree): {len(exit_candidates)}")
+                    output.append(f"**🔴 Exit Candidates** (>=50% probability AND RED heat, truly naked with no offsetting puts): {len(exit_candidates)}")
                     output.append("")
                     for row in exit_candidates:
                         output.append(f"- {row['ticker']} {row['type']} {row['strike']:.1f} ({row['account']}) — {row['prob']*100:.0f}% probability, RED heat")
                 else:
-                    output.append("No positions currently combine >=50% probability with RED heat.")
+                    output.append("No positions currently combine >=50% probability with RED heat on a truly naked (non-strangle) call, or an at-risk put.")
+                if strangle_legs:
+                    output.append("")
+                    output.append(f"**🔄 Strangle legs at >=50%/RED** (roll to rebalance, not exit candidates): {len(strangle_legs)}")
+                    output.append("")
+                    for row in strangle_legs:
+                        output.append(f"- {row['ticker']} {row['type']} {row['strike']:.1f} ({row['account']}) — {row['prob']*100:.0f}% probability, RED heat")
                 output.append("")
             else:
                 output.append("No open positions with a parseable expiry within 120 DTE.")
