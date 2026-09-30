@@ -789,6 +789,18 @@ class UnifiedReportProduction:
             naked, covered, total_calls, total_puts = naked_covered_calls(ticker)
             is_strangle = naked > 0 and total_puts > 0
             detail_parts = [f"RSI/heat: {reason}." if reason else ""]
+            # Real per-ticker IV Rank -- trader-flagged 2026-09-30: the
+            # sector-level "avg IVR" (Section 4.5) can mislabel individual
+            # names, e.g. Defense's "avg IVR 33 < 40, THIN premium" is really
+            # BA at 46 (genuinely rich) dragged down by LMT at 14 (genuinely
+            # thin) -- the sector average was correct arithmetic but hid
+            # real dispersion. Each row now shows its own live number so a
+            # rich name isn't buried inside a "thin" sector label.
+            ivr_data = self.iv_ranks.get(ticker) or {}
+            ivr = ivr_data.get('iv_rank')
+            if ivr is not None:
+                ivr_label = "rich premium" if ivr >= 40 else "thin premium"
+                detail_parts.append(f"IV Rank {ivr:.0f} ({ivr_label} for CSPs/CCs).")
             if total_calls > 0 and is_strangle:
                 detail_parts.append(
                     f"Two-sided position: {int(covered)} covered call(s) ({int(covered*100)} sh owned), "
@@ -957,7 +969,21 @@ class UnifiedReportProduction:
                 macro_tag = " 🔴 HIGH MACRO EXPOSURE (see Section 6.5)"
             else:
                 macro_tag = f" 🟡 possible macro exposure ({sensitivity_confidence} historical signal, see Section 6.5)"
-            output.append(f"### {sector} ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}{macro_tag}")
+
+            # Dispersion flag -- trader-flagged 2026-09-30: a sector-average
+            # "THIN premium" line can be arithmetically correct while hiding
+            # a genuinely rich name dragged down by a thin one in the same
+            # sector (Defense: BA at IVR 46 averaged with LMT at IVR 14 into
+            # a flat "avg IVR 33 < 40"). Flag it whenever the sector's own
+            # held names span both sides of the 40 threshold, so "THIN
+            # premium" isn't read as uniform across every name in it.
+            sector_ivrs = [self.iv_ranks.get(t, {}).get('iv_rank') for t in tickers]
+            sector_ivrs = [v for v in sector_ivrs if v is not None]
+            dispersion_tag = ""
+            if len(sector_ivrs) >= 2 and max(sector_ivrs) >= 40 > min(sector_ivrs):
+                dispersion_tag = f" ⚠️ MIXED — individual IVR ranges {min(sector_ivrs):.0f}-{max(sector_ivrs):.0f}, not uniformly thin (see per-symbol IV Rank below)"
+
+            output.append(f"### {sector} ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}{macro_tag}{dispersion_tag}")
             output.append("")
 
             rows = []
