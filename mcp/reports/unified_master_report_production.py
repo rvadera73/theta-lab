@@ -828,7 +828,16 @@ class UnifiedReportProduction:
                 )
             elif total_calls > 0:
                 detail_parts.append(f"Calls: {int(covered)} covered ({int(covered*100)} sh owned), {naked:.0f} naked. No offsetting put position on this name.")
-            if macro_text:
+            # Trader-flagged 2026-09-30: a 'weak'/'unconfirmed'-confidence
+            # macro note never actually changes anything (blocking_flag below
+            # only fires on macro_conf=='strong'), yet was printed on nearly
+            # every row in any HIGH-exposure sector regardless -- Technology/
+            # Communication Services/Consumer Cyclical/Basic Materials alone
+            # cover a large share of the book, so this repeated identically
+            # on most rows with zero discriminating value. It's still shown
+            # once at the sector header (macro_tag); per-ticker only when the
+            # confidence is actually strong enough to matter.
+            if macro_text and macro_conf == 'strong':
                 detail_parts.append(macro_text.capitalize() + ".")
             if qual:
                 detail_parts.append(f"Qualitative flag ({qual['as_of']}): {qual['summary']}")
@@ -874,6 +883,16 @@ class UnifiedReportProduction:
                 label = f"🟡 WATCH: {naked:.0f} isolated naked call(s), no offsetting puts — uncapped upside risk if it runs"
             elif heat == 'RED':
                 label = f"🟡 WATCH: RED heat, but conviction {conv:.1f} holds it back from CLOSE/TRIM"
+            elif reason:
+                # Trader-flagged 2026-09-30: this used to be a flat "no
+                # confirmed direction yet" for every YELLOW-heat name with no
+                # other special case -- no real content, same complaint as
+                # the old "Approaching extremes" heat_reason. reason is now
+                # always specific (real RSI/range values and which threshold
+                # they're approaching, see enhanced_metrics.py's 2026-09-30
+                # fix) so the label names the actual condition instead of a
+                # generic placeholder.
+                label = f"🟡 WATCH: {reason}"
             else:
                 label = "🟡 WATCH: no confirmed direction yet"
 
@@ -1054,23 +1073,32 @@ class UnifiedReportProduction:
         3's rule (the more complete one -- RED heat AND low conviction) as
         the single source for both.
 
-        Returns dict with 'close' (conviction<5), 'trim' (5<=conviction<6),
-        both RED-heat; 'enter_short_put' (top-3 HIGH-conviction + GREEN
+        Returns dict with 'close' (conviction<5), 'trim' (5<=conviction<7),
+        both RED-heat; 'enter_short_put' (top-10 HIGH-conviction + GREEN
         heat, matching Section 3's ENTER logic). LET-RUN (RSI-driven) stays
         a separate, genuinely different signal -- not a duplicate of
         close/trim/enter, so it isn't merged into this method.
+
+        Widened 2026-09-30 (trader-requested -- Priority Actions was
+        showing 5 total against 20 names across the Top 10 GREEN/RED
+        lists, too narrow for the same "quick look" the Top 10 lists were
+        built for): TRIM's conviction band widened from <6 to <7, ENTER's
+        cap widened from top-3 to top-10. CLOSE's own conviction<5 gate is
+        unchanged -- that's the most severe, correctly rare case, and
+        widening it risks real over-triggering rather than just surfacing
+        more borderline names to review.
         """
         if hasattr(self, '_action_classification_cache'):
             return self._action_classification_cache
 
         close_, trim_ = [], []
         for ticker, m in self.metrics.items():
-            if m['heat_status'] == 'RED' and m['conviction'] < 6:
+            if m['heat_status'] == 'RED' and m['conviction'] < 7:
                 (close_ if m['conviction'] < 5 else trim_).append((ticker, m))
 
         conviction_by_bucket = self._get_conviction_summary()
         enter_short_put = [
-            (ticker, m) for ticker, m in conviction_by_bucket.get('HIGH', [])[:3]
+            (ticker, m) for ticker, m in conviction_by_bucket.get('HIGH', [])[:10]
             if m['heat_status'] == 'GREEN'
         ]
 
