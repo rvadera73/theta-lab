@@ -28,6 +28,7 @@ try:
     from analysis.regime import detect_regime
     from analysis.iv_rank import batch_iv_rank
     from analysis.macro_risk_analyzer import analyze_macro_risk
+    from analysis.premium_yield import get_cached_batch_yield, average_annualized_yield, RICH_YIELD_THRESHOLD_PCT
 except ImportError as e:
     # Fallback if modules unavailable
     print(f"⚠️ Warning: Import error (will use fallbacks): {e}")
@@ -37,6 +38,11 @@ except ImportError as e:
         return {s: {"iv_rank": 50, "iv_pct": 50} for s in symbols}
     def analyze_macro_risk(data):
         return {"risk_level": "GREEN", "stage": 0, "signals": {}, "summary": "Macro analyzer unavailable"}
+    def get_cached_batch_yield(symbols, **kwargs):
+        return {}
+    def average_annualized_yield(entry):
+        return None
+    RICH_YIELD_THRESHOLD_PCT = 15.0
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -94,13 +100,23 @@ class UnifiedReportProduction:
             if _iv_data.get("iv_rank") is None:
                 _iv_data["iv_rank"] = 0
 
-        # Get sector analysis — iv_ranks passed through so the sector signal
-        # can distinguish "cheap stock" from "cheap stock AND rich premium"
-        # (a sector like Utilities/Energy can be statistically oversold on
-        # price while carrying structurally low IV, which matters for a
-        # premium-selling strategy but was previously invisible in the signal).
+        # Real annualized yield-on-capital per ticker (trader-requested
+        # 2026-09-30, replacing IV Rank as the thin/rich premium driver --
+        # see premium_yield.py's module docstring and RICH_YIELD_THRESHOLD_PCT
+        # for why). Cached once per calendar day and reused across every
+        # report type generated that day -- unlike IV Rank this needs a live
+        # option-chain fetch per ticker, real cost/latency not worth paying
+        # more than once a day for strikes 90-135 DTE out.
+        self.premium_yields = get_cached_batch_yield(self.position_summary.index.tolist())
+
+        # Get sector analysis — iv_ranks/premium_yields passed through so the
+        # sector signal can distinguish "cheap stock" from "cheap stock AND
+        # rich premium" (a sector like Utilities/Energy can be statistically
+        # oversold on price while carrying structurally low real yield, which
+        # matters for a premium-selling strategy but was previously invisible
+        # in the signal).
         self.sector_summary, self.sector_analysis_output, self.sector_rotation_output, self.ticker_sector_map = batch_get_sector_analysis(
-            self.open_positions, self.metrics, self.prices, self.iv_ranks
+            self.open_positions, self.metrics, self.prices, self.iv_ranks, self.premium_yields
         )
 
     def _load_portfolio_snapshot(self) -> dict:
@@ -789,18 +805,21 @@ class UnifiedReportProduction:
             naked, covered, total_calls, total_puts = naked_covered_calls(ticker)
             is_strangle = naked > 0 and total_puts > 0
             detail_parts = [f"RSI/heat: {reason}." if reason else ""]
-            # Real per-ticker IV Rank -- trader-flagged 2026-09-30: the
-            # sector-level "avg IVR" (Section 4.5) can mislabel individual
-            # names, e.g. Defense's "avg IVR 33 < 40, THIN premium" is really
-            # BA at 46 (genuinely rich) dragged down by LMT at 14 (genuinely
-            # thin) -- the sector average was correct arithmetic but hid
-            # real dispersion. Each row now shows its own live number so a
-            # rich name isn't buried inside a "thin" sector label.
-            ivr_data = self.iv_ranks.get(ticker) or {}
-            ivr = ivr_data.get('iv_rank')
-            if ivr is not None:
-                ivr_label = "rich premium" if ivr >= 40 else "thin premium"
-                detail_parts.append(f"IV Rank {ivr:.0f} ({ivr_label} for CSPs/CCs).")
+            # Real per-ticker annualized yield-on-capital -- replaced the
+            # IV-Rank-based version of this line 2026-09-30 after the trader
+            # challenged the "thin premium" sector labels (Defense, Brand-
+            # Quality) and live verification (PFE, SBUX) showed IV Rank can
+            # read anywhere while real yield stays genuinely thin: IV Rank
+            # only compares a stock to ITS OWN 52-week vol range, never to
+            # market/sector vol or to what a dollar of capital actually
+            # earns. This shows the real number instead -- annualized yield
+            # on a ~10% OTM put/call at this book's own ~90-135 DTE window,
+            # from the cached daily option-chain pull (analysis/premium_yield.py).
+            yield_data = self.premium_yields.get(ticker)
+            avg_yield = average_annualized_yield(yield_data)
+            if avg_yield is not None:
+                yield_label = "rich premium" if avg_yield >= RICH_YIELD_THRESHOLD_PCT else "thin premium"
+                detail_parts.append(f"Real yield-on-capital ~{avg_yield:.0f}% annualized ({yield_label} for CSPs/CCs, ~10% OTM/{yield_data.get('dte', '?')}DTE).")
             if total_calls > 0 and is_strangle:
                 detail_parts.append(
                     f"Two-sided position: {int(covered)} covered call(s) ({int(covered*100)} sh owned), "
@@ -973,15 +992,15 @@ class UnifiedReportProduction:
             # Dispersion flag -- trader-flagged 2026-09-30: a sector-average
             # "THIN premium" line can be arithmetically correct while hiding
             # a genuinely rich name dragged down by a thin one in the same
-            # sector (Defense: BA at IVR 46 averaged with LMT at IVR 14 into
-            # a flat "avg IVR 33 < 40"). Flag it whenever the sector's own
-            # held names span both sides of the 40 threshold, so "THIN
-            # premium" isn't read as uniform across every name in it.
-            sector_ivrs = [self.iv_ranks.get(t, {}).get('iv_rank') for t in tickers]
-            sector_ivrs = [v for v in sector_ivrs if v is not None]
+            # sector. Flag it whenever the sector's own held names span both
+            # sides of RICH_YIELD_THRESHOLD_PCT (real annualized yield-on-
+            # capital), so "THIN premium" isn't read as uniform across every
+            # name in it.
+            sector_yields = [average_annualized_yield(self.premium_yields.get(t)) for t in tickers]
+            sector_yields = [v for v in sector_yields if v is not None]
             dispersion_tag = ""
-            if len(sector_ivrs) >= 2 and max(sector_ivrs) >= 40 > min(sector_ivrs):
-                dispersion_tag = f" ⚠️ MIXED — individual IVR ranges {min(sector_ivrs):.0f}-{max(sector_ivrs):.0f}, not uniformly thin (see per-symbol IV Rank below)"
+            if len(sector_yields) >= 2 and max(sector_yields) >= RICH_YIELD_THRESHOLD_PCT > min(sector_yields):
+                dispersion_tag = f" ⚠️ MIXED — individual real yield ranges {min(sector_yields):.0f}%-{max(sector_yields):.0f}%, not uniformly thin (see per-symbol detail below)"
 
             output.append(f"### {sector} ({len(tickers)} positions, ${s_notional:,.0f}) — {signal}{macro_tag}{dispersion_tag}")
             output.append("")

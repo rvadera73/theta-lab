@@ -10,6 +10,13 @@ from collections import defaultdict
 from typing import Dict, List, Tuple
 import logging
 
+try:
+    from analysis.premium_yield import average_annualized_yield, RICH_YIELD_THRESHOLD_PCT
+except ImportError:
+    def average_annualized_yield(entry):
+        return None
+    RICH_YIELD_THRESHOLD_PCT = 15.0
+
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -83,7 +90,7 @@ class SectorAnalyzer:
         'CIFR': 'Crypto Mining',
     }
 
-    def __init__(self, open_positions: pd.DataFrame, metrics: Dict, prices: Dict, iv_ranks: Dict = None):
+    def __init__(self, open_positions: pd.DataFrame, metrics: Dict, prices: Dict, iv_ranks: Dict = None, premium_yields: Dict = None):
         """
         Initialize with positions data and metrics
 
@@ -92,13 +99,24 @@ class SectorAnalyzer:
             metrics: Dict[ticker] -> metrics dict with conviction, heat_status, rsi, position_in_52w_range
             prices: Dict[ticker] -> current price
             iv_ranks: Dict[ticker] -> {iv_rank, iv_pct, ...} from analysis.iv_rank.batch_iv_rank.
-                Optional — omit (or pass {}) to keep the sector signal price-only,
-                same as before this was added.
+                Kept for the per-ticker display elsewhere in the report; no longer
+                drives the thin/rich premium signal below (see premium_yields).
+            premium_yields: Dict[ticker] -> {put, call, ...} from
+                analysis.premium_yield.get_cached_batch_yield. Drives the
+                thin/rich premium call -- replaced IV-Rank-vs-own-history
+                2026-09-30 after live verification (PFE, SBUX) showed a stock
+                can read anywhere on IV Rank while its real annualized yield
+                stays genuinely thin: IV Rank never compares to market/sector
+                vol or to what a dollar of capital actually earns, which is
+                the real question for "is this sector worth new premium."
+                Optional — omit (or pass {}) to keep the sector signal
+                price-only.
         """
         self.open_positions = open_positions
         self.metrics = metrics
         self.prices = prices
         self.iv_ranks = iv_ranks or {}
+        self.premium_yields = premium_yields or {}
         self.sector_map = {}
         self.sector_data = {}
         self._fetch_sector_data()
@@ -146,6 +164,7 @@ class SectorAnalyzer:
             'rsi_values': [],
             'position_ranges': [],
             'iv_ranks': [],
+            'yields': [],
         })
 
         # Group positions by sector
@@ -167,6 +186,9 @@ class SectorAnalyzer:
             iv_rank = self.iv_ranks.get(ticker, {}).get('iv_rank')
             if iv_rank is not None:
                 sector_analysis[sector]['iv_ranks'].append(iv_rank)
+            yield_val = average_annualized_yield(self.premium_yields.get(ticker))
+            if yield_val is not None:
+                sector_analysis[sector]['yields'].append(yield_val)
 
         # Calculate sector-level metrics
         sector_summary = {}
@@ -203,16 +225,19 @@ class SectorAnalyzer:
             avg_position_range = np.mean(position_ranges)
             iv_ranks = data['iv_ranks']
             avg_iv_rank = float(np.mean(iv_ranks)) if iv_ranks else None
-            # IVR >= 40 is this codebase's own established "worth selling
-            # premium here" threshold (see analysis/iv_rank.py's entry_signal).
-            # Below that, options are cheap regardless of how the stock itself
-            # is priced — a sector can be statistically oversold on PRICE
-            # (Utilities, Energy) while being a poor premium-selling sector
-            # because its options are structurally low-IV. This was previously
-            # invisible: "BUY" meant "cheap stock," not "cheap stock AND rich
-            # premium," which is what actually matters for a premium-selling
-            # strategy.
-            premium_rich = avg_iv_rank is not None and avg_iv_rank >= 40
+            yields = data['yields']
+            avg_yield = float(np.mean(yields)) if yields else None
+            # RICH_YIELD_THRESHOLD_PCT (15% annualized, trader-set 2026-09-30)
+            # replaces the old IVR>=40 check as the "worth selling premium
+            # here" test. Live-verified reason for the swap: IV Rank only
+            # compares a stock to ITS OWN 52-week vol range, never to market/
+            # sector vol or to what a dollar of capital actually earns -- PFE
+            # and SBUX both showed genuinely thin real annualized yield
+            # (3-11% at this book's own 10-15% OTM convention) regardless of
+            # where their IV Rank sat. A sector can be statistically oversold
+            # on PRICE (Utilities, Energy) while being a poor premium-selling
+            # sector because the REAL yield on tied-up capital is thin.
+            premium_rich = avg_yield is not None and avg_yield >= RICH_YIELD_THRESHOLD_PCT
 
             # Discriminating bands. Sector AVERAGES rarely hit conjunctive extremes,
             # so overbought/oversold (OR conditions) drive the color; conviction guards it.
@@ -223,20 +248,20 @@ class SectorAnalyzer:
                 signal = "🔴 REDUCE — Overbought / extended"
                 signal_type = "EXTENSION"
             elif avg_rsi <= 40 or avg_position_range <= 25:
-                if avg_iv_rank is None:
-                    signal = "🟢 BUY — Oversold / attractively valued (IV rank unavailable — premium richness unknown)"
+                if avg_yield is None:
+                    signal = "🟢 BUY — Oversold / attractively valued (real yield data unavailable — premium richness unknown)"
                 elif premium_rich:
-                    signal = f"🟢 BUY — Oversold + rich premium (avg IVR {avg_iv_rank:.0f}, good for selling)"
+                    signal = f"🟢 BUY — Oversold + rich premium (avg real yield {avg_yield:.0f}%, good for selling)"
                 else:
-                    signal = f"🟡 BUY (stock only) — Oversold but THIN premium (avg IVR {avg_iv_rank:.0f} < 40) — not attractive for CSPs/CCs"
+                    signal = f"🟡 BUY (stock only) — Oversold but THIN premium (avg real yield {avg_yield:.0f}% < {RICH_YIELD_THRESHOLD_PCT:.0f}%) — not attractive for CSPs/CCs"
                 signal_type = "ATTRACTION"
             elif avg_conv >= 7.5 and avg_position_range < 50:
-                if avg_iv_rank is None:
-                    signal = "🟢 BUY — High conviction (IV rank unavailable — premium richness unknown)"
+                if avg_yield is None:
+                    signal = "🟢 BUY — High conviction (real yield data unavailable — premium richness unknown)"
                 elif premium_rich:
-                    signal = f"🟢 BUY — High conviction + rich premium (avg IVR {avg_iv_rank:.0f})"
+                    signal = f"🟢 BUY — High conviction + rich premium (avg real yield {avg_yield:.0f}%)"
                 else:
-                    signal = f"🟡 BUY (stock only) — High conviction but THIN premium (avg IVR {avg_iv_rank:.0f} < 40)"
+                    signal = f"🟡 BUY (stock only) — High conviction but THIN premium (avg real yield {avg_yield:.0f}% < {RICH_YIELD_THRESHOLD_PCT:.0f}%)"
                 signal_type = "ATTRACTION"
             else:
                 signal = "🟡 MONITOR — Neutral positioning"
@@ -255,6 +280,7 @@ class SectorAnalyzer:
                 'avg_rsi': round(avg_rsi, 1),
                 'avg_position_in_52w_range': round(avg_position_range, 1),
                 'avg_iv_rank': round(avg_iv_rank, 1) if avg_iv_rank is not None else None,
+                'avg_yield_pct': round(avg_yield, 1) if avg_yield is not None else None,
                 'top_positions': top_positions,
                 'signal': signal,
                 'signal_type': signal_type,
@@ -278,7 +304,7 @@ class SectorAnalyzer:
         # Summary table
         output.append("### Sector Snapshot — Conviction & Valuation Positioning")
         output.append("")
-        headers = ["Sector", "Positions", "Avg Conv", "Avg RSI", "52W %ile", "Avg IVR", "Signal"]
+        headers = ["Sector", "Positions", "Avg Conv", "Avg RSI", "52W %ile", "Avg Yield%", "Signal"]
         rows = []
 
         for sector in ordered_sectors:
@@ -286,18 +312,19 @@ class SectorAnalyzer:
             conv = data['avg_conviction']
             rsi = data['avg_rsi']
             range_pct = data['avg_position_in_52w_range']
-            ivr = data.get('avg_iv_rank')
-            ivr_str = f"{ivr:.0f}" if ivr is not None else "n/a"
+            yld = data.get('avg_yield_pct')
+            yield_str = f"{yld:.0f}%" if yld is not None else "n/a"
             signal_type = data['signal_type']
 
             # Shorten signal for display — BUY splits on premium richness
-            # (avg IV rank >= 40) so a cheap-but-thin-premium sector like
+            # (avg real annualized yield >= RICH_YIELD_THRESHOLD_PCT, 15% as
+            # of 2026-09-30) so a cheap-but-thin-premium sector like
             # Utilities/Energy doesn't read identically to a cheap-and-rich
-            # one; PRICE_ONLY (no IV data) is called out rather than guessed.
+            # one; PRICE_ONLY (no yield data) is called out rather than guessed.
             if signal_type == "ATTRACTION":
-                if ivr is None:
+                if yld is None:
                     signal_short = "🟢 BUY (price only)"
-                elif ivr >= 40:
+                elif yld >= RICH_YIELD_THRESHOLD_PCT:
                     signal_short = "🟢 BUY (rich premium)"
                 else:
                     signal_short = "🟡 BUY stock/THIN premium"
@@ -310,7 +337,7 @@ class SectorAnalyzer:
             else:
                 signal_short = "🟡 NEUTRAL"
 
-            rows.append([sector, str(data['position_count']), str(conv), f"{rsi:.1f}", f"{range_pct:.1f}", ivr_str, signal_short])
+            rows.append([sector, str(data['position_count']), str(conv), f"{rsi:.1f}", f"{range_pct:.1f}", yield_str, signal_short])
 
         output.append("| " + " | ".join(headers) + " |")
         output.append("|" + "|".join(["---"] * len(headers)) + "|")
@@ -380,19 +407,23 @@ class SectorAnalyzer:
         return output
 
 
-def batch_get_sector_analysis(open_positions: pd.DataFrame, metrics: Dict, prices: Dict, iv_ranks: Dict = None) -> Tuple[Dict, List[str], List[str], Dict[str, str]]:
+def batch_get_sector_analysis(open_positions: pd.DataFrame, metrics: Dict, prices: Dict, iv_ranks: Dict = None, premium_yields: Dict = None) -> Tuple[Dict, List[str], List[str], Dict[str, str]]:
     """
     Generate sector analysis for unified reports
 
     Args:
-        iv_ranks: optional Dict[ticker] -> {iv_rank, ...} from analysis.iv_rank.batch_iv_rank,
-            used to split BUY signals into rich-premium vs thin-premium. Omit to
-            keep the prior price-only signal behavior.
+        iv_ranks: optional Dict[ticker] -> {iv_rank, ...} from analysis.iv_rank.batch_iv_rank.
+            Informational only now -- see premium_yields for what drives the signal.
+        premium_yields: optional Dict[ticker] -> {put, call, ...} from
+            analysis.premium_yield.get_cached_batch_yield, used to split BUY
+            signals into rich-premium vs thin-premium by real annualized
+            yield-on-capital (>=15% = rich). Omit to keep the prior
+            price-only signal behavior.
 
     Returns:
         (sector_summary, sector_analysis_section, sector_rotation_section, ticker_to_sector_map)
     """
-    analyzer = SectorAnalyzer(open_positions, metrics, prices, iv_ranks)
+    analyzer = SectorAnalyzer(open_positions, metrics, prices, iv_ranks, premium_yields)
     sector_summary = analyzer.get_sector_breakdown()
     analysis_section = analyzer.generate_sector_analysis_report(sector_summary)
     rotation_section = analyzer.get_sector_rotation_insights(sector_summary)

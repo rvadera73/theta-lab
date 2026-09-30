@@ -8,8 +8,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,415,485
-- **Total notional exposure:** $8,045,847
-- **Total option requirement:** $2,767,607
+- **Total notional exposure:** $8,047,654
+- **Total option requirement:** $2,767,899
 - **Positions with short puts:** 90
 - **Positions with short calls:** 51
 - **YTD Net Premium:** $321,035 (live from transactions)
@@ -61,18 +61,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 16.7% | $5,625,405 | $1,012,573 | Margin | 🔴 OVER CAP | $33,085 | ✅ $-1,819 |
-| Account B (275) | $261,000 | 10.8% | $369,981 | $294,050 | Cash-Sec | 🔴 COVERAGE GAP | $9,595 | ✅ $-527 |
-| Account C (634) | $256,067 | 10.6% | $351,362 | $211,950 | Cash-Sec | ⚠️ WATCH | $9,413 | ✅ $-517 |
-| Fidelity (Rahul) | $563,432 | 23.3% | $692,753 | $620,908 | Cash-Sec | 🔴 COVERAGE GAP | $20,712 | ✅ $-1,139 |
-| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $53,635 | $52,655 | Cash-Sec | 🔴 COVERAGE GAP | $1,652 | ✅ $-90 |
-| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $178,238 | $163,200 | Cash-Sec | 🔴 COVERAGE GAP | $5,196 | ✅ $-285 |
-| Vanguard (Rahul) | $320,492 | 13.3% | $436,086 | $412,271 | Cash-Sec | 🔴 COVERAGE GAP | $11,782 | ✅ $-648 |
-| Robinhood (Individual) | $13,000 | 0.5% | $26,759 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $478 | ✅ $-26 |
-| Robinhood (Traditional IRA) | $220,000 | 9.1% | $311,628 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,087 | ✅ $-444 |
+| Account A (232) | $403,000 | 16.7% | $5,627,176 | $1,012,892 | Margin | 🔴 OVER CAP | $33,085 | ✅ $-2,812 |
+| Account B (275) | $261,000 | 10.8% | $369,276 | $294,050 | Cash-Sec | 🔴 COVERAGE GAP | $9,595 | ✅ $-815 |
+| Account C (634) | $256,067 | 10.6% | $351,402 | $211,950 | Cash-Sec | ⚠️ WATCH | $9,413 | ✅ $-800 |
+| Fidelity (Rahul) | $563,432 | 23.3% | $693,234 | $620,942 | Cash-Sec | 🔴 COVERAGE GAP | $20,712 | ✅ $-1,760 |
+| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $53,635 | $52,683 | Cash-Sec | 🔴 COVERAGE GAP | $1,652 | ✅ $-140 |
+| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $178,015 | $163,200 | Cash-Sec | 🔴 COVERAGE GAP | $5,196 | ✅ $-441 |
+| Vanguard (Rahul) | $320,492 | 13.3% | $436,530 | $412,182 | Cash-Sec | 🔴 COVERAGE GAP | $11,782 | ✅ $-1,001 |
+| Robinhood (Individual) | $13,000 | 0.5% | $26,718 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $478 | ✅ $-40 |
+| Robinhood (Traditional IRA) | $220,000 | 9.1% | $311,667 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,087 | ✅ $-687 |
 | Fidelity 401K (Rahul) | $192,200 | 8.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,415,485 | 100.0% | $8,045,847 | $2,767,607 |  |  |  |  |
+| **TOTAL** | $2,415,485 | 100.0% | $8,047,654 | $2,767,899 |  |  |  |  |
 
 - **Account A (232):** 171 option positions | Monthly target: $33,085 | Equity: ADBE 300sh, APP 100sh, AXON 200sh, COIN 200sh, CRCL 100sh +15 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -116,19 +116,19 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 - Gap to close: $578,965.0 (64.3%)
 - Monthly average (YTD): $35,671
 - Monthly average needed: $100,000
-- Monthly gap: $-5,500
+- Monthly gap: $-8,500
 
 **Position tier distribution → gap closure:**
 
 - Tier 1 (15 positions): $57,000/month (57% of $100,000 target)
-- Tier 2 (58 positions): $58,000/month (58% of target)
-- Tier 3 (19 positions): $-9,500/month (-10% drag)
-- Current total: 92 positions = $105,500/month (106% of target)
+- Tier 2 (60 positions): $60,000/month (60% of target)
+- Tier 3 (17 positions): $-8,500/month (-8% drag)
+- Current total: 92 positions = $108,500/month (108% of target)
 
 **Gap closure path:**
 
 - To hit $100,000 target: Need 0 more Tier 1 positions
-- Alternative: Scale existing OR exit 7 worst Tier 3 positions
+- Alternative: Scale existing OR exit 6 worst Tier 3 positions
 - Capital required for 0 new positions: $0 (0 × $10K)
 
 **Risk guardrails:**
@@ -178,88 +178,86 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 **Tier contribution to target:**
 
 - Tier 1 (15 positions): $57,000/month — each contributes $3,800/month (4.2% of $100,000)
-- Tier 2 (58 positions): $58,000/month — each contributes $1,000/month (1.1% of target)
-- Tier 3 (19 positions): $-9,500/month — each drags -$500/month (-0.6% of target)
-- Portfolio: 105,500/month (106% of target) — Need $-5,500 more
+- Tier 2 (60 positions): $60,000/month — each contributes $1,000/month (1.1% of target)
+- Tier 3 (17 positions): $-8,500/month — each drags -$500/month (-0.6% of target)
+- Portfolio: 108,500/month (108% of target) — Need $-8,500 more
 
 **HIGH (Tier 1: 8-10) conviction** — 15 positions | Total contribution: $57,000/month (57.0% of target)
 
 | Heat | Symbol | Price | Conv | Contribution | % Target |
 |---|---|---|---|---|---|
-| 🟢 | APP | $300.35 | 9.1 | $3,800 | 3.8% |
-| 🟢 | BROS | $39.39 | 9.0 | $3,800 | 3.8% |
+| 🟢 | APP | $299.67 | 9.1 | $3,800 | 3.8% |
+| 🟢 | BROS | $39.41 | 9.0 | $3,800 | 3.8% |
 | 🟡 | JD | $26.58 | 8.6 | $3,800 | 3.8% |
-| 🟡 | LASR | $39.05 | 8.5 | $3,800 | 3.8% |
-| 🟢 | GEV | $954.15 | 8.4 | $3,800 | 3.8% |
-| 🟢 | GOOGL | $350.41 | 8.4 | $3,800 | 3.8% |
-| 🟡 | MU | $1073.14 | 8.4 | $3,800 | 3.8% |
-| 🟢 | VRT | $242.63 | 8.3 | $3,800 | 3.8% |
-| 🟡 | PL | $16.66 | 8.2 | $3,800 | 3.8% |
-| 🟢 | AMKR | $52.92 | 8.1 | $3,800 | 3.8% |
-| 🟡 | CAVA | $54.31 | 8.1 | $3,800 | 3.8% |
-| 🟡 | IONQ | $45.00 | 8.0 | $3,800 | 3.8% |
-| 🟡 | LLY | $1185.01 | 8.0 | $3,800 | 3.8% |
-| 🟡 | NVDA | $230.13 | 8.0 | $3,800 | 3.8% |
-| 🟢 | NU | $12.36 | 8.0 | $3,800 | 3.8% |
+| 🟡 | LASR | $38.95 | 8.5 | $3,800 | 3.8% |
+| 🟢 | GEV | $954.39 | 8.4 | $3,800 | 3.8% |
+| 🟢 | GOOGL | $351.42 | 8.4 | $3,800 | 3.8% |
+| 🟡 | MU | $1072.24 | 8.4 | $3,800 | 3.8% |
+| 🟢 | VRT | $243.34 | 8.3 | $3,800 | 3.8% |
+| 🟡 | TSM | $461.03 | 8.2 | $3,800 | 3.8% |
+| 🟡 | PL | $16.57 | 8.2 | $3,800 | 3.8% |
+| 🟢 | AMKR | $52.56 | 8.1 | $3,800 | 3.8% |
+| 🟡 | CAVA | $54.63 | 8.1 | $3,800 | 3.8% |
+| 🟡 | IONQ | $44.73 | 8.0 | $3,800 | 3.8% |
+| 🟡 | NVDA | $230.64 | 8.0 | $3,800 | 3.8% |
+| 🟢 | NU | $12.31 | 8.0 | $3,800 | 3.8% |
 _(put/call detail: Section 6)_
 
-**MODERATE (Tier 2: 6-8) conviction** — 58 positions | Total contribution: $58,000/month (58.0% of target)
+**MODERATE (Tier 2: 6-8) conviction** — 60 positions | Total contribution: $60,000/month (60.0% of target)
 
 | Heat | Symbol | Price | Conv | Contribution | % Target |
 |---|---|---|---|---|---|
-| 🟡 | SHOP | $150.51 | 7.8 | $1,000 | 1.0% |
-| 🟡 | LITE | $941.00 | 7.8 | $1,000 | 1.0% |
-| 🟡 | ASTS | $61.71 | 7.8 | $1,000 | 1.0% |
-| 🔴 | PLTR | $190.43 | 7.8 | $1,000 | 1.0% |
-| 🟢 | NKE | $35.65 | 7.7 | $1,000 | 1.0% |
-| 🟡 | TSM | $459.58 | 7.7 | $1,000 | 1.0% |
-| 🟡 | MSFT | $518.35 | 7.6 | $1,000 | 1.0% |
-| 🟡 | ANET | $203.80 | 7.5 | $1,000 | 1.0% |
-| 🟢 | OKLO | $37.94 | 7.5 | $1,000 | 1.0% |
-| 🟡 | CRWV | $86.74 | 7.5 | $1,000 | 1.0% |
-| 🟡 | NBIS | $237.07 | 7.5 | $1,000 | 1.0% |
-| 🟡 | QUBT | $8.60 | 7.5 | $1,000 | 1.0% |
-| 🟡 | WMT | $105.60 | 7.5 | $1,000 | 1.0% |
-| 🟢 | UNH | $370.10 | 7.4 | $1,000 | 1.0% |
-| 🟡 | MP | $47.94 | 7.4 | $1,000 | 1.0% |
-| 🟢 | ALAB | $347.14 | 7.3 | $1,000 | 1.0% |
-| 🟡 | ZS | $201.95 | 7.3 | $1,000 | 1.0% |
-| 🟡 | ISRG | $408.08 | 7.3 | $1,000 | 1.0% |
-| 🟡 | SKHY | $186.19 | 7.3 | $1,000 | 1.0% |
-| 🟡 | ALB | $106.89 | 7.2 | $1,000 | 1.0% |
+| 🟡 | SHOP | $151.11 | 7.8 | $1,000 | 1.0% |
+| 🟡 | LLY | $1192.33 | 7.8 | $1,000 | 1.0% |
+| 🟡 | ASTS | $61.90 | 7.8 | $1,000 | 1.0% |
+| 🔴 | PLTR | $190.53 | 7.8 | $1,000 | 1.0% |
+| 🟢 | NKE | $35.69 | 7.7 | $1,000 | 1.0% |
+| 🟡 | MSFT | $518.50 | 7.6 | $1,000 | 1.0% |
+| 🟡 | ANET | $204.78 | 7.5 | $1,000 | 1.0% |
+| 🟢 | OKLO | $37.85 | 7.5 | $1,000 | 1.0% |
+| 🟡 | CRWV | $86.75 | 7.5 | $1,000 | 1.0% |
+| 🟡 | NBIS | $237.76 | 7.5 | $1,000 | 1.0% |
+| 🟡 | QUBT | $8.56 | 7.5 | $1,000 | 1.0% |
+| 🟡 | WMT | $105.48 | 7.5 | $1,000 | 1.0% |
+| 🟢 | UNH | $370.76 | 7.4 | $1,000 | 1.0% |
+| 🟡 | LITE | $945.47 | 7.4 | $1,000 | 1.0% |
+| 🟡 | MP | $47.92 | 7.4 | $1,000 | 1.0% |
+| 🟢 | ALAB | $346.17 | 7.3 | $1,000 | 1.0% |
+| 🟡 | ISRG | $409.05 | 7.3 | $1,000 | 1.0% |
+| 🟡 | SKHY | $185.82 | 7.3 | $1,000 | 1.0% |
+| 🟡 | ALB | $106.59 | 7.2 | $1,000 | 1.0% |
+| 🟡 | UBER | $68.98 | 7.2 | $1,000 | 1.0% |
 _(put/call detail: Section 6)_
-_...and 38 more (see Section 6 for the full sector-grouped list)_
+_...and 40 more (see Section 6 for the full sector-grouped list)_
 
-**LOW (Tier 3: <6) conviction** — 19 positions | Total contribution: $-9,500/month (-9.5% of target)
+**LOW (Tier 3: <6) conviction** — 17 positions | Total contribution: $-8,500/month (-8.5% of target)
 
 | Heat | Symbol | Price | Conv | Contribution | % Target |
 |---|---|---|---|---|---|
-| 🔴 | OKTA | $211.64 | 5.9 | $-500 | 0.0% |
-| 🟢 | VST | $137.52 | 5.9 | $-500 | 0.0% |
-| 🔴 | TWLO | $293.71 | 5.8 | $-500 | 0.0% |
-| 🟢 | SBUX | $95.43 | 5.8 | $-500 | 0.0% |
-| 🟡 | IBM | $221.13 | 5.7 | $-500 | 0.0% |
-| 🟢 | PYPL | $53.28 | 5.6 | $-500 | 0.0% |
-| 🔴 | SONO | $17.97 | 5.6 | $-500 | 0.0% |
-| 🟢 | INFY | $10.68 | 5.6 | $-500 | 0.0% |
-| 🟢 | ELF | $102.57 | 5.6 | $-500 | 0.0% |
-| 🟡 | COIN | $186.55 | 5.5 | $-500 | 0.0% |
-| 🟢 | DIS | $105.96 | 5.3 | $-500 | 0.0% |
-| 🟢 | REGN | $749.72 | 5.2 | $-500 | 0.0% |
-| 🟡 | TSLA | $347.98 | 5.2 | $-500 | 0.0% |
-| 🟡 | ADBE | $240.01 | 5.1 | $-500 | 0.0% |
-| 🟢 | SMR | $8.06 | 5.0 | $-500 | 0.0% |
-| 🟡 | NVO | $38.52 | 4.7 | $-500 | 0.0% |
-| 🟡 | CCJ | $88.10 | 4.5 | $-500 | 0.0% |
-| 🟢 | TTD | $12.14 | 4.3 | $-500 | 0.0% |
-| 🟢 | XYZ | $74.04 | 4.2 | $-500 | 0.0% |
+| 🔴 | OKTA | $210.95 | 5.9 | $-500 | 0.0% |
+| 🟢 | VST | $137.38 | 5.9 | $-500 | 0.0% |
+| 🔴 | TWLO | $293.33 | 5.8 | $-500 | 0.0% |
+| 🟡 | IBM | $221.12 | 5.7 | $-500 | 0.0% |
+| 🟢 | PYPL | $53.09 | 5.6 | $-500 | 0.0% |
+| 🔴 | SONO | $17.96 | 5.6 | $-500 | 0.0% |
+| 🟢 | INFY | $10.70 | 5.6 | $-500 | 0.0% |
+| 🟡 | COIN | $186.83 | 5.5 | $-500 | 0.0% |
+| 🟢 | DIS | $105.78 | 5.3 | $-500 | 0.0% |
+| 🟢 | REGN | $754.38 | 5.2 | $-500 | 0.0% |
+| 🟡 | TSLA | $348.39 | 5.2 | $-500 | 0.0% |
+| 🟡 | ADBE | $239.47 | 5.1 | $-500 | 0.0% |
+| 🟢 | SMR | $8.03 | 5.0 | $-500 | 0.0% |
+| 🟡 | NVO | $38.56 | 4.7 | $-500 | 0.0% |
+| 🟡 | CCJ | $87.81 | 4.5 | $-500 | 0.0% |
+| 🟢 | TTD | $12.11 | 4.3 | $-500 | 0.0% |
+| 🟢 | XYZ | $73.80 | 4.2 | $-500 | 0.0% |
 _(put/call detail: Section 6)_
 
 
 ## Section 3: POSITION HEAT DISTRIBUTION
 
-- 🟢 GREEN (Attractive/Oversold): 39 positions (42.4%)
-- 🟡 YELLOW (Neutral): 45 positions (48.9%)
+- 🟢 GREEN (Attractive/Oversold): 38 positions (41.3%)
+- 🟡 YELLOW (Neutral): 46 positions (50.0%)
 - 🔴 RED (Extended/Overbought): 8 positions (8.7%)
 
 
@@ -268,28 +266,28 @@ _(put/call detail: Section 6)_
 - **Current Regime:** BULL
 - **Note:** Regime auto-detected from data. No caution flags active.
 - **VIX:** 15.9 — VIX 15.9 sustained < 20
-- **S&P 500:** 7712 (50d MA: 7649, 200d MA: 7217)
+- **S&P 500:** 7714 (50d MA: 7649, 200d MA: 7217)
   - Above 50d MA: True | Above 200d MA: True
 
 ## Section 4.5: Sector Analysis & Rotation Framework
 
 ### Sector Snapshot — Conviction & Valuation Positioning
 
-| Sector | Positions | Avg Conv | Avg RSI | 52W %ile | Avg IVR | Signal |
+| Sector | Positions | Avg Conv | Avg RSI | 52W %ile | Avg Yield% | Signal |
 |---|---|---|---|---|---|---|
-| Technology | 108 | 6.88 | 57.6 | 59.1 | 37 | 🟡 NEUTRAL |
-| Healthcare | 22 | 6.54 | 51.5 | 46.0 | 15 | 🟡 NEUTRAL |
-| Consumer Cyclical | 33 | 6.76 | 43.8 | 33.8 | 32 | 🟡 NEUTRAL |
-| Industrials | 35 | 6.91 | 46.8 | 36.3 | 25 | 🟡 NEUTRAL |
-| Energy | 2 | 5.75 | 32.2 | 44.4 | 25 | 🟡 BUY stock/THIN premium |
-| Consumer Defensive | 1 | 7.5 | 49.4 | 18.5 | 100 | 🟢 BUY (rich premium) |
-| Utilities | 10 | 6.58 | 36.0 | 5.8 | 14 | 🟡 BUY stock/THIN premium |
-| Communication Services | 37 | 7.45 | 46.4 | 25.2 | 32 | 🟡 NEUTRAL |
-| Defense | 9 | 6.5 | 32.0 | 15.7 | 33 | 🟡 BUY stock/THIN premium |
-| Brand-Quality (Non-AI) | 13 | 6.95 | 44.6 | 21.5 | 10 | 🟡 BUY stock/THIN premium |
-| Crypto Mining | 7 | 6.27 | 49.0 | 41.6 | 33 | 🟡 NEUTRAL |
-| Basic Materials | 12 | 7.27 | 34.8 | 17.3 | 23 | 🟡 BUY stock/THIN premium |
-| Financial Services | 31 | 6.05 | 47.6 | 36.2 | 52 | 🟡 NEUTRAL |
+| Technology | 108 | 6.85 | 57.6 | 59.0 | 26% | 🟡 NEUTRAL |
+| Healthcare | 22 | 6.5 | 52.4 | 46.4 | 12% | 🟡 NEUTRAL |
+| Consumer Cyclical | 33 | 6.71 | 43.5 | 33.5 | 23% | 🟡 NEUTRAL |
+| Industrials | 35 | 6.91 | 46.6 | 36.2 | 35% | 🟡 NEUTRAL |
+| Energy | 2 | 5.75 | 32.2 | 44.3 | 17% | 🟢 BUY (rich premium) |
+| Consumer Defensive | 1 | 7.5 | 49.2 | 18.2 | 8% | 🟡 BUY stock/THIN premium |
+| Utilities | 10 | 6.58 | 35.9 | 5.7 | 29% | 🟢 BUY (rich premium) |
+| Communication Services | 37 | 7.45 | 46.5 | 25.3 | 25% | 🟡 NEUTRAL |
+| Defense | 9 | 6.5 | 31.6 | 15.1 | 11% | 🟡 BUY stock/THIN premium |
+| Brand-Quality (Non-AI) | 13 | 7.04 | 44.3 | 21.1 | 17% | 🟢 BUY (rich premium) |
+| Crypto Mining | 7 | 6.27 | 49.2 | 41.8 | 49% | 🟡 NEUTRAL |
+| Basic Materials | 12 | 7.27 | 34.7 | 17.2 | 26% | 🟢 BUY (rich premium) |
+| Financial Services | 31 | 6.05 | 47.4 | 36.0 | 25% | 🟡 NEUTRAL |
 
 Per-symbol drill-down (put/call/total value, heat, suggestion, grouped by
 sector) is in Section 6 — not repeated here to avoid two versions of the
@@ -299,12 +297,12 @@ same per-ticker/per-sector data going out of sync with each other.
 
 **Priority 1: Buy Signals** (Attractive pricing + conviction)
 
-- ✓ **Basic Materials:** Conv 7.3/10, RSI 34.8, 52W %ile 17.3 — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 23 < 40) — not attractive for CSPs/CCs
-- ✓ **Defense:** Conv 6.5/10, RSI 32.0, 52W %ile 15.7 — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 33 < 40) — not attractive for CSPs/CCs
-- ✓ **Brand-Quality (Non-AI):** Conv 7.0/10, RSI 44.6, 52W %ile 21.5 — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 10 < 40) — not attractive for CSPs/CCs
-- ✓ **Utilities:** Conv 6.6/10, RSI 36.0, 52W %ile 5.8 — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 14 < 40) — not attractive for CSPs/CCs
-- ✓ **Consumer Defensive:** Conv 7.5/10, RSI 49.4, 52W %ile 18.5 — 🟢 BUY — Oversold + rich premium (avg IVR 100, good for selling)
-- ✓ **Energy:** Conv 5.8/10, RSI 32.2, 52W %ile 44.4 — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 25 < 40) — not attractive for CSPs/CCs
+- ✓ **Basic Materials:** Conv 7.3/10, RSI 34.7, 52W %ile 17.2 — 🟢 BUY — Oversold + rich premium (avg real yield 26%, good for selling)
+- ✓ **Defense:** Conv 6.5/10, RSI 31.6, 52W %ile 15.1 — 🟡 BUY (stock only) — Oversold but THIN premium (avg real yield 11% < 15%) — not attractive for CSPs/CCs
+- ✓ **Brand-Quality (Non-AI):** Conv 7.0/10, RSI 44.3, 52W %ile 21.1 — 🟢 BUY — Oversold + rich premium (avg real yield 17%, good for selling)
+- ✓ **Utilities:** Conv 6.6/10, RSI 35.9, 52W %ile 5.7 — 🟢 BUY — Oversold + rich premium (avg real yield 29%, good for selling)
+- ✓ **Consumer Defensive:** Conv 7.5/10, RSI 49.2, 52W %ile 18.2 — 🟡 BUY (stock only) — Oversold but THIN premium (avg real yield 8% < 15%) — not attractive for CSPs/CCs
+- ✓ **Energy:** Conv 5.8/10, RSI 32.2, 52W %ile 44.3 — 🟢 BUY — Oversold + rich premium (avg real yield 17%, good for selling)
 
 **Priority 2: Hold Signals** (Conviction intact but extended)
 
@@ -316,13 +314,13 @@ same per-ticker/per-sector data going out of sync with each other.
 
 **Priority 4: Monitor Signals** (Neutral or low conviction)
 
-- ◇ **Technology:** Conv 6.9/10, RSI 57.6, 52W %ile 59.1 — 🟡 MONITOR — Neutral positioning
-- ◇ **Consumer Cyclical:** Conv 6.8/10, RSI 43.8, 52W %ile 33.8 — 🟡 MONITOR — Neutral positioning
-- ◇ **Communication Services:** Conv 7.5/10, RSI 46.4, 52W %ile 25.2 — 🟡 MONITOR — Neutral positioning
-- ◇ **Industrials:** Conv 6.9/10, RSI 46.8, 52W %ile 36.3 — 🟡 MONITOR — Neutral positioning
-- ◇ **Financial Services:** Conv 6.0/10, RSI 47.6, 52W %ile 36.2 — 🟡 MONITOR — Neutral positioning
-- ◇ **Healthcare:** Conv 6.5/10, RSI 51.5, 52W %ile 46.0 — 🟡 MONITOR — Neutral positioning
-- ◇ **Crypto Mining:** Conv 6.3/10, RSI 49.0, 52W %ile 41.6 — 🟡 MONITOR — Neutral positioning
+- ◇ **Technology:** Conv 6.8/10, RSI 57.6, 52W %ile 59.0 — 🟡 MONITOR — Neutral positioning
+- ◇ **Consumer Cyclical:** Conv 6.7/10, RSI 43.5, 52W %ile 33.5 — 🟡 MONITOR — Neutral positioning
+- ◇ **Communication Services:** Conv 7.5/10, RSI 46.5, 52W %ile 25.3 — 🟡 MONITOR — Neutral positioning
+- ◇ **Industrials:** Conv 6.9/10, RSI 46.6, 52W %ile 36.2 — 🟡 MONITOR — Neutral positioning
+- ◇ **Financial Services:** Conv 6.0/10, RSI 47.4, 52W %ile 36.0 — 🟡 MONITOR — Neutral positioning
+- ◇ **Healthcare:** Conv 6.5/10, RSI 52.4, 52W %ile 46.4 — 🟡 MONITOR — Neutral positioning
+- ◇ **Crypto Mining:** Conv 6.3/10, RSI 49.2, 52W %ile 41.8 — 🟡 MONITOR — Neutral positioning
 
 
 ## Section 5: POSITION DISTRIBUTION BY ACCOUNT
@@ -346,202 +344,202 @@ same per-ticker/per-sector data going out of sync with each other.
 
 | Symbol | Verb | Sector | Action | Detail |
 |---|---|---|---|---|
-| APP | ENTER | Communication Services | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 0 (thin premium for CSPs/CCs). Two-sided position: 1 covered call(s) (100 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| BROS | ENTER | Consumer Cyclical | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 17 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| OKTA | TRIM | Technology | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +0%. IV Rank 91 (rich premium for CSPs/CCs). Calls: 6 covered (600 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| SONO | TRIM | Technology | 🔴 TRIM CALL | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. IV Rank 29 (thin premium for CSPs/CCs). Calls: 4 covered (400 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| TWLO | TRIM | Technology | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -10%. IV Rank 47 (rich premium for CSPs/CCs). Calls: 3 covered (300 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| APP | ENTER | Communication Services | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 1 covered call(s) (100 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| BROS | ENTER | Consumer Cyclical | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~29% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| OKTA | TRIM | Technology | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +1%. Real yield-on-capital ~35% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 6 covered (600 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| SONO | TRIM | Technology | 🔴 TRIM CALL | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. Real yield-on-capital ~21% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 4 covered (400 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| TWLO | TRIM | Technology | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -10%. Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 3 covered (300 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
 
 ### Top 10 GREEN — best-positioned
 
 | Symbol | Sector | Conv | Notional | Action | Detail |
 |---|---|---|---|---|---|
-| APP | Communication Services | 9.1 | $300,350 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 0 (thin premium for CSPs/CCs). Two-sided position: 1 covered call(s) (100 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| BROS | Consumer Cyclical | 9.0 | $3,939 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 17 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| GEV | Industrials | 8.4 | $381,658 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 11 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| GOOGL | Communication Services | 8.4 | $140,164 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 28 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| VRT | Industrials | 8.3 | $72,788 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 27 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| AMKR | Technology | 8.1 | $21,170 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 8 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| NU | Financial Services | 8.0 | $1,236 | 🟢 HOLD — let run | RSI/heat: Dropped -12% in 7 days AND -16% below its 200-day average — genuinely beaten down. IV Rank 78 (rich premium for CSPs/CCs). No qualitative flag on file. |
-| NKE | Brand-Quality (Non-AI) | 7.7 | $24,958 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 2 (thin premium for CSPs/CCs). Calls: 7 covered (700 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
-| OKLO | Utilities | 7.5 | $15,176 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 22 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| UNH | Healthcare | 7.4 | $148,038 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 0 (thin premium for CSPs/CCs). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| APP | Communication Services | 9.1 | $299,665 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 1 covered call(s) (100 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| BROS | Consumer Cyclical | 9.0 | $3,941 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~29% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| GEV | Industrials | 8.4 | $381,756 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~22% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| GOOGL | Communication Services | 8.4 | $140,568 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~12% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| VRT | Industrials | 8.3 | $73,001 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~29% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| AMKR | Technology | 8.1 | $21,024 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~33% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| NU | Financial Services | 8.0 | $1,231 | 🟢 HOLD — let run | RSI/heat: Dropped -12% in 7 days AND -16% below its 200-day average — genuinely beaten down. Real yield-on-capital ~19% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| NKE | Brand-Quality (Non-AI) | 7.7 | $24,980 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~19% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 7 covered (700 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
+| OKLO | Utilities | 7.5 | $15,140 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~42% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| UNH | Healthcare | 7.4 | $148,304 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~12% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
 
 ### Top 10 RED — most concerning
 
 | Symbol | Sector | Conv | Notional | Action | Detail |
 |---|---|---|---|---|---|
-| OKTA | Technology | 5.9 | $169,312 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +0%. IV Rank 91 (rich premium for CSPs/CCs). Calls: 6 covered (600 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| TWLO | Technology | 5.8 | $117,484 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -10%. IV Rank 47 (rich premium for CSPs/CCs). Calls: 3 covered (300 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| CRWD | Technology | 6.0 | $107,389 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -12%. IV Rank 98 (rich premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| PANW | Technology | 6.0 | $80,706 | 🟡 WATCH: RED heat, but conviction 6.0 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -2%. IV Rank 99 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| PLTR | Technology | 7.8 | $19,043 | 🟡 WATCH: RED heat, but conviction 7.8 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%. IV Rank 8 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| PFE | Healthcare | 6.2 | $14,344 | 🟡 WATCH: RED heat, but conviction 6.2 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +1%. IV Rank 27 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| RBRK | Technology | 6.3 | $11,652 | 🟡 WATCH: RED heat, but conviction 6.3 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%. IV Rank 83 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| SONO | Technology | 5.6 | $7,188 | 🔴 TRIM CALL | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. IV Rank 29 (thin premium for CSPs/CCs). Calls: 4 covered (400 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| OKTA | Technology | 5.9 | $168,756 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +1%. Real yield-on-capital ~35% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 6 covered (600 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| TWLO | Technology | 5.8 | $117,334 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -10%. Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 3 covered (300 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| CRWD | Technology | 6.0 | $107,096 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -12%. Real yield-on-capital ~31% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| PANW | Technology | 6.0 | $80,570 | 🟡 WATCH: RED heat, but conviction 6.0 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -2%. Real yield-on-capital ~27% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| PLTR | Technology | 7.8 | $19,053 | 🟡 WATCH: RED heat, but conviction 7.8 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%. Real yield-on-capital ~25% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| PFE | Healthcare | 6.2 | $14,365 | 🟡 WATCH: RED heat, but conviction 6.2 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +1%. Real yield-on-capital ~6% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| RBRK | Technology | 6.3 | $11,582 | 🟡 WATCH: RED heat, but conviction 6.3 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. Real yield-on-capital ~33% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| SONO | Technology | 5.6 | $7,184 | 🔴 TRIM CALL | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. Real yield-on-capital ~21% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 4 covered (400 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
 
-### Technology (31 positions, $2,880,707) — 🟡 MONITOR — Neutral positioning 🟡 possible macro exposure (weak historical signal, see Section 6.5) ⚠️ MIXED — individual IVR ranges 0-99, not uniformly thin (see per-symbol IV Rank below)
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
-|---|---|---|---|---|---|---|---|
-| LITE | $282,301 | $94,100 | $376,402 | 🟡 | 7.8 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 85% of 52-week range approaching the high extreme (90%+). IV Rank 6 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| MU | $214,627 | $107,314 | $321,941 | 🟡 | 8.4 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: 83% of 52-week range approaching the high extreme (90%+). IV Rank 0 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): Confirms and strengthens the 2026-09-01 flag: HBM4 capacity now sold out through 2027, likely through 2028; $100B+ in logged orders; CEO says demand exceeds capacity by ~50%. Stock now $935-986 range, +~200% YTD, $1.1T market cap. Q4 earnings 2026-09-30 (11 days out) is a real near-term catalyst/ris |
-| CRM | $93,248 | $139,872 | $233,120 | 🟡 | 6.7 | 🟡 WATCH: strangle (1C/4P) — call side uncapped if it rallies | RSI/heat: 71% of 52-week range approaching the high extreme (90%+). IV Rank 90 (rich premium for CSPs/CCs). Two-sided position: 5 covered call(s) (500 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): 2026-09-01 finding (Salesforce/Anthropic "Claudeforce" partnership) not re-checked this pass -- carried forward, no new SA headline this cycle contradicting it. |
-| ALAB | $173,570 | $34,714 | $208,284 | 🟢 | 7.3 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 30 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| ADBE | $72,003 | $120,005 | $192,008 | 🟡 | 5.1 | 🟡 WATCH: strangle (2C/3P) — call side uncapped if it rallies | RSI/heat: 29% of 52-week range approaching the low extreme (10%-). IV Rank 62 (rich premium for CSPs/CCs). Two-sided position: 3 covered call(s) (300 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| TSM | $137,875 | $45,958 | $183,834 | 🟡 | 7.7 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: Technically extended (+20% vs 200-day average), but analyst upside still +20% — may be fundamentally supported, watch rather than force a close. IV Rank 1 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| OKTA | $42,328 | $126,984 | $169,312 | 🔴 | 5.9 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +0%. IV Rank 91 (rich premium for CSPs/CCs). Calls: 6 covered (600 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| ANET | $101,900 | $61,140 | $163,040 | 🟡 | 7.5 | 🟡 WATCH: strangle (3C/5P) — call side uncapped if it rallies | RSI/heat: 89% of 52-week range approaching the high extreme (90%+). IV Rank 7 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 3 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| MSFT | $103,670 | $51,835 | $155,505 | 🟡 | 7.6 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 83% of 52-week range approaching the high extreme (90%+). IV Rank 13 (thin premium for CSPs/CCs). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| TWLO | $29,371 | $88,113 | $117,484 | 🔴 | 5.8 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -10%. IV Rank 47 (rich premium for CSPs/CCs). Calls: 3 covered (300 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| CRWD | $80,542 | $26,847 | $107,389 | 🔴 | 6.0 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -12%. IV Rank 98 (rich premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| IBM | $66,340 | $22,113 | $88,454 | 🟡 | 5.7 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 16% of 52-week range approaching the low extreme (10%-). IV Rank 18 (thin premium for CSPs/CCs). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| ZS | $60,585 | $20,195 | $80,780 | 🟡 | 7.3 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: RSI 72 approaching overbought (70+). IV Rank 46 (rich premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| PANW | $80,706 | $0 | $80,706 | 🔴 | 6.0 | 🟡 WATCH: RED heat, but conviction 6.0 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -2%. IV Rank 99 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| NVDA | $69,040 | $0 | $69,040 | 🟡 | 8.0 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Technically extended (+15% vs 200-day average), but analyst upside still +42% — may be fundamentally supported, watch rather than force a close. IV Rank 58 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| SHOP | $60,204 | $0 | $60,204 | 🟡 | 7.8 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 73 approaching overbought (70+). IV Rank 40 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| XYZ | $29,616 | $14,808 | $44,424 | 🟢 | 4.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 15 (thin premium for CSPs/CCs). Calls: 2 covered (200 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| UBER | $41,430 | $0 | $41,430 | 🟡 | 7.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 10% of 52-week range approaching the low extreme (10%-). IV Rank 13 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| FSLR | $35,557 | $0 | $35,557 | 🟢 | 6.7 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 42 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| IONQ | $18,001 | $9,000 | $27,001 | 🟡 | 8.0 | 🟡 WATCH: strangle (2C/4P) — call side uncapped if it rallies | RSI/heat: RSI/range reads overbought, but +3% vs its 200-day average — watch, don't force a close. IV Rank 22 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| AMKR | $21,170 | $0 | $21,170 | 🟢 | 8.1 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 8 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| PLTR | $19,043 | $0 | $19,043 | 🔴 | 7.8 | 🟡 WATCH: RED heat, but conviction 7.8 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%. IV Rank 8 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| SKHY | $18,619 | $0 | $18,619 | 🟡 | 7.3 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 82% of 52-week range approaching the high extreme (90%+). IV Rank 0 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| ASTS | $18,512 | $0 | $18,512 | 🟡 | 7.8 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 15% of 52-week range approaching the low extreme (10%-). IV Rank 3 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| RBRK | $11,652 | $0 | $11,652 | 🔴 | 6.3 | 🟡 WATCH: RED heat, but conviction 6.3 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%. IV Rank 83 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| LYFT | $1,522 | $7,608 | $9,129 | 🟡 | 6.6 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 21% of 52-week range approaching the low extreme (10%-). IV Rank 18 (thin premium for CSPs/CCs). Calls: 5 covered (500 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| CRWV | $8,674 | $0 | $8,674 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 28% of 52-week range approaching the low extreme (10%-). IV Rank 0 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| LASR | $7,810 | $0 | $7,810 | 🟡 | 8.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 19% of 52-week range approaching the low extreme (10%-). IV Rank 7 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| SONO | $0 | $7,188 | $7,188 | 🔴 | 5.6 | 🔴 TRIM CALL | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. IV Rank 29 (thin premium for CSPs/CCs). Calls: 4 covered (400 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| INFY | $1,068 | $1,068 | $2,135 | 🟢 | 5.6 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 27 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| QUBT | $860 | $0 | $860 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 12% of 52-week range approaching the low extreme (10%-). IV Rank 0 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-
-### Industrials (9 positions, $1,163,051) — 🟡 MONITOR — Neutral positioning ⚠️ MIXED — individual IVR ranges 1-55, not uniformly thin (see per-symbol IV Rank below)
+### Technology (31 positions, $2,880,269) — 🟡 MONITOR — Neutral positioning 🟡 possible macro exposure (weak historical signal, see Section 6.5) ⚠️ MIXED — individual real yield ranges 9%-47%, not uniformly thin (see per-symbol detail below)
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
 |---|---|---|---|---|---|---|---|
-| AXON | $85,997 | $343,988 | $429,985 | 🟡 | 6.2 | 🟡 WATCH: strangle (6C/2P) — call side uncapped if it rallies | RSI/heat: 21% of 52-week range approaching the low extreme (10%-). IV Rank 55 (rich premium for CSPs/CCs). Two-sided position: 2 covered call(s) (200 sh owned), 6 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| GEV | $286,244 | $95,415 | $381,658 | 🟢 | 8.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 11 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| BE | $139,790 | $55,916 | $195,706 | 🟡 | 7.0 | 🟡 WATCH: strangle (2C/4P) — call side uncapped if it rallies | RSI/heat: 74% of 52-week range approaching the high extreme (90%+). IV Rank 9 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| VRT | $48,526 | $24,263 | $72,788 | 🟢 | 8.3 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 27 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| RKLB | $43,164 | $0 | $43,164 | 🟢 | 6.8 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 8 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| BWXT | $27,716 | $0 | $27,716 | 🟢 | 6.8 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 22 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| KTOS | $8,756 | $0 | $8,756 | 🟢 | 6.4 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 1 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| PL | $1,666 | $0 | $1,666 | 🟡 | 8.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 15% of 52-week range approaching the low extreme (10%-). IV Rank 7 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| SMR | $1,612 | $0 | $1,612 | 🟢 | 5.0 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 52 (rich premium for CSPs/CCs). No qualitative flag on file. |
+| LITE | $283,641 | $94,547 | $378,188 | 🟡 | 7.4 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 85% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~40% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| MU | $214,449 | $107,224 | $321,673 | 🟡 | 8.4 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: 83% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~29% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): Confirms and strengthens the 2026-09-01 flag: HBM4 capacity now sold out through 2027, likely through 2028; $100B+ in logged orders; CEO says demand exceeds capacity by ~50%. Stock now $935-986 range, +~200% YTD, $1.1T market cap. Q4 earnings 2026-09-30 (11 days out) is a real near-term catalyst/ris |
+| CRM | $93,080 | $139,620 | $232,700 | 🟡 | 6.7 | 🟡 WATCH: strangle (1C/4P) — call side uncapped if it rallies | RSI/heat: 70% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~18% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 5 covered call(s) (500 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): 2026-09-01 finding (Salesforce/Anthropic "Claudeforce" partnership) not re-checked this pass -- carried forward, no new SA headline this cycle contradicting it. |
+| ALAB | $173,085 | $34,617 | $207,702 | 🟢 | 7.3 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~47% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| ADBE | $71,841 | $119,735 | $191,576 | 🟡 | 5.1 | 🟡 WATCH: strangle (2C/3P) — call side uncapped if it rallies | RSI/heat: 28% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~18% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 3 covered call(s) (300 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| TSM | $138,309 | $46,103 | $184,412 | 🟡 | 8.2 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: Technically extended (+20% vs 200-day average), but analyst upside still +20% — may be fundamentally supported, watch rather than force a close. Real yield-on-capital ~13% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| OKTA | $42,189 | $126,567 | $168,756 | 🔴 | 5.9 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +1%. Real yield-on-capital ~35% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 6 covered (600 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| ANET | $102,390 | $61,434 | $163,824 | 🟡 | 7.5 | 🟡 WATCH: strangle (3C/5P) — call side uncapped if it rallies | RSI/heat: 90% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~23% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 3 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| MSFT | $103,701 | $51,850 | $155,551 | 🟡 | 7.6 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 83% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~9% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| TWLO | $29,333 | $88,000 | $117,334 | 🔴 | 5.8 | 🔴 TRIM CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected) | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -10%. Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 3 covered (300 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| CRWD | $80,322 | $26,774 | $107,096 | 🔴 | 6.0 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -12%. Real yield-on-capital ~31% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| IBM | $66,336 | $22,112 | $88,448 | 🟡 | 5.7 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 16% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~14% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| PANW | $80,570 | $0 | $80,570 | 🔴 | 6.0 | 🟡 WATCH: RED heat, but conviction 6.0 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -2%. Real yield-on-capital ~27% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| ZS | $60,414 | $20,138 | $80,552 | 🟡 | 6.2 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: RSI 72 approaching overbought (70+). Real yield-on-capital ~31% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| NVDA | $69,192 | $0 | $69,192 | 🟡 | 8.0 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Technically extended (+15% vs 200-day average), but analyst upside still +42% — may be fundamentally supported, watch rather than force a close. Real yield-on-capital ~13% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| SHOP | $60,444 | $0 | $60,444 | 🟡 | 7.8 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 74 approaching overbought (70+). Real yield-on-capital ~28% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| XYZ | $29,520 | $14,760 | $44,280 | 🟢 | 4.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~20% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 2 covered (200 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| UBER | $41,391 | $0 | $41,391 | 🟡 | 7.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI/range reads oversold, but -8% vs its 200-day average — verify before treating as attractive. Real yield-on-capital ~15% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| FSLR | $35,183 | $0 | $35,183 | 🟢 | 6.7 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~26% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| IONQ | $17,892 | $8,946 | $26,838 | 🟡 | 8.0 | 🟡 WATCH: strangle (2C/4P) — call side uncapped if it rallies | RSI/heat: RSI/range reads overbought, but +3% vs its 200-day average — watch, don't force a close. Real yield-on-capital ~42% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| AMKR | $21,024 | $0 | $21,024 | 🟢 | 8.1 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~33% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| PLTR | $19,053 | $0 | $19,053 | 🔴 | 7.8 | 🟡 WATCH: RED heat, but conviction 7.8 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%. Real yield-on-capital ~25% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| SKHY | $18,582 | $0 | $18,582 | 🟡 | 7.3 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 81% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~29% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| ASTS | $18,571 | $0 | $18,571 | 🟡 | 7.8 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 15% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~42% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| RBRK | $11,582 | $0 | $11,582 | 🔴 | 6.3 | 🟡 WATCH: RED heat, but conviction 6.3 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. Real yield-on-capital ~33% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| LYFT | $1,517 | $7,585 | $9,102 | 🟡 | 6.6 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 21% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~25% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 5 covered (500 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| CRWV | $8,675 | $0 | $8,675 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 28% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~41% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| LASR | $7,790 | $0 | $7,790 | 🟡 | 8.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 19% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~37% annualized (rich premium for CSPs/CCs, ~10% OTM/79DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| SONO | $0 | $7,184 | $7,184 | 🔴 | 5.6 | 🔴 TRIM CALL | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +4%. Real yield-on-capital ~21% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 4 covered (400 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| INFY | $1,070 | $1,070 | $2,141 | 🟢 | 5.6 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~18% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| QUBT | $856 | $0 | $856 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 12% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~42% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
 
-### Communication Services (8 positions, $1,041,157) — 🟡 MONITOR — Neutral positioning 🟡 possible macro exposure (weak historical signal, see Section 6.5) ⚠️ MIXED — individual IVR ranges 0-73, not uniformly thin (see per-symbol IV Rank below)
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
-|---|---|---|---|---|---|---|---|
-| META | $292,595 | $73,149 | $365,744 | 🟡 | 7.2 | 🟡 WATCH: strangle (1C/4P) — call side uncapped if it rallies | RSI/heat: 81% of 52-week range approaching the high extreme (90%+). IV Rank 73 (rich premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| APP | $210,245 | $90,105 | $300,350 | 🟢 | 9.1 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 0 (thin premium for CSPs/CCs). Two-sided position: 1 covered call(s) (100 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| NFLX | $112,120 | $42,045 | $154,165 | 🟢 | 6.7 | 🟡 WATCH: technicals attractive, but a qualitative flag is unresolved | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 50 (rich premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 6 naked call(s) (uncapped upside if it rallies), AND 16 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): Wells Fargo downgraded NFLX to Underweight from Equal Weight, cut PT to $57 from $80 (2026-09-18), citing engagement decline (viewing hours -8% adjusted for password-sharing crackdown/geo mix) and a weak content slate (base case -21% YoY hours from top-100 originals). Stock on a 4th straight session |
-| GOOGL | $105,123 | $35,041 | $140,164 | 🟢 | 8.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 28 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| RBLX | $20,880 | $12,528 | $33,408 | 🟢 | 7.0 | 🟢 HOLD — let run | RSI/heat: Dropped -19% in 7 days AND -25% below its 200-day average — genuinely beaten down. IV Rank 37 (thin premium for CSPs/CCs). Two-sided position: 2 covered call(s) (200 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| NBIS | $23,707 | $0 | $23,707 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 72% of 52-week range approaching the high extreme (90%+). IV Rank 0 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| DIS | $21,192 | $0 | $21,192 | 🟢 | 5.3 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 29 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| TTD | $2,427 | $0 | $2,427 | 🟢 | 4.3 | 🟢 HOLD — let run | RSI/heat: Dropped -13% in 7 days AND -47% below its 200-day average — genuinely beaten down. IV Rank 17 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-
-### Healthcare (7 positions, $990,566) — 🟡 MONITOR — Neutral positioning
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
-|---|---|---|---|---|---|---|---|
-| LLY | $355,503 | $118,501 | $474,004 | 🟡 | 8.0 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: Technically extended (+11% vs 200-day average), but analyst upside still +12% — may be fundamentally supported, watch rather than force a close. IV Rank 2 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| ISRG | $122,423 | $40,808 | $163,230 | 🟡 | 7.3 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI/range reads overbought, but -9% vs its 200-day average — watch, don't force a close. IV Rank 26 (thin premium for CSPs/CCs). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
-| REGN | $74,972 | $74,972 | $149,945 | 🟢 | 5.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 30 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| UNH | $74,019 | $74,019 | $148,038 | 🟢 | 7.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 0 (thin premium for CSPs/CCs). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| NVO | $15,408 | $7,704 | $23,112 | 🟡 | 4.7 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 25 approaching oversold (30-); 12% of 52-week range approaching the low extreme (10%-). IV Rank 18 (thin premium for CSPs/CCs). Calls: 2 covered (200 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
-| ZBH | $8,946 | $8,946 | $17,893 | 🟢 | 6.5 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 22 (thin premium for CSPs/CCs). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
-| PFE | $14,344 | $0 | $14,344 | 🔴 | 6.2 | 🟡 WATCH: RED heat, but conviction 6.2 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +1%. IV Rank 27 (thin premium for CSPs/CCs). No qualitative flag on file. |
-
-### Financial Services (7 positions, $674,653) — 🟡 MONITOR — Neutral positioning ⚠️ MIXED — individual IVR ranges 0-81, not uniformly thin (see per-symbol IV Rank below)
+### Industrials (9 positions, $1,162,277) — 🟡 MONITOR — Neutral positioning
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
 |---|---|---|---|---|---|---|---|
-| MA | $223,780 | $0 | $223,780 | 🟢 | 6.9 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 0 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| COIN | $37,310 | $167,895 | $205,205 | 🟡 | 5.5 | 🟡 WATCH: strangle (7C/1P) — call side uncapped if it rallies | RSI/heat: 18% of 52-week range approaching the low extreme (10%-). IV Rank 70 (rich premium for CSPs/CCs). Two-sided position: 2 covered call(s) (200 sh owned), 7 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| JPM | $66,688 | $33,344 | $100,032 | 🟡 | 6.7 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: RSI 29 approaching oversold (30-). IV Rank 26 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| PYPL | $15,984 | $63,936 | $79,920 | 🟢 | 5.6 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 54 (rich premium for CSPs/CCs). Two-sided position: 11 covered call(s) (1100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| CRCL | $24,969 | $16,646 | $41,615 | 🟢 | 6.1 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 49 (rich premium for CSPs/CCs). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| HOOD | $22,864 | $0 | $22,864 | 🟢 | 6.5 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 81 (rich premium for CSPs/CCs). No qualitative flag on file. |
-| NU | $1,236 | $0 | $1,236 | 🟢 | 8.0 | 🟢 HOLD — let run | RSI/heat: Dropped -12% in 7 days AND -16% below its 200-day average — genuinely beaten down. IV Rank 78 (rich premium for CSPs/CCs). No qualitative flag on file. |
+| AXON | $85,746 | $342,984 | $428,730 | 🟡 | 6.2 | 🟡 WATCH: strangle (6C/2P) — call side uncapped if it rallies | RSI/heat: 21% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 2 covered call(s) (200 sh owned), 6 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| GEV | $286,317 | $95,439 | $381,756 | 🟢 | 8.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~22% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| BE | $140,015 | $56,006 | $196,021 | 🟡 | 7.0 | 🟡 WATCH: strangle (2C/4P) — call side uncapped if it rallies | RSI/heat: 74% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~43% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| VRT | $48,667 | $24,334 | $73,001 | 🟢 | 8.3 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~29% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| RKLB | $43,143 | $0 | $43,143 | 🟢 | 6.8 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~41% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| BWXT | $27,669 | $0 | $27,669 | 🟢 | 6.8 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~20% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| KTOS | $8,694 | $0 | $8,694 | 🟢 | 6.4 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~35% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| PL | $1,657 | $0 | $1,657 | 🟡 | 8.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 15% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~50% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| SMR | $1,606 | $0 | $1,606 | 🟢 | 5.0 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~42% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
 
-### Consumer Cyclical (12 positions, $451,084) — 🟡 MONITOR — Neutral positioning 🟡 possible macro exposure (weak historical signal, see Section 6.5) ⚠️ MIXED — individual IVR ranges 7-52, not uniformly thin (see per-symbol IV Rank below)
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
-|---|---|---|---|---|---|---|---|
-| EXPE | $106,570 | $26,642 | $133,212 | 🟢 | 6.8 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 36 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| AMZN | $50,393 | $25,196 | $75,589 | 🟢 | 7.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 17 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| TSLA | $69,597 | $0 | $69,597 | 🟡 | 5.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 25% of 52-week range approaching the low extreme (10%-). IV Rank 36 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| BABA | $54,193 | $0 | $54,193 | 🟡 | 6.0 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 16% of 52-week range approaching the low extreme (10%-). IV Rank 47 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| ABNB | $16,146 | $32,292 | $48,438 | 🟢 | 6.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 48 (rich premium for CSPs/CCs). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| MMYT | $19,036 | $4,759 | $23,795 | 🟡 | 6.7 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 23% of 52-week range approaching the low extreme (10%-). IV Rank 7 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| JD | $7,975 | $7,975 | $15,951 | 🟡 | 8.6 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 17% of 52-week range approaching the low extreme (10%-). IV Rank 12 (thin premium for CSPs/CCs). Two-sided position: 2 covered call(s) (200 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| ETSY | $7,248 | $7,248 | $14,496 | 🟢 | 6.0 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 44 (rich premium for CSPs/CCs). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| CAVA | $5,431 | $0 | $5,431 | 🟡 | 8.1 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 20% of 52-week range approaching the low extreme (10%-). IV Rank 26 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| BROS | $3,939 | $0 | $3,939 | 🟢 | 9.0 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 17 (thin premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| DKNG | $3,911 | $0 | $3,911 | 🟢 | 6.4 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 50 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-| CCL | $2,532 | $0 | $2,532 | 🟡 | 7.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Spiked 13% in 7 days but only -7% vs its 200-day average — short-term move, not structurally extended. IV Rank 52 (rich premium for CSPs/CCs). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-
-### Defense (3 positions, $355,673) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 33 < 40) — not attractive for CSPs/CCs ⚠️ MIXED — individual IVR ranges 14-46, not uniformly thin (see per-symbol IV Rank below)
+### Communication Services (8 positions, $1,041,986) — 🟡 MONITOR — Neutral positioning 🟡 possible macro exposure (weak historical signal, see Section 6.5) ⚠️ MIXED — individual real yield ranges 9%-47%, not uniformly thin (see per-symbol detail below)
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
 |---|---|---|---|---|---|---|---|
-| LMT | $153,294 | $0 | $153,294 | 🟡 | 6.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 29% of 52-week range approaching the low extreme (10%-). IV Rank 14 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| NOC | $97,063 | $48,531 | $145,594 | 🟢 | 6.6 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 38 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| BA | $37,857 | $18,929 | $56,786 | 🟡 | 6.4 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: 16% of 52-week range approaching the low extreme (10%-). IV Rank 46 (rich premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| META | $293,342 | $73,335 | $366,677 | 🟡 | 7.2 | 🟡 WATCH: strangle (1C/4P) — call side uncapped if it rallies | RSI/heat: 82% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~16% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| APP | $209,766 | $89,900 | $299,665 | 🟢 | 9.1 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 1 covered call(s) (100 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| NFLX | $112,216 | $42,081 | $154,297 | 🟢 | 6.7 | 🟡 WATCH: technicals attractive, but a qualitative flag is unresolved | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~15% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 6 naked call(s) (uncapped upside if it rallies), AND 16 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): Wells Fargo downgraded NFLX to Underweight from Equal Weight, cut PT to $57 from $80 (2026-09-18), citing engagement decline (viewing hours -8% adjusted for password-sharing crackdown/geo mix) and a weak content slate (base case -21% YoY hours from top-100 originals). Stock on a 4th straight session |
+| GOOGL | $105,426 | $35,142 | $140,568 | 🟢 | 8.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~12% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| RBLX | $20,890 | $12,534 | $33,424 | 🟢 | 7.0 | 🟢 HOLD — let run | RSI/heat: Dropped -18% in 7 days AND -25% below its 200-day average — genuinely beaten down. Real yield-on-capital ~34% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 2 covered call(s) (200 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 5 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| NBIS | $23,776 | $0 | $23,776 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 73% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~47% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| DIS | $21,156 | $0 | $21,156 | 🟢 | 5.3 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~9% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| TTD | $2,423 | $0 | $2,423 | 🟢 | 4.3 | 🟢 HOLD — let run | RSI/heat: Dropped -13% in 7 days AND -47% below its 200-day average — genuinely beaten down. Real yield-on-capital ~37% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
 
-### Brand-Quality (Non-AI) (4 positions, $217,363) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 10 < 40) — not attractive for CSPs/CCs
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
-|---|---|---|---|---|---|---|---|
-| ULTA | $108,707 | $54,353 | $163,060 | 🟢 | 6.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 33 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| NKE | $0 | $24,958 | $24,958 | 🟢 | 7.7 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 2 (thin premium for CSPs/CCs). Calls: 7 covered (700 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
-| SBUX | $19,087 | $0 | $19,087 | 🟢 | 5.8 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 2 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| ELF | $10,257 | $0 | $10,257 | 🟢 | 5.6 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. IV Rank 12 (thin premium for CSPs/CCs). No qualitative flag on file. |
-
-### Utilities (3 positions, $120,683) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 14 < 40) — not attractive for CSPs/CCs
+### Healthcare (7 positions, $995,085) — 🟡 MONITOR — Neutral positioning
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
 |---|---|---|---|---|---|---|---|
-| VST | $41,257 | $13,752 | $55,010 | 🟢 | 5.9 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 0 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
-| CEG | $50,497 | $0 | $50,497 | 🟡 | 6.1 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 26 approaching oversold (30-); 13% of 52-week range approaching the low extreme (10%-). IV Rank 24 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| OKLO | $15,176 | $0 | $15,176 | 🟢 | 7.5 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. IV Rank 22 (thin premium for CSPs/CCs). No qualitative flag on file. |
+| LLY | $357,699 | $119,233 | $476,932 | 🟡 | 7.8 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: Technically extended (+11% vs 200-day average), but analyst upside still +11% — may be fundamentally supported, watch rather than force a close. Real yield-on-capital ~13% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| ISRG | $122,716 | $40,905 | $163,622 | 🟡 | 7.3 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI/range reads overbought, but -9% vs its 200-day average — watch, don't force a close. Real yield-on-capital ~15% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
+| REGN | $75,438 | $75,438 | $150,876 | 🟢 | 5.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~12% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| UNH | $74,152 | $74,152 | $148,304 | 🟢 | 7.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~12% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| NVO | $15,424 | $7,712 | $23,136 | 🟡 | 4.7 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 25 approaching oversold (30-); 12% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~14% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 2 covered (200 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
+| ZBH | $8,925 | $8,925 | $17,850 | 🟢 | 6.5 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~9% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
+| PFE | $14,365 | $0 | $14,365 | 🔴 | 6.2 | 🟡 WATCH: RED heat, but conviction 6.2 holds it back from CLOSE/TRIM | RSI/heat: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +1%. Real yield-on-capital ~6% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
 
-### Basic Materials (2 positions, $104,682) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 23 < 40) — not attractive for CSPs/CCs 🟡 possible macro exposure (weak historical signal, see Section 6.5)
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
-|---|---|---|---|---|---|---|---|
-| ALB | $64,131 | $21,377 | $85,508 | 🟡 | 7.2 | 🟡 WATCH: strangle (2C/6P) — call side uncapped if it rallies | RSI/heat: 18% of 52-week range approaching the low extreme (10%-). IV Rank 32 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 6 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): JPMorgan cut its lithium price forecast and PT to $140 (Dec 2027, down from $160/Dec 2026), Neutral maintained -- short-term commodity pricing pressure (China lithium carbonate ~$21,625/mt Q3 vs ~$24,810 Q2), not a structural downgrade. Q2 revenue +31.1% YoY, EPS beat. Stock fell -3.51% on 2026-09-1 |
-| MP | $14,381 | $4,794 | $19,174 | 🟡 | 7.4 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 16% of 52-week range approaching the low extreme (10%-). IV Rank 4 (thin premium for CSPs/CCs). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
-
-### Crypto Mining (3 positions, $22,206) — 🟡 MONITOR — Neutral positioning ⚠️ MIXED — individual IVR ranges 13-44, not uniformly thin (see per-symbol IV Rank below)
+### Financial Services (7 positions, $673,936) — 🟡 MONITOR — Neutral positioning ⚠️ MIXED — individual real yield ranges 6%-40%, not uniformly thin (see per-symbol detail below)
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
 |---|---|---|---|---|---|---|---|
-| RIOT | $8,246 | $2,061 | $10,307 | 🟡 | 6.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Dropped -15% in 7 days but only +7% vs its 200-day average — pullback within trend, verify thesis before treating as an entry. IV Rank 44 (rich premium for CSPs/CCs). No qualitative flag on file. |
-| HUT | $8,694 | $0 | $8,694 | 🟡 | 6.7 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Dropped -16% in 7 days but only +9% vs its 200-day average — pullback within trend, verify thesis before treating as an entry. IV Rank 13 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| CIFR | $3,204 | $0 | $3,204 | 🟢 | 6.2 | 🟢 HOLD — let run | RSI/heat: Dropped -15% in 7 days AND -13% below its 200-day average — genuinely beaten down. IV Rank 20 (thin premium for CSPs/CCs). No qualitative flag on file. |
+| MA | $223,248 | $0 | $223,248 | 🟢 | 6.9 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~6% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| COIN | $37,366 | $168,147 | $205,513 | 🟡 | 5.5 | 🟡 WATCH: strangle (7C/1P) — call side uncapped if it rallies | RSI/heat: 18% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~33% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 2 covered call(s) (200 sh owned), 7 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| JPM | $66,567 | $33,283 | $99,850 | 🟡 | 6.7 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: RSI 29 approaching oversold (30-). Real yield-on-capital ~6% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| PYPL | $15,927 | $63,708 | $79,635 | 🟢 | 5.6 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~15% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 11 covered call(s) (1100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| CRCL | $24,942 | $16,628 | $41,570 | 🟢 | 6.1 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~40% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| HOOD | $22,888 | $0 | $22,888 | 🟢 | 6.5 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~32% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| NU | $1,231 | $0 | $1,231 | 🟢 | 8.0 | 🟢 HOLD — let run | RSI/heat: Dropped -12% in 7 days AND -16% below its 200-day average — genuinely beaten down. Real yield-on-capital ~19% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
 
-### Energy (2 positions, $13,461) — 🟡 BUY (stock only) — Oversold but THIN premium (avg IVR 25 < 40) — not attractive for CSPs/CCs
-
-| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
-|---|---|---|---|---|---|---|---|
-| CCJ | $8,810 | $0 | $8,810 | 🟡 | 4.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 28 approaching oversold (30-); 18% of 52-week range approaching the low extreme (10%-). IV Rank 16 (thin premium for CSPs/CCs). No qualitative flag on file. |
-| DVN | $4,651 | $0 | $4,651 | 🟡 | 7.0 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 71% of 52-week range approaching the high extreme (90%+). IV Rank 33 (thin premium for CSPs/CCs). No qualitative flag on file. |
-
-### Consumer Defensive (1 positions, $10,560) — 🟢 BUY — Oversold + rich premium (avg IVR 100, good for selling)
+### Consumer Cyclical (12 positions, $450,246) — 🟡 MONITOR — Neutral positioning 🟡 possible macro exposure (weak historical signal, see Section 6.5) ⚠️ MIXED — individual real yield ranges 9%-46%, not uniformly thin (see per-symbol detail below)
 
 | Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
 |---|---|---|---|---|---|---|---|
-| WMT | $10,560 | $0 | $10,560 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 19% of 52-week range approaching the low extreme (10%-). IV Rank 100 (rich premium for CSPs/CCs). No qualitative flag on file. |
+| EXPE | $106,012 | $26,503 | $132,515 | 🟢 | 6.8 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~24% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 4 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| AMZN | $50,296 | $25,148 | $75,444 | 🟢 | 7.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~13% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| TSLA | $69,678 | $0 | $69,678 | 🟡 | 5.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 25% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~17% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| BABA | $54,240 | $0 | $54,240 | 🟡 | 6.0 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 16% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~9% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| ABNB | $16,120 | $32,240 | $48,360 | 🟢 | 6.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~16% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 1 covered call(s) (100 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 1 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| MMYT | $19,016 | $4,754 | $23,770 | 🟡 | 6.4 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 23% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~46% annualized (rich premium for CSPs/CCs, ~10% OTM/79DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| JD | $7,973 | $7,973 | $15,945 | 🟡 | 8.6 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 17% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~14% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 2 covered call(s) (200 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| ETSY | $7,251 | $7,251 | $14,503 | 🟢 | 6.0 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~24% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 1 covered (100 sh owned), 0 naked. No offsetting put position on this name. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| CAVA | $5,463 | $0 | $5,463 | 🟡 | 8.1 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 20% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~31% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| BROS | $3,941 | $0 | $3,941 | 🟢 | 9.0 | 🟢 ENTER: sell put, 45-60 DTE, delta 0.15-0.20 | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~29% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| DKNG | $3,875 | $0 | $3,875 | 🟢 | 6.4 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~37% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+| CCL | $2,512 | $0 | $2,512 | 🟡 | 7.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Spiked 13% in 7 days but only -8% vs its 200-day average — short-term move, not structurally extended. Real yield-on-capital ~19% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+
+### Defense (3 positions, $355,551) — 🟡 BUY (stock only) — Oversold but THIN premium (avg real yield 11% < 15%) — not attractive for CSPs/CCs
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
+|---|---|---|---|---|---|---|---|
+| LMT | $153,564 | $0 | $153,564 | 🟡 | 6.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 29% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~8% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| NOC | $97,164 | $48,582 | $145,746 | 🟢 | 6.6 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~9% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| BA | $37,494 | $18,747 | $56,241 | 🟡 | 6.4 | 🟡 WATCH: strangle (1C/2P) — call side uncapped if it rallies | RSI/heat: 14% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~14% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+
+### Brand-Quality (Non-AI) (4 positions, $217,020) — 🟢 BUY — Oversold + rich premium (avg real yield 17%, good for selling) ⚠️ MIXED — individual real yield ranges 9%-30%, not uniformly thin (see per-symbol detail below)
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
+|---|---|---|---|---|---|---|---|
+| ULTA | $108,616 | $54,308 | $162,924 | 🟢 | 6.4 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~13% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 2 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| NKE | $0 | $24,980 | $24,980 | 🟢 | 7.7 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~19% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Calls: 7 covered (700 sh owned), 0 naked. No offsetting put position on this name. No qualitative flag on file. |
+| SBUX | $18,956 | $0 | $18,956 | 🟡 | 6.1 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 29 approaching oversold (30-). Real yield-on-capital ~9% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| ELF | $10,160 | $0 | $10,160 | 🟢 | 6.2 | 🟢 HOLD — let run | RSI/heat: Neutral positioning. Real yield-on-capital ~30% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+
+### Utilities (3 positions, $120,583) — 🟢 BUY — Oversold + rich premium (avg real yield 29%, good for selling)
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
+|---|---|---|---|---|---|---|---|
+| VST | $41,214 | $13,738 | $54,952 | 🟢 | 5.9 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~21% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. No qualitative flag on file. |
+| CEG | $50,491 | $0 | $50,491 | 🟡 | 6.1 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 26 approaching oversold (30-); 13% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~19% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| OKLO | $15,140 | $0 | $15,140 | 🟢 | 7.5 | 🟢 HOLD — let run | RSI/heat: Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning. Real yield-on-capital ~42% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+
+### Basic Materials (2 positions, $104,442) — 🟢 BUY — Oversold + rich premium (avg real yield 26%, good for selling) 🟡 possible macro exposure (weak historical signal, see Section 6.5)
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
+|---|---|---|---|---|---|---|---|
+| ALB | $63,954 | $21,318 | $85,272 | 🟡 | 7.2 | 🟡 WATCH: strangle (2C/6P) — call side uncapped if it rallies | RSI/heat: 18% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~26% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 2 naked call(s) (uncapped upside if it rallies), AND 6 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). Qualitative flag (2026-09-18): JPMorgan cut its lithium price forecast and PT to $140 (Dec 2027, down from $160/Dec 2026), Neutral maintained -- short-term commodity pricing pressure (China lithium carbonate ~$21,625/mt Q3 vs ~$24,810 Q2), not a structural downgrade. Q2 revenue +31.1% YoY, EPS beat. Stock fell -3.51% on 2026-09-1 |
+| MP | $14,377 | $4,792 | $19,170 | 🟡 | 7.4 | 🟡 WATCH: strangle (1C/3P) — call side uncapped if it rallies | RSI/heat: 16% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~26% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). Two-sided position: 0 covered call(s) (0 sh owned), 1 naked call(s) (uncapped upside if it rallies), AND 3 short put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call. Possible macro exposure (breadth, weak historical signal). No qualitative flag on file. |
+
+### Crypto Mining (3 positions, $22,273) — 🟡 MONITOR — Neutral positioning
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
+|---|---|---|---|---|---|---|---|
+| RIOT | $8,264 | $2,066 | $10,330 | 🟡 | 6.2 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Dropped -14% in 7 days but only +7% vs its 200-day average — pullback within trend, verify thesis before treating as an entry. Real yield-on-capital ~46% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| HUT | $8,740 | $0 | $8,740 | 🟡 | 6.7 | 🟡 WATCH: no confirmed direction yet | RSI/heat: Dropped -15% in 7 days but only +10% vs its 200-day average — pullback within trend, verify thesis before treating as an entry. Real yield-on-capital ~54% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| CIFR | $3,203 | $0 | $3,203 | 🟢 | 6.2 | 🟢 HOLD — let run | RSI/heat: Dropped -15% in 7 days AND -13% below its 200-day average — genuinely beaten down. Real yield-on-capital ~52% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+
+### Energy (2 positions, $13,438) — 🟢 BUY — Oversold + rich premium (avg real yield 17%, good for selling) ⚠️ MIXED — individual real yield ranges 13%-21%, not uniformly thin (see per-symbol detail below)
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
+|---|---|---|---|---|---|---|---|
+| CCJ | $8,781 | $0 | $8,781 | 🟡 | 4.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: RSI 27 approaching oversold (30-); 18% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~21% annualized (rich premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+| DVN | $4,658 | $0 | $4,658 | 🟡 | 7.0 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 71% of 52-week range approaching the high extreme (90%+). Real yield-on-capital ~13% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
+
+### Consumer Defensive (1 positions, $10,548) — 🟡 BUY (stock only) — Oversold but THIN premium (avg real yield 8% < 15%) — not attractive for CSPs/CCs
+
+| Symbol | Put Value | Call Value | Total Value | Heat | Conv | Action | Detail |
+|---|---|---|---|---|---|---|---|
+| WMT | $10,548 | $0 | $10,548 | 🟡 | 7.5 | 🟡 WATCH: no confirmed direction yet | RSI/heat: 18% of 52-week range approaching the low extreme (10%-). Real yield-on-capital ~8% annualized (thin premium for CSPs/CCs, ~10% OTM/107DTE). No qualitative flag on file. |
 
 **Portfolio Heat Allocation:**
 
-- 🔴 CRITICAL: 6.9% ($559,041)
-- 🟡 MONITOR: 57.0% ($4,586,611)
-- 🟢 HEALTHY: 36.0% ($2,900,195)
+- 🔴 CRITICAL: 6.9% ($557,857)
+- 🟡 MONITOR: 57.3% ($4,610,721)
+- 🟢 HEALTHY: 35.8% ($2,879,076)
 
 
 ## Section 6.5: CRASH EARLY WARNING — 7-LAYER MACRO RISK ANALYSIS
@@ -556,7 +554,7 @@ same per-ticker/per-sector data going out of sync with each other.
 |  | Indicator | Value | Status | Threshold |
 |---|---|---|---|---|
 | ⚠️ | BREADTH | 53.84615384615385 | YELLOW | 60% (caution), 50% (alert) |
-| ✅ | AD_RATIO | 1.0 | GREEN | 1.0 (caution), 0.8 (alert) |
+| ✅ | AD_RATIO | 1.2727272727272727 | GREEN | 1.0 (caution), 0.8 (alert) |
 | ✅ | VIX_TERM | CONTANGO | GREEN | Contango (normal) → Flat (caution) → Backwardation (alert) |
 | ✅ | HYOAS | 308 bps | GREEN | 400 (caution), 450 (alert) |
 | ✅ | PCR | 0.75 | GREEN | 1.0 (caution), 1.2 (alert) |
@@ -598,15 +596,15 @@ New entries in HIGH-exposure sectors compound the exact risk this driver is flag
 
 ### AI Capex Risk Tracker (Circular Financing Playbook — the scriptable half of the same macro picture above)
 
-- **Technology concentration:** 35.8% of notional (108 positions, $2,880,707)
+- **Technology concentration:** 35.8% of notional (108 positions, $2,880,269)
   - Reference: top-10 S&P 500 concentration is 41.2%, a record — this line tracks your own book against that same structural risk, not just the index's.
 
 **90-day capital plan tracking** (target 30% high-risk / 70% quality, $700K base):
 
-- High-risk (ALAB/LITE/MU/PLTR): $925,670 live — 83% of tracked pair vs. 30% target
-- Quality-AI (TSM/ASML/APH): $183,834 live
+- High-risk (ALAB/LITE/MU/PLTR): $926,616 live — 83% of tracked pair vs. 30% target
+- Quality-AI (TSM/ASML/APH): $184,412 live
 - ⚠️ Drift >10pp from the 30/70 target — check whether a tier fired to justify it before rebalancing.
-- ⚠️ Avoid-list exposure still open: $109,723 across NBIS, CRWV, RKLB, OKLO, HUT, RIOT
+- ⚠️ Avoid-list exposure still open: $109,803 across NBIS, CRWV, RKLB, OKLO, HUT, RIOT
 
 Qualitative Tier 1/2 check (credit news, IPO status, private-credit gating) is NOT computed here — run /ai-capex-risk-review for the live dial state. This section tracks only the scriptable half.
 
@@ -623,8 +621,8 @@ Dial state: BASE CASE (30/70) -- unchanged. No Tier-1 or Tier-2 condition has ac
 
 **⚠️ Underperformance proxy** — check these for credit news specifically:
 
-- HUT: -16.0% (7d) vs SPX -0.7% — >10pp gap
-- RIOT: -14.7% (7d) vs SPX -0.7% — >10pp gap
+- HUT: -15.3% (7d) vs SPX -0.6% — >10pp gap
+- RIOT: -14.2% (7d) vs SPX -0.6% — >10pp gap
 
 
 ## Section 6.6: ASSIGNMENT / EXERCISE PROBABILITY (ALL ACCOUNTS, <=120 DTE)
@@ -632,36 +630,36 @@ Dial state: BASE CASE (30/70) -- unchanged. No Tier-1 or Tier-2 condition has ac
 
 | Account | Ticker | T | Strike | DTE | Prob | Cash-at-Risk | Flag |
 |---|---|---|---|---|---|---|---|
-| Account A (232) | NVO | P | 50.0 | 79 | 96% | $5,000 |  |
-| Account A (232) | OKTA | C | 140.0 | 51 | 93% | $14,000 | ✅ COVERED — assignment is the intended outcome, not an exit |
-| Account C (634) | TWLO | C | 145.0 | 107 | 87% | $14,500 | ✅ COVERED — assignment is the intended outcome, not an exit |
-| Account A (232) | CRM | C | 185.0 | 51 | 87% | $18,500 |  |
+| Account A (232) | NVO | P | 50.0 | 79 | 95% | $5,000 |  |
+| Account A (232) | OKTA | C | 140.0 | 51 | 90% | $14,000 | ✅ COVERED — assignment is the intended outcome, not an exit |
+| Account C (634) | TWLO | C | 145.0 | 107 | 90% | $14,500 | ✅ COVERED — assignment is the intended outcome, not an exit |
+| Account C (634) | CCJ | P | 110.0 | 107 | 87% | $11,000 |  |
+| Account C (634) | TWLO | C | 150.0 | 107 | 87% | $30,000 | ✅ COVERED — assignment is the intended outcome, not an exit |
 | Account A (232) | AXON | P | 560.0 | 79 | 87% | $56,000 |  |
-| Account C (634) | CCJ | P | 110.0 | 107 | 86% | $11,000 |  |
-| Account B (275) | AMKR | P | 70.0 | 107 | 86% | $7,000 |  |
-| Account C (634) | TWLO | C | 150.0 | 107 | 85% | $30,000 | ✅ COVERED — assignment is the intended outcome, not an exit |
+| Account B (275) | AMKR | P | 70.0 | 107 | 87% | $7,000 |  |
+| Account A (232) | CRM | C | 185.0 | 51 | 86% | $18,500 |  |
+| Account A (232) | ADBE | P | 260.0 | 16 | 85% | $26,000 |  |
 | Account A (232) | MP | P | 60.0 | 79 | 84% | $6,000 |  |
 | Account A (232) | NFLX | P | 80.0 | 51 | 84% | $24,000 |  |
 | Account A (232) | AXON | P | 540.0 | 79 | 83% | $54,000 |  |
-| Account B (275) | CRM | C | 175.0 | 79 | 82% | $17,500 |  |
-| Account A (232) | ADBE | P | 260.0 | 16 | 82% | $26,000 |  |
-| Account A (232) | PYPL | C | 42.5 | 51 | 78% | $21,250 |  |
-| Account A (232) | NFLX | P | 77.5 | 51 | 78% | $15,500 |  |
+| Account B (275) | CRM | C | 175.0 | 79 | 83% | $17,500 |  |
+| Account B (275) | BWXT | P | 160.0 | 107 | 78% | $16,000 |  |
+| Account A (232) | NFLX | P | 77.5 | 51 | 77% | $15,500 |  |
 | Account C (634) | ABNB | C | 145.0 | 16 | 77% | $14,500 |  |
-| Account B (275) | BWXT | P | 160.0 | 107 | 76% | $16,000 |  |
-| Account A (232) | COIN | C | 170.0 | 16 | 75% | $17,000 |  |
-| Account A (232) | PYPL | C | 45.0 | 51 | 75% | $9,000 |  |
+| Account A (232) | PYPL | C | 42.5 | 51 | 77% | $21,250 |  |
+| Account A (232) | COIN | C | 170.0 | 16 | 76% | $17,000 |  |
+| Account A (232) | PYPL | C | 45.0 | 51 | 73% | $9,000 |  |
 | Account A (232) | ETSY | C | 60.0 | 79 | 73% | $6,000 |  |
 | Account A (232) | PYPL | C | 45.0 | 79 | 71% | $13,500 |  |
 | Account C (634) | UBER | P | 75.0 | 107 | 71% | $7,500 |  |
-| Account A (232) | WMT | P | 110.0 | 51 | 69% | $11,000 |  |
-| Account A (232) | NFLX | P | 75.0 | 107 | 68% | $22,500 |  |
-| Account A (232) | META | C | 650.0 | 79 | 67% | $65,000 |  |
+| Account A (232) | WMT | P | 110.0 | 51 | 68% | $11,000 |  |
+| Account A (232) | META | C | 650.0 | 79 | 68% | $65,000 |  |
+| Account A (232) | NFLX | P | 75.0 | 107 | 67% | $22,500 |  |
 _...and 83 more within 120 DTE (not shown)_
 
 - **Worst case (all shown):** $3,469,000 across 108 positions
-- **Realistic (>=30% prob):** $1,752,500 across 77 positions
-- **Likely (>=50% prob):** $917,250 across 48 positions
+- **Realistic (>=30% prob):** $1,726,000 across 76 positions
+- **Likely (>=50% prob):** $869,250 across 47 positions
 
 No positions currently combine >=50% probability with RED heat on a truly naked (non-strangle) call, or an at-risk put.
 
@@ -702,7 +700,7 @@ No positions currently combine >=50% probability with RED heat on a truly naked 
 **⏳ march_strangle_entry_gate** — BLOCKED
 
 Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
-  - Live: account_a_margin_utilization_pct = 112.50809541702272
+  - Live: account_a_margin_utilization_pct = 112.54352448272704
   - Live: macro_risk_level = GREEN
 
 **⏳ be_puts_reduction** — OPEN
@@ -727,7 +725,7 @@ KNOWN GAP: the automated check only sees 5 of these 6 legs -- the Robinhood (Tra
 #### 1. Close Now 🔴 (0 positions)
 
 - Why: Extended/overbought + structural risk. Act before deterioration.
-- Gap Impact: Closing 0 RED positions saves ~$0/month drag; moves gap from $-5,500 to $-5,500 (0.0% improvement)
+- Gap Impact: Closing 0 RED positions saves ~$0/month drag; moves gap from $-8,500 to $-8,500 (0.0% improvement)
 - ✅ None needed — no RED + high conviction conflicts
 
 #### 2. Monitor for Rolls 🟡 (3 positions at risk)
@@ -736,35 +734,35 @@ KNOWN GAP: the automated check only sees 5 of these 6 legs -- the Robinhood (Tra
 - Gap Impact: Preserve existing $3,000/month contribution from MODERATE conviction positions
 - Names: OKTA, TWLO, SONO (full detail in Section 6)
 
-#### 3. Let Run — Nothing Needed 🟢 (39 positions)
+#### 3. Let Run — Nothing Needed 🟢 (38 positions)
 
 - Why: Attractive pricing (oversold) + adequate conviction. No action required.
-- Gap Impact: 39 healthy positions contribute $39,000/month baseline (expected)
-- ✅ 39 positions: Continue monitoring weekly
+- Gap Impact: 38 healthy positions contribute $38,000/month baseline (expected)
+- ✅ 38 positions: Continue monitoring weekly
 
 #### 4. Opportunity — High Conviction Entries 🟢 (7 names)
 
 - Why: Conviction ≥8.0 + oversold/attractive. Consider adding on dips.
-- Gap Impact: Adding 7 Tier 1 entries = $26,600/month; closes gap from $-5,500 to $-32,100 (26.6% closure)
-  - APP: Conv 9.1/10 | RSI 42.8 | Value $300,350 ⚠️ Communication Services is HIGH-exposure to today's primary risk driver — adding here compounds it
-  - BROS: Conv 9.0/10 | RSI 26.2 | Value $3,939 ⚠️ Consumer Cyclical is HIGH-exposure to today's primary risk driver — adding here compounds it
-  - GEV: Conv 8.4/10 | RSI 56.6 | Value $381,658
-  - GOOGL: Conv 8.4/10 | RSI 62.6 | Value $140,164 ⚠️ Communication Services is HIGH-exposure to today's primary risk driver — adding here compounds it
-  - VRT: Conv 8.3/10 | RSI 46.8 | Value $72,788
+- Gap Impact: Adding 7 Tier 1 entries = $26,600/month; closes gap from $-8,500 to $-35,100 (26.6% closure)
+  - APP: Conv 9.1/10 | RSI 42.5 | Value $299,665 ⚠️ Communication Services is HIGH-exposure to today's primary risk driver — adding here compounds it
+  - BROS: Conv 9.0/10 | RSI 27.2 | Value $3,941 ⚠️ Consumer Cyclical is HIGH-exposure to today's primary risk driver — adding here compounds it
+  - GEV: Conv 8.4/10 | RSI 56.7 | Value $381,756
+  - GOOGL: Conv 8.4/10 | RSI 63.0 | Value $140,568 ⚠️ Communication Services is HIGH-exposure to today's primary risk driver — adding here compounds it
+  - VRT: Conv 8.3/10 | RSI 47.2 | Value $73,001
 
 **Portfolio Status & Gap Trajectory:**
 
 - ✅ Total positions scanned: 92
 - 🔴 Critical actions: 0 closes + 3 monitors
-- 🟡 Yellow cautions: 43
-- 🟢 Green healthy: 39
+- 🟡 Yellow cautions: 44
+- 🟢 Green healthy: 38
 - 📊 Market regime: BULL
 
 **Gap Closure Summary:**
 
-- Current gap: $-5,500 (-5.5% below target)
-- After closes: $-5,500 (saves ~0.0%)
-- After new Tier 1 entries: $-32,100 (26.6% to gap closure)
+- Current gap: $-8,500 (-8.5% below target)
+- After closes: $-8,500 (saves ~0.0%)
+- After new Tier 1 entries: $-35,100 (26.6% to gap closure)
 - Path to target: Execute closes → add HIGH conviction Tier 1 → scale over 2-3 weeks
 
 ---

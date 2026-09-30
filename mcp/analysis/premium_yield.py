@@ -9,6 +9,8 @@ iv_rank.py or enhanced_metrics.py -- this is genuinely a different
 question (capital efficiency vs. volatility-richness) with a different
 data need (a live option chain, not just price history).
 """
+import json
+import os
 from datetime import date, datetime
 from typing import Optional
 
@@ -18,6 +20,19 @@ DEFAULT_OTM_PCT = 0.10
 DEFAULT_DTE_LOW = 75
 DEFAULT_DTE_HIGH = 135
 TARGET_DTE_MIDPOINT = 100  # centers on this book's own 90/120-day window
+
+# "Rich" cutoff for the Sector Heat "thin/rich premium" labeling -- replaced
+# an IV-Rank->=40-vs-own-history check 2026-09-30 after live verification
+# (PFE, SBUX) showed IV Rank can read anywhere while real annualized yield
+# stays genuinely thin, since IV Rank never compares to market/sector vol or
+# to what a dollar of capital actually earns. 15% annualized is the
+# trader's own chosen bar (upper end of this book's stated "quality bucket"
+# target range, 10-15% annualized, from the AI capex playbook) -- not an
+# invented threshold.
+RICH_YIELD_THRESHOLD_PCT = 15.0
+
+_CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
+_CACHE_FILE = os.path.join(_CACHE_DIR, "premium_yield_cache.json")
 
 
 def _pick_expiry(ticker_obj, today, dte_low, dte_high):
@@ -96,3 +111,49 @@ def get_yield_on_capital(
 
 def batch_get_yield_on_capital(symbols: list[str], **kwargs) -> dict[str, dict]:
     return {s: get_yield_on_capital(s, **kwargs) for s in symbols}
+
+
+def average_annualized_yield(entry: Optional[dict]) -> Optional[float]:
+    """One summarizing richness number per ticker -- mean of put/call
+    annualized_yield_pct, whichever side(s) resolved. Returns None if
+    neither side has real data (e.g. empty_option_chain)."""
+    if not entry:
+        return None
+    vals = [entry[side]["annualized_yield_pct"] for side in ("put", "call")
+            if entry.get(side) and entry[side].get("annualized_yield_pct") is not None]
+    return sum(vals) / len(vals) if vals else None
+
+
+def get_cached_batch_yield(symbols: list[str], **kwargs) -> dict[str, dict]:
+    """Batch yield-on-capital, cached once per calendar day and reused
+    across every report type generated that day (daily/weekly/biweekly/
+    monthly) -- trader-confirmed 2026-09-30. Unlike IV Rank (price-history
+    only, cheap), this needs one live option-chain fetch PER TICKER;
+    re-fetching all 92 on every report run is real, avoidable latency and
+    yfinance rate-limit risk for strikes 90-135 DTE out that don't move
+    enough intraday to justify a same-day re-fetch. A stale cache from a
+    prior day is never reused -- the date check below forces a fresh pull
+    the first time any report runs on a new day.
+    """
+    today = date.today().isoformat()
+    cache: dict = {}
+    if os.path.exists(_CACHE_FILE):
+        try:
+            with open(_CACHE_FILE) as f:
+                stored = json.load(f)
+            if stored.get("date") == today:
+                cache = stored.get("data", {})
+        except Exception:
+            pass
+
+    missing = [s for s in symbols if s not in cache]
+    if missing:
+        cache.update(batch_get_yield_on_capital(missing, **kwargs))
+        try:
+            os.makedirs(_CACHE_DIR, exist_ok=True)
+            with open(_CACHE_FILE, "w") as f:
+                json.dump({"date": today, "data": cache}, f)
+        except Exception:
+            pass
+
+    return {s: cache[s] for s in symbols if s in cache}

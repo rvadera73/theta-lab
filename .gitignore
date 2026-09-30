@@ -12,6 +12,11 @@ data/portfolio_snapshot.yaml
 # not source; would also bloat git history with every status click.
 data/dashboard_actions.db
 
+# Real annualized yield-on-capital cache (analysis/premium_yield.py) --
+# refreshed once per calendar day, pure runtime state with no historical
+# value once superseded; would bloat git history with every day's refresh.
+data/premium_yield_cache.json
+
 # Brokerage statements, tax docs, portfolios — stay local only
 *.PDF
 *.pdf
