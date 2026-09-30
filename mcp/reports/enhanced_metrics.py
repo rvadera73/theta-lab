@@ -478,8 +478,26 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
             heat_status = "GREEN"
             heat_reason = "Neutral positioning"
         else:
+            # Catch-all for the transition zone just inside the outer 25/75
+            # RSI and 10/90 range bounds already excluded above -- e.g. RSI
+            # 72 or 78% of 52-week range, real signal but not yet confirmed
+            # extended/oversold. Previously just said "Approaching extremes"
+            # with no numbers and no indication of which side -- trader
+            # feedback 2026-09-30: this read as no action, no insight. Now
+            # names the actual RSI/range value(s) that tripped it and which
+            # threshold they're approaching, same standard as every other
+            # branch above.
             heat_status = "YELLOW"
-            heat_reason = "Approaching extremes"
+            triggers = []
+            if rsi >= 70:
+                triggers.append(f"RSI {rsi:.0f} approaching overbought (70+)")
+            elif rsi <= 30:
+                triggers.append(f"RSI {rsi:.0f} approaching oversold (30-)")
+            if position_in_range >= 70:
+                triggers.append(f"{position_in_range:.0f}% of 52-week range approaching the high extreme (90%+)")
+            elif position_in_range <= 30:
+                triggers.append(f"{position_in_range:.0f}% of 52-week range approaching the low extreme (10%-)")
+            heat_reason = "; ".join(triggers) if triggers else f"RSI {rsi:.0f}, {position_in_range:.0f}% of 52-week range — mixed signal, not cleanly neutral"
 
         return {
             "ticker": ticker,

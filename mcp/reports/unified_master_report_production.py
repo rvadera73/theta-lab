@@ -890,6 +890,51 @@ class UnifiedReportProduction:
             output.append("_None right now -- nothing forced (no RED-heat/low-conviction names) and no rare high-conviction entry opportunity. The book is in a WATCH/HOLD state._")
             output.append("")
 
+        # Top 10 GREEN / Top 10 RED cross-sector (trader-requested 2026-09-30):
+        # the per-sector tables below split a 92-ticker book across ~13
+        # sectors, so each sector's own list is too short on its own to rank
+        # "what's genuinely best/worst right now" -- this flattens across
+        # every sector once, ranked, so that comparison doesn't require
+        # scanning every sector table by hand. GREEN sorted by conviction
+        # (best opportunities first); RED sorted by notional (matches
+        # Section 7's own "biggest impact first" convention for critical
+        # positions) -- these are different questions (best idea vs.
+        # biggest exposure at risk) so they get different sorts.
+        all_rows = []
+        for ticker in self.position_summary.index:
+            sector = self.ticker_sector_map.get(ticker, "Other")
+            pc = put_call.get(ticker, {"put_notional": 0, "call_notional": 0})
+            pos = by_heat.get(ticker, {})
+            heat = pos.get('heat', self.metrics.get(ticker, {}).get('heat_status', 'YELLOW'))
+            conv = pos.get('conv', self.metrics.get(ticker, {}).get('conviction', 5.0))
+            reason = pos.get('reason', self.metrics.get(ticker, {}).get('heat_reason', ''))
+            total_val = pc['put_notional'] + pc['call_notional']
+            all_rows.append({
+                "ticker": ticker, "sector": sector, "heat": heat, "conv": conv,
+                "reason": reason, "notional": total_val,
+                "put_val": pc['put_notional'], "call_val": pc['call_notional'],
+            })
+
+        top_green = sorted([r for r in all_rows if r["heat"] == "GREEN"], key=lambda r: -r["conv"])[:10]
+        top_red = sorted([r for r in all_rows if r["heat"] == "RED"], key=lambda r: -r["notional"])[:10]
+
+        for title, heat_label, rows_ in (
+            ("Top 10 GREEN — best-positioned", "GREEN", top_green),
+            ("Top 10 RED — most concerning", "RED", top_red),
+        ):
+            output.append(f"### {title}")
+            output.append("")
+            if not rows_:
+                output.append(f"_None currently in {heat_label} heat._")
+                output.append("")
+                continue
+            table_rows = []
+            for r in rows_:
+                label, detail = suggestion_for(r["ticker"], r["heat"], r["conv"], r["sector"], r["put_val"], r["call_val"], r["reason"])
+                table_rows.append([r["ticker"], r["sector"], f"{r['conv']:.1f}", f"${r['notional']:,.0f}", label, detail])
+            output.extend(self._md_table(["Symbol", "Sector", "Conv", "Notional", "Action", "Detail"], table_rows))
+            output.append("")
+
         # Group tickers by sector
         sector_tickers: Dict[str, list] = defaultdict(list)
         for ticker in self.position_summary.index:
