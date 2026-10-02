@@ -83,6 +83,19 @@ def get_yield_on_capital(
             if len(row) == 0 or capital is None or capital <= 0:
                 return None
             bid, ask = float(row["bid"].values[0]), float(row["ask"].values[0])
+            if bid == 0.0 and ask == 0.0:
+                # A real option essentially never has a simultaneous zero
+                # bid AND zero ask unless it's worthless -- found live
+                # 2026-10-02: every single ticker's chain came back with
+                # bid=ask=0.0 for strikes that are clearly not worthless
+                # (e.g. COIN $210C, AXON $460C), meaning this is Yahoo not
+                # having live quotes available (after-hours/no-data), not a
+                # real zero premium. Returning None here instead of a false,
+                # confident "0% annualized (thin)" that would otherwise get
+                # cached for the rest of the day and silently mislabel the
+                # whole book as thin on a day with no real data, not a day
+                # with genuinely worthless options.
+                return None
             mid = (bid + ask) / 2
             premium = mid * 100
             annualized = (premium / capital) * (365 / dte) * 100
