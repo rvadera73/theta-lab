@@ -11,7 +11,7 @@ import sys
 import yaml
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 import json
 
@@ -27,7 +27,7 @@ from report_utils import option_probability_itm
 try:
     from analysis.regime import detect_regime
     from analysis.iv_rank import batch_iv_rank
-    from analysis.macro_risk_analyzer import analyze_macro_risk
+    from analysis.macro_risk_analyzer import analyze_macro_risk, MacroRiskAnalyzer
     from analysis.premium_yield import get_cached_batch_yield, average_annualized_yield, RICH_YIELD_THRESHOLD_PCT
 except ImportError as e:
     # Fallback if modules unavailable
@@ -38,6 +38,13 @@ except ImportError as e:
         return {s: {"iv_rank": 50, "iv_pct": 50} for s in symbols}
     def analyze_macro_risk(data):
         return {"risk_level": "GREEN", "stage": 0, "signals": {}, "summary": "Macro analyzer unavailable"}
+    class MacroRiskAnalyzer:
+        def _get_risk_summary(self, risk_level, stage, signals):
+            return "Macro analyzer unavailable"
+        def _get_actions(self, risk_level, stage):
+            return []
+        def _get_rotation_playbook(self, stage, crash_prob=None):
+            return ""
     def get_cached_batch_yield(symbols, **kwargs):
         return {}
     def average_annualized_yield(entry):
@@ -411,6 +418,81 @@ class UnifiedReportProduction:
         except Exception:
             return (70, 50)
 
+    _STAGE_WINDOW_DAYS = 14
+    _STAGE_BAND_YELLOW = 1.0
+    _STAGE_BAND_RED = 2.0
+    _STAGE_NAMES = {0: "GREEN", 1: "YELLOW", 2: "RED"}
+
+    def _severity_from_prob_30d(self, prob_30d) -> Optional[float]:
+        """Reconstructs a severity_sum from an already-logged prob_30d value,
+        for history entries written before severity_sum was tracked directly
+        -- exact inverse of calculate_crash_probability()'s own
+        prob_30d = 6.0 + severity_sum*15 formula, not a guess."""
+        if prob_30d is None:
+            return None
+        return max(0.0, (prob_30d - 6.0) / 15.0)
+
+    def _compute_stage_with_hysteresis(self, severity_sum_today: float, history: list) -> dict:
+        """Smooths today's severity over a trailing _STAGE_WINDOW_DAYS window
+        instead of classifying a single day's reading, and requires 2
+        consecutive days of support before stepping DOWN a stage -- trader-
+        requested 2026-10-02 after the macro banner (and the literal "close
+        30% of RSI>75 positions" action text it drives) flipped RED->GREEN in
+        a single day. Root cause traced live: the old risk_level/stage used a
+        binary red-count vote (RED needs 2+ RED indicators) completely
+        decoupled from the continuous severity score that already smoothly
+        drives the probability numbers -- a single noisy, boundary-straddling
+        indicator (breadth, already known weak-confidence) could swing the
+        banner and action text alone. This replaces that vote with bands on
+        the SAME severity score the probabilities already use, smoothed over
+        2 weeks of real logged history, so one noisy day can't swing it.
+
+        Stepping UP still happens on the very next smoothed reading, no
+        delay -- missing a real deterioration is the worse failure mode in a
+        risk system, so only the de-escalation direction gets the 2-day
+        confirmation requirement.
+        """
+        def band_for(sev: float) -> int:
+            if sev >= self._STAGE_BAND_RED:
+                return 2
+            if sev >= self._STAGE_BAND_YELLOW:
+                return 1
+            return 0
+
+        cutoff = (date.today() - timedelta(days=self._STAGE_WINDOW_DAYS)).isoformat()
+        window = [severity_sum_today]
+        for h in history:
+            if h.get("date", "") < cutoff or h.get("date") == date.today().isoformat():
+                continue
+            sev = h.get("severity_sum")
+            if sev is None:
+                sev = self._severity_from_prob_30d(h.get("prob_30d"))
+            if sev is not None:
+                window.append(sev)
+
+        smoothed = sum(window) / len(window)
+        candidate_stage = band_for(smoothed)
+
+        prior = history[-1] if history else None
+        prior_stage = prior.get("stage") if prior and prior.get("stage") is not None else candidate_stage
+        prior_pending = prior.get("pending_downgrade_stage") if prior else None
+
+        if candidate_stage >= prior_stage:
+            final_stage, pending = candidate_stage, None
+        elif prior_pending is not None and candidate_stage <= prior_pending:
+            final_stage, pending = candidate_stage, None  # 2nd consecutive day confirms the downgrade
+        else:
+            final_stage, pending = prior_stage, candidate_stage  # hold; flag as pending for tomorrow
+
+        return {
+            "stage": final_stage,
+            "risk_level": self._STAGE_NAMES[final_stage],
+            "severity_sum": round(severity_sum_today, 2),
+            "severity_smoothed": round(smoothed, 2),
+            "severity_window_days": len(window),
+            "pending_downgrade_stage": pending,
+        }
+
     def _get_macro_risk_analysis(self) -> dict:
         """Cached wrapper around analyze_macro_risk() -- was previously
         computed inline only inside Section 6.5, so Section 6 (the sector
@@ -436,6 +518,44 @@ class UnifiedReportProduction:
             result = analyze_macro_risk(macro_risk_data)
         except Exception:
             result = {}
+
+        # Smoothed/hysteresis stage override -- see _compute_stage_with_hysteresis's
+        # own docstring. Only runs when the raw call succeeded (has real
+        # crash_probability data to derive severity from); on any failure here
+        # the raw (unsmoothed) result from analyze_macro_risk is used as-is
+        # rather than silently guessing a severity.
+        try:
+            prob_30d = result.get("crash_probability", {}).get("prob_30d")
+            severity_today = self._severity_from_prob_30d(prob_30d)
+            if severity_today is not None:
+                import yaml as _yaml
+                history_path = "/home/rahulvadera/projects/theta-lab/data/macro_risk_history.yaml"
+                try:
+                    with open(history_path) as f:
+                        history = _yaml.safe_load(f) or []
+                except Exception:
+                    history = []
+                smoothed = self._compute_stage_with_hysteresis(severity_today, history)
+                analyzer = MacroRiskAnalyzer()
+                result["risk_level"] = smoothed["risk_level"]
+                result["stage"] = smoothed["stage"]
+                result["severity_sum"] = smoothed["severity_sum"]
+                result["severity_smoothed"] = smoothed["severity_smoothed"]
+                result["severity_window_days"] = smoothed["severity_window_days"]
+                result["pending_downgrade_stage"] = smoothed["pending_downgrade_stage"]
+                result["pending_downgrade_level"] = (
+                    self._STAGE_NAMES.get(smoothed["pending_downgrade_stage"])
+                    if smoothed["pending_downgrade_stage"] is not None else None
+                )
+                # Regenerate summary/actions/playbook against the OVERRIDDEN
+                # stage -- otherwise these would still describe the raw,
+                # pre-smoothing stage and contradict the banner shown above them.
+                result["summary"] = analyzer._get_risk_summary(result["risk_level"], result["stage"], result.get("signals", {}))
+                result["actions"] = analyzer._get_actions(result["risk_level"], result["stage"])
+                result["playbook"] = analyzer._get_rotation_playbook(result["stage"], result.get("crash_probability"))
+        except Exception:
+            pass  # smoothing is an enhancement -- never block on it, raw result still usable
+
         self._macro_risk_cache = result
         return result
 
@@ -685,6 +805,13 @@ class UnifiedReportProduction:
                 "prob_60d": round(crash_prob.get("prob_60d", 0), 1),
                 "prob_90d": round(crash_prob.get("prob_90d", 0), 1),
                 "primary_risk": crash_prob.get("primary_risk"),
+                # Added 2026-10-02 for _compute_stage_with_hysteresis's 2-week
+                # smoothing + step-down confirmation -- stage is the FINAL
+                # (post-hysteresis) stage, not the raw single-day vote, so
+                # tomorrow's run knows what was actually in effect today.
+                "stage": risk_analysis.get("stage"),
+                "severity_sum": risk_analysis.get("severity_sum"),
+                "pending_downgrade_stage": risk_analysis.get("pending_downgrade_stage"),
             }
             history = [h for h in history if h.get("date") != today_str]
             history.append(entry)
@@ -1583,6 +1710,30 @@ class UnifiedReportProduction:
             output.append("")
             output.append(f"**Summary:** {risk_analysis['summary']}")
             output.append("")
+            # Smoothing/hysteresis transparency -- trader-requested 2026-10-02
+            # after a single-day RED->GREEN flip was hard to navigate with no
+            # visibility into why. Shows the raw today-only reading alongside
+            # the smoothed one actually driving the banner, and flags a
+            # pending (not-yet-confirmed) downgrade explicitly rather than
+            # letting it appear to flip without warning tomorrow.
+            if "severity_smoothed" in risk_analysis:
+                window_n = risk_analysis.get("severity_window_days", 1)
+                output.append(
+                    f"_Severity: today {risk_analysis['severity_sum']:.2f} raw, "
+                    f"{risk_analysis['severity_smoothed']:.2f} smoothed over the trailing "
+                    f"{window_n} logged day(s) (target window: {self._STAGE_WINDOW_DAYS}d, "
+                    f"will widen as more days log). Bands: GREEN <{self._STAGE_BAND_YELLOW:.1f}, "
+                    f"YELLOW {self._STAGE_BAND_YELLOW:.1f}-{self._STAGE_BAND_RED:.1f}, "
+                    f"RED ≥{self._STAGE_BAND_RED:.1f}._"
+                )
+                if risk_analysis.get("pending_downgrade_level"):
+                    output.append(
+                        f"- ⏳ A downgrade to {risk_analysis['pending_downgrade_level']} is "
+                        f"**pending** — today's smoothed reading supports it, but it needs "
+                        f"tomorrow's reading to confirm before the banner actually moves "
+                        f"(2-day step-down rule, escalation has no delay)."
+                    )
+                output.append("")
 
             # Display individual signals
             output.append("**Indicator Status:**")

@@ -35,8 +35,11 @@
   prob_90d: 16.0
   primary_risk: Market neutral
 - date: '2026-10-02'
-  risk_level: GREEN
-  prob_30d: 23.9
-  prob_60d: 40.8
-  prob_90d: 57.7
+  risk_level: YELLOW
+  prob_30d: 35.0
+  prob_60d: 59.3
+  prob_90d: 83.7
   primary_risk: BREADTH critical
+  stage: 1
+  severity_sum: 1.93
+  pending_downgrade_stage: null
