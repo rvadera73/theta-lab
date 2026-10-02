@@ -285,14 +285,24 @@
     let body = "";
     for (const r of rows) {
       const isMargin = r.account_type === "Margin";
+      // Trader-flagged 2026-10-02: a cash-secured account hitting its
+      // coverage threshold isn't the same severity as Account A's real
+      // margin-call risk (no leverage, no broker-enforced liquidation
+      // possible -- see _compute_account_status's own docstring). "over"
+      // (true red) is now reserved for margin; cash-secured maxes out at
+      // "warn" (yellow) on the gauge, matching COVERAGE GAP's new orange
+      // status icon rather than visually equating it with Account A.
       const concerning = /OVER CAP|EMERGENCY|COVERAGE GAP/.test(r.status || "");
+      const gaugeClass = isMargin
+        ? (r.utilization >= 100 ? 'over' : r.utilization >= 75 ? 'warn' : 'ok')
+        : (r.utilization >= 75 ? 'warn' : 'ok');
       body += `
         <tr class="${isMargin ? 'expandable-row' : ''}" ${isMargin ? `data-account="${r.account}"` : ''}>
           <th scope="row">${r.account}${isMargin ? " 🔎" : ""}</th>
           <td>${r.account_type ?? ""}</td>
           <td class="num">${fmt(r.balance)}</td>
           <td class="num">${pct(r.utilization)}
-            <div class="gauge-track" style="width:70px;"><div class="gauge-fill ${r.utilization >= 100 ? 'over' : r.utilization >= 75 ? 'warn' : 'ok'}" style="width:${Math.min(100, r.utilization)}%"></div></div>
+            <div class="gauge-track" style="width:70px;"><div class="gauge-fill ${gaugeClass}" style="width:${Math.min(100, r.utilization)}%"></div></div>
           </td>
           <td>${r.status ?? ""}</td>
           <td>${concerning ? trackBtn("US", "Account Health", `${r.account} at ${r.status} (${pct(r.utilization)} utilization)`, `Balance ${fmt(r.balance)}, Opt Req ${fmt(r.opt_req)}.`) : ""}</td>

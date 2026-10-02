@@ -369,8 +369,20 @@ class UnifiedReportProduction:
                 # see _calculate_option_requirements) exceeds the account's
                 # own cash. Same cutoffs as an early-warning signal, coverage
                 # language rather than crisis language.
+                #
+                # Icon fixed 2026-10-02 -- the WORDS here were already
+                # correctly account-type-aware (this function's own docstring
+                # calls that out as a previously-fixed bug), but COVERAGE GAP
+                # still used the same red circle as margin's real OVER CAP/
+                # EMERGENCY, undermining the distinction visually: trader
+                # flagged "why does [a cash-secured account] show red... given
+                # all are cash secured except account A" -- a fair reaction,
+                # since red reads as the same severity regardless of the text
+                # next to it. Orange keeps COVERAGE GAP visually distinct from
+                # Account A's genuine red margin-call risk while still ranking
+                # above the yellow WATCH tier.
                 if utilization >= 100:
-                    status = "🔴 COVERAGE GAP"
+                    status = "🟠 COVERAGE GAP"
                 elif utilization >= 75:
                     status = "⚠️ WATCH"
                 else:
@@ -793,7 +805,17 @@ class UnifiedReportProduction:
             try:
                 with open(path) as f:
                     history = _yaml.safe_load(f) or []
-            except (FileNotFoundError, _yaml.YAMLError):
+            except (FileNotFoundError, _yaml.YAMLError, PermissionError):
+                # PermissionError added 2026-10-02: previously fell through to
+                # the outer except and skipped the write ENTIRELY, meaning a
+                # file some other process (e.g. the dashboard container,
+                # running as root) left in a mode this process can't read
+                # would silently block logging forever, same failure shape as
+                # the original corruption bug. Treating it the same as
+                # FileNotFoundError loses a few days of trend at worst (this
+                # is informational history, not trading-critical) while the
+                # chmod below breaks the lockout going forward instead of
+                # perpetuating it.
                 history = []
 
             today_str = date.today().isoformat()
@@ -822,6 +844,20 @@ class UnifiedReportProduction:
             fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".macro_risk_history_", suffix=".tmp")
             with os.fdopen(fd, "w") as f:
                 _yaml.safe_dump(history, f, default_flow_style=False, sort_keys=False)
+            # mkstemp() always creates its temp file at mode 0600 regardless
+            # of who runs it -- found live 2026-10-02: this file is written
+            # by BOTH the host user (manual/scripted runs) and the dashboard
+            # Docker container (root, via its background cache-refresh
+            # thread, since the Dockerfile has no USER directive). Whichever
+            # one wrote last left the file owner-only, locking the other out
+            # entirely -- and because the READ path right above treats a
+            # PermissionError as "no history" (same broad except), this
+            # silently neutered the smoothing fix from earlier today down to
+            # a 1-day window with zero visible error. 0o664 keeps it
+            # read/writable by both without needing to solve container user-
+            # mapping; this data is risk-level numbers, not anything
+            # sensitive, so group/other-readable is a fine tradeoff here.
+            os.chmod(tmp_path, 0o664)  # rename preserves this file's mode, not the old destination's
             os.replace(tmp_path, path)  # atomic on the same filesystem
             tmp_path = None
         except Exception:
