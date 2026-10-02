@@ -21,7 +21,7 @@ from analysis.india_statement_parser import (
     build_positions_from_statements,
     load_india_config,
 )
-from report_utils import current_price as _live_price, yf_symbol
+from reports.report_utils import current_price as _live_price, yf_symbol
 from config import (
     INDIA_ACCOUNT,
     INDIA_PERMANENT_EXITS,
