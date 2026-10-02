@@ -23,6 +23,7 @@ from open_positions_loader_v2 import OpenPositionsLoaderV2
 from enhanced_metrics import batch_get_metrics, BlackScholesGreeks
 from sector_analysis import batch_get_sector_analysis
 from report_utils import option_probability_itm
+from trend_verticals import get_verticals_for_ticker, get_vertical_membership
 
 try:
     from analysis.regime import detect_regime
@@ -347,7 +348,22 @@ class UnifiedReportProduction:
             account_type = "Margin" if is_margin else "Cash-Sec"
 
             acct_positions = self.open_positions[self.open_positions['account_name'] == account_name]
-            acct_opt_req = self.option_requirements.get(account_name, 0)
+            acct_opt_req_computed = self.option_requirements.get(account_name, 0)
+            # real_opt_req: a trader-confirmed figure straight from the
+            # broker's own Margin Details screen, added 2026-10-02 after a
+            # real, meaningful gap was found live -- Account A's computed
+            # Opt Req (18% of notional, a rough Reg-T proxy recomputed fresh
+            # every run from current positions) read $992,750/110% ("OVER
+            # CAP") the same day the real Schwab figure was $850,000/94.4%
+            # ("ALERT") -- a $143K/17% overstatement from the heuristic, not
+            # a real margin-call. Preferring the real figure when present
+            # rather than the computed one -- it's a direct broker read, not
+            # an approximation -- but ALWAYS surfacing both (see result dict
+            # below and its render site) so a stale real_opt_req is visible
+            # as such rather than silently trusted forever, same pattern as
+            # balance_as_of/balance_days_stale just below.
+            real_opt_req = config.get('real_opt_req')
+            acct_opt_req = real_opt_req if real_opt_req is not None else acct_opt_req_computed
             acct_notional = (
                 sum(self.prices.get(row['ticker'], 0) * row['net_quantity'] * 100
                     for _, row in acct_positions.iterrows())
@@ -399,10 +415,21 @@ class UnifiedReportProduction:
             else:
                 balance_days_stale = None  # genuinely unconfirmed, not just "old" -- no date to diff against
 
+            real_opt_req_as_of = config.get('real_opt_req_as_of')
+            if real_opt_req_as_of:
+                try:
+                    real_opt_req_days_stale = (date.today() - date.fromisoformat(real_opt_req_as_of)).days
+                except ValueError:
+                    real_opt_req_days_stale = None
+            else:
+                real_opt_req_days_stale = None
+
             result[account_name] = {
                 'balance': balance, 'pct': pct, 'account_type': account_type,
                 'is_margin': is_margin, 'notional': acct_notional,
                 'opt_req': acct_opt_req, 'utilization': utilization, 'status': status,
+                'opt_req_computed': acct_opt_req_computed, 'opt_req_real': real_opt_req,
+                'opt_req_real_as_of': real_opt_req_as_of, 'opt_req_real_days_stale': real_opt_req_days_stale,
                 'has_positions': not acct_positions.empty,
                 'position_count': len(acct_positions),
                 'target': acct_gap['target'], 'actual': acct_gap['actual'],
@@ -907,6 +934,57 @@ class UnifiedReportProduction:
         output.append(f"  - {first.get('date')}: {first.get('prob_30d', 0):.0f}% → {last.get('date')}: {last.get('prob_30d', 0):.0f}% ({trend_word}, {delta:+.0f}pp)")
         return output
 
+    def _render_hot_trends_section(self) -> List[str]:
+        """Hot Trend Verticals -- cross-cutting thematic tags (trend_verticals.py)
+        orthogonal to GICS sector (a ticker keeps exactly one sector but can
+        carry multiple vertical tags, e.g. RKLB is both Space and
+        Defense/Geopolitical). Informational only -- same rule the module's
+        own docstring states: a vertical tag never gates a CLOSE/TRIM/ENTER
+        decision, it's a lens for "how much of the book leans on this real
+        market theme" that a GICS grouping alone can't show (AI exposure
+        here spans Technology, Utilities, Industrials, Energy, Communication
+        Services, and Consumer Cyclical).
+        """
+        output = ["### Hot Trend Verticals — cross-sector thematic exposure", ""]
+        output.append("_Informational only — never a CLOSE/TRIM/ENTER gate. Shows how much of the book leans on each real market theme, independent of GICS sector._")
+        output.append("")
+
+        put_call = self._parse_put_call_breakdown()
+        vertical_totals: Dict[str, dict] = {}
+        for ticker in self.position_summary.index:
+            verticals = get_verticals_for_ticker(ticker)
+            if not verticals:
+                continue
+            pc = put_call.get(ticker, {"put_notional": 0, "call_notional": 0})
+            notional = pc['put_notional'] + pc['call_notional']
+            conv = self.metrics.get(ticker, {}).get('conviction', 5.0)
+            for v in verticals:
+                d = vertical_totals.setdefault(v, {"tickers": [], "notional": 0.0, "convictions": []})
+                d["tickers"].append(ticker)
+                d["notional"] += notional
+                d["convictions"].append(conv)
+
+        if not vertical_totals:
+            output.append("_No held tickers currently carry a vertical tag._")
+            output.append("")
+            return output
+
+        rows = []
+        for vertical, d in sorted(vertical_totals.items(), key=lambda kv: -kv[1]["notional"]):
+            avg_conv = sum(d["convictions"]) / len(d["convictions"])
+            rows.append([vertical, ", ".join(sorted(d["tickers"])), f"${d['notional']:,.0f}", f"{avg_conv:.1f}"])
+        output.extend(self._md_table(["Vertical", "Tickers", "Notional", "Avg Conv"], rows))
+        output.append("")
+
+        tagged = {t for d in vertical_totals.values() for t in d["tickers"]}
+        total_n = len(self.position_summary.index)
+        output.append(
+            f"_{len(tagged)} of {total_n} held tickers carry at least one vertical tag; "
+            f"{total_n - len(tagged)} carry none (expected, not a gap — see trend_verticals.py)._"
+        )
+        output.append("")
+        return output
+
     def _naked_covered_calls(self, ticker):
         """Real coverage math, not just notional -- shares owned (now
         correctly including assignment-created equity, see
@@ -1383,6 +1461,25 @@ class UnifiedReportProduction:
             elif s['balance_days_stale'] is not None and s['balance_days_stale'] > 30:
                 acct_notes.append(f"  - ⚠️ Balance as of {s['balance_as_of']} ({s['balance_days_stale']} days ago) — re-confirm if the {s['status']} reading above matters for a decision")
 
+            # Real-vs-computed Opt Req cross-check -- added 2026-10-02 after
+            # Account A's computed figure (18%-of-notional heuristic) read
+            # $143K/17% higher than the real broker figure the same day.
+            # Shown whenever BOTH exist and diverge >5%, so a future gap is
+            # visible immediately rather than silently trusted either way;
+            # also flags once the real figure itself is aging.
+            if s.get('opt_req_real') is not None and s.get('opt_req_computed'):
+                real, computed = s['opt_req_real'], s['opt_req_computed']
+                diff_pct = abs(computed - real) / real * 100 if real else 0
+                if diff_pct > 5:
+                    acct_notes.append(
+                        f"  - ℹ️ Opt Req shown (${real:,.0f}) is the real broker-confirmed figure "
+                        f"({s.get('opt_req_real_as_of', '?')}) — the live computed estimate (18% of "
+                        f"notional) reads ${computed:,.0f}, {diff_pct:.0f}% {'higher' if computed > real else 'lower'}. "
+                        f"Re-confirm live if this account's status matters for a decision."
+                    )
+                if s.get('opt_req_real_days_stale') is not None and s['opt_req_real_days_stale'] > 14:
+                    acct_notes.append(f"  - ⚠️ Real Opt Req is {s['opt_req_real_days_stale']} days old ({s['opt_req_real_as_of']}) — re-confirm from the broker screen rather than trusting it indefinitely.")
+
         acct_rows.append(["**TOTAL**", f"${TOTAL_PORTFOLIO_BALANCE:,}", "100.0%", f"${total_notional:,.0f}", f"${total_option_req:,.0f}", "", "", "", ""])
         output.extend(self._md_table(acct_headers, acct_rows))
         output.append("")
@@ -1644,6 +1741,14 @@ class UnifiedReportProduction:
         # SECTION 4.5: SECTOR ANALYSIS & ROTATION
         output.extend(self.sector_analysis_output)
         output.extend(self.sector_rotation_output)
+
+        # SECTION 4.6: HOT TREND VERTICALS -- trader-requested 2026-10-02 as
+        # part of month-start prep ("run the hot trends"). trend_verticals.py
+        # was built 2026-09-25 but confirmed live today to have zero callers
+        # anywhere in the report engine or dashboard -- the module existed,
+        # nothing rendered it. This wires it in for real instead of treating
+        # the request as "re-run an existing feature."
+        output.extend(self._render_hot_trends_section())
 
         # SECTION 5: ACCOUNT DISTRIBUTION
         output.extend(self._format_section_header(5, "POSITION DISTRIBUTION BY ACCOUNT"))

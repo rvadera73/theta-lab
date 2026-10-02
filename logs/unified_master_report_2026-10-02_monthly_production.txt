@@ -10,9 +10,9 @@
 
 ### Consolidated Portfolio Snapshot
 
-- **Total Portfolio Balance:** $2,415,485
-- **Total notional exposure:** $7,981,998
-- **Total option requirement:** $2,773,706
+- **Total Portfolio Balance:** $2,432,003
+- **Total notional exposure:** $7,990,516
+- **Total option requirement:** $2,775,732
 - **Positions with short puts:** 87
 - **Positions with short calls:** 52
 - **YTD Net Premium:** $362,543 (live from transactions)
@@ -64,35 +64,32 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 16.7% | $5,515,222 | $992,740 | Margin | 🔴 OVER CAP | $33,085 | ✅ $-2,712 |
-| Account B (275) | $261,000 | 10.8% | $373,155 | $316,050 | Cash-Sec | 🟠 COVERAGE GAP | $9,595 | ✅ $-786 |
-| Account C (634) | $256,067 | 10.6% | $342,965 | $213,150 | Cash-Sec | ⚠️ WATCH | $9,413 | ✅ $-771 |
-| Fidelity (Rahul) | $563,432 | 23.3% | $693,264 | $615,718 | Cash-Sec | 🟠 COVERAGE GAP | $20,712 | ✅ $-1,698 |
-| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $53,419 | $52,208 | Cash-Sec | 🟠 COVERAGE GAP | $1,652 | ✅ $-135 |
-| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $176,686 | $163,700 | Cash-Sec | 🟠 COVERAGE GAP | $5,196 | ✅ $-426 |
-| Vanguard (Rahul) | $320,492 | 13.3% | $462,677 | $420,140 | Cash-Sec | 🟠 COVERAGE GAP | $11,782 | ✅ $-966 |
-| Robinhood (Individual) | $13,000 | 0.5% | $26,874 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $478 | ✅ $-39 |
-| Robinhood (Traditional IRA) | $220,000 | 9.1% | $337,735 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,087 | ✅ $-663 |
-| Fidelity 401K (Rahul) | $192,200 | 8.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
+| Account A (232) | $423,000 | 17.4% | $5,521,915 | $850,000 | Margin | 🔴 EMERGENCY | $33,186 | ✅ $-3,650 |
+| Account B (275) | $316,000 | 13.0% | $373,121 | $316,050 | Cash-Sec | 🟠 COVERAGE GAP | $11,652 | ✅ $-1,281 |
+| Account C (634) | $213,000 | 8.8% | $343,062 | $213,150 | Cash-Sec | 🟠 COVERAGE GAP | $7,854 | ✅ $-863 |
+| Fidelity (Rahul) | $560,000 | 23.0% | $694,878 | $616,281 | Cash-Sec | 🟠 COVERAGE GAP | $20,649 | ✅ $-2,271 |
+| Fidelity (Rajul — Roth IRA) | $44,000 | 1.8% | $53,566 | $52,326 | Cash-Sec | 🟠 COVERAGE GAP | $1,621 | ✅ $-179 |
+| Fidelity (Rajul — Rollover IRA) | $140,000 | 5.8% | $176,476 | $163,700 | Cash-Sec | 🟠 COVERAGE GAP | $5,162 | ✅ $-567 |
+| Vanguard (Rahul) | $306,000 | 12.6% | $463,144 | $420,280 | Cash-Sec | 🟠 COVERAGE GAP | $11,283 | ✅ $-1,241 |
+| Robinhood (Individual) | $13,000 | 0.5% | $26,814 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $479 | ✅ $-52 |
+| Robinhood (Traditional IRA) | $220,000 | 9.0% | $337,540 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,112 | ✅ $-892 |
+| Fidelity 401K (Rahul) | $197,000 | 8.1% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,415,485 | 100.0% | $7,981,998 | $2,773,706 |  |  |  |  |
+| **TOTAL** | $2,432,003 | 100.0% | $7,990,516 | $2,775,732 |  |  |  |  |
 
-- **Account A (232):** 173 option positions | Monthly target: $33,085 | Equity: ADBE 300sh, APP 100sh, AXON 200sh, COIN 200sh, CRCL 100sh +15 more
-  - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
-- **Account B (275):** 20 option positions | Monthly target: $9,595 | Equity: CRM 100sh, NVO 100sh
-  - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🟠 COVERAGE GAP reading above
-- **Account C (634):** 21 option positions | Monthly target: $9,413 | Equity: ABNB 100sh, NKE 100sh, PL 100sh, TWLO 324sh
-- **Fidelity (Rahul):** 41 option positions | Monthly target: $20,712 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, CRM 200sh
-- **Fidelity (Rajul — Roth IRA):** 8 option positions | Monthly target: $1,652 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
-- **Fidelity (Rajul — Rollover IRA):** 10 option positions | Monthly target: $5,196
-- **Vanguard (Rahul):** 28 option positions | Monthly target: $11,782
-  - ⚠️ Balance as of 2026-07-31 (63 days ago) — re-confirm if the 🟠 COVERAGE GAP reading above matters for a decision
-- **Robinhood (Individual):** 4 option positions | Monthly target: $478 | Equity: RIOT 100sh, AAPL 0sh
+- **Account A (232):** 173 option positions | Monthly target: $33,186 | Equity: ADBE 300sh, APP 100sh, AXON 200sh, COIN 200sh, CRCL 100sh +15 more
+  - ℹ️ Opt Req shown ($850,000) is the real broker-confirmed figure (2026-10-02) — the live computed estimate (18% of notional) reads $993,945, 17% higher. Re-confirm live if this account's status matters for a decision.
+- **Account B (275):** 20 option positions | Monthly target: $11,652 | Equity: CRM 100sh, NVO 100sh
+- **Account C (634):** 21 option positions | Monthly target: $7,854 | Equity: ABNB 100sh, NKE 100sh, PL 100sh, TWLO 324sh
+- **Fidelity (Rahul):** 41 option positions | Monthly target: $20,649 | Equity: FMC 100sh, LYFT 100sh, NKE 100sh, CRM 200sh
+- **Fidelity (Rajul — Roth IRA):** 8 option positions | Monthly target: $1,622 | Equity: FMC 200sh, NKE 200sh, OKTA 100sh, SONO 400sh
+- **Fidelity (Rajul — Rollover IRA):** 10 option positions | Monthly target: $5,162
+- **Vanguard (Rahul):** 28 option positions | Monthly target: $11,283
+- **Robinhood (Individual):** 4 option positions | Monthly target: $479 | Equity: RIOT 100sh, AAPL 0sh
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the ✅ FULLY COLLATERALIZED reading above
-- **Robinhood (Traditional IRA):** 22 option positions | Monthly target: $8,087
+- **Robinhood (Traditional IRA):** 22 option positions | Monthly target: $8,112
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the ✅ FULLY COLLATERALIZED reading above
 - **Fidelity 401K (Rahul):** No open positions | Monthly target: $0
-  - ⚠️ Balance as of 2026-07-31 (63 days ago) — re-confirm if the ✅ FULLY COLLATERALIZED reading above matters for a decision
 - **Fidelity (Rahul — Roth IRA Minor):** No open positions | Monthly target: $0
   - ⚠️ Balance as of 2026-05-31 (124 days ago) — re-confirm if the ✅ FULLY COLLATERALIZED reading above matters for a decision
 
@@ -119,14 +116,14 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 - Gap to close: $637,457.0 (63.7%)
 - Monthly average (YTD): $36,254
 - Monthly average needed: $100,000
-- Monthly gap: $-8,200
+- Monthly gap: $-11,000
 
 **Position tier distribution → gap closure:**
 
-- Tier 1 (14 positions): $53,200/month (53% of $100,000 target)
-- Tier 2 (62 positions): $62,000/month (62% of target)
+- Tier 1 (15 positions): $57,000/month (57% of $100,000 target)
+- Tier 2 (61 positions): $61,000/month (61% of target)
 - Tier 3 (14 positions): $-7,000/month (-7% drag)
-- Current total: 90 positions = $108,200/month (108% of target)
+- Current total: 90 positions = $111,000/month (111% of target)
 
 **Gap closure path:**
 
@@ -155,16 +152,16 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 
 | Account | Gross | Net |
 |---|---|---|
-| Account A (232) | $82,712 | $33,085 |
-| Account B (275) | $23,987 | $9,595 |
-| Account C (634) | $23,532 | $9,413 |
-| Fidelity (Rahul) | $51,780 | $20,712 |
-| Fidelity (Rajul — Roth IRA) | $4,130 | $1,652 |
-| Fidelity (Rajul — Rollover IRA) | $12,990 | $5,196 |
-| Vanguard (Rahul) | $29,455 | $11,782 |
-| Robinhood (Individual) | $1,195 | $478 |
-| Robinhood (Traditional IRA) | $20,217 | $8,087 |
-| **TOTAL** | $249,998 | $100,000 |
+| Account A (232) | $82,965 | $33,186 |
+| Account B (275) | $29,130 | $11,652 |
+| Account C (634) | $19,635 | $7,854 |
+| Fidelity (Rahul) | $51,622 | $20,649 |
+| Fidelity (Rajul — Roth IRA) | $4,055 | $1,622 |
+| Fidelity (Rajul — Rollover IRA) | $12,905 | $5,162 |
+| Vanguard (Rahul) | $28,207 | $11,283 |
+| Robinhood (Individual) | $1,197 | $479 |
+| Robinhood (Traditional IRA) | $20,280 | $8,112 |
+| **TOTAL** | $249,996 | $99,999 |
 
 
 ## Section 1: MONTHLY ACTUAL VS TARGET — COMPLETE VARIANCE ANALYSIS
@@ -183,16 +180,16 @@ See Section 0's PERFORMANCE VS TARGET block for YTD actual/target/gap and this m
 
 | Account | Balance | % Portfolio | Target (mo) | Actual (MTD) | Actual (YTD) | Variance (MTD) | Open Positions | Status |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 16.7% | $33,085 | $27,916 | $111,568 | $-5,169 (-15.6%) | 173 | ⚠️ BELOW |
-| Account B (275) | $261,000 | 10.8% | $9,595 | $385 | $24,410 | $-9,210 (-96.0%) | 20 | ⚠️ BELOW |
-| Account C (634) | $256,067 | 10.6% | $9,413 | $4,523 | $15,938 | $-4,890 (-51.9%) | 21 | ⚠️ BELOW |
-| Fidelity (Rahul) | $563,432 | 23.3% | $20,712 | $2,859 | $32,238 | $-17,853 (-86.2%) | 41 | ⚠️ BELOW |
-| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $1,652 | $136 | $2,774 | $-1,516 (-91.8%) | 8 | ⚠️ BELOW |
-| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $5,196 | $3,045 | $5,588 | $-2,151 (-41.4%) | 10 | ⚠️ BELOW |
-| Vanguard (Rahul) | $320,492 | 13.3% | $11,782 | $0 | $0 | $-11,782 (-100.0%) | 28 | ⚠️ BELOW |
-| Robinhood (Individual) | $13,000 | 0.5% | $478 | $0 | $302 | $-478 (-100.0%) | 4 | ⚠️ BELOW |
-| Robinhood (Traditional IRA) | $220,000 | 9.1% | $8,087 | $4,718 | $17,809 | $-3,369 (-41.7%) | 22 | ⚠️ BELOW |
-| Fidelity 401K (Rahul) | $192,200 | 8.0% | $0 | $0 | $0 | $0 (+0.0%) | 0 | — (no target) |
+| Account A (232) | $423,000 | 17.4% | $33,186 | $27,916 | $111,568 | $-5,270 (-15.9%) | 173 | ⚠️ BELOW |
+| Account B (275) | $316,000 | 13.0% | $11,652 | $385 | $24,410 | $-11,267 (-96.7%) | 20 | ⚠️ BELOW |
+| Account C (634) | $213,000 | 8.8% | $7,854 | $4,523 | $15,938 | $-3,331 (-42.4%) | 21 | ⚠️ BELOW |
+| Fidelity (Rahul) | $560,000 | 23.0% | $20,649 | $2,859 | $32,238 | $-17,790 (-86.2%) | 41 | ⚠️ BELOW |
+| Fidelity (Rajul — Roth IRA) | $44,000 | 1.8% | $1,622 | $136 | $2,774 | $-1,486 (-91.6%) | 8 | ⚠️ BELOW |
+| Fidelity (Rajul — Rollover IRA) | $140,000 | 5.8% | $5,162 | $3,045 | $5,588 | $-2,117 (-41.0%) | 10 | ⚠️ BELOW |
+| Vanguard (Rahul) | $306,000 | 12.6% | $11,283 | $0 | $0 | $-11,283 (-100.0%) | 28 | ⚠️ BELOW |
+| Robinhood (Individual) | $13,000 | 0.5% | $479 | $0 | $302 | $-479 (-100.0%) | 4 | ⚠️ BELOW |
+| Robinhood (Traditional IRA) | $220,000 | 9.0% | $8,112 | $4,718 | $17,809 | $-3,394 (-41.8%) | 22 | ⚠️ BELOW |
+| Fidelity 401K (Rahul) | $197,000 | 8.1% | $0 | $0 | $0 | $0 (+0.0%) | 0 | — (no target) |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | $0 | $0 (+0.0%) | 0 | — (no target) |
 
 No option-level realized data for: Vanguard (Rahul), Fidelity 401K (Rahul) — see `realized_pnl.py`'s module docstring for why (e.g. Vanguard's option-side data is untracked).
@@ -224,19 +221,19 @@ Per-driver attribution (regime / thesis / timing / slippage) requires trade-leve
 
 | Symbol | Conv | Heat | Price | Value | RSI | 52W Range | Verdict |
 |---|---|---|---|---|---|---|---|
-| BROS | 9.0 | GREEN | $38.77 | $3,877 | 16.0 | 4% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
-| MU | 8.6 | YELLOW | $1081.89 | $432,756 | 76.6 | 84% | STRONG (Technically extended (+59% vs 200-day average), but analyst upside still +41% — may be fundamentally supported, watch rather than force a close) |
-| GEV | 8.5 | YELLOW | $986.63 | $394,652 | 87.1 | 69% | STRONG (RSI/range reads overbought, but +8% vs its 200-day average — watch, don't force a close) |
-| NVDA | 8.4 | YELLOW | $236.43 | $70,929 | 83.9 | 98% | STRONG (Technically extended (+18% vs 200-day average), but analyst upside still +39% — may be fundamentally supported, watch rather than force a close) |
-| ONDS | 8.4 | YELLOW | $7.22 | $722 | 50.0 | 22% | STRONG (22% of 52-week range approaching the low extreme (10%-)) |
+| BROS | 9.0 | GREEN | $38.77 | $3,877 | 14.4 | 4% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
+| MU | 8.6 | YELLOW | $1080.67 | $432,266 | 76.3 | 84% | STRONG (Technically extended (+59% vs 200-day average), but analyst upside still +41% — may be fundamentally supported, watch rather than force a close) |
+| GEV | 8.5 | YELLOW | $992.11 | $396,844 | 87.3 | 69% | STRONG (RSI/range reads overbought, but +8% vs its 200-day average — watch, don't force a close) |
+| NVDA | 8.4 | YELLOW | $235.32 | $70,597 | 83.6 | 96% | STRONG (Technically extended (+17% vs 200-day average), but analyst upside still +39% — may be fundamentally supported, watch rather than force a close) |
+| ONDS | 8.4 | YELLOW | $7.22 | $722 | 49.6 | 22% | STRONG (22% of 52-week range approaching the low extreme (10%-)) |
 
 Tier 1 summary: 5 positions, quality improving
 
 **Tier 2 — Moderate Moat** (Conviction 5-7)
 
-- MSFT: 7.9/10 (YELLOW) | Value $154,512 — 81% of 52-week range approaching the high extreme (90%+)
-- ALAB: 7.8/10 (RED) | Value $178,072 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +9%
-- PLTR: 7.8/10 (RED) | Value $57,114 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%
+- ALAB: 7.8/10 (RED) | Value $178,225 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +9%
+- ISRG: 7.8/10 (YELLOW) | Value $158,616 — 25% of 52-week range approaching the low extreme (10%-)
+- PLTR: 7.8/10 (RED) | Value $57,105 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%
 
 **Tier 3 & Exited:**
 
@@ -262,7 +259,7 @@ Note: The prior Citadel/peer comparison used fabricated P&L figures and has been
 **⏳ march_strangle_entry_gate** — BLOCKED
 
 Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
-  - Live: account_a_margin_utilization_pct = 110.30444078445434
+  - Live: account_a_margin_utilization_pct = 94.44444444444444
   - Live: macro_risk_level = YELLOW
 
 **⏳ be_puts_reduction** — OPEN

@@ -71,23 +71,44 @@ needs realized_pnl.py's numbers) — this module has no dependency on either.
 # position export has no cash/NLV line at all, so there is currently no way
 # to derive these live; they need a direct re-confirmation from the trader.
 ACCOUNTS_CONFIG = {
-    'Account A (232)': {'balance': 403000, 'margin': True, 'capacity': 900000, 'balance_as_of': None, 'capacity_as_of': '2026-09-21'},
-    'Account B (275)': {'balance': 261000, 'margin': False, 'balance_as_of': None},
-    'Account C (634)': {'balance': 256067, 'margin': False, 'balance_as_of': '2026-09-25'},  # real Schwab balance export -- Cash Secured Put Requirement $213,150 against $213,203 cash, only $52.94 actually free to trade
-    # Fidelity balances derived from the position file's own money-market cash
-    # line + its "% of account" column (Cash / pct = total account value) --
-    # a real, live figure computable from every fresh export, not a manually
-    # re-confirmed number that goes stale. Fixed 2026-09-25 after the trader
-    # flagged reports still showing the 2026-07-31 balance_as_of date despite
-    # regular fresh ingests -- this field just wasn't being recomputed from
-    # data that was already sitting in the position files the whole time.
-    'Fidelity (Rahul)': {'balance': 563432, 'margin': False, 'balance_as_of': '2026-09-25'},  # $522,516.06 cash / 92.73%
-    'Fidelity (Rajul — Roth IRA)': {'balance': 44942, 'margin': False, 'balance_as_of': '2026-09-25'},  # $34,469.22 cash / 76.71%
-    'Fidelity (Rajul — Rollover IRA)': {'balance': 141349, 'margin': False, 'balance_as_of': '2026-09-25'},  # $163,364.18 cash / 115.58% (>100% because this account's naked-put book carries negative net option value, pulling the account total below the cash line)
-    'Vanguard (Rahul)': {'balance': 320492, 'margin': False, 'balance_as_of': '2026-07-31'},
+    # Re-confirmed 2026-10-02 (month-start reconciliation) directly from each
+    # broker's own live Balances/Margin Details screen -- trader-provided,
+    # not derived. Found two real, meaningful discrepancies against the
+    # previously-computed figures that day:
+    #   - Account A: real Opt Req was $850,000 against this file's own
+    #     $900,000 capacity = 94.4% ("ALERT" tier) -- the report's LIVE
+    #     Opt Req calc (18% of notional, computed fresh every run from
+    #     positions, NOT read from this file) showed $992,750/110% ("OVER
+    #     CAP") that same day, an overstatement of ~$143K/17%. The 18%-of-
+    #     notional heuristic is a rough Reg-T proxy, not Schwab's real
+    #     per-position margin math (covered/naked/strangle netting) -- it
+    #     can drift from the real number by a meaningful amount depending on
+    #     the current position mix. Re-check this gap at the next
+    #     reconciliation rather than assuming either number going forward.
+    #   - Vanguard: the stale 2026-07-31 balance ($320,492) had the account
+    #     looking BETTER than real -- the account actually lost value since
+    #     July, not gained. Real balance $306,000 moves true utilization to
+    #     ~137%, worse than the 131% the stale figure showed. Real "Avail to
+    #     Trade: $73" confirms this directly.
+    'Account A (232)': {'balance': 423000, 'margin': True, 'capacity': 900000, 'balance_as_of': '2026-10-02', 'capacity_as_of': '2026-09-21', 'real_opt_req': 850000, 'real_opt_req_as_of': '2026-10-02'},  # real: SMA $1.65M, Cash+Borrowing -$24K, Bal Subject to Interest $0, Equity% 26, ITM covered calls $95K
+    'Account B (275)': {'balance': 316000, 'margin': False, 'balance_as_of': '2026-10-02'},  # real Cash and Cash Investment; Cash to Trade $225 (essentially fully committed)
+    'Account C (634)': {'balance': 213000, 'margin': False, 'balance_as_of': '2026-10-02'},  # real Cash and Cash Investment; Cash to Trade $95 (~$53 at last 09-25 check -- still essentially fully committed, consistent both times)
+    # Fidelity/Vanguard balances below are manually re-confirmed from each
+    # broker's own screen at reconciliation time -- there is NO automated
+    # live-derivation pipeline despite an earlier comment here implying one;
+    # confirmed 2026-10-02 (grepped the whole report engine, the only two
+    # places balance_as_of is ever read are this file and the report that
+    # displays it -- nothing recomputes it from a fresh position file).
+    # This is a real, recurring manual step: ask for these figures from the
+    # trader's own broker screens at every reconciliation, same as Account
+    # A/B/C's margin-details walk-through above, not a one-time fix.
+    'Fidelity (Rahul)': {'balance': 560000, 'margin': False, 'balance_as_of': '2026-10-02'},  # real Avail to Trade: $2,000
+    'Fidelity (Rajul — Roth IRA)': {'balance': 44000, 'margin': False, 'balance_as_of': '2026-10-02'},  # real Avail to Trade: $565
+    'Fidelity (Rajul — Rollover IRA)': {'balance': 140000, 'margin': False, 'balance_as_of': '2026-10-02'},  # real Avail to Trade: $164
+    'Vanguard (Rahul)': {'balance': 306000, 'margin': False, 'balance_as_of': '2026-10-02'},  # real Avail to Trade: $73 -- see discrepancy note above, this account is tighter than the stale 07-31 figure showed, not looser
     'Robinhood (Individual)': {'balance': 13000, 'margin': False, 'balance_as_of': None},
     'Robinhood (Traditional IRA)': {'balance': 220000, 'margin': False, 'balance_as_of': None},
-    'Fidelity 401K (Rahul)': {'balance': 192200, 'margin': False, 'weighting_basis': 0, 'balance_as_of': '2026-07-31'},
+    'Fidelity 401K (Rahul)': {'balance': 197000, 'margin': False, 'weighting_basis': 0, 'balance_as_of': '2026-10-02'},  # real balance, non-tradeable (401K) per trader
     # The 5th Fidelity account (custodial "ROTH IRA for Minor", 258240575) —
     # previously untracked entirely (see scripts/update_snapshot.py's
     # _FIDELITY_ACCOUNT_LABELS). Confirmed real, had genuine 2026 option
