@@ -10,42 +10,73 @@
 # (the previous approach, which was silently lost on the next regeneration --
 # confirmed zero references to Seeking Alpha in the report code before this).
 
-last_check_date: "2026-09-18"
+last_check_date: "2026-10-02"
 findings:
   - ticker: NFLX
     summary: >
-      Wells Fargo downgraded NFLX to Underweight from Equal Weight, cut PT
-      to $57 from $80 (2026-09-18), citing engagement decline (viewing hours
-      -8% adjusted for password-sharing crackdown/geo mix) and a weak
-      content slate (base case -21% YoY hours from top-100 originals).
-      Stock on a 4th straight session of losses, 3rd consecutive weekly
-      decline in September. Spot ~$72, i.e. already below the new $57 target
-      would require another ~20% move -- a real, credible bearish catalyst,
-      not just noise.
+      STILL OPEN, now 2 weeks stale. 2026-09-18 Wells Fargo downgrade
+      (Underweight, PT $57) thesis has played out on price -- spot fell from
+      ~$72 (09-18) to ~$67 today, confirming the bearish read rather than
+      reversing it. Position has grown since the original flag: now 16 short
+      puts + 6 naked calls (was 2 puts flagged originally), still 0 shares
+      owned. The report's own qualitative-flag mechanism is correctly
+      suppressing a naive "RSI says oversold, buy more" signal (heat reads
+      GREEN/Oversold-Attractive technically, but the verb stays WATCH because
+      this flag is unresolved) -- confirms the architecture built this week
+      is working, but the underlying action itself has now sat open for 2
+      full weekly cycles with no resolution.
     action: >
-      CONCRETE WEEKLY ACTION: Account A holds 2 ITM cash-secured NFLX puts
-      right now -- $77.50P x2 (Nov 20) and $80P x3 (Nov 20), both already
-      ITM at $72 spot, both already flagged separately as low-premium
-      (<$500/contract) in this week's Account A cleanup pass. This new
-      catalyst adds real downside conviction on top of an already-poor
-      risk/reward. Recommend reviewing both for an early close/roll before
-      assignment risk grows further, rather than waiting for expiry. The 2
-      naked NFLX calls ($80C x3 Nov 20, $85C x3 Jan 15) are UNAFFECTED
-      negatively -- a decline moves them further OTM, reducing their risk.
+      STILL CONCRETE WEEKLY ACTION, now overdue: review the short NFLX puts
+      for an early close/roll -- the original 09-18 catalyst has since been
+      confirmed by price action, not contradicted. Worth asking directly
+      whether this is being deliberately held (thesis the decline is
+      overdone) or simply not yet gotten to.
   - ticker: MU
     summary: >
-      Confirms and strengthens the 2026-09-01 flag: HBM4 capacity now sold
-      out through 2027, likely through 2028; $100B+ in logged orders; CEO
-      says demand exceeds capacity by ~50%. Stock now $935-986 range, +~200%
-      YTD, $1.1T market cap. Q4 earnings 2026-09-30 (11 days out) is a real
-      near-term catalyst/risk event. The one flagged risk case (Samsung/SK
-      Hynix supply flooding back before Micron's $100B+ fab capex pays off)
-      is a 2027+ concern, not a 90-day one.
+      RESOLVED (earnings printed) -- Q4 FY26 reported 2026-09-30: revenue
+      $54.2B (+31% QoQ, +379% YoY), EPS $33.42 vs $31.50 est (+6.1% beat),
+      gross margin 87% (+210bps QoQ), operating margin 82%. Full FY26
+      revenue $133.2B (+256% YoY), first year DRAM revenue topped $100B.
+      26 strategic customer agreements now cover ~35% of revenue through
+      2030, $32B in customer financial commitments, ~$150B remaining
+      performance obligations. This is real, printed confirmation of the
+      09-01/09-18 thesis (HBM4 sold out, demand exceeding capacity) --
+      contracted revenue at this scale is exactly the structural shift away
+      from classic cyclical/commodity memory risk the reclass flag was
+      about, now with an actual earnings print behind it instead of
+      forward-looking demand commentary alone.
     action: >
-      Flag for next quarterly bucket review (HIGH_RISK_BUCKET -> QUALITY_AI_BUCKET)
-      -- conviction on the reclass is now stronger than 2026-09-01, not an
-      immediate action. Note the 09-30 earnings date if sizing any near-dated
-      MU options this cycle.
+      Reclass conviction is now STRONGER than either prior flag -- real
+      printed numbers, not forward guidance. Recommend executing the
+      HIGH_RISK_BUCKET -> QUALITY_AI_BUCKET reclass at the next quarterly
+      bucket review rather than flagging it a third time; the evidence bar
+      this flag was waiting for has been cleared.
+  - ticker: AMZN
+    summary: >
+      New (FT, reported 2026-10-01/02): Amazon in talks to move ~$8B of
+      Nvidia Grace Blackwell chips (deployed across 12+ US data centers, 5
+      states) into a special-purpose vehicle, then lease them back -- same
+      "SPV buys chips, leases back to the hyperscaler" mechanical pattern as
+      the AVGO/Anthropic structure flagged 2026-09-18. SPV would issue debt
+      expected to carry an investment-grade rating off AMZN's own AA credit,
+      targeting insurers/pension funds as buyers; AMZN offers up to 10%
+      equity in the vehicle while keeping no ownership stake. Framed
+      explicitly as making AMZN MORE asset-light / strengthening its own
+      balance sheet, not funding distress -- AMZN carries $220B of 2026
+      capex guidance, mostly AWS/AI infra. AMZN is one of the Tier CR
+      "Moody's six" already tracked in data/tier_cr_state.yaml.
+    action: >
+      No Tier CR trigger -- no rating action, no covenant/redemption event;
+      this is AMZN proactively offloading balance-sheet risk via a
+      presumptively investment-grade SPV, the same pattern the AVGO finding
+      showed the market reading as reassuring rather than alarming. Fold
+      this mechanical detail into the Circular Financing Playbook's Tier CR
+      section at its next full review (now 3 real SPV-structure examples
+      logged there: AVGO/Anthropic, this AMZN/Nvidia one, plus CoreWeave's
+      own IG-rated DDTL facility from the 2026-09-28 AI Capex Review) --
+      the pattern itself (hyperscalers structuring AI-chip debt off their
+      own balance sheets into separately-rated vehicles) is becoming the
+      market-standard financing approach, not an isolated red flag.
   - ticker: AVGO
     summary: >
       The $60-100B AI-chip debt-financing structure flagged 2026-08-14 (BofA,
@@ -89,5 +120,6 @@ findings:
       See scripts/open_positions_loader_v2.py fix, same date.
     action: "No action -- finding was false, do not resurface."
 action_items_open:
-  - "NFLX: review the 2 ITM Nov-20 cash-secured puts ($77.50P x2, $80P x3, Account A) for an early close/roll given the Wells Fargo downgrade -- new this cycle."
-  - "MU: reclass conviction strengthened for next quarterly bucket review -- not urgent."
+  - "NFLX: review short puts for an early close/roll given the Wells Fargo downgrade -- OVERDUE, open since 2026-09-18 (2 full cycles), thesis confirmed by price action since, not contradicted."
+  - "MU: execute the HIGH_RISK_BUCKET -> QUALITY_AI_BUCKET reclass at the next quarterly bucket review -- real Q4 earnings print now backs it, not just forward guidance."
+  - "AVGO/AMZN SPV financing pattern: fold both into the Circular Financing Playbook's Tier CR section at its next full review -- no action needed before then."

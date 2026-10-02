@@ -123,3 +123,40 @@ Python report pipeline.
   target still implies recovery above current spot.**
 - **CRM** -- not re-checked this pass; 09-01 finding (Claudeforce
   partnership) carried forward with no new contradicting headline.
+
+### 2026-10-02 (third run -- 14 days late, missed the 09-25 cadence; month-start reconciliation day)
+
+- **MU** -- RESOLVED. Q4 FY26 printed 2026-09-30: revenue $54.2B (+31% QoQ,
+  +379% YoY), EPS $33.42 beat ($31.50 est, +6.1%), 87% gross margin, FY26
+  revenue $133.2B (+256% YoY, first year DRAM topped $100B). 26 strategic
+  customer agreements now cover ~35% of revenue through 2030 ($32B
+  committed, ~$150B remaining performance obligations). This is the real
+  print the 09-01/09-18 flags were waiting on -- contracted revenue at this
+  scale is the structural shift away from cyclical/commodity memory risk,
+  confirmed rather than just forecast. **Action: execute the
+  HIGH_RISK_BUCKET -> QUALITY_AI_BUCKET reclass at the next quarterly
+  bucket review** -- third flag on this, evidence bar is now cleared.
+- **AMZN** -- new. FT reports Amazon in talks to move ~$8B of Nvidia Grace
+  Blackwell chips into an SPV and lease them back -- the same "SPV buys
+  chips, leases back to the hyperscaler" structure as AVGO/Anthropic
+  (09-18). Framed as asset-light/balance-sheet-strengthening (AMZN keeps no
+  SPV ownership, offers up to 10% equity to outside investors, debt
+  expected investment-grade off AMZN's own AA rating) -- market read as
+  prudent, not distressed, same as the AVGO reaction. AMZN is one of the
+  Tier CR "Moody's six." **No Tier CR trigger -- no rating/covenant event.
+  Fold into the Circular Financing Playbook's Tier CR section** -- this is
+  now the 3rd real SPV example logged (AVGO/Anthropic, this one, CoreWeave's
+  own IG-rated DDTL from the 09-28 AI Capex Review), suggesting the pattern
+  is becoming standard hyperscaler financing practice, not an isolated flag.
+- **NFLX** -- carried forward, now genuinely overdue. The 09-18 Wells Fargo
+  downgrade thesis has been confirmed by price action since (spot $72 ->
+  $67), not contradicted, yet the flagged short-put review still hasn't
+  happened two full weekly cycles later. The report's own qualitative-flag
+  mechanism (shipped this week) is correctly holding the verb at WATCH
+  despite technicals reading GREEN/oversold-attractive -- the architecture
+  is working, the underlying decision just hasn't been made. Flagging this
+  explicitly rather than letting a third silent carry-forward happen.
+- **ALB, CRM** -- not re-checked this pass (reconciliation day, time-boxed
+  to the two most substantive/portfolio-relevant headlines per the skill's
+  own "1-2 queries per theme" scope); both carried forward unchanged from
+  09-18 with no new contradicting information found in passing.

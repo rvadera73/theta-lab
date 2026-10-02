@@ -10,8 +10,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,415,485
-- **Total notional exposure:** $7,986,317
-- **Total option requirement:** $2,774,459
+- **Total notional exposure:** $7,981,998
+- **Total option requirement:** $2,773,706
 - **Positions with short puts:** 87
 - **Positions with short calls:** 52
 - **YTD Net Premium:** $362,543 (live from transactions)
@@ -63,18 +63,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 16.7% | $5,518,402 | $993,312 | Margin | 🔴 OVER CAP | $33,085 | ✅ $-2,712 |
-| Account B (275) | $261,000 | 10.8% | $373,245 | $316,050 | Cash-Sec | 🟠 COVERAGE GAP | $9,595 | ✅ $-786 |
-| Account C (634) | $256,067 | 10.6% | $343,118 | $213,150 | Cash-Sec | ⚠️ WATCH | $9,413 | ✅ $-771 |
-| Fidelity (Rahul) | $563,432 | 23.3% | $693,821 | $615,818 | Cash-Sec | 🟠 COVERAGE GAP | $20,712 | ✅ $-1,698 |
-| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $53,449 | $52,241 | Cash-Sec | 🟠 COVERAGE GAP | $1,652 | ✅ $-135 |
-| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $176,720 | $163,700 | Cash-Sec | 🟠 COVERAGE GAP | $5,196 | ✅ $-426 |
-| Vanguard (Rahul) | $320,492 | 13.3% | $462,883 | $420,187 | Cash-Sec | 🟠 COVERAGE GAP | $11,782 | ✅ $-966 |
-| Robinhood (Individual) | $13,000 | 0.5% | $26,893 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $478 | ✅ $-39 |
-| Robinhood (Traditional IRA) | $220,000 | 9.1% | $337,787 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,087 | ✅ $-663 |
+| Account A (232) | $403,000 | 16.7% | $5,515,222 | $992,740 | Margin | 🔴 OVER CAP | $33,085 | ✅ $-2,712 |
+| Account B (275) | $261,000 | 10.8% | $373,155 | $316,050 | Cash-Sec | 🟠 COVERAGE GAP | $9,595 | ✅ $-786 |
+| Account C (634) | $256,067 | 10.6% | $342,965 | $213,150 | Cash-Sec | ⚠️ WATCH | $9,413 | ✅ $-771 |
+| Fidelity (Rahul) | $563,432 | 23.3% | $693,264 | $615,718 | Cash-Sec | 🟠 COVERAGE GAP | $20,712 | ✅ $-1,698 |
+| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $53,419 | $52,208 | Cash-Sec | 🟠 COVERAGE GAP | $1,652 | ✅ $-135 |
+| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $176,686 | $163,700 | Cash-Sec | 🟠 COVERAGE GAP | $5,196 | ✅ $-426 |
+| Vanguard (Rahul) | $320,492 | 13.3% | $462,677 | $420,140 | Cash-Sec | 🟠 COVERAGE GAP | $11,782 | ✅ $-966 |
+| Robinhood (Individual) | $13,000 | 0.5% | $26,874 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $478 | ✅ $-39 |
+| Robinhood (Traditional IRA) | $220,000 | 9.1% | $337,735 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,087 | ✅ $-663 |
 | Fidelity 401K (Rahul) | $192,200 | 8.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,415,485 | 100.0% | $7,986,317 | $2,774,459 |  |  |  |  |
+| **TOTAL** | $2,415,485 | 100.0% | $7,981,998 | $2,773,706 |  |  |  |  |
 
 - **Account A (232):** 173 option positions | Monthly target: $33,085 | Equity: ADBE 300sh, APP 100sh, AXON 200sh, COIN 200sh, CRCL 100sh +15 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -173,8 +173,8 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 **Current signals:**
 
 - VIX: 15.7 (VIX 15.7 sustained < 20)
-- S&P 500 50-MA: +69
-- S&P 500 200-MA: +501
+- S&P 500 50-MA: +67
+- S&P 500 200-MA: +499
 
 **Probability of regime shift this week:** 15% | **Probability of staying BULL:** 85% ✅
 
@@ -186,18 +186,18 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 - 14 positions with Conv ≥8/10 identified
 - Contribution: $53,200/month = 53% of target
 - Gap to close: $-8,200/month → Need 0 more Tier 1 positions
-- BROS: Conv 9.0 | Contribution $3,800/mo | Value $3,881 | Heat: GREEN
-- MU: Conv 8.6 | Contribution $3,800/mo | Value $432,628 | Heat: YELLOW
-- GEV: Conv 8.5 | Contribution $3,800/mo | Value $394,916 | Heat: YELLOW
+- BROS: Conv 9.0 | Contribution $3,800/mo | Value $3,877 | Heat: GREEN
+- MU: Conv 8.6 | Contribution $3,800/mo | Value $432,756 | Heat: YELLOW
+- GEV: Conv 8.5 | Contribution $3,800/mo | Value $394,652 | Heat: YELLOW
 
 **Priority 2 — Monitor LOW Conviction positions for exit:**
 
 - 14 positions with Conv <6/10 identified
 - Drag impact: $7,000/month drag (-7.0% of target)
 - Action: Close worst RED positions to eliminate drag
-- OKTA: Conv 5.8 | Drag $500/mo | Value $193,086 | RSI 69.8 (CONCERN: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -1%)
-- TWLO: Conv 5.8 | Drag $500/mo | Value $88,635 | RSI 73.4 (CONCERN: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -11%)
-- PANW: Conv 5.6 | Drag $500/mo | Value $80,463 | RSI 64.3 (CONCERN: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -2%)
+- OKTA: Conv 5.8 | Drag $500/mo | Value $192,960 | RSI 69.8 (CONCERN: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -1%)
+- TWLO: Conv 5.8 | Drag $500/mo | Value $88,555 | RSI 73.4 (CONCERN: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -11%)
+- PANW: Conv 5.6 | Drag $500/mo | Value $80,600 | RSI 64.3 (CONCERN: Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only -2%)
 
 **Priority 3 — IV Rank Entry Gate Check:**
 
@@ -205,11 +205,11 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 - Potential contribution: $83,600/month if all deployed
 - Capital required: $220,000 (22 × $10K per position)
 - Gap closure from new entries: 84% of $$8200 gap
-- NU: IVR 87.1 | $13.10 | Contributes $3,800/mo if added — short put only
-- CRM: IVR 87.0 | $234.85 | Contributes $3,800/mo if added — short put only
-- HOOD: IVR 80.7 | $112.89 | Contributes $3,800/mo if added — short put only
-- META: IVR 73.7 | $729.78 | Contributes $3,800/mo if added — short put only
-- COIN: IVR 61.4 | $182.41 | Contributes $3,800/mo if added — short put only
+- NU: IVR 87.2 | $13.09 | Contributes $3,800/mo if added — short put only
+- CRM: IVR 87.0 | $234.82 | Contributes $3,800/mo if added — short put only
+- HOOD: IVR 80.7 | $112.64 | Contributes $3,800/mo if added — short put only
+- META: IVR 73.7 | $728.83 | Contributes $3,800/mo if added — short put only
+- COIN: IVR 61.5 | $182.08 | Contributes $3,800/mo if added — short put only
 
 **Weekly Pace to Month-End Target:**
 
@@ -289,45 +289,45 @@ same targets scaled by the current regime's adjustment factor, gross+net.
 
 **Tier 1 Entry Candidates (IVR ≥ 40, RED-heat excluded):**
 
-- ✅ NU: 87.1 IVR | $13.10 — short put only
-- ✅ CRM: 87.0 IVR | $234.85 — short put only
-- ✅ HOOD: 80.7 IVR | $112.89 — short put only
-- ✅ META: 73.7 IVR | $729.78 — short put only
-- ✅ COIN: 61.4 IVR | $182.41 — short put only
-- ✅ NVDA: 58.9 IVR | $236.35 — short put only
-- ✅ ADBE: 57.0 IVR | $237.24 — short put only
-- ✅ PYPL: 53.6 IVR | $52.88 — short put only
-- ✅ BA: 49.1 IVR | $192.70 — short put only
-- ✅ AXON: 48.6 IVR | $412.09 — short put only
+- ✅ NU: 87.2 IVR | $13.09 — short put only
+- ✅ CRM: 87.0 IVR | $234.82 — short put only
+- ✅ HOOD: 80.7 IVR | $112.64 — short put only
+- ✅ META: 73.7 IVR | $728.83 — short put only
+- ✅ COIN: 61.5 IVR | $182.08 — short put only
+- ✅ NVDA: 58.9 IVR | $236.43 — short put only
+- ✅ ADBE: 57.0 IVR | $237.23 — short put only
+- ✅ PYPL: 53.6 IVR | $52.84 — short put only
+- ✅ BA: 49.0 IVR | $192.45 — short put only
+- ✅ AXON: 48.6 IVR | $411.86 — short put only
 
 **Tier 1 BLOCKED (IVR < 40):**
 
 - ❌ INFY: 38.7 IVR (below gate)
-- ❌ RBLX: 37.2 IVR (below gate)
-- ❌ TSLA: 37.0 IVR (below gate)
-- ❌ EXPE: 35.1 IVR (below gate)
-- ❌ NOC: 33.9 IVR (below gate)
-- ❌ ALB: 31.1 IVR (below gate)
+- ❌ RBLX: 37.1 IVR (below gate)
+- ❌ TSLA: 36.9 IVR (below gate)
+- ❌ EXPE: 35.2 IVR (below gate)
+- ❌ NOC: 34.0 IVR (below gate)
+- ❌ ALB: 31.2 IVR (below gate)
 - ❌ ULTA: 29.8 IVR (below gate)
 - ❌ WMT: 27.6 IVR (below gate)
-- ❌ VRT: 26.3 IVR (below gate)
 - ❌ GOOGL: 26.2 IVR (below gate)
+- ❌ VRT: 26.2 IVR (below gate)
 
 
 ## Section 6: WEEKLY CASH & MARGIN FORECAST
 
 **Current position** (real, from live option requirements):
-- Portfolio-wide utilization: 95% ($2,774,459 req against $2,912,485 capacity)
+- Portfolio-wide utilization: 95% ($2,773,706 req against $2,912,485 capacity)
 - ⚠️ Over documented capacity: Account A (232) — see Section 0 per-account status
 - 0 more Tier 1 entries needed to close the $-8,200 monthly gap ($0 capital)
 
 **Crash-scenario cash requirement (Account A only — the only margin account):**
 
-- Account A total option notional: $5,518,402 | Current Opt Req (18% model): $993,312
-- Modeled stress case (15-20% broad market move): +$148,997 to +$198,662 incremental Opt Req
+- Account A total option notional: $5,515,222 | Current Opt Req (18% model): $992,740
+- Modeled stress case (15-20% broad market move): +$148,911 to +$198,548 incremental Opt Req
 - Operating cash target (Account A, day-to-day): $100,000
 - Emergency reserve (held separate, trader-confirmed): $200,000
-- ✅ Emergency reserve covers the modeled stress case ($200,000 ≥ $198,662 high end) — no additional emergency cash indicated by this model.
+- ✅ Emergency reserve covers the modeled stress case ($200,000 ≥ $198,548 high end) — no additional emergency cash indicated by this model.
 - Open items (re-confirm directly with Schwab, not from this model): (1) whether Account A's real capacity is still $700K or has grown toward the ~$1M margin-equity figure reported 2026-09-21; (2) that the emergency reserve is genuinely liquid and same/next-day movable into Account A specifically.
 
 **Expiry-curve concentration (Account A, vs. the 90/120-day strategy target):**
@@ -418,7 +418,7 @@ Portfolio Greeks: not computed in this pipeline — no live delta/gamma/theta/ve
 **⏳ march_strangle_entry_gate** — BLOCKED
 
 Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
-  - Live: account_a_margin_utilization_pct = 110.36803957366944
+  - Live: account_a_margin_utilization_pct = 110.30444078445434
   - Live: macro_risk_level = YELLOW
 
 **⏳ be_puts_reduction** — OPEN

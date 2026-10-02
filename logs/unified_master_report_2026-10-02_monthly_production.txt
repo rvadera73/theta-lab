@@ -11,8 +11,8 @@
 ### Consolidated Portfolio Snapshot
 
 - **Total Portfolio Balance:** $2,415,485
-- **Total notional exposure:** $7,986,317
-- **Total option requirement:** $2,774,459
+- **Total notional exposure:** $7,981,998
+- **Total option requirement:** $2,773,706
 - **Positions with short puts:** 87
 - **Positions with short calls:** 52
 - **YTD Net Premium:** $362,543 (live from transactions)
@@ -64,18 +64,18 @@ opened this month may not close for months. See scripts/realized_pnl.py for the 
 
 | Account | Balance | % | Notional | Opt Req | Type | Status | Target | Gap |
 |---|---|---|---|---|---|---|---|---|
-| Account A (232) | $403,000 | 16.7% | $5,518,402 | $993,312 | Margin | 🔴 OVER CAP | $33,085 | ✅ $-2,712 |
-| Account B (275) | $261,000 | 10.8% | $373,245 | $316,050 | Cash-Sec | 🟠 COVERAGE GAP | $9,595 | ✅ $-786 |
-| Account C (634) | $256,067 | 10.6% | $343,118 | $213,150 | Cash-Sec | ⚠️ WATCH | $9,413 | ✅ $-771 |
-| Fidelity (Rahul) | $563,432 | 23.3% | $693,821 | $615,818 | Cash-Sec | 🟠 COVERAGE GAP | $20,712 | ✅ $-1,698 |
-| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $53,449 | $52,241 | Cash-Sec | 🟠 COVERAGE GAP | $1,652 | ✅ $-135 |
-| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $176,720 | $163,700 | Cash-Sec | 🟠 COVERAGE GAP | $5,196 | ✅ $-426 |
-| Vanguard (Rahul) | $320,492 | 13.3% | $462,883 | $420,187 | Cash-Sec | 🟠 COVERAGE GAP | $11,782 | ✅ $-966 |
-| Robinhood (Individual) | $13,000 | 0.5% | $26,893 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $478 | ✅ $-39 |
-| Robinhood (Traditional IRA) | $220,000 | 9.1% | $337,787 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,087 | ✅ $-663 |
+| Account A (232) | $403,000 | 16.7% | $5,515,222 | $992,740 | Margin | 🔴 OVER CAP | $33,085 | ✅ $-2,712 |
+| Account B (275) | $261,000 | 10.8% | $373,155 | $316,050 | Cash-Sec | 🟠 COVERAGE GAP | $9,595 | ✅ $-786 |
+| Account C (634) | $256,067 | 10.6% | $342,965 | $213,150 | Cash-Sec | ⚠️ WATCH | $9,413 | ✅ $-771 |
+| Fidelity (Rahul) | $563,432 | 23.3% | $693,264 | $615,718 | Cash-Sec | 🟠 COVERAGE GAP | $20,712 | ✅ $-1,698 |
+| Fidelity (Rajul — Roth IRA) | $44,942 | 1.9% | $53,419 | $52,208 | Cash-Sec | 🟠 COVERAGE GAP | $1,652 | ✅ $-135 |
+| Fidelity (Rajul — Rollover IRA) | $141,349 | 5.9% | $176,686 | $163,700 | Cash-Sec | 🟠 COVERAGE GAP | $5,196 | ✅ $-426 |
+| Vanguard (Rahul) | $320,492 | 13.3% | $462,677 | $420,140 | Cash-Sec | 🟠 COVERAGE GAP | $11,782 | ✅ $-966 |
+| Robinhood (Individual) | $13,000 | 0.5% | $26,874 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $478 | ✅ $-39 |
+| Robinhood (Traditional IRA) | $220,000 | 9.1% | $337,735 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $8,087 | ✅ $-663 |
 | Fidelity 401K (Rahul) | $192,200 | 8.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
 | Fidelity (Rahul — Roth IRA Minor) | $3 | 0.0% | $0 | $0 | Cash-Sec | ✅ FULLY COLLATERALIZED | $0 | ✅ $0 |
-| **TOTAL** | $2,415,485 | 100.0% | $7,986,317 | $2,774,459 |  |  |  |  |
+| **TOTAL** | $2,415,485 | 100.0% | $7,981,998 | $2,773,706 |  |  |  |  |
 
 - **Account A (232):** 173 option positions | Monthly target: $33,085 | Equity: ADBE 300sh, APP 100sh, AXON 200sh, COIN 200sh, CRCL 100sh +15 more
   - ⚠️ Balance date UNCONFIRMED — this figure has no known verification date, re-confirm before trusting the 🔴 OVER CAP reading above
@@ -224,19 +224,19 @@ Per-driver attribution (regime / thesis / timing / slippage) requires trade-leve
 
 | Symbol | Conv | Heat | Price | Value | RSI | 52W Range | Verdict |
 |---|---|---|---|---|---|---|---|
-| BROS | 9.0 | GREEN | $38.81 | $3,881 | 16.0 | 4% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
-| MU | 8.6 | YELLOW | $1081.57 | $432,628 | 76.6 | 84% | STRONG (Technically extended (+59% vs 200-day average), but analyst upside still +41% — may be fundamentally supported, watch rather than force a close) |
-| GEV | 8.5 | YELLOW | $987.29 | $394,916 | 87.1 | 69% | STRONG (RSI/range reads overbought, but +8% vs its 200-day average — watch, don't force a close) |
-| NVDA | 8.4 | YELLOW | $236.35 | $70,904 | 83.9 | 98% | STRONG (Technically extended (+18% vs 200-day average), but analyst upside still +39% — may be fundamentally supported, watch rather than force a close) |
-| ONDS | 8.4 | YELLOW | $7.24 | $724 | 50.0 | 22% | STRONG (22% of 52-week range approaching the low extreme (10%-)) |
+| BROS | 9.0 | GREEN | $38.77 | $3,877 | 16.0 | 4% | STRONG (Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning) |
+| MU | 8.6 | YELLOW | $1081.89 | $432,756 | 76.6 | 84% | STRONG (Technically extended (+59% vs 200-day average), but analyst upside still +41% — may be fundamentally supported, watch rather than force a close) |
+| GEV | 8.5 | YELLOW | $986.63 | $394,652 | 87.1 | 69% | STRONG (RSI/range reads overbought, but +8% vs its 200-day average — watch, don't force a close) |
+| NVDA | 8.4 | YELLOW | $236.43 | $70,929 | 83.9 | 98% | STRONG (Technically extended (+18% vs 200-day average), but analyst upside still +39% — may be fundamentally supported, watch rather than force a close) |
+| ONDS | 8.4 | YELLOW | $7.22 | $722 | 50.0 | 22% | STRONG (22% of 52-week range approaching the low extreme (10%-)) |
 
 Tier 1 summary: 5 positions, quality improving
 
 **Tier 2 — Moderate Moat** (Conviction 5-7)
 
-- MSFT: 7.9/10 (YELLOW) | Value $154,591 — 81% of 52-week range approaching the high extreme (90%+)
-- ALAB: 7.8/10 (RED) | Value $178,175 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +9%
-- PLTR: 7.8/10 (RED) | Value $57,135 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%
+- MSFT: 7.9/10 (YELLOW) | Value $154,512 — 81% of 52-week range approaching the high extreme (90%+)
+- ALAB: 7.8/10 (RED) | Value $178,072 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +9%
+- PLTR: 7.8/10 (RED) | Value $57,114 — Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only +3%
 
 **Tier 3 & Exited:**
 
@@ -262,7 +262,7 @@ Note: The prior Citadel/peer comparison used fabricated P&L figures and has been
 **⏳ march_strangle_entry_gate** — BLOCKED
 
 Hold off on new March-2027-expiry strangle entries (including adding to AXON's existing March legs) until BOTH: (1) Account A margin utilization back under 85% (was 99%/EMERGENCY on 2026-09-10), and (2) portfolio crash-risk level back to YELLOW or better (was RED, 53.9% 30-day, on 2026-09-10). Resolve axon_sept18_roll_450c and pypl_naked_calls_cleanup first -- don't stack a third naked-call layer while those two are still open.
-  - Live: account_a_margin_utilization_pct = 110.36803957366944
+  - Live: account_a_margin_utilization_pct = 110.30444078445434
   - Live: macro_risk_level = YELLOW
 
 **⏳ be_puts_reduction** — OPEN
