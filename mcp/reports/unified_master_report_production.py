@@ -1107,6 +1107,19 @@ class UnifiedReportProduction:
                     f"{naked:.0f} naked call(s) (uncapped upside if it rallies), AND {total_puts:.0f} short "
                     f"put(s) (assignment risk if it drops) -- a strangle by design, not an isolated naked call."
                 )
+            elif total_calls > 0 and total_puts > 0:
+                # is_strangle requires a NAKED call -- a fully-covered call
+                # plus separate real puts (OKTA, confirmed live 2026-10-02:
+                # 6 covered/0 naked calls AND 3 real short puts) fell through
+                # to the "No offsetting put position" branch below and
+                # flatly lied about having no puts, even though total_puts
+                # was 3. Real put-side assignment risk here, just not from a
+                # naked call.
+                detail_parts.append(
+                    f"Calls: {int(covered)} covered ({int(covered*100)} sh owned), {naked:.0f} naked. "
+                    f"Also {total_puts:.0f} short put(s) open on this name (real assignment risk on the "
+                    f"put side, separate from the covered call)."
+                )
             elif total_calls > 0:
                 detail_parts.append(f"Calls: {int(covered)} covered ({int(covered*100)} sh owned), {naked:.0f} naked. No offsetting put position on this name.")
             # Trader-flagged 2026-09-30: a 'weak'/'unconfirmed'-confidence
@@ -1134,15 +1147,42 @@ class UnifiedReportProduction:
                 verb = "CLOSE" if ticker in close_tickers else "TRIM"
                 reason_upper = str(reason).upper()
                 is_upside_extension = "OVERBOUGHT" in reason_upper or "EXTENDED" in reason_upper and "OVERSOLD" not in reason_upper
-                if has_put and has_call:
+                # Covered/naked-aware, not the raw has_put/has_call notional
+                # check this used before 2026-10-02 -- that flagged TWLO and
+                # SONO (both 100% covered, 0 naked) as "TRIM CALL" for the
+                # same reason Section 6.6's Exit Candidate flag wrongly
+                # flagged TWLO on 2026-09-28 (real trader pushback, fixed
+                # there via _naked_covered_calls, but never ported to this
+                # sibling function). A covered call has no uncapped risk to
+                # trim regardless of RSI -- assignment is a fine, intended
+                # outcome, not a risk event. Also fixed a second real bug
+                # this surfaced: has_put here (pc['put_notional']>0) could
+                # disagree with total_puts (_naked_covered_calls' real open-
+                # position count) -- OKTA showed "HOLD PUT" in the label
+                # while its own detail text said "No offsetting put
+                # position," two different sources answering the same
+                # question differently. Using naked/total_puts (the single
+                # source of truth already computed above) for both removes
+                # the disagreement entirely, not just TWLO/SONO's case.
+                has_naked_call = naked > 0
+                has_real_put = total_puts > 0
+                if has_naked_call and has_real_put:
                     if is_upside_extension:
                         label = f"🔴 {verb} CALL / HOLD PUT (call has delta/assignment risk; put near max profit, unaffected)"
                     else:
                         label = f"🔴 {verb} PUT / HOLD CALL (put has downside/assignment risk; call unaffected)"
-                elif has_call and not has_put:
+                elif has_naked_call and not has_real_put:
                     label = f"🔴 {verb} CALL"
-                elif has_put and not has_call:
+                elif has_real_put and not has_naked_call:
                     label = f"🔴 {verb} PUT"
+                elif covered > 0:
+                    # Trader's own stated preference (2026-10-02): don't trim
+                    # a profitable covered call on an overbought name -- add
+                    # a short put on it for strangle premium instead.
+                    label = (
+                        f"🟡 WATCH: {int(covered)} covered call(s) only, no naked/strangle risk -- "
+                        f"consider adding a short put for strangle premium instead of trimming"
+                    )
                 else:
                     label = f"🔴 {verb}"
             elif ticker in enter_tickers and not blocking_flag:
@@ -1199,7 +1239,21 @@ class UnifiedReportProduction:
             conv = pos.get('conv', self.metrics.get(ticker, {}).get('conviction', 5.0))
             reason = pos.get('reason', self.metrics.get(ticker, {}).get('heat_reason', ''))
             label, detail = suggestion_for(ticker, heat, conv, sector, pc['put_notional'], pc['call_notional'], reason)
-            verb = "CLOSE" if ticker in close_tickers else "TRIM" if ticker in trim_tickers else "ENTER"
+            # Derived from the label itself, not bare close/trim/enter set
+            # membership -- a covered-call-only ticker can land in
+            # trim_tickers (RED heat + low conviction is still real) but get
+            # downgraded to a WATCH label above; the ledger's title/verb must
+            # agree with what the label actually says, not the bucket it
+            # started in, or the Action Tracker shows a "TRIM" item whose own
+            # text says not to trim.
+            if label.startswith("🔴 CLOSE"):
+                verb = "CLOSE"
+            elif label.startswith("🔴 TRIM"):
+                verb = "TRIM"
+            elif label.startswith("🟢 ENTER"):
+                verb = "ENTER"
+            else:
+                verb = "WATCH"
             priority_actions.append({
                 "ticker": ticker, "verb": verb, "sector": sector,
                 "label": label, "detail": detail,
