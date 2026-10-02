@@ -1110,12 +1110,29 @@ async def call_tool(name: str, arguments: dict):
             account_filter = arguments.get("account", "all")
             all_positions = await _load_positions_all(account_filter)
             roll_items = []
+            no_price_count = 0
             for pos in all_positions:
                 roll = pos.roll_signal()
                 loss = pos.loss_flag()
-                itm_legs = [lg for lg in pos.option_legs if
-                            (lg.option_type == "PUT" and pos.current_price < lg.strike) or
-                            (lg.option_type == "CALL" and pos.current_price > lg.strike)]
+                if pos.current_price <= 0:
+                    # analysis/pnl.py sets current_price=0 as an explicit
+                    # fallback on several real code paths (the documented
+                    # NO_PRICE case -- a live quote lookup skipped entirely
+                    # for anything without owned shares, see report_utils.py).
+                    # With current_price=0, "0 < strike" is true for every
+                    # PUT, so this used to flag essentially every no-price
+                    # put as falsely ITM, then crash computing pct below
+                    # (division by pos.current_price == 0). Skip ITM
+                    # assessment entirely rather than fabricate or crash --
+                    # same "don't treat unknown as safe or as a signal"
+                    # principle scan_position_heat already applies via its
+                    # UNKNOWN bucket.
+                    itm_legs = []
+                    no_price_count += 1
+                else:
+                    itm_legs = [lg for lg in pos.option_legs if
+                                (lg.option_type == "PUT" and pos.current_price < lg.strike) or
+                                (lg.option_type == "CALL" and pos.current_price > lg.strike)]
                 if roll["signal"] or loss["flag"] or itm_legs:
                     roll_items.append({
                         "pos": pos, "acct": pos.account,
@@ -1125,6 +1142,9 @@ async def call_tool(name: str, arguments: dict):
                     })
             roll_items.sort(key=lambda x: (x["priority"], min((lg.dte for lg in x["pos"].option_legs), default=999)))
             lines = [f"## Roll Candidates — {len(roll_items)} position(s) need attention", ""]
+            if no_price_count:
+                lines.append(f"⚪ {no_price_count} position(s) have no live price (NOT ITM-assessed, do not treat as safe) -- roll/loss signals above still apply.")
+                lines.append("")
             if not roll_items:
                 lines.append("✅ No roll candidates. All positions healthy.")
             for item in roll_items:
