@@ -643,15 +643,39 @@ class UnifiedReportProduction:
         snapshot -- trader-requested 2026-09-01: 'range of the risk level
         indicator over last 90 days on weekly/biweekly basis... to show the
         trend.' Capped to the last 130 days on write so the file doesn't grow
-        unbounded."""
+        unbounded.
+
+        Locked + atomic-replace as of 2026-10-02 -- found this file genuinely
+        corrupted (a truncated mid-dict line, and a duplicate same-date entry)
+        after it silently stopped growing past 2026-09-25 for a full week.
+        Root cause: the dashboard's background cache-refresh thread and a
+        manually-triggered report run can both call this at once with no
+        locking, so two read-modify-write cycles interleaved and one's
+        yaml.safe_dump() got cut off mid-write by the other -- the broad
+        except below then silently swallowed the resulting YAML parse error
+        on every subsequent run, forever, since a parse failure never raises
+        past this function. flock + write-to-tempfile-then-os.replace() makes
+        the read-modify-write atomic across processes/threads so this can't
+        happen again; the temp file is cleaned up even on failure.
+        """
+        import os
+        import tempfile
+        path = "/home/rahulvadera/projects/theta-lab/data/macro_risk_history.yaml"
+        lock_path = path + ".lock"
+        lock_fd = None
+        tmp_path = None
         try:
+            import fcntl
             import yaml as _yaml
-            path = "/home/rahulvadera/projects/theta-lab/data/macro_risk_history.yaml"
+            lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR)
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+
             try:
                 with open(path) as f:
                     history = _yaml.safe_load(f) or []
-            except FileNotFoundError:
+            except (FileNotFoundError, _yaml.YAMLError):
                 history = []
+
             today_str = date.today().isoformat()
             crash_prob = risk_analysis.get('crash_probability', {})
             entry = {
@@ -667,10 +691,26 @@ class UnifiedReportProduction:
             cutoff = (date.today() - timedelta(days=130)).isoformat()
             history = [h for h in history if h.get("date", "0000-00-00") >= cutoff]
             history.sort(key=lambda h: h.get("date", ""))
-            with open(path, "w") as f:
+
+            fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".macro_risk_history_", suffix=".tmp")
+            with os.fdopen(fd, "w") as f:
                 _yaml.safe_dump(history, f, default_flow_style=False, sort_keys=False)
+            os.replace(tmp_path, path)  # atomic on the same filesystem
+            tmp_path = None
         except Exception:
             pass  # history logging is best-effort, never block report generation
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+            if lock_fd is not None:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                    os.close(lock_fd)
+                except Exception:
+                    pass
 
     def _render_macro_risk_trend(self) -> List[str]:
         """90-day weekly-sampled trend of the 30-day crash probability, as an

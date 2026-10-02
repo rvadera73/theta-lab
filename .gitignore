@@ -17,6 +17,10 @@ data/dashboard_actions.db
 # value once superseded; would bloat git history with every day's refresh.
 data/premium_yield_cache.json
 
+# flock lockfile for macro_risk_history.yaml's atomic write (2026-10-02 fix)
+# -- empty, zero-byte, exists only to hold an flock(); no content ever.
+data/*.lock
+
 # Brokerage statements, tax docs, portfolios — stay local only
 *.PDF
 *.pdf
