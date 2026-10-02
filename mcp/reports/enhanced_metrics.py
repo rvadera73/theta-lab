@@ -8,7 +8,10 @@ import pandas as pd
 from scipy.stats import norm
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
+import json
 import logging
+import os
+import time
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -545,18 +548,80 @@ def get_ticker_metrics(ticker: str, current_price: float, option_type: str = Non
         }
 
 
+_METRICS_CACHE_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "data", "ticker_metrics_cache.json",
+)
+_METRICS_CACHE_TTL_SECONDS = 600  # 10 min
+_INTER_TICKER_DELAY_SECONDS = 0.35
+
+
+def _load_metrics_cache() -> dict:
+    try:
+        with open(_METRICS_CACHE_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_metrics_cache(cache: dict) -> None:
+    try:
+        os.makedirs(os.path.dirname(_METRICS_CACHE_FILE), exist_ok=True)
+        tmp = _METRICS_CACHE_FILE + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(cache, f)
+        os.replace(tmp, _METRICS_CACHE_FILE)
+        # Written by both the host user and the dashboard's own Docker
+        # container (root, no USER directive) -- same cross-process lockout
+        # already found and fixed on macro_risk_history.yaml 2026-10-02.
+        os.chmod(_METRICS_CACHE_FILE, 0o664)
+    except Exception:
+        pass
+
+
 def batch_get_metrics(tickers: list, prices: dict, option_types: dict = None) -> dict:
     """Get metrics for multiple tickers.
 
     option_types: optional {ticker: 'P'|'C'} — the dominant option type held
     for that ticker, so the RSI component uses the right calibration (see
     get_ticker_metrics). Omit to keep the prior call-context/generic default.
+
+    Cached (10 min TTL) + paced (0.35s between cold-cache tickers) as of
+    2026-10-02 -- this function previously fired ~90 tickers x 2+ yfinance
+    calls each with zero delay and no cache, every single time ANY report
+    type was generated or the dashboard refreshed. Confirmed live the same
+    day: a normal work session (reconciliation check + 4 report types +
+    two dashboard refreshes, all within ~20 minutes) racked up 156 "Too
+    Many Requests" hits and degraded every one of 90 tickers to the
+    "Data unavailable" fallback (conviction 5.0, RSI 50 for all of them)
+    at once -- not a code bug, a real rate-limit lockout from request
+    volume. A "Data unavailable" result is never written to the cache
+    (so a bad read doesn't poison the next 10 minutes for every caller),
+    and is always treated as a cache miss on read for the same reason.
     """
     option_types = option_types or {}
+    cache = _load_metrics_cache()
+    now = time.time()
     results = {}
+    misses = []
     for ticker in tickers:
+        cached = cache.get(ticker)
+        if cached and cached.get("heat_reason") != "Data unavailable" and (now - cached.get("_cached_at", 0)) < _METRICS_CACHE_TTL_SECONDS:
+            results[ticker] = {k: v for k, v in cached.items() if k != "_cached_at"}
+        else:
+            misses.append(ticker)
+
+    for i, ticker in enumerate(misses):
         price = prices.get(ticker, 0)
-        results[ticker] = get_ticker_metrics(ticker, price, option_type=option_types.get(ticker))
+        m = get_ticker_metrics(ticker, price, option_type=option_types.get(ticker))
+        results[ticker] = m
+        if m.get("heat_reason") != "Data unavailable":
+            cache[ticker] = {**m, "_cached_at": now}
+        if i < len(misses) - 1:
+            time.sleep(_INTER_TICKER_DELAY_SECONDS)
+
+    if misses:
+        _save_metrics_cache(cache)
     return results
 
 
