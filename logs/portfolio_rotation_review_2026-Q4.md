@@ -93,7 +93,7 @@ last 90 days, Account B + Fidelity) — see the reliability note below.
 
 ---
 
-## 4. Confirmed bug, separate from today's earlier MCP fixes: live portfolio check is unreliable
+## 4. Confirmed + fixed bug: live portfolio check was blind to every Schwab holding
 
 While cross-checking Section 3's candidates, `run_screener` tagged both **NU**
 and **AXON** as "not currently held." Both are real, currently-held positions
@@ -102,22 +102,66 @@ confirmed via the CSV-based reconciliation pipeline (NU: Account B + Fidelity,
 names in the entire book). 2 of the 8 candidates returned were wrong on this
 exact dimension — a 25% error rate in this one sample.
 
-Root cause (confirmed via `mcp/server.py`'s `_load_live_portfolio()`): the
-screener/`scan_sector`/`screen_new_entries` tools build their "currently held"
-set from a **live Schwab API call** (`_load_positions_all`, wraps
-open-stocks-mcp), completely separate from the CSV-reconciliation pipeline
-every other report/dashboard tool in this project uses. That live path is
-disagreeing with reality for at least these two Schwab-account names. This is
-a real, separate issue from today's two earlier MCP fixes (the startup crash
-and the `scan_roll_candidates` div-by-zero) — worth its own investigation
-(likely a stale/expired Schwab API token or an account-filter gap in
-`_load_positions_all`), not fixed in this pass. Until resolved, don't trust
-"not currently held" from `run_screener`/`scan_sector`/`screen_new_entries`
-without cross-checking against the real holdings list the way this report did.
+**Root cause (corrected from this report's first draft, which initially
+guessed a live Schwab API issue — that was wrong, there is no live API here):**
+`mcp/reports/report_utils.py`'s `reconstruct_positions_from_transactions()`
+(the file-based function `_load_live_portfolio()` actually calls, NOT a live
+API) built `Position`/`OptionLeg` objects with 3 field names that had drifted
+from `analysis.pnl`'s real dataclass schema (`cost_basis` instead of
+`stock_cost_basis`, a `premium_received` kwarg `Position` never had, `qty`
+instead of `quantity`). Every call raised `TypeError`, silently caught by a
+bare `except Exception: return None` with zero logging — meaning **every**
+Schwab-held position (not just AXON/NU) has been invisible to
+`run_screener`/`scan_sector`/`screen_new_entries`'s "already held" check,
+likely for a long time, with no visible error anywhere.
+
+**Fixed and verified 2026-10-04** (commit `6e146c6`): `reconstruct_positions_from_transactions("A")`
+now returns 53 real positions including AXON, `("B")` returns 19 including NU.
+Confirmed live through `run_screener` itself post-restart.
+
+**Still open, lower priority, not yet fixed:** the same live-check path also
+depends on `.env` variables for Fidelity/Vanguard/Robinhood that are either
+5 months stale (`FIDELITY_CSV_1/2`, `VANGUARD_CSV` all point at
+`*May-03-2026*` snapshot files) or blank (`ROBINHOOD_INDIVIDUAL_CSV`,
+`ROBINHOOD_IRA_CSV`) — so a Fidelity/Vanguard/Robinhood-only holding can still
+show as falsely "not held" by this specific live-check path. Decision pending:
+keep those env vars current each reconciliation, or retire this separate
+parsing path entirely in favor of reusing `open_positions_loader_v2.py` (the
+same pipeline every other tool already trusts).
 
 ---
 
-## 5. Is "trim ~5% / add ~5% per quarter" a good discipline?
+## 5. Multi-factor check: premium + hot-trend/direction + quality + real execution
+
+Sections 1-3 above leaned on technical signals (heat/RSI/conviction, itself
+largely RSI-and-trend-range-driven). Trader-directed follow-up: re-evaluate on
+premium (yield), hot-trend/direction, business quality (moat), and real
+execution (actual recent earnings/guidance track record, not a technical
+proxy) — applied here to four specific names.
+
+| | PFE | SONO | PYPL | NKE |
+|---|---|---|---|---|
+| Yield | 5.7% (thin) | 19.7% (rich) | 15.7% | 15.2% |
+| Hot-trend tag | none | none | none | **Global Brand** |
+| Quality flag | none | none | **PERMANENT_EXIT** (`config.py` `PERMANENT_EXITS`) | none |
+| Position | 10 short puts, 0 calls | 4 covered calls, 0 naked/puts | 11 covered + **1 naked call** + 3 puts | 7 covered calls, 0 naked/puts |
+| 90d activity | 2 opens | 0 (untouched) | 2 opens | **13 opens** (most-traded name in the book) |
+
+**Real execution, from actual recent earnings (not a technical proxy):**
+- **PFE** — Q3 2025 beat, but revenue -7% YoY as COVID-era products unwind; raised/narrowed full-year EPS guidance, non-COVID portfolio +4%. Core business executing fine; the real gap is thin premium and no trend story to justify a 10-put allocation. [Pfizer Q3 2025 release](https://www.nasdaq.com/press-release/pfizer-reports-solid-third-quarter-2025-results-raises-and-narrows-2025-eps-guidance)
+- **SONO** — a genuine, real turnaround: Q4 FY25 revenue +13% YoY (near high end of guidance), EBITDA above midpoint, 12% headcount cut + $60-70M run-rate savings, reduced China production exposure. CEO: "restored the quality of our software." [Sonos FY25 results](https://www.businesswire.com/news/home/20251105034045/en/sonos-reports-fourth-quarter-and-fiscal-2025-results/)
+- **PYPL** — Q4 2025 **missed** estimates, weak 2026 guidance, shares -9.6% on the print. Branded-checkout growth decelerated sharply (1% vs 5% prior quarter). Management's own words: "execution has not been where it needs to be" — the board replaced the CEO over it. [PYPL Q4 2025 miss](https://www.nasdaq.com/articles/pypl-falls-96-despite-earnings-growth-stock-hold-or-fold)
+- **NKE** — EPS beat by 41%, but flat sales, operating margin compressed to 8.1% from 11.2%, same-store sales -3%. CEO: still in the "middle innings" of an unfinished turnaround. [Nike turnaround status](https://www.barchart.com/story/news/36718028/nke-q4-deep-dive-flat-sales-margin-pressures-and-a-focus-on-turnaround)
+
+**What this changes versus the technical-only list in Section 2:**
+- **PYPL is the clearest drop case in the whole book** — stronger than CRWD/PANW/COIN. It reads fine on pure technicals (GREEN heat, decent yield) — exactly the blind spot this exercise was meant to catch. It is already on `config.py`'s `PERMANENT_EXITS` list, carries a real naked call (uncapped risk), and the real-world execution story just got worse, not better — the company's own board replaced its CEO over acknowledged execution failure. **Open question for the trader, not decided here:** a real option-open on PYPL in the last 90 days (adding a premium-maximizing naked call to an already-covered position) directly contradicts the standing `PERMANENT_EXIT` flag. Maximizing premium on a name you're supposedly winding down increases exposure in the wrong direction if the thesis is still intact — either the flag is now stale and should be updated/removed, or the position should actually be heading toward closed, not added to. Needs a decision, not an assumption.
+- **SONO upgrades from a neutral WATCH to a real continue/add candidate** — the turnaround has real numbers behind it now, the position is fully covered, and yield is rich. Reinforces the 2026-10-02 suggestion to add a strangle put here.
+- **PFE** is not a quality problem, just a weak premium/trend case for its size (10 puts on a thin-yield, no-trend name) — worth trimming the put count, not a full exit.
+- **NKE**'s brand/trend case is real, but it is also the single most actively-managed name in the entire book (13 opens across 3 accounts) while its own CEO says the turnaround isn't finished — worth flagging as a concentration/bandwidth question even though the thesis itself isn't broken.
+
+---
+
+## 6. Is "trim ~5% / add ~5% per quarter" a good discipline?
 
 Short answer: yes as a standing **review** habit, not as a mechanical quota
 that must be filled every quarter regardless of what the data says.
