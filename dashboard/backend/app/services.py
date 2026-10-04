@@ -90,6 +90,7 @@ def get_composite_scores():
     against the same population, as what's already held).
     """
     from composite_score import compute_composite_scores
+    from realized_performance import realized_pnl_by_ticker
     from . import watchlist as _watchlist
 
     gen = _get_generator()
@@ -101,6 +102,25 @@ def get_composite_scores():
     for r in result["watchlist"]:
         r["notes"] = notes_by_symbol.get(r["ticker"], "")
 
+    # Real, realized (FIFO-matched) 90-day P&L per ticker -- a SEPARATE
+    # result from the composite score above, never blended into it. Past
+    # realized outcome and the current forward-looking composite score
+    # answer different questions (see realized_performance.py's module
+    # docstring) -- shown side by side on the dashboard, not merged into
+    # one ranked list.
+    held_by_ticker = {r["ticker"]: r for r in result["held"]}
+    realized = realized_pnl_by_ticker(days=90)
+    top_performers = []
+    for ticker, pnl, closed_count in realized["ranked"][:15]:
+        row = held_by_ticker.get(ticker, {})
+        top_performers.append({
+            "ticker": ticker, "realized_pnl_90d": pnl, "closed_count_90d": closed_count,
+            "composite_rank": row.get("rank"), "composite_score": row.get("score"),
+            "conviction": row.get("conviction"), "conviction_rank": row.get("conviction_rank"),
+            "yield_pct": row.get("yield_pct"), "yield_rank": row.get("yield_rank"),
+            "flags": row.get("flags"), "tail_risk": row.get("tail_risk"),
+        })
+
     return _to_native({
         "held": result["held"],
         "watchlist": result["watchlist"],
@@ -109,6 +129,8 @@ def get_composite_scores():
         "severity_smoothed": result["severity_smoothed"],
         "high_exposure_sectors": result["high_exposure_sectors"],
         "sensitivity_confidence": result["sensitivity_confidence"],
+        "realized_top_performers_90d": top_performers,
+        "realized_cutoff": realized["cutoff"],
     })
 
 

@@ -38,6 +38,15 @@
   .empty { color: #757575; font-style: italic; }
   .methodology { font-size: 12.5px; color: #444; background: #fff; border-radius: 4px; padding: 12px 16px; margin-bottom: 20px; }
   .methodology summary { cursor: pointer; font-weight: 700; }
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { background: #f0f0f0; }
+  th.sortable .arrow { font-size: 10px; color: #a9a9a9; }
+  th.sortable.active .arrow { color: #205493; }
+  th.sortable sup { color: #205493; font-weight: 700; }
+  .perf-section { background: #fff; border-radius: 4px; padding: 12px 16px; margin: 20px 0; }
+  .perf-section h3 { margin: 0 0 4px; font-size: 15px; }
+  .perf-section p.sub { font-size: 12px; color: #565c65; margin: 0 0 12px; }
+  .mismatch { color: #b50909; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -71,10 +80,13 @@
 
   <div id="tail-risk-section"></div>
 
+  <div id="realized-section"></div>
+
   <div class="filter-row">
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="held">Held only</button>
     <button class="filter-btn" data-filter="watchlist">Watchlist only</button>
+    <span style="font-size:11.5px;color:#757575;margin-left:16px;">Shift-click a column to add it as a secondary sort</span>
   </div>
 
   <div id="score-table"><p class="empty">Loading...</p></div>
@@ -82,6 +94,11 @@
 <script>
   let data = null;
   let filter = "all";
+  // Multi-column sort: ordered list of {key, asc}. sortKeys[0] is primary,
+  // sortKeys[1] breaks ties within it, etc. A plain click on a header
+  // resets this to that column alone; a shift-click appends/toggles it as
+  // an additional tie-breaker without disturbing the existing order.
+  let sortKeys = [{ key: "rank", asc: true }];
 
   function fmtPct(n) { return n === null || n === undefined ? "-" : Number(n).toFixed(1) + "%"; }
   function fmtNum(n) { return n === null || n === undefined ? "-" : Number(n).toFixed(2); }
@@ -93,7 +110,53 @@
     data = body.data;
     renderContext(body.as_of);
     renderTailRisk();
+    renderRealizedPerformance();
     renderTable();
+  }
+
+  function renderRealizedPerformance() {
+    const rows = data.realized_top_performers_90d || [];
+    if (!rows.length) {
+      document.getElementById("realized-section").innerHTML = "";
+      return;
+    }
+    const trs = rows.map(r => {
+      const rankText = r.tail_risk ? '<span class="mismatch">tail-risk disqualified</span>'
+        : (r.composite_rank ? `#${r.composite_rank}` : '<span class="empty">not currently held</span>');
+      // Flag a real divergence: a top-10 real performer landing outside the
+      // top half of the current composite ranking -- worth a second look,
+      // not necessarily a problem (realized P&L reflects when the trade was
+      // opened/closed; the composite score reflects the CURRENT snapshot --
+      // these answer different-in-time questions, a mismatch can be real.
+      const popSize = (data.held || []).length || 90;
+      const isMismatch = r.composite_rank && r.composite_rank > popSize * 0.5;
+      return `
+      <tr>
+        <td><strong>${r.ticker}</strong></td>
+        <td class="num">$${r.realized_pnl_90d.toLocaleString(undefined, {maximumFractionDigits: 0})}</td>
+        <td class="num">${r.closed_count_90d}</td>
+        <td class="num ${isMismatch ? 'mismatch' : ''}">${rankText}</td>
+        <td class="num">${fmtNum(r.conviction)}${r.conviction_rank ? ` (#${r.conviction_rank})` : ""}</td>
+        <td class="num">${fmtPct(r.yield_pct)}${r.yield_rank ? ` (#${r.yield_rank})` : ""}</td>
+        <td>${(r.flags || []).map(f => `<span class="tag tag-flag">${f}</span>`).join("") || "-"}</td>
+      </tr>`;
+    }).join("");
+    document.getElementById("realized-section").innerHTML = `
+      <div class="perf-section">
+        <h3>Real performance — top 15 by realized P&L, trailing 90 days</h3>
+        <p class="sub">Separate from the composite score below, never blended into it — real, FIFO-matched
+          closed-trade P&L (as of ${data.realized_cutoff || "?"}) vs. each name's CURRENT forward-looking score.
+          A name can validate the model (high past P&L + high current rank) or diverge from it (high past P&L,
+          weak current rank) — divergence isn't necessarily wrong, since realized P&L reflects when the trade
+          closed and the composite score reflects right now.</p>
+        <table class="usa-table usa-table--borderless">
+          <thead><tr>
+            <th>Ticker</th><th class="num">Realized P&amp;L (90d)</th><th class="num">Closes</th>
+            <th class="num">Composite rank now</th><th class="num">Conviction</th><th class="num">Yield</th><th>Flags</th>
+          </tr></thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </div>`;
   }
 
   function renderContext(asOf) {
@@ -131,16 +194,43 @@
       </div>`;
   }
 
+  // Column definitions for sorting -- each a (row) => comparable-value
+  // getter, so clicking any header sorts by that column's real underlying
+  // number, not its formatted/display string.
+  const COLUMNS = [
+    { key: "rank", label: "Rank", get: r => r.rank ?? 999, numeric: true },
+    { key: "ticker", label: "Ticker", get: r => r.ticker, numeric: false },
+    { key: "score", label: "Score", get: r => r.score ?? -999, numeric: true },
+    { key: "yield_pct", label: "Yield (rank)", get: r => r.yield_pct ?? -999, numeric: true },
+    { key: "conviction", label: "Conviction (rank)", get: r => r.conviction ?? -999, numeric: true },
+    { key: "target_upside_pct", label: "Analyst upside", get: r => r.target_upside_pct ?? -999, numeric: true },
+    { key: "invested", label: "Invested (notional)", get: r => r.invested ?? -1, numeric: true },
+    { key: "heat", label: "Heat", get: r => r.heat || "", numeric: false },
+  ];
+
   function renderTable() {
     let combined = [
       ...(data.held || []).filter(r => !r.tail_risk),
       ...(data.watchlist || []).filter(r => !r.tail_risk && r.score !== undefined),
     ];
-    combined.sort((a, b) => (a.rank || 999) - (b.rank || 999));
 
     let filtered = combined;
     if (filter === "held") filtered = combined.filter(r => !r.is_new);
     if (filter === "watchlist") filtered = combined.filter(r => r.is_new);
+
+    // Multi-column sort: walk sortKeys in order, first non-zero comparison
+    // wins -- e.g. sort by Invested (notional) primary, Score secondary to
+    // break ties among similarly-sized positions.
+    filtered.sort((a, b) => {
+      for (const { key, asc } of sortKeys) {
+        const col = COLUMNS.find(c => c.key === key);
+        if (!col) continue;
+        const av = col.get(a), bv = col.get(b);
+        const cmp = col.numeric ? (av - bv) : String(av).localeCompare(String(bv));
+        if (cmp !== 0) return asc ? cmp : -cmp;
+      }
+      return 0;
+    });
 
     const watchlistErrors = (data.watchlist || []).filter(r => r.tail_risk === null && r.error);
     const errorBox = watchlistErrors.length ? `
@@ -166,16 +256,53 @@
         <td>${(r.flags || []).map(f => `<span class="tag tag-flag">${f}</span>`).join("") || "-"}</td>
       </tr>`).join("");
 
+    // Columns where a bigger number is the more interesting end, so a
+    // first click on them defaults to descending rather than ascending.
+    const DESC_FIRST = new Set(["score", "yield_pct", "conviction", "invested", "target_upside_pct"]);
+
+    const headCells = COLUMNS.map(c => {
+      const pos = sortKeys.findIndex(s => s.key === c.key);
+      const active = pos !== -1;
+      let arrow = "&#8645;";
+      let priority = "";
+      if (active) {
+        arrow = sortKeys[pos].asc ? "&#9650;" : "&#9660;";
+        if (sortKeys.length > 1) priority = `<sup>${pos + 1}</sup>`;
+      }
+      return `<th class="sortable${active ? " active" : ""} ${c.numeric ? "num" : ""}" data-key="${c.key}" title="Click to sort; shift-click to add as a secondary sort">${c.label}${priority} <span class="arrow">${arrow}</span></th>`;
+    }).join("");
+
     document.getElementById("score-table").innerHTML = `
       ${errorBox}
       <table class="usa-table usa-table--borderless">
         <thead><tr>
-          <th>Rank</th><th>Ticker</th><th class="num">Score</th><th class="num">Yield (rank)</th>
-          <th class="num">Conviction (rank)</th><th class="num">Analyst upside</th>
-          <th class="num">Invested (notional)</th><th>Heat</th><th>Hot-trend</th><th>Quality flags</th>
+          ${headCells}<th>Hot-trend</th><th>Quality flags</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
+
+    document.querySelectorAll("th.sortable").forEach(th => {
+      th.addEventListener("click", (ev) => {
+        const key = th.dataset.key;
+        const existing = sortKeys.findIndex(s => s.key === key);
+        if (ev.shiftKey) {
+          // Add (or toggle direction on) this column as an additional
+          // tie-breaker, without disturbing the columns already sorted on.
+          if (existing !== -1) {
+            sortKeys[existing].asc = !sortKeys[existing].asc;
+          } else {
+            sortKeys.push({ key, asc: !DESC_FIRST.has(key) });
+          }
+        } else if (existing === 0 && sortKeys.length === 1) {
+          // Sole active sort column clicked again: just flip direction.
+          sortKeys[0].asc = !sortKeys[0].asc;
+        } else {
+          // Plain click on any other column: it becomes the sole sort key.
+          sortKeys = [{ key, asc: !DESC_FIRST.has(key) }];
+        }
+        renderTable();
+      });
+    });
   }
 
   document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -185,6 +312,10 @@
       filter = btn.dataset.filter;
       renderTable();
     });
+  });
+
+  ["min-invested", "max-invested"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => renderTable());
   });
 
   load();
