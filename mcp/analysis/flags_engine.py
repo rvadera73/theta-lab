@@ -129,13 +129,31 @@ def _evaluate_yfinance(symbol: str) -> list[dict]:
 
         cash = info.get("totalCash") or 0
         fcf = info.get("freeCashflow") or 0
-        if fcf < 0 and cash > 0:
+        ocf = info.get("operatingCashflow")
+        # Confirmed live 2026-10-04: this used to gate only on free cash flow
+        # (cash flow AFTER capex), which false-positived HARD BLOCKS on CEG
+        # (Constellation Energy, a real, profitable, currently-HELD nuclear
+        # utility -- operatingCashflow +$4.2B, FCF -$6.6B) and NEE (NextEra
+        # Energy, +$13.8B operating cash flow, FCF -$17.8B) at 0.85
+        # confidence, which HARD_BLOCK_FLAG_KEYS treats as an auditor-level
+        # going-concern warning. Negative FREE cash flow from heavy,
+        # healthy infrastructure capex (funded by debt markets, not a
+        # shrinking cash pile) is normal and expected for capital-intensive
+        # sectors -- it says nothing about survival risk. Negative
+        # OPERATING cash flow (can the business even fund its day-to-day
+        # operations from operations, before any capex at all) is the real,
+        # much stronger distress signal -- confirmed on ONDS, a genuine
+        # real going-concern-adjacent case this flag correctly SHOULD catch
+        # (operatingCashflow -$0.16B). Requiring both negative operating
+        # cash flow AND the runway check removes the utility false
+        # positives while keeping the real ONDS-style case caught.
+        if ocf is not None and ocf < 0 and fcf < 0 and cash > 0:
             months_runway = (cash / abs(fcf)) * 12
             if months_runway < 12:
                 flags.append(_flag_entry(
                     "GOING_CONCERN", 0.85,
-                    f"yfinance cash={cash/1e9:.1f}B, FCF={fcf/1e9:.1f}B/yr",
-                    f"Only {months_runway:.0f} months cash runway"
+                    f"yfinance cash={cash/1e9:.1f}B, FCF={fcf/1e9:.1f}B/yr, operatingCashflow={ocf/1e9:.1f}B/yr",
+                    f"Only {months_runway:.0f} months cash runway AND negative operating cash flow"
                 ))
 
         shares_issued = info.get("sharesOutstanding") or 0
