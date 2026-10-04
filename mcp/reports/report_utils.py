@@ -12,6 +12,15 @@ from typing import Any, Iterable
 
 import yaml
 
+import sys as _sys
+_p = os.path.dirname(os.path.abspath(__file__))
+for _ in range(5):
+    _cand = os.path.join(_p, "mcp", "analysis")
+    if os.path.isdir(_cand):
+        _sys.path.insert(0, _cand)
+        break
+    _p = os.path.dirname(_p)
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
 
 from bootstrap import load_credentials as _load_credentials

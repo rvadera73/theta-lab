@@ -15,6 +15,15 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import requests
+import os as _os, sys as _sys
+_p = _os.path.dirname(_os.path.abspath(__file__))
+for _ in range(5):
+    _cand = _os.path.join(_p, "mcp", "analysis")
+    if _os.path.isdir(_cand):
+        _sys.path.insert(0, _cand)
+        break
+    _p = _os.path.dirname(_p)
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))

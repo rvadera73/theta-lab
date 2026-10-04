@@ -27,6 +27,12 @@ data/ticker_metrics_cache.json
 # -- empty, zero-byte, exists only to hold an flock(); no content ever.
 data/*.lock
 
+# Global cross-process Yahoo rate limiter state (mcp/analysis/yahoo_throttle.py,
+# 2026-10-04) -- a single shared last-call timestamp + its flock lockfile,
+# pure runtime state, rewritten on every yfinance call from any process.
+data/.yahoo_rate_limiter_state
+data/.yahoo_rate_limiter.lock
+
 # Brokerage statements, tax docs, portfolios — stay local only
 *.PDF
 *.pdf

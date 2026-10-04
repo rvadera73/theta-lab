@@ -3,6 +3,15 @@ Sector analysis using Yahoo Finance native sector classifications
 Groups positions by sector and analyzes conviction, heat, and valuation
 """
 
+import os as _os, sys as _sys
+_p = _os.path.dirname(_os.path.abspath(__file__))
+for _ in range(5):
+    _cand = _os.path.join(_p, "mcp", "analysis")
+    if _os.path.isdir(_cand):
+        _sys.path.insert(0, _cand)
+        break
+    _p = _os.path.dirname(_p)
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
 import pandas as pd
 import numpy as np

@@ -7,12 +7,14 @@ No manual data entry needed.
 
 import pandas as pd
 import numpy as np
-import yfinance as yf
 from scipy.stats import norm
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 import sys
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/scripts')
+sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp/analysis')
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
+import yfinance as yf
 
 
 class BlackScholesCalculator:

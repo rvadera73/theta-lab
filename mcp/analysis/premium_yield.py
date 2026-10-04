@@ -11,9 +11,18 @@ data need (a live option chain, not just price history).
 """
 import json
 import os
+import sys
 from datetime import date, datetime
 from typing import Optional
 
+_p = os.path.dirname(os.path.abspath(__file__))
+for _ in range(5):
+    _cand = os.path.join(_p, "mcp", "analysis")
+    if os.path.isdir(_cand):
+        sys.path.insert(0, _cand)
+        break
+    _p = os.path.dirname(_p)
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
 
 DEFAULT_OTM_PCT = 0.10

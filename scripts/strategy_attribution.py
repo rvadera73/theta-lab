@@ -30,13 +30,13 @@ import sys
 from collections import defaultdict, deque
 from datetime import date
 
-import yfinance as yf
-
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_ROOT, "scripts"))
 sys.path.insert(0, os.path.join(_ROOT, "mcp"))
 sys.path.insert(0, os.path.join(_ROOT, "mcp", "reports"))
 sys.path.insert(0, os.path.join(_ROOT, "mcp", "analysis"))
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
+import yfinance as yf
 
 from update_snapshot import (
     find_schwab_transactions, find_fidelity_transactions, find_robinhood_transactions,

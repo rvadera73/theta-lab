@@ -26,12 +26,13 @@ import os
 from datetime import date
 
 import pandas as pd
-import yfinance as yf
 
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/scripts')
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp')
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp/analysis')
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp/reports')
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
+import yfinance as yf
 
 from config import UNIVERSE, Tier, PERMANENT_EXITS
 from iv_rank import batch_iv_rank

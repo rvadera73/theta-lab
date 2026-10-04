@@ -9,7 +9,17 @@ If P(book > danger zone) > 30%, throttle new put entries.
 
 import math
 import random
+import os as _os, sys as _sys
 from datetime import date, datetime
+
+_p = _os.path.dirname(_os.path.abspath(__file__))
+for _ in range(5):
+    _cand = _os.path.join(_p, "mcp", "analysis")
+    if _os.path.isdir(_cand):
+        _sys.path.insert(0, _cand)
+        break
+    _p = _os.path.dirname(_p)
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
 
 

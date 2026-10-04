@@ -10,10 +10,12 @@ import sys
 import re
 import pandas as pd
 import numpy as np
-import yfinance as yf
 from pathlib import Path
 
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp/reports')
+sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/mcp/analysis')
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
+import yfinance as yf
 from enhanced_metrics import TechnicalIndicators
 
 TXN_FILE = '/home/rahulvadera/projects/theta-lab/data/positions/Individual_XXX232_Transactions_20260712-111304.csv'

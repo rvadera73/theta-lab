@@ -3,11 +3,21 @@ Yahoo Finance Price Fetcher with Intelligent Rate Limiting
 Batch downloads with exponential backoff and retry logic
 """
 
-import yfinance as yf
+import os as _os, sys as _sys
 import pandas as pd
 import time
 import logging
 from typing import Dict, List, Optional
+
+_p = _os.path.dirname(_os.path.abspath(__file__))
+for _ in range(5):
+    _cand = _os.path.join(_p, "mcp", "analysis")
+    if _os.path.isdir(_cand):
+        _sys.path.insert(0, _cand)
+        break
+    _p = _os.path.dirname(_p)
+import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
+import yfinance as yf
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
