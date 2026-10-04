@@ -69,6 +69,7 @@ def age_seconds(computed_at: str) -> float:
 def _build_us_entries(services):
     return {
         "us_account_status": services.get_account_status(),
+        "us_composite_scores": services.get_composite_scores(),
         "us_pnl_trend": services.get_pnl_trend(),
         "us_cash_margin_forecast": services.get_cash_margin_forecast(),
         "us_sector_heat": {"text": services.extract_markdown_section("daily", "## Section 6: POSITION HEAT MATRIX", "\n## Section 6.5")},

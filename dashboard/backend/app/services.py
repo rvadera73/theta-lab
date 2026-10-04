@@ -67,6 +67,50 @@ def get_account_status():
     ])
 
 
+# Sector hints for Watchlist candidates sourced from run_screener (which
+# already knows each candidate's sector) -- gather_watchlist_rows has no
+# other way to learn a not-yet-held ticker's sector, since ticker_sector_map
+# is only ever built from held positions.
+_WATCHLIST_SECTOR_HINTS = {
+    "DELL": "AI Infrastructure & Data Center", "HPE": "AI Infrastructure & Data Center",
+    "SCHW": "Financial Services", "BAC": "Financial Services", "MUFG": "Financial Services",
+    "PBR": "Energy",
+}
+
+
+def get_composite_scores():
+    """Composite risk-adjusted scores for every held ticker AND every tracked
+    Watchlist symbol, scored TOGETHER as one population (see mcp/reports/
+    composite_score.py's module docstring for the full z-score formula and
+    its revision history) -- so a new candidate's rank and z-scores reflect
+    genuine standing against everything already held, not a separate
+    standalone number. This is the real gap the trader flagged (a technical
+    screener's "new names" don't mean anything until scored the same way,
+    against the same population, as what's already held).
+    """
+    from composite_score import compute_composite_scores
+    from . import watchlist as _watchlist
+
+    gen = _get_generator()
+    gen.get_priority_actions()  # ensure self.metrics/premium_yields/ticker_sector_map are populated
+
+    tracked = _watchlist.list_watchlist(tracked_only=True)
+    notes_by_symbol = {row["symbol"]: row.get("notes", "") for row in tracked}
+    result = compute_composite_scores(gen, [row["symbol"] for row in tracked], _WATCHLIST_SECTOR_HINTS)
+    for r in result["watchlist"]:
+        r["notes"] = notes_by_symbol.get(r["ticker"], "")
+
+    return _to_native({
+        "held": result["held"],
+        "watchlist": result["watchlist"],
+        "regime": result["regime"],
+        "macro_stage": result["macro_stage"],
+        "severity_smoothed": result["severity_smoothed"],
+        "high_exposure_sectors": result["high_exposure_sectors"],
+        "sensitivity_confidence": result["sensitivity_confidence"],
+    })
+
+
 def get_ytd_summary():
     from realized_pnl import get_realized_summary
     return get_realized_summary()

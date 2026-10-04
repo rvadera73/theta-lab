@@ -155,18 +155,37 @@ def get_cached_batch_yield(symbols: list[str], **kwargs) -> dict[str, dict]:
             with open(_CACHE_FILE) as f:
                 stored = json.load(f)
             if stored.get("date") == today:
-                cache = stored.get("data", {})
+                # Drop any error entries a pre-fix version of this function
+                # may have already persisted today (see the write-side fix
+                # below) -- an old cached failure should never block a retry
+                # just because it happens to share today's date.
+                cache = {s: v for s, v in stored.get("data", {}).items() if not v.get("error")}
         except Exception:
             pass
 
     missing = [s for s in symbols if s not in cache]
     if missing:
-        cache.update(batch_get_yield_on_capital(missing, **kwargs))
-        try:
-            os.makedirs(_CACHE_DIR, exist_ok=True)
-            with open(_CACHE_FILE, "w") as f:
-                json.dump({"date": today, "data": cache}, f)
-        except Exception:
-            pass
+        fresh = batch_get_yield_on_capital(missing, **kwargs)
+        # Never persist an error result (rate-limited, no_price_data, etc.)
+        # into the day's cache -- confirmed live 2026-10-04: a rate-limit
+        # hit got cached as if it were valid data for the rest of the day,
+        # so a ticker that failed once during a heavy-traffic moment never
+        # got a chance to retry again that same day. Same bug class already
+        # fixed once in enhanced_metrics.py's metrics cache (a "Data
+        # unavailable" result is never cached there either) -- this module
+        # just never got the same treatment. `cache` (error-free, per the
+        # read-side filter above) plus only fresh's error-free entries is
+        # what gets written back to disk; the in-memory `result` below still
+        # carries this call's own fresh errors so the immediate caller sees
+        # them.
+        cacheable = {s: v for s, v in fresh.items() if not v.get("error")}
+        if cacheable:
+            try:
+                os.makedirs(_CACHE_DIR, exist_ok=True)
+                with open(_CACHE_FILE, "w") as f:
+                    json.dump({"date": today, "data": {**cache, **cacheable}}, f)
+            except Exception:
+                pass
+        cache.update(fresh)
 
     return {s: cache[s] for s in symbols if s in cache}

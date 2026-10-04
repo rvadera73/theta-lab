@@ -209,6 +209,17 @@ def us_pnl_trend():
     return {"data": value, "as_of": computed_at}
 
 
+@app.get("/api/us/composite-scores")
+def us_composite_scores():
+    value, computed_at = _get_or_compute("us_composite_scores", services.get_composite_scores)
+    return {"data": value, "as_of": computed_at}
+
+
+@app.get("/composite-scores")
+def composite_scores_dashboard():
+    return FileResponse(os.path.join(STATIC_DIR, "composite-scores.html"))
+
+
 @app.get("/api/us/cash-margin-forecast")
 def us_cash_margin_forecast():
     value, computed_at = _get_or_compute("us_cash_margin_forecast", services.get_cash_margin_forecast)

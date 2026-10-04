@@ -43,3 +43,21 @@
   stage: 1
   severity_sum: 1.19
   pending_downgrade_stage: null
+- date: '2026-10-03'
+  risk_level: GREEN
+  prob_30d: 22.9
+  prob_60d: 39.2
+  prob_90d: 55.5
+  primary_risk: BREADTH critical
+  stage: 0
+  severity_sum: 1.13
+  pending_downgrade_stage: null
+- date: '2026-10-04'
+  risk_level: GREEN
+  prob_30d: 22.9
+  prob_60d: 39.2
+  prob_90d: 55.5
+  primary_risk: BREADTH critical
+  stage: 0
+  severity_sum: 1.13
+  pending_downgrade_stage: null

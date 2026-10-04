@@ -34,6 +34,16 @@ US_FLAGS_BY_SYMBOL = {
     # Platform & Subscription Growth — contrarian rotation thesis
     "TSLA": ['THIN_MARGINS', 'LOW_MOAT', 'CHINA_EXPOSURE'],
     "NU": ['LOW_MOAT'],
+    # Added 2026-10-04, trader-flagged surprise at ONDS topping the composite
+    # score model purely on its 58.4% yield -- real research confirmed it:
+    # $35M operating loss on $7M revenue (2024), ~$50.6M adjusted EBITDA
+    # loss, Seeking Alpha's own headline calls it "At High Risk Of Further
+    # Dilution" and "a speculative stock with a blue-chip price tag." A name
+    # this unprofitable simply wasn't in this registry at all, so its
+    # extreme yield -- itself a market-priced symptom of that same risk --
+    # got zero quality penalty. See composite_score.py's yield-dampening fix
+    # for the structural half of this same bug.
+    "ONDS": ['SPECULATIVE_STORY'],
 }
 
 INDIA_FLAGS_BY_SYMBOL = {
