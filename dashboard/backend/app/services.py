@@ -72,9 +72,10 @@ def get_account_status():
 # other way to learn a not-yet-held ticker's sector, since ticker_sector_map
 # is only ever built from held positions.
 _WATCHLIST_SECTOR_HINTS = {
-    "DELL": "AI Infrastructure & Data Center", "HPE": "AI Infrastructure & Data Center",
+    "DELL": "Technology", "HPE": "Technology",
     "SCHW": "Financial Services", "BAC": "Financial Services", "MUFG": "Financial Services",
-    "PBR": "Energy",
+    "PBR": "Energy", "OXY": "Energy",
+    "TGT": "Consumer Cyclical", "ETN": "Industrials", "DE": "Industrials",
 }
 
 

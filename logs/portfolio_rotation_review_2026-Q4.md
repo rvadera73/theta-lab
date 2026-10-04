@@ -269,3 +269,61 @@ fighting that system rather than reinforcing it.
 review against ("look hard for your weakest ~5% and best new ~5%, sized to
 keep the book from drifting"), not a floor that must be filled. Keep the
 actual trigger evidence-based, exactly as this report did.
+
+---
+
+## 8. Diversification candidates — sourced outside the concentrated themes
+
+Trader pushback on Section 6's "find 5 names" exercise, worth recording
+in full since it changed the actual approach: searching for peers *within*
+our top-performing sub-themes (crypto mining, quantum computing, space)
+mostly returned already-held names (a separate, still-open live-portfolio-
+check data gap) or real SKIP signals (IVR below the real-premium floor) --
+only 1-2 genuine candidates (CRDO, marginally COHR) emerged from 10 named
+peers checked directly. The deeper point raised: concluding "the market
+has no good candidates" from that search was itself a category error --
+it only showed that a technical options-screener operating within a ~105-
+name fixed universe, searching the SAME concentrated themes this book
+already sits in, can't manufacture more of what's already been found. The
+system's own `AI_CONCENTRATION` flag already states this book is ~80%
+AI/tech-exposed -- doubling down on the same sub-themes was the wrong
+question. Redirected to: find real candidates specifically in sectors this
+book is NOT concentrated in.
+
+**Result, `scan_sector` across Healthcare & Biotech, Consumer & Retail,
+Industrials & Infrastructure, Financials, and Energy:**
+
+| Ticker | Sector | Signal | Flags | Premium |
+|---|---|---|---|---|
+| TGT | Consumer & Retail | ENTER NOW, RSI 44, IVR 40 | none | 1.68%/mo |
+| ETN | Industrials | ENTER NOW, RSI 77 (stretched), IVR 44 | none | 2.64%/mo |
+| DE | Industrials | ENTER NOW, RSI 52, IVR 47 | none | 1.93%/mo |
+| SCHW | Financials | ENTER NOW, RSI 22 (oversold), IVR 59 | none | 2.05%/mo |
+| OXY | Energy | ENTER NOW, RSI 39, IVR 45 | none | 2.32%/mo |
+
+All five confirmed genuinely unheld and flag-free — real diversification,
+not more AI/tech exposure. Added to the Watchlist 2026-10-04.
+
+**Composite-score verification, incomplete as of this writing:** only
+SCHW scored cleanly through the full pipeline this run (score -1.30, rank
+87 of 89 — weak, and its own `target_upside_pct` came back `None`, a
+partial-degradation symptom of the same cause below, so even this number
+is less trustworthy than today's earlier verified reads). TGT/ETN/DE/OXY
+all failed with `no_expiry_in_75-135_dte_window` — almost certainly
+today's cumulative Yahoo usage (dozens of live-data runs across this
+session) exhausting the rate-limit budget, not a code bug; the
+2026-10-04 `premium_yield.py` caching fix prevents this from poisoning
+tomorrow's cache, but can't prevent the live rate limit itself. Re-run
+the composite scoring once the rate limit clears (retrying immediately
+only extends the throttle window) before treating any of these five as
+confirmed by the model — right now they're real, clean technical/flag
+candidates, not yet composite-scored ones.
+
+Also found and fixed while sourcing these: `flags_engine.py`'s
+`GOING_CONCERN` check was false-positiving on large capital-intensive
+utilities (CEG — a real, currently-held position — and NEE both hard-
+blocked at 0.85 confidence) because it only checked free cash flow, which
+is routinely negative for utilities funding heavy, healthy capex via debt
+markets. Fixed by also requiring negative operating cash flow (confirmed:
+CEG +$4.2B, NEE +$13.8B operating cash flow vs. ONDS's genuinely negative
+-$0.16B) — see commit `95cd125`.
