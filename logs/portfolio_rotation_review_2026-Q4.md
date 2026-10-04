@@ -161,7 +161,84 @@ proxy) — applied here to four specific names.
 
 ---
 
-## 6. Is "trim ~5% / add ~5% per quarter" a good discipline?
+## 6. Composite risk-adjusted score model (replaces the staged-gate approach)
+
+Trader pushback on the Section 5 four-stage gate model: it didn't align with
+the book's actual objective (risk-adjusted premium income, not equity-quality
+investing) and would produce real false positives/negatives — a `LOW_MOAT`
+flag shouldn't veto a name the way a "leadership" gate implies, and a
+single-day RSI/IVR read is exactly the kind of noisy signal already fixed
+once for the macro-risk stage. Rebuilt as a **composite score**, modeled on
+how actual quant/multi-strategy shops (Citadel's pod model, factor-investing
+funds) rank candidates — score every name on several factors at once, rank,
+rebalance on a schedule — rather than gating pass/fail on any single one.
+
+**Scoring formula** (per currently-held ticker):
+- **Tail-risk gate (binary, only this disqualifies):** `GOING_CONCERN`,
+  `ACCOUNTING_RISK`, `DELISTING_RISK`, `PERMANENT_EXIT` (from `config.py`'s
+  `RISK["binary_exit_flags"]` and `PERMANENT_EXITS`) — about capital
+  destruction, not business quality.
+- **Risk-adjusted premium** = yield × (conviction / 10). Conviction is
+  already a smoothed, composite RSI/range/200-day-trend score, not a raw
+  single-day technical read — reused deliberately instead of re-introducing
+  that noise.
+- **Hot-trend/industry bonus**: +3 if the ticker carries a real
+  `trend_verticals.py` tag.
+- **Crash-risk alignment penalty**: -5 if the ticker's sector is a
+  confirmed (`strong`-confidence) high-crash-sensitivity sector AND the
+  macro stage is YELLOW/RED. Today's macro sector-sensitivity read is only
+  `weak` confidence, so this never fired this run — correctly conservative.
+- **Quality-as-sizing**: `LOW_MOAT`/`THIN_MARGINS`/`COMMODITY_PRICE_RISK`/etc.
+  reduce a suggested size multiplier (floor 0.5x) and modestly dock score —
+  never an exclusion, matching how the live screener already treats these
+  flags ("reduce to half-size," not "avoid").
+
+**Global context at run time (2026-10-04):** Regime **BULL**, macro stage
+**GREEN** (severity_smoothed 0.86, only a 5-day window so far since the
+hysteresis fix started logging) — a supportive backdrop for new entries,
+read alongside the sector-sensitivity list (Basic Materials, Communication
+Services, Consumer Cyclical, Technology — weak confidence only).
+
+### Tail-risk disqualified — the headline finding
+
+| Ticker | Flags | Yield | Conviction | 90d opens |
+|---|---|---|---|---|
+| **BE** | `GOING_CONCERN`, `SPECULATIVE_STORY` | **43.9%** | 6.4 | **10** |
+| PYPL | `PERMANENT_EXIT` | 15.7% | 5.6 | 2 |
+
+**BE is a bigger, more urgent finding than PYPL.** It is the 6th-most-actively-
+traded name in the entire 90-day window, carrying the richest yield of any
+name evaluated in this review — exactly the "too-good premium hiding real
+risk" trap this model was built to catch. A `GOING_CONCERN` flag means an
+auditor-level survival question, not a preference call like `PERMANENT_EXIT`.
+This should be looked at before anything else in this report.
+
+### Bottom 10 by composite score (capital-efficiency drop candidates)
+
+LMT, REGN, GOOGL, BA, UNH, WMT, TSLA, JPM, MA, PFE — notably, **none of
+Section 2's technical-only picks (CRWD/PANW/COIN/OKTA) appear here.** Their
+yields (27-35%) are rich enough to outscore these large, stable, low-premium
+names (LMT 7.4%, JPM 6.2%, MA 5.8%) even with mediocre conviction. This list
+is driven by capital efficiency — these names tie up capital and attention
+for comparatively little premium — not technical weakness, and is the more
+objective-aligned answer of the two.
+
+### Top 15 by composite score (where the real income engine of the book lives)
+
+ONDS (58.4% yield), HUT/CIFR (Crypto), AMKR/ALAB/IONQ/LITE (AI/Pick-and-Shovel,
+AI/Quantum), ASTS/PL/RKLB (Space), CRWV (AI/Data-Center-Infra), OKLO
+(AI/Nuclear-Power), KTOS (Defense/AI), MMYT (Global Brand). Several carry
+real quality flags (ALAB, LASR, RKLB) but those only reduced score/sizing,
+never excluded — the model working as designed.
+
+**This section supersedes Section 2's drop list** for the purpose of the
+~5%/5% quarterly review — Section 2 is left in place above as the "before"
+picture so the shift in reasoning stays visible, not because both are still
+equally valid.
+
+---
+
+## 7. Is "trim ~5% / add ~5% per quarter" a good discipline?
 
 Short answer: yes as a standing **review** habit, not as a mechanical quota
 that must be filled every quarter regardless of what the data says.
