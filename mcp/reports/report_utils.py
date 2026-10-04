@@ -638,14 +638,25 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
             live_contracts = {sym: qty for sym, qty in contracts.items() if qty > 0}
 
             if live_contracts:
-                # Create Position with live option legs
+                # Create Position with live option legs. Field names must
+                # match analysis.pnl.Position/OptionLeg exactly -- this call
+                # drifted from the real schema (cost_basis -> stock_cost_basis,
+                # a premium_received kwarg Position never had, qty -> quantity,
+                # and OptionLeg's required description was missing entirely)
+                # and silently returned None for every Schwab account on every
+                # call ever since, via the bare except below. Confirmed live
+                # 2026-10-04: reconstruct_positions_from_transactions("A")
+                # raised TypeError: Position.__init__() got an unexpected
+                # keyword argument 'cost_basis' on every single call -- this
+                # is what made run_screener/scan_sector/screen_new_entries
+                # tag real Schwab-held names (AXON, NU) as "not currently
+                # held," not a one-ticker fluke.
                 pos = Position(
                     symbol=underlying,
                     shares=0,
-                    cost_basis=0,
+                    stock_cost_basis=0,
                     current_price=0,
                     account=account,
-                    premium_received=0,
                     option_legs=[],
                 )
 
@@ -661,11 +672,12 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
                             continue  # expired — no longer an open position
 
                         leg = OptionLeg(
+                            description=contract_sym,
                             option_type=opt_type,
                             strike=strike,
                             expiry=expiry.isoformat(),
                             dte=dte,
-                            qty=abs(qty),
+                            quantity=-abs(qty),  # short (negative), matching OptionLeg's own convention
                             premium_received=0,
                             current_mark=0,
                         )
@@ -676,7 +688,7 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
 
         return result if result else None
 
-    except Exception as e:
+    except Exception:
         return None
 
 
