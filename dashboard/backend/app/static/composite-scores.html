@@ -82,6 +82,8 @@
 
   <div id="realized-section"></div>
 
+  <div id="laggards-section"></div>
+
   <div class="filter-row">
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="held">Held only</button>
@@ -111,7 +113,60 @@
     renderContext(body.as_of);
     renderTailRisk();
     renderRealizedPerformance();
+    renderLaggards();
     renderTable();
+  }
+
+  function renderLaggards() {
+    const losses = data.realized_losses_90d || [];
+    const noActivity = data.realized_no_activity_90d || [];
+    if (!losses.length && !noActivity.length) {
+      document.getElementById("laggards-section").innerHTML = "";
+      return;
+    }
+    const popSize = (data.held || []).length || 90;
+    const rowHtml = (r, isLoss) => {
+      const rankText = r.tail_risk ? '<span class="mismatch">tail-risk disqualified</span>'
+        : (r.composite_rank ? `#${r.composite_rank}` : '<span class="empty">unranked</span>');
+      return `
+      <tr>
+        <td><strong>${r.ticker}</strong></td>
+        <td class="num ${isLoss ? 'mismatch' : ''}">${isLoss ? "$" + r.realized_pnl_90d.toLocaleString(undefined, {maximumFractionDigits: 0}) : "no closes"}</td>
+        <td class="num">${isLoss ? r.closed_count_90d : "-"}</td>
+        <td class="num">${rankText}</td>
+        <td class="num">${fmtNum(r.conviction)}${r.conviction_rank ? ` (#${r.conviction_rank})` : ""}</td>
+        <td class="num">${fmtPct(r.yield_pct)}${r.yield_rank ? ` (#${r.yield_rank})` : ""}</td>
+        <td>${(r.flags || []).map(f => `<span class="tag tag-flag">${f}</span>`).join("") || "-"}</td>
+      </tr>`;
+    };
+    const lossRows = losses.map(r => rowHtml(r, true)).join("");
+    const idleRows = noActivity.map(r => rowHtml(r, false)).join("");
+    document.getElementById("laggards-section").innerHTML = `
+      <div class="perf-section">
+        <h3>Laggards — real losses and zero-activity names, trailing 90 days</h3>
+        <p class="sub">The symmetric opposite of the performance section above: realized LOSSES (an actual
+          closed trade that lost money, not just "lowest profit"), and separately, currently-held names with
+          <strong>zero</strong> realized closes at all in the window — capital sitting in a position with no
+          completed, measurable result yet. Neither list is blended into the composite ranking.</p>
+        ${losses.length ? `
+        <p style="font-size:12.5px;font-weight:700;margin:12px 0 4px;">Real losses (${losses.length})</p>
+        <table class="usa-table usa-table--borderless">
+          <thead><tr>
+            <th>Ticker</th><th class="num">Realized P&amp;L (90d)</th><th class="num">Closes</th>
+            <th class="num">Composite rank now</th><th class="num">Conviction</th><th class="num">Yield</th><th>Flags</th>
+          </tr></thead>
+          <tbody>${lossRows}</tbody>
+        </table>` : '<p class="empty">No realized losses in the window.</p>'}
+        ${noActivity.length ? `
+        <p style="font-size:12.5px;font-weight:700;margin:16px 0 4px;">Zero realized activity (${noActivity.length} of ${popSize} held, sorted by current composite rank)</p>
+        <table class="usa-table usa-table--borderless">
+          <thead><tr>
+            <th>Ticker</th><th class="num">Realized P&amp;L (90d)</th><th class="num">Closes</th>
+            <th class="num">Composite rank now</th><th class="num">Conviction</th><th class="num">Yield</th><th>Flags</th>
+          </tr></thead>
+          <tbody>${idleRows}</tbody>
+        </table>` : ""}
+      </div>`;
   }
 
   function renderRealizedPerformance() {

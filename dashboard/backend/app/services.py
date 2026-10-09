@@ -110,16 +110,36 @@ def get_composite_scores():
     # one ranked list.
     held_by_ticker = {r["ticker"]: r for r in result["held"]}
     realized = realized_pnl_by_ticker(days=90)
-    top_performers = []
-    for ticker, pnl, closed_count in realized["ranked"][:15]:
+
+    def _row(ticker, pnl, closed_count):
         row = held_by_ticker.get(ticker, {})
-        top_performers.append({
+        return {
             "ticker": ticker, "realized_pnl_90d": pnl, "closed_count_90d": closed_count,
             "composite_rank": row.get("rank"), "composite_score": row.get("score"),
             "conviction": row.get("conviction"), "conviction_rank": row.get("conviction_rank"),
             "yield_pct": row.get("yield_pct"), "yield_rank": row.get("yield_rank"),
             "flags": row.get("flags"), "tail_risk": row.get("tail_risk"),
-        })
+        }
+
+    top_performers = [_row(t, pnl, cc) for t, pnl, cc in realized["ranked"][:15]]
+
+    # Laggards -- the symmetric opposite view, never blended into the top-
+    # performers list above: real realized LOSSES (not just "lowest
+    # profit"), plus currently-held names with ZERO realized activity at
+    # all in the window (no close means no FIFO match, so they never
+    # appear in realized["ranked"] to begin with -- capital sitting in a
+    # position with literally no completed, measurable result yet, which
+    # is a different and arguably more important "laggard" signal than a
+    # small realized loss).
+    losses = [_row(t, pnl, cc) for t, pnl, cc in realized["ranked"] if pnl < 0]
+    losses.sort(key=lambda r: r["realized_pnl_90d"])  # worst (most negative) first
+
+    realized_tickers = {t for t, _pnl, _cc in realized["ranked"]}
+    no_activity = [_row(t, 0.0, 0) for t in held_by_ticker if t not in realized_tickers]
+    # Best-ranked-but-still-inactive first (most worth a second look --
+    # good forward score, yet nothing realized in 90 days); unranked
+    # (missing yield/conviction data) sort to the end.
+    no_activity.sort(key=lambda r: r["composite_rank"] if r["composite_rank"] is not None else 9999)
 
     return _to_native({
         "held": result["held"],
@@ -130,6 +150,8 @@ def get_composite_scores():
         "high_exposure_sectors": result["high_exposure_sectors"],
         "sensitivity_confidence": result["sensitivity_confidence"],
         "realized_top_performers_90d": top_performers,
+        "realized_losses_90d": losses,
+        "realized_no_activity_90d": no_activity,
         "realized_cutoff": realized["cutoff"],
     })
 
