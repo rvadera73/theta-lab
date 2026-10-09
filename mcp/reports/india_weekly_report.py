@@ -841,7 +841,7 @@ def _evaluate_fno_legs(positions: list) -> list[dict]:
     results = []
     for underlying, spot, leg in short_legs:
         vol = vol_cache.get(underlying)
-        expected_move_pct = vol * (leg.dte / 365) ** 0.5 * 100 * expected_move_multiple if vol else None
+        expected_move_pct = vol * (max(leg.dte, 0) / 365) ** 0.5 * 100 * expected_move_multiple if vol else None
         buffer_pct = abs(leg.strike - spot) / spot * 100 if spot else None
         delta = _bs_delta(spot, leg.strike, leg.dte, vol, leg.option_type) if vol else None
         results.append({

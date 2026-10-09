@@ -81,6 +81,8 @@ _INDIA_SYMBOL_MAP = {
     "LIC": "LICI.NS",
     "LUPIN": "LUPIN.NS",
     "MAZDOC": "MAZDOCK.NS",
+    "MTAR": "MTARTECH.NS",  # MTAR Technologies -- MTAR.NS 404s on Yahoo; MTARTECH.NS confirmed live 2026-10-04
+    "STLTC": "STLTECH.NS",  # Sterlite Technologies
     "NTPC": "NTPC.NS",
     "ONE97": "PAYTM.NS",  # One97 Communications (Paytm) -- confirmed via india_config.yaml watchlist entry, real ticker already used there
     "PARDEF": "PARAS.NS",

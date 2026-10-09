@@ -155,6 +155,64 @@ watchlist:
     strategy: "Already in zone — the strongest fundamentals-vs-price gap of the three new candidates. Enter first tranche now."
     max_position: 12  # shares (high price stock)
 
+  # ---- AI Data Center trend basket (added 2026-10-04) ----
+  # All three are EXTENDED right now (91-100% of 52w range, RSI 59-72, above
+  # both MAs) — per the established 30-day/MA discipline these are WAIT-FOR-
+  # PULLBACK entries anchored near the 50-day MA, NOT chase-now buys.
+  # HFCL is already held via the 6-month plan (HIMFUT month-3 ₹10,000 add,
+  # conditional on price holding ~₹210 — it has NOT; it ran to ~₹238, so
+  # that conditional add should be skipped per its own rule).
+  - symbol: HFCL
+    name: HFCL Limited (Himachal Futuristic Communications)
+    sector: AI & Data Center / Optical Fiber & Telecom Infra
+    thesis: >
+      Added 2026-10-04 to the AI data-center trend basket. Optical fiber
+      cable + telecom infrastructure beneficiary of AI data-center
+      connectivity buildout. Revenue growth +119.9% YoY, but HONEST FLAG:
+      stock is at 93.2% of 52w range (₹238 vs 52w low ₹61), trailing PE 62,
+      and the Yahoo analyst mean target (₹150) sits ~37% BELOW spot —
+      price has run far past published targets. Do not chase.
+    entry_zone_low: 200
+    entry_zone_high: 221
+    current_price: 238
+    strategy: "Wait for pullback to the 50-MA zone (~₹221) or better; the existing 6-month-plan month-3 conditional add (only if ≤ ~₹210) is currently NOT triggered."
+    max_position: 50  # shares
+
+  - symbol: STLTC
+    name: Sterlite Technologies Limited
+    sector: AI & Data Center / Optical Comms & Network Integration
+    thesis: >
+      Added 2026-10-04 to the AI data-center trend basket. Optical
+      communications + network integration play on data-center networking
+      buildout. Revenue growth +87.4% YoY, earnings growth +1,755% (base
+      effect — verify durability), analyst strong_buy with mean target
+      ₹1,355 (~42% above ₹955). HONEST FLAG: at 100% of 52w range
+      (10x off the ₹86 low), RSI 71.8 — the most extended of the three.
+      Highest conviction on trend, worst entry point right now.
+    entry_zone_low: 680
+    entry_zone_high: 760
+    current_price: 955
+    strategy: "Wait for pullback toward the 50-MA (~₹718). Do not chase at the 52w high with RSI > 70. Re-evaluate zone after the next earnings print confirms the growth is not pure base effect."
+    max_position: 20  # shares
+
+  - symbol: MTAR
+    name: MTAR Technologies Limited
+    sector: AI & Data Center / Precision Engineering (defense + clean energy base)
+    thesis: >
+      Reclassified from Defense & Aerospace to AI & Data Center 2026-10-04
+      per trader request — precision-engineering angle on data-center
+      thermal/power components layered on its defense/clean-energy base
+      (NOTE: the AI-data-center thesis for MTAR is the trader's thematic
+      call, not yet verified against filings/order book — flagged for
+      confirmation). Revenue growth +130.4%, analyst strong_buy, mean
+      target ₹9,140 (~17% above ₹7,797). At 91% of 52w range, trailing
+      PE 179 / forward PE 46. Already in the F&O screener universe (tier 3).
+    entry_zone_low: 6400
+    entry_zone_high: 6900
+    current_price: 7797
+    strategy: "Wait for pullback to the 50-MA zone (~₹6,900). Verify the data-center order-book claim before sizing up; treat as tier-3 speculative until then."
+    max_position: 5  # shares (high price stock)
+
   - symbol: GVTD
     icici_symbol: "GE VERNOVA T&D"
     name: GE Vernova T&D India Ltd

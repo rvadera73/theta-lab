@@ -227,6 +227,8 @@ WATCHLIST_YF: dict[str, str] = {
     "SOLARINDS":  "SOLARINDS.NS",
     "GVTD":       "GVT&D.NS",
     "POWERINDIA": "POWERINDIA.NS",
+    "STLTC":      "STLTECH.NS",   # Sterlite Technologies -- added 2026-10-04 (AI data-center basket)
+    "MTAR":       "MTARTECH.NS",  # MTAR Technologies -- MTAR.NS 404s on Yahoo; added 2026-10-04
 }
 
 
