@@ -146,6 +146,25 @@ def average_annualized_yield(entry: Optional[dict]) -> Optional[float]:
     return sum(vals) / len(vals) if vals else None
 
 
+def _is_usable(entry: dict) -> bool:
+    """An entry is only worth caching if it has an explicit error key AND
+    at least one side (put or call) resolved to a real annualized yield --
+    reuses average_annualized_yield() as the single source of truth for
+    "did this side actually resolve" instead of a second, divergent check.
+    Confirmed live 2026-10-09: a structurally "successful" fetch (a real
+    price, a real expiry found) can still have both put AND call come back
+    None because Yahoo returned a stale/no-quote chain (bid=ask=0.0 for
+    every strike, the same documented quirk get_yield_on_capital's own
+    _yield_for already guards against per-side) -- this has no "error" key
+    at all, so the original error-only check let it through and cached a
+    functionally-empty result as if it were good data for the rest of the
+    day. A fresh, uncached call minutes later for the same ticker returned
+    real bid/ask -- Yahoo's data was fine, only the cached snapshot was bad."""
+    if entry.get("error"):
+        return False
+    return average_annualized_yield(entry) is not None
+
+
 def get_cached_batch_yield(symbols: list[str], **kwargs) -> dict[str, dict]:
     """Batch yield-on-capital, cached once per calendar day and reused
     across every report type generated that day (daily/weekly/biweekly/
@@ -164,30 +183,32 @@ def get_cached_batch_yield(symbols: list[str], **kwargs) -> dict[str, dict]:
             with open(_CACHE_FILE) as f:
                 stored = json.load(f)
             if stored.get("date") == today:
-                # Drop any error entries a pre-fix version of this function
-                # may have already persisted today (see the write-side fix
-                # below) -- an old cached failure should never block a retry
-                # just because it happens to share today's date.
-                cache = {s: v for s, v in stored.get("data", {}).items() if not v.get("error")}
+                # Drop any unusable entries a pre-fix version of this
+                # function may have already persisted today (see the
+                # write-side check below) -- an old cached failure (error
+                # OR a structurally-successful-but-empty result) should
+                # never block a retry just because it happens to share
+                # today's date.
+                cache = {s: v for s, v in stored.get("data", {}).items() if _is_usable(v)}
         except Exception:
             pass
 
     missing = [s for s in symbols if s not in cache]
     if missing:
         fresh = batch_get_yield_on_capital(missing, **kwargs)
-        # Never persist an error result (rate-limited, no_price_data, etc.)
-        # into the day's cache -- confirmed live 2026-10-04: a rate-limit
-        # hit got cached as if it were valid data for the rest of the day,
-        # so a ticker that failed once during a heavy-traffic moment never
-        # got a chance to retry again that same day. Same bug class already
-        # fixed once in enhanced_metrics.py's metrics cache (a "Data
-        # unavailable" result is never cached there either) -- this module
-        # just never got the same treatment. `cache` (error-free, per the
-        # read-side filter above) plus only fresh's error-free entries is
-        # what gets written back to disk; the in-memory `result` below still
-        # carries this call's own fresh errors so the immediate caller sees
-        # them.
-        cacheable = {s: v for s, v in fresh.items() if not v.get("error")}
+        # Never persist an unusable result (an explicit error, OR a
+        # structurally "successful" fetch where both put and call still
+        # came back None) into the day's cache -- confirmed live
+        # 2026-10-04 for the error case and 2026-10-09 for the empty-
+        # result case; same underlying problem (a transient Yahoo data
+        # gap getting cached as if it were final for the rest of the day),
+        # different shape. Same bug class already fixed once in
+        # enhanced_metrics.py's metrics cache (a "Data unavailable" result
+        # is never cached there either). `cache` (already filtered above)
+        # plus only fresh's usable entries is what gets written back to
+        # disk; the in-memory `result` below still carries this call's own
+        # fresh failures so the immediate caller sees them.
+        cacheable = {s: v for s, v in fresh.items() if _is_usable(v)}
         if cacheable:
             try:
                 os.makedirs(_CACHE_DIR, exist_ok=True)
