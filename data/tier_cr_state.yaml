@@ -66,6 +66,50 @@ last_outcome: >
   Jul downgrade, not a new systemic signal. Worth a closer look next
   cycle specifically on whether ORCL's weakness spreads to CRWV/NBIS
   (the CRWV 30d deceleration is the one number to watch).
+
+  PARTIAL UPDATE 2026-10-11 (targeted WebSearch on neocloud debt + the
+  Nov 2026 midterms specifically -- NOT a full /ai-capex-risk-review run;
+  VIX/SPX/breadth/HY-OAS/Anthropic-IPO/fundamentals-drift were not
+  re-pulled this pass, so last_check_date stays 2026-09-28 and a full
+  review is now overdue, not reset by this note):
+  - CoreWeave's real total debt is $35B as of 2026-06-30 (up from $22.7B
+    long-term debt at Q1-end), with quarterly interest expense of $640M
+    (vs. $267M a year earlier) -- keeping the company cash-flow negative
+    even as revenue grows. The Sep-28 check's "$8.5B DDTL is A3/investment
+    grade" framing is true but was one facility, not the real total
+    leverage picture -- worth citing the $35B/$640M figures going forward,
+    not just the DDTL.
+  - GPU rental rates have fallen 70-90% from their 2023 peak, and some
+    neocloud startups have cut prices a further ~33% since September 2026
+    -- a real, already-occurring revenue-side stress signal this gate has
+    never tracked (it watches credit spreads/ratings, not the underlying
+    rental economics that determine whether the debt can be serviced at
+    all). Worth adding as its own tracked metric, not folded into HY OAS.
+  - The "borrower set" at the center of the neocloud refinancing wall is
+    named directly (multiple sources, Oct 2026): CoreWeave, Lambda,
+    Applied Digital, Crusoe, and Nebius -- Lambda and Crusoe are
+    structurally identical risk (same GPU-collateral debt model, same
+    lender pool: Blackstone/Blue Owl/Apollo/PIMCO/BlackRock) but far less
+    covered in mainstream press, added to tracked_names below. Fluidstack
+    ($10B facility reported) is private with no public ticker -- tracked
+    by name only, no price-based proxy possible.
+  - Financing spreads bifurcate sharply by customer quality: neoclouds
+    borrow at SOFR+225 against a hyperscaler-backed contract vs.
+    SOFR+450-550 against a weaker/smaller customer -- a live, quantified
+    proxy for exactly the customer-concentration risk flagged in this
+    conversation. Worth tracking this spread directly if it becomes
+    visible in future financing announcements.
+  - Nov 3, 2026 midterm elections added as a Tier-1 checkpoint (see
+    playbook Section 08): AI regulation/chip-export policy is an explicit,
+    heavily-funded campaign issue (>$200M in opposing super PACs), and the
+    current administration's deregulatory AI stance is an unstated
+    assumption behind the whole capex buildout. Margins are razor-thin
+    (R 53-47 Senate / 218-214 House; D needs net +4 Senate / +3 House to
+    flip both) -- a real toss-up, no view taken on the outcome itself.
+  - None of the above is a rating-agency action -- gate_fired stays false.
+    This is Tier-1-relevant evidence (debt scale, revenue-side pressure,
+    a wider borrower set, a dated political catalyst), not a Tier-CR
+    firing event.
 gate_fired: false
 tracked_names:
   - MSFT
@@ -78,3 +122,7 @@ tracked_names:
   - HUT
   - RIOT
   - AVGO
+  - LAMBDA     # private, no public ticker -- track by name/news only
+  - CRUSOE     # private, no public ticker -- track by name/news only
+  - APLD       # Applied Digital -- public ticker
+  - FLUIDSTACK # private, no public ticker -- track by name/news only
