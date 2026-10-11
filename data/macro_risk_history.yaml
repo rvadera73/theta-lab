@@ -99,10 +99,28 @@
   pending_downgrade_stage: null
 - date: '2026-10-09'
   risk_level: GREEN
-  prob_30d: 9.5
-  prob_60d: 16.8
-  prob_90d: 24.1
-  primary_risk: BREADTH elevated
+  prob_30d: 6.0
+  prob_60d: 11.0
+  prob_90d: 16.0
+  primary_risk: Market neutral
   stage: 0
-  severity_sum: 0.23
+  severity_sum: 0.0
+  pending_downgrade_stage: null
+- date: '2026-10-10'
+  risk_level: GREEN
+  prob_30d: 6.0
+  prob_60d: 11.0
+  prob_90d: 16.0
+  primary_risk: Market neutral
+  stage: 0
+  severity_sum: 0.0
+  pending_downgrade_stage: null
+- date: '2026-10-11'
+  risk_level: GREEN
+  prob_30d: 6.0
+  prob_60d: 11.0
+  prob_90d: 16.0
+  primary_risk: Market neutral
+  stage: 0
+  severity_sum: 0.0
   pending_downgrade_stage: null
