@@ -282,6 +282,13 @@ exit_triggers:
   # DIXTEC: sold (0 shares as of 2026-07-19 statement)
   # MAZDOC: sold (0 shares as of 2026-07-19 statement)
   # HERHON: sold (0 shares as of 2026-07-19 statement)
+  # YATHOS: not in holdings (confirmed via scripts/reconcile.py Layer 3 check
+  #   against real parse_equity_positions() data, 2026-10-11 -- this entry's
+  #   action text had been repeating a hand-typed "price 845.50" verbatim in
+  #   every report since 2026-08-04 with no re-evaluation against real
+  #   holdings; see docs/RECONCILIATION_PROCESS.md's Incidents section)
+  # DRREDD: not in holdings (same check, same date -- identical bug class,
+  #   found by the same automated cross-check, not a manual re-catch)
 
   # --- Watch / hold — NOT immediate exits (corrected 2026-08-04, re-verified live) ---
   # Re-verified 2026-08-04 against fresh statement + live Yahoo data. The 2026-07-19
@@ -295,18 +302,6 @@ exit_triggers:
     shares: all
     phase: 3
     action: "HOLD — thesis intact, +11.8% profit as of 2026-08-04 (not a loss-cut). Review 2026-10-17, do not exit on this trigger."
-
-  # Re-verified 2026-08-04: 45 sh @ avg cost 1226.13, live price 1172.60 = -4.4%
-  # (small loss, direction was right). Earnings are worse than the config stated —
-  # real earningsGrowth -68.7%, not -14% — which reinforces rather than weakens the
-  # "exit on bounce" thesis. Price crossed 1350 at some point in the last 89 days
-  # (89d high 1367.03) and has since pulled back below the trigger — if that bounce
-  # wasn't acted on, the window was missed; re-arm for the next bounce.
-  - icici_symbol: DRREDD
-    trigger: 1350
-    shares: all
-    phase: 2
-    action: "Exit on bounce >= 1,350 — pharma not in core theme, real earnings growth -68.7% (worse than originally stated, thesis still holds)"
 
   # Re-verified 2026-08-04: trigger (414) still sits above the 89-day range (89d
   # high 410.20, low 341.85); stock at 343.65, near its 89-day low again. Share
@@ -324,16 +319,6 @@ exit_triggers:
     shares: all
     phase: 2
     action: "Exit >= 230 — take 38%+ gain, re-enter lower (stock ran 108% in 1Y). Live price 209.95, not yet triggered; recent buys at ~208-219 look like averaging, not exit prep."
-
-  # Re-verified 2026-08-04: fixed the trigger-vs-text mismatch (field said 820, text
-  # said 750). Live price 845.50 IS above the real 820 trigger — this one is
-  # genuinely actionable today, unlike the others in this block. ~150 sh @ avg cost
-  # ~782.92 = +8.0% profit.
-  - icici_symbol: YATHOS
-    trigger: 820
-    shares: all
-    phase: 1
-    action: "Exit all at market — price 845.50 above the 820 trigger, +8.0% profit on ~150 sh. Genuinely actionable now."
 
   # Re-verified 2026-08-04: trigger (2,700) still sits ~5.4% above the 89-day high
   # (2,561.53), never touched. Share count corrected: actual holding is 100 (not the
