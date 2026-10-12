@@ -260,7 +260,7 @@
     { key: "conviction", label: "Conviction (rank)", get: r => r.conviction ?? -999, numeric: true },
     { key: "target_upside_pct", label: "Analyst upside", get: r => r.target_upside_pct ?? -999, numeric: true },
     { key: "invested", label: "Invested (notional)", get: r => r.invested ?? -1, numeric: true },
-    { key: "heat", label: "Heat", get: r => r.heat || "", numeric: false },
+    { key: "heat", label: "Technical Heat", get: r => r.heat || "", numeric: false },
   ];
 
   function renderTable() {

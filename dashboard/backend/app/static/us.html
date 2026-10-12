@@ -54,6 +54,8 @@
     border-radius: 999px; background: #e8f4f8; color: #205493; margin-left: 8px; vertical-align: middle;
   }
   .as-of-badge.stale { background: #f4e3db; color: #b50909; }
+  .heat-RED { color: #b50909; font-weight: 700; }
+  .heat-YELLOW { color: #936316; font-weight: 700; }
   section.panel h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 
   /* Top scorecard -- one at-a-glance summary before any detail panel */
@@ -110,9 +112,16 @@
     <div id="pnl-trend"><p class="empty">Loading...</p></div>
   </section>
 
+  <section class="panel" aria-labelledby="h-posheat">
+    <span class="customer-label">Customer</span>
+    <h2 id="h-posheat">Position Heat <span class="as-of-badge" id="as-of-posheat"></span></h2>
+    <p style="font-size:13px;color:#565c65;margin-top:-4px;">Per open option LEG -- is this specific trade in trouble (cost-to-close vs. premium, DTE, strike distance). Different question from Technical/Sector Heat below, which scores the STOCK's own RSI/trend extendedness -- a position can be severely red here while its stock reads calm there, or vice versa.</p>
+    <div id="position-heat"><p class="empty">Loading...</p></div>
+  </section>
+
   <section class="panel" aria-labelledby="h-sector">
     <span class="customer-label">Customer</span>
-    <h2 id="h-sector">Sector Heat <span class="as-of-badge" id="as-of-sector"></span></h2>
+    <h2 id="h-sector">Technical / Sector Heat <span class="as-of-badge" id="as-of-sector"></span></h2>
     <details id="sector-details">
       <summary>Show sector-by-sector position heat</summary>
       <div id="sector-heat" class="rendered-md"><p class="empty">Loading...</p></div>
@@ -355,6 +364,55 @@
       </table>`;
   }
 
+  async function loadPositionHeat() {
+    const resp = await fetch("api/us/position-heat");
+    const el = document.getElementById("position-heat");
+    if (!resp.ok) {
+      el.innerHTML = `<p class="empty">Failed to load (${resp.status})</p>`;
+      return;
+    }
+    const json = await resp.json();
+    setAsOf("as-of-posheat", json.as_of);
+    const d = json.data || {};
+    const counts = d.counts || {};
+    const actionable = (d.top_actions || []).filter(l => l.color === "RED" || l.color === "YELLOW");
+    let html = `<p><span class="heat-RED">${counts.RED || 0} RED</span> &middot; <span class="heat-YELLOW">${counts.YELLOW || 0} YELLOW</span> &middot; ${counts.GREEN || 0} GREEN`
+      + (counts.UNKNOWN ? ` &middot; ${counts.UNKNOWN} UNKNOWN (no live price)` : "") + `</p>`;
+    if (!actionable.length) {
+      html += `<p class="empty">No RED/YELLOW legs -- every open position is within normal range.</p>`;
+    } else {
+      html += `<table class="usa-table usa-table--borderless" style="width:100%;">
+        <thead><tr><th>Symbol</th><th>Leg</th><th>Expiry</th><th>DTE</th><th>Color</th><th>Coverage</th><th>Action</th><th>Why</th></tr></thead>
+        <tbody>` + actionable.map(l => {
+          let coverage;
+          if (l.type === "PUT") {
+            coverage = `<span title="Cash-secured by account design -- checked separately, not here">cash-secured</span>`;
+          } else if (l.covered === true) {
+            coverage = `<span class="heat-GREEN">covered (${l.covered_contracts}/${l.total_contracts})</span>`;
+          } else if (l.covered === false && l.covered_contracts > 0) {
+            coverage = `<span class="heat-YELLOW">partial (${l.covered_contracts}/${l.total_contracts})</span>`;
+          } else {
+            coverage = `<span class="heat-RED">naked</span>`;
+          }
+          const strangleBadge = l.strangle ? ` <span style="font-size:11px;color:#565c65;">(strangle)</span>` : "";
+          const staleBadge = (l.days_stale != null && l.days_stale > 3)
+            ? ` <span class="as-of-badge stale" title="From ${l.data_source} data">${l.days_stale}d old</span>` : "";
+          return `
+          <tr>
+            <td>${l.symbol}${strangleBadge}</td>
+            <td>${l.type} $${l.strike}</td>
+            <td>${l.expiry}</td>
+            <td>${l.dte}</td>
+            <td class="heat-${l.color}">${l.color}</td>
+            <td style="font-size:12.5px;">${coverage}${staleBadge}</td>
+            <td>${l.action}</td>
+            <td style="font-size:12.5px;">${l.reason}</td>
+          </tr>`;
+        }).join("") + `</tbody></table>`;
+    }
+    el.innerHTML = html;
+  }
+
   async function loadJsonTextInto(url, elementId, asOfId) {
     const resp = await fetch(url);
     if (!resp.ok) {
@@ -481,6 +539,7 @@
     await Promise.all([
       loadAccountStatus(),
       loadPnlTrend(),
+      loadPositionHeat(),
       loadJsonTextInto("api/us/sector-heat", "sector-heat", "as-of-sector"),
       loadJsonTextInto("api/us/risk-macro", "risk-macro", "as-of-risk"),
       loadQuarterly(),

@@ -184,6 +184,39 @@ def sync_all():
                 title, desc[:2000], status,
             )
 
+        # -- US: Position Heat (per LEG, services.get_position_heat() ->
+        # analysis.heat_scanner.assess_portfolio_heat) -- a real signal this
+        # ledger never saw before 2026-10-12: a position can be severely
+        # RED here (hard stop-loss territory on cost-to-close) while
+        # invisible to priority_actions above, because that list gates on
+        # ticker-level conviction<7 and a high-conviction name's bad TRADE
+        # never surfaces there. Only RED legs synced -- YELLOW/GREEN are
+        # routine, same "don't flood the tracker" principle priority_actions
+        # already follows.
+        #
+        # A RED CALL that's fully covered (real owned shares >= contracts,
+        # see services.get_position_heat()'s coverage calc) is NOT synced at
+        # the same urgency -- its real exposure is capped (assignment at the
+        # strike), not the open-ended "pay $X to buy it back" story the same
+        # cost-to-close math implies for a naked one. Confirmed real case,
+        # 2026-10-12: OKTA's three deep-ITM short calls looked like a 15x-
+        # loss naked emergency under a stale transactions file; the current
+        # position snapshot showed 600 real shares fully covering all of
+        # them. Partially-covered and naked calls, and all puts (already
+        # cash-secured by account design, a separate check), still sync at
+        # full urgency as before.
+        for leg in services.get_position_heat().get("by_color", {}).get("RED", []):
+            if leg.get("type") == "CALL" and leg.get("covered") is True:
+                continue
+            stale_note = (
+                f" [based on {leg['data_source']} data as of {leg['data_as_of']}, {leg['days_stale']}d old]"
+                if leg.get("days_stale") is not None and leg["days_stale"] > 3 else ""
+            )
+            item_id = f"us_posheat_{_short_id(leg['symbol'], leg['strike'], leg['expiry'], leg['type'])}"
+            title = f"{leg['action']} {leg['symbol']} {leg['type']} ${leg['strike']}"
+            desc = f"exp {leg['expiry']} ({leg['dte']}d) | {leg['reason']}{stale_note}"
+            _upsert_new_only(conn, item_id, "US", "position_heat", leg['action'], title, desc, "OPEN")
+
         # -- India: 6-month plan's F&O legs flagged for closing + equity exits
         plan = services.get_india_plan() or {}
         for leg in plan.get("fno_legs_to_close_month_1", []):

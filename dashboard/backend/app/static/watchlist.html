@@ -84,7 +84,7 @@
     return `
       <div class="kpi-row">
         <div class="kpi"><div class="value">$${fmtNum(a.price)}</div><div class="label">Price</div></div>
-        <div class="kpi"><div class="value heat-${a.heat_status}">${a.heat_status || "-"}</div><div class="label">Heat (conv ${fmtNum(a.conviction)}, RSI ${fmtNum(a.rsi)})</div></div>
+        <div class="kpi"><div class="value heat-${a.heat_status}">${a.heat_status || "-"}</div><div class="label">Technical Heat (conv ${fmtNum(a.conviction)}, RSI ${fmtNum(a.rsi)})</div></div>
         <div class="kpi"><div class="value">${a.iv_rank !== null && a.iv_rank !== undefined ? a.iv_rank.toFixed(0) : "-"}</div><div class="label">IV Rank ${a.iv_entry_signal ? "✓ ≥40" : ""}</div></div>
         <div class="kpi"><div class="value">${put ? put.annualized_yield_pct.toFixed(1) + "%" : "-"}</div><div class="label">Put yield-on-capital (ann.)</div></div>
         <div class="kpi"><div class="value">${call ? call.annualized_yield_pct.toFixed(1) + "%" : "-"}</div><div class="label">Call yield-on-capital (ann.)</div></div>

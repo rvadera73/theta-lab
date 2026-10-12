@@ -194,6 +194,162 @@ def get_us_priority_actions():
     return _to_native(gen.get_priority_actions())
 
 
+def get_position_heat():
+    """Position Heat (per LEG) -- a different concept from the per-TICKER
+    'Technical Heat' everywhere else on this dashboard (get_composite_scores,
+    get_us_priority_actions, Sector Heat all read UnifiedReportProduction's
+    self.metrics, which scores a stock's own RSI/Bollinger/52-week-range
+    extendedness). This instead reuses analysis.heat_scanner.assess_portfolio_heat
+    -- the engine behind the scan_position_heat MCP tool -- which scores each
+    individual OPEN OPTION LEG by cost-to-close-vs-premium ratio, DTE, and
+    strike distance: "is this specific trade in trouble," not "is this stock
+    technically extended." The two never conflict because they were never
+    wired together: this dashboard never showed the per-leg signal at all
+    before this function existed (confirmed 2026-10-12 -- a real position,
+    META $670P, was RED and 62% underwater here while invisible to every
+    other dashboard view, including the Action Tracker, because none of
+    them read this computation).
+
+    Reuses report_utils.load_us_positions() -- the SAME file-based loader
+    (Schwab reconstructed from transaction CSVs, no live broker API; Fidelity/
+    Robinhood/Vanguard from their CSV/PDF exports; prices backfilled live from
+    Yahoo) that mcp/server.py's scan_position_heat tool handler already uses,
+    so this is the identical real signal already proven this session, not a
+    second, parallel computation of "what's open" built from a different
+    loader (scripts/open_positions_loader_v2.py, used by UnifiedReportProduction,
+    has no premium_received/current_mark fields at all -- this data only
+    exists via load_us_positions()'s Position/OptionLeg objects).
+    """
+    import asyncio
+    from collections import defaultdict
+    from report_utils import load_us_positions
+    from heat_scanner import assess_portfolio_heat
+    from regime import detect_regime
+
+    us_data = asyncio.run(load_us_positions())
+    positions = us_data.get("positions", [])
+    account_sources = us_data.get("account_sources", {})
+    regime_str = detect_regime().get("regime", "CAUTIOUS_BULL")
+
+    # Real position-context annotations heat_scanner.py itself has no concept
+    # of (confirmed by source -- zero references to "covered"/"shares"
+    # anywhere in that file): per-leg coverage, strangle pairing, and data
+    # staleness. Computed here and merged into assess_portfolio_heat's output
+    # afterward, keyed by (symbol, strike, expiry, option_type) -- a leg
+    # identifier can collide across two accounts holding the identical
+    # contract, a known rare edge case; when it happens the two accounts'
+    # context is combined rather than picked arbitrarily, which is
+    # conservative (a leg shows covered only if EVERY account holding it has
+    # enough shares).
+    context: dict[tuple, dict] = {}
+
+    def _key(symbol, strike, expiry, opt_type):
+        return (symbol, round(float(strike), 4), expiry, opt_type)
+
+    legs = []
+    for pos in positions:
+        # Covered-call allocation: real owned shares in THIS account/symbol,
+        # consumed by its own call legs only (coverage doesn't cross
+        # accounts in practice -- the shares and the short call have to sit
+        # in the same brokerage account to actually be "covered"). Calls
+        # sorted by strike ascending so the most likely to be assigned
+        # (closest to/through the money) draws on available shares first.
+        shares_remaining = pos.shares or 0
+        calls_sorted = sorted(
+            (lg for lg in pos.option_legs if lg.option_type == "CALL"),
+            key=lambda lg: lg.strike,
+        )
+        leg_coverage = {}
+        for lg in calls_sorted:
+            contracts = abs(lg.quantity)
+            covered = min(shares_remaining // 100, contracts)
+            shares_remaining -= covered * 100
+            leg_coverage[id(lg)] = {
+                "covered_contracts": int(covered),
+                "total_contracts": int(contracts),
+                "naked": covered < contracts,
+            }
+
+        # Strangle pairing: a put + call on the same underlying/account
+        # sharing an expiry is one coordinated structure, not two unrelated
+        # alarms -- matches how this book's own strategy docs already treat
+        # strangles.
+        puts_by_expiry = defaultdict(list)
+        calls_by_expiry = defaultdict(list)
+        for lg in pos.option_legs:
+            (calls_by_expiry if lg.option_type == "CALL" else puts_by_expiry)[lg.expiry].append(lg)
+        strangle_expiries = set(puts_by_expiry) & set(calls_by_expiry)
+
+        source_info = account_sources.get(pos.account, {})
+
+        for lg in pos.option_legs:
+            premium = abs(lg.premium_received or 0)
+            if premium <= 0:
+                continue  # assess_portfolio_heat can't compute loss_multiple against a zero premium
+            legs.append({
+                "symbol": pos.symbol,
+                "option_type": lg.option_type,
+                "strike": lg.strike,
+                "dte": lg.dte,
+                "expiry": lg.expiry,
+                "premium_received": premium,
+                "cost_to_close": abs(lg.current_mark or 0),
+                "current_price": pos.current_price,
+            })
+
+            cov = leg_coverage.get(id(lg))
+            k = _key(pos.symbol, lg.strike, lg.expiry, lg.option_type)
+            entry = context.setdefault(k, {
+                "account": pos.account,
+                "covered": True,  # AND-combined below; True is the identity for AND
+                "covered_contracts": 0, "total_contracts": 0,
+                "strangle": lg.expiry in strangle_expiries,
+                "data_source": source_info.get("source"),
+                "data_as_of": source_info.get("as_of"),
+                "days_stale": source_info.get("days_stale"),
+            })
+            if lg.option_type == "CALL":
+                entry["covered"] = entry["covered"] and not cov["naked"]
+                entry["covered_contracts"] += cov["covered_contracts"]
+                entry["total_contracts"] += cov["total_contracts"]
+            else:
+                entry["covered"] = None  # not a meaningful concept for puts -- cash-secured by account design, checked separately
+
+    if not legs:
+        return _to_native({"by_color": {"RED": [], "YELLOW": [], "GREEN": [], "UNKNOWN": []},
+                            "counts": {"RED": 0, "YELLOW": 0, "GREEN": 0, "UNKNOWN": 0},
+                            "regime": regime_str, "top_actions": []})
+
+    result = assess_portfolio_heat(legs, regime_str)
+
+    def _annotate(rows):
+        # top_actions rows use "option_type"; by_color rows use "type" --
+        # heat_scanner.py's own two output shapes genuinely differ (confirmed
+        # directly against its source, not assumed), not something to "fix"
+        # there since it's pre-existing, relied-on-elsewhere behavior.
+        for row in rows:
+            opt_type = row.get("type") or row.get("option_type")
+            if not opt_type:
+                continue
+            ctx = context.get(_key(row["symbol"], row["strike"], row["expiry"], opt_type))
+            if ctx:
+                row["covered"] = ctx["covered"]
+                row["covered_contracts"] = ctx["covered_contracts"] if opt_type == "CALL" else None
+                row["total_contracts"] = ctx["total_contracts"] if opt_type == "CALL" else None
+                row["strangle"] = ctx["strangle"]
+                row["account"] = ctx["account"]
+                row["data_source"] = ctx["data_source"]
+                row["data_as_of"] = ctx["data_as_of"]
+                row["days_stale"] = ctx["days_stale"]
+        return rows
+
+    for color_rows in result.get("by_color", {}).values():
+        _annotate(color_rows)
+    _annotate(result.get("top_actions", []))
+
+    return _to_native(result)
+
+
 def _get_symbol_sector(ticker: str) -> str:
     """Same CUSTOM_SECTOR_MAP-then-Yahoo-fallback logic sector_analysis.py
     uses for held positions, reused directly for a watchlist symbol that

@@ -585,6 +585,108 @@ def _snapshot_holdings() -> set:
     return _SNAPSHOT_HOLDINGS_CACHE
 
 
+_SCHWAB_SNAPSHOT_FILE = {
+    "A": "schwab_rahul_individual.csv",
+    "B": "schwab_pinky_ira.csv",
+    "C": "schwab_designated-bene.csv",
+}
+
+_SCHWAB_OPT_SYMBOL = re.compile(r"^(\w+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([CP])$")
+
+
+def _clean_money(val: str) -> float:
+    try:
+        return float(val.strip().strip('"').replace("$", "").replace(",", ""))
+    except (ValueError, AttributeError):
+        return 0.0
+
+
+def load_schwab_from_snapshot(account: str) -> list[Position] | None:
+    """Build Positions directly from the current Schwab POSITION snapshot
+    (data/positions/schwab_*.csv -- the same canonical file reconcile.py
+    maintains), instead of reconstructing from transaction history. Real
+    advantage over reconstruct_positions_from_transactions(): this file
+    carries Schwab's own live Cost Basis (-> premium_received) and Mkt Val
+    (-> current_mark) per leg directly -- no live option-chain fetch needed,
+    and no risk of a stale transaction file showing a contract as still
+    open (or a share count as 0) when the broker's own current snapshot
+    says otherwise. Confirmed real case, 2026-10-12: Account A's
+    transactions file was 10 days stale and showed OKTA with 0 shares
+    against 6 short calls (looked like naked calls, 15x loss); the SAME
+    day's position snapshot (4:23 PM) showed the true figure -- 600 shares,
+    fully covering all 6 contracts -- a covered-call position, not a naked
+    one. Returns None if no snapshot file exists for this account."""
+    filename = _SCHWAB_SNAPSHOT_FILE.get(account)
+    if not filename:
+        return None
+    path = DATA_DIR / "positions" / filename
+    if not path.exists():
+        return None
+
+    try:
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            lines = f.readlines()
+    except Exception:
+        return None
+
+    header_idx = next((i for i, l in enumerate(lines) if '"Symbol"' in l and "Asset Type" in l), None)
+    if header_idx is None:
+        return None
+
+    equity_map: dict[str, Position] = {}
+    reader = csv.DictReader(lines[header_idx:])
+    for row in reader:
+        raw_sym = (row.get("Symbol") or "").strip().strip('"')
+        if not raw_sym or raw_sym.lower().startswith(("account", "cash")):
+            continue
+        asset_type = (row.get("Asset Type") or "").strip().strip('"').lower()
+        try:
+            qty = float((row.get("Qty (Quantity)") or "0").strip().strip('"').replace(",", ""))
+        except ValueError:
+            continue
+        price = _clean_money(row.get("Price") or "0")
+
+        if asset_type in ("equity", "stock"):
+            if raw_sym not in equity_map:
+                equity_map[raw_sym] = Position(
+                    symbol=raw_sym, account=account, shares=0,
+                    stock_cost_basis=0, current_price=price, option_legs=[],
+                )
+            equity_map[raw_sym].shares = int(qty) if qty > 0 else 0
+            equity_map[raw_sym].current_price = price
+
+        elif asset_type == "option" and qty < 0:
+            m = _SCHWAB_OPT_SYMBOL.match(raw_sym)
+            if not m:
+                continue
+            underlying, expiry_str, strike_str, opt_char = m.groups()
+            expiry = datetime.strptime(expiry_str, "%m/%d/%Y").date()
+            dte = (expiry - date.today()).days
+            if dte < 0:
+                continue  # expired -- not an open position
+
+            if underlying not in equity_map:
+                equity_map[underlying] = Position(
+                    symbol=underlying, account=account, shares=0,
+                    stock_cost_basis=0, current_price=0, option_legs=[],
+                )
+
+            leg = OptionLeg(
+                description=raw_sym,
+                option_type="CALL" if opt_char == "C" else "PUT",
+                strike=float(strike_str),
+                expiry=expiry.isoformat(),
+                dte=dte,
+                quantity=-abs(qty),
+                premium_received=abs(_clean_money(row.get("Cost Basis") or "0")),
+                current_mark=abs(_clean_money(row.get("Mkt Val (Market Value)") or "0")),
+            )
+            equity_map[underlying].option_legs.append(leg)
+
+    result = [p for p in equity_map.values() if p.option_legs]
+    return result if result else None
+
+
 def reconstruct_positions_from_transactions(account: str = "A") -> list[Position] | None:
     """
     Reconstruct current positions from transaction history (fallback when live API unavailable).
@@ -608,6 +710,18 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
     txn_file = max(txn_files, key=lambda x: x.stat().st_mtime)
 
     positions_dict = defaultdict(lambda: {"contracts": defaultdict(int)})
+    # Real premium received per contract, from the SAME transaction file's own
+    # Amount column -- STO credits add, BTC debits reduce (a partial close
+    # reduces the basis remaining on the still-open quantity). No live fetch
+    # needed; this is exactly what the broker already recorded.
+    premium_by_contract: dict[str, float] = defaultdict(float)
+
+    def _amount(row: dict) -> float:
+        raw = row.get("Amount", "").strip().strip('"').replace("$", "").replace(",", "")
+        try:
+            return float(raw)
+        except ValueError:
+            return 0.0
 
     try:
         with open(txn_file) as f:
@@ -634,14 +748,17 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
 
                 if "Sell to Open" in action or "STO" in action:
                     positions_dict[underlying]["contracts"][symbol] += qty
+                    premium_by_contract[symbol] += abs(_amount(row))
                 elif "Buy to Close" in action or "BTC" in action:
                     positions_dict[underlying]["contracts"][symbol] -= qty
+                    premium_by_contract[symbol] -= abs(_amount(row))
                 elif "Assigned" in action or "Expired" in action:
                     # short option closed by assignment/expiration — net it out
                     positions_dict[underlying]["contracts"][symbol] -= abs(qty)
 
         # Convert to Position objects
         result = []
+        pending_mark_lookups: list[tuple[str, str, float, str, "OptionLeg"]] = []  # (symbol, expiry, strike, opt_type, leg)
         for underlying in sorted(positions_dict.keys()):
             contracts = positions_dict[underlying]["contracts"]
             # Only NET-POSITIVE = genuine open short (STO not yet closed). Net-negative =
@@ -689,18 +806,50 @@ def reconstruct_positions_from_transactions(account: str = "A") -> list[Position
                             expiry=expiry.isoformat(),
                             dte=dte,
                             quantity=-abs(qty),  # short (negative), matching OptionLeg's own convention
-                            premium_received=0,
-                            current_mark=0,
+                            premium_received=max(0.0, premium_by_contract.get(contract_sym, 0.0)),
+                            current_mark=0,  # filled in below via a live option-chain lookup
                         )
                         pos.option_legs.append(leg)
+                        pending_mark_lookups.append((underlying, expiry.isoformat(), strike, opt_type, leg))
 
                 if pos.option_legs:
                     result.append(pos)
+
+        _fill_current_marks(pending_mark_lookups)
 
         return result if result else None
 
     except Exception:
         return None
+
+
+def _fill_current_marks(lookups: list[tuple[str, str, float, str, "OptionLeg"]]) -> None:
+    """Live cost-to-close for each leg in `lookups`, via yfinance's option chain
+    (mid of bid/ask) -- batched one chain fetch per (symbol, expiry) pair rather
+    than per leg, since several strikes on the same underlying/expiry share one
+    chain. Never raises: a failed symbol/expiry just leaves current_mark at 0
+    for its legs (same non-fatal-per-item policy as the rest of this loader) --
+    heat_scanner.py's own NO_PRICE/UNKNOWN handling is the right place to
+    surface that, not an exception here."""
+    by_chain: dict[tuple[str, str], list[tuple[float, str, "OptionLeg"]]] = defaultdict(list)
+    for symbol, expiry, strike, opt_type, leg in lookups:
+        by_chain[(symbol, expiry)].append((strike, opt_type, leg))
+
+    for (symbol, expiry), legs in by_chain.items():
+        try:
+            chain = yf.Ticker(symbol).option_chain(expiry)
+        except Exception:
+            continue
+        for strike, opt_type, leg in legs:
+            table = chain.calls if opt_type == "CALL" else chain.puts
+            row = table[table["strike"] == strike]
+            if row.empty:
+                continue
+            bid = float(row["bid"].iloc[0] or 0)
+            ask = float(row["ask"].iloc[0] or 0)
+            mid = (bid + ask) / 2 if (bid > 0 and ask > 0) else max(bid, ask, float(row["lastPrice"].iloc[0] or 0))
+            qty = abs(leg.quantity)
+            leg.current_mark = round(mid * 100 * qty, 2)
 
 
 async def load_us_positions() -> dict[str, Any]:
@@ -717,16 +866,48 @@ async def load_us_positions() -> dict[str, Any]:
 
     all_positions: list[Position] = []
     balances: dict[str, dict[str, Any]] = {}
+    # Which real source + how current it was, per account -- lets any caller
+    # (e.g. Position Heat) show "based on data from N days ago" per leg
+    # instead of silently trusting whichever file happened to load.
+    account_sources: dict[str, dict[str, Any]] = {}
 
-    # ── Schwab accounts — reconstructed from exported transaction CSVs (NO live API) ──
-    # Data/auth policy: analysis is file+Yahoo first; Schwab API is not used here.
+    # ── Schwab accounts — from the current position snapshot when it's at
+    # least as fresh as the transactions file, else reconstructed from
+    # transaction history (NO live API either way; file+Yahoo only). The
+    # snapshot carries Schwab's own real Cost Basis/Mkt Val and share counts
+    # directly -- prefer it whenever it's current, since a stale transaction
+    # file can show a wrong share count (confirmed real case 2026-10-12:
+    # Account A's transactions file was 10 days stale and showed OKTA with
+    # 0 shares against 6 short calls -- looked naked; the snapshot from the
+    # same day showed the true 600 shares, fully covering all 6).
     for label, cfg in ACCOUNTS.items():
         if cfg.get("broker") != "schwab":
             continue
         try:
-            txn_positions = reconstruct_positions_from_transactions(label)
-            if txn_positions:
-                all_positions.extend(txn_positions)
+            snapshot_path = DATA_DIR / "positions" / _SCHWAB_SNAPSHOT_FILE.get(label, "")
+            txn_pattern = {
+                "A": "Individual_XXX232_Transactions_*.csv",
+                "B": "Contributory_XXX275_Transactions_*.csv",
+                "C": "Designated_Bene_Individual_XXX634_Transactions_*.csv",
+            }.get(label, "")
+            txn_files = list((DATA_DIR / "positions").glob(txn_pattern)) + list(STATEMENTS_DIR.glob(txn_pattern))
+            txn_mtime = max((f.stat().st_mtime for f in txn_files), default=0)
+            snapshot_mtime = snapshot_path.stat().st_mtime if snapshot_path.exists() else -1
+
+            positions = None
+            used_source, used_mtime = "transactions", txn_mtime
+            if snapshot_mtime >= txn_mtime and snapshot_mtime >= 0:
+                positions = load_schwab_from_snapshot(label)
+                if positions:
+                    used_source, used_mtime = "snapshot", snapshot_mtime
+            if not positions:
+                positions = reconstruct_positions_from_transactions(label)
+                used_source, used_mtime = "transactions", txn_mtime
+            if positions:
+                all_positions.extend(positions)
+                as_of = datetime.fromtimestamp(used_mtime).date().isoformat() if used_mtime > 0 else None
+                days_stale = (date.today() - datetime.fromtimestamp(used_mtime).date()).days if used_mtime > 0 else None
+                account_sources[label] = {"source": used_source, "as_of": as_of, "days_stale": days_stale}
         except Exception:
             pass  # never block on one account
 
@@ -805,6 +986,7 @@ async def load_us_positions() -> dict[str, Any]:
         "warning": None,
         "snapshot": load_snapshot(),
         "transactions": load_account_transactions(),
+        "account_sources": account_sources,
     }
 
 

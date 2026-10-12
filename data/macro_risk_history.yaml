@@ -124,3 +124,12 @@
   stage: 0
   severity_sum: 0.0
   pending_downgrade_stage: null
+- date: '2026-10-12'
+  risk_level: GREEN
+  prob_30d: 7.5
+  prob_60d: 13.6
+  prob_90d: 19.6
+  primary_risk: BREADTH elevated
+  stage: 0
+  severity_sum: 0.1
+  pending_downgrade_stage: null

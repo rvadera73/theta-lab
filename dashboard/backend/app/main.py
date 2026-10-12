@@ -240,6 +240,16 @@ def us_sector_heat():
     return {"text": value["text"], "as_of": computed_at}
 
 
+@app.get("/api/us/position-heat")
+def us_position_heat():
+    """Position Heat (per open option LEG) -- distinct from /api/us/sector-heat
+    above, which is per-TICKER technical extendedness. See
+    services.get_position_heat()'s docstring for why these are two different,
+    both-real signals rather than duplicates of each other."""
+    value, computed_at = _get_or_compute("us_position_heat", services.get_position_heat)
+    return {"data": value, "as_of": computed_at}
+
+
 @app.get("/api/us/risk-macro")
 def us_risk_macro():
     def _compute():

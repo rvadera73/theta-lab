@@ -73,6 +73,7 @@ def _build_us_entries(services):
         "us_pnl_trend": services.get_pnl_trend(),
         "us_cash_margin_forecast": services.get_cash_margin_forecast(),
         "us_sector_heat": {"text": services.extract_markdown_section("daily", "## Section 6: POSITION HEAT MATRIX", "\n## Section 6.5")},
+        "us_position_heat": services.get_position_heat(),
         "us_risk_macro": {"text": (
             services.extract_markdown_section("daily", "## Section 6.5: CRASH EARLY WARNING", "\n## Section 6.6")
             + "\n\n" + services.extract_markdown_section("weekly", "## Section 8: RISK & GUARDRAILS", "\n## Section 9")

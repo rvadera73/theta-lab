@@ -89,9 +89,12 @@ def _audit_credentials() -> None:
     """Log which credentials are present at startup. Never prints values."""
     import logging
     _log = logging.getLogger("theta-lab")
+    # Data/auth policy: analysis is file-based (exported CSVs + Yahoo) -- the
+    # live Schwab broker API was removed (see _get_configured_accounts()), so
+    # SCHWAB_API_KEY/SCHWAB_APP_SECRET are not read or required by anything
+    # anymore. ACCOUNT_*_HASH are still consumed by generate_weekly_report()'s
+    # legacy call signature, kept here until that's cleaned up separately.
     required = {
-        "SCHWAB_API_KEY": os.getenv("SCHWAB_API_KEY", ""),
-        "SCHWAB_APP_SECRET": os.getenv("SCHWAB_APP_SECRET", ""),
         "SCHWAB_ACCOUNT_A_HASH": ACCOUNT_A_HASH,
         "SCHWAB_ACCOUNT_B_HASH": ACCOUNT_B_HASH,
     }
@@ -107,17 +110,12 @@ def _audit_credentials() -> None:
     for k in present:
         _log.info(f"[theta-lab]   ✅ {k} = ***loaded***")
     for k in missing:
-        _log.warning(f"[theta-lab]   ❌ {k} = MISSING — live Schwab tools will fail")
+        _log.warning(f"[theta-lab]   ❌ {k} = MISSING — weekly report account labeling will be incomplete")
     for k, v in optional.items():
         status = "✅ loaded" if v else "⚠️  not set"
         _log.info(f"[theta-lab]   {status}: {k}")
-    if missing:
-        _log.warning(
-            "[theta-lab] Fix: add missing vars to ~/.claude.json "
-            "(mcpServers.theta-lab.env) or project .env, then restart."
-        )
-    else:
-        _log.info("[theta-lab] ✅ All required credentials present — live tools enabled")
+    if not missing:
+        _log.info("[theta-lab] ✅ All required credentials present")
     _log.info("[theta-lab] ────────────────────────────────────────────")
 
 _audit_credentials()
@@ -1824,31 +1822,7 @@ def _no_credentials_message() -> str:
     )
 
 
-def _schwab_data_required(tool: str) -> str:
-    return f"Tool `{tool}` requires live Schwab credentials. See `docs/schwab_api_setup.md`."
-
-
-async def _init_schwab_broker() -> None:
-    """Register and authenticate the Schwab broker in the open_stocks_mcp registry."""
-    api_key = os.getenv("SCHWAB_API_KEY")
-    app_secret = os.getenv("SCHWAB_APP_SECRET")
-    if not api_key or not app_secret:
-        return
-    try:
-        from open_stocks_mcp.brokers.registry import get_broker_registry
-        from open_stocks_mcp.brokers.schwab import SchwabBroker
-        registry = await get_broker_registry()
-        if "schwab" not in registry.list_brokers():
-            broker = SchwabBroker(api_key=api_key, app_secret=app_secret)
-            registry.register(broker)
-            await registry.authenticate_all()
-    except Exception as e:
-        # Non-fatal — server still starts; live data tools will return errors
-        sys.stderr.write(f"[theta-lab] Schwab broker init failed: {e}\n")
-
-
 async def _run_stdio():
-    await _init_schwab_broker()
     async with stdio_server() as streams:
         await app.run(streams[0], streams[1], app.create_initialization_options())
 
@@ -1859,8 +1833,6 @@ async def _run_http(host: str, port: int, token: str | None):
     from starlette.requests import Request
     from starlette.responses import JSONResponse
     from starlette.routing import Mount, Route
-
-    await _init_schwab_broker()
 
     sse = SseServerTransport("/messages/")
 
