@@ -158,16 +158,52 @@ def sync_all():
     normal day, verified live.
     """
     from . import services  # local import: avoids a circular import at module load
+    from . import sequencer
 
     conn = _conn()
     try:
-        # -- US: bottom-up CLOSE/TRIM/ENTER priority list (Sector Heat's
-        # own real, gated classification -- never the routine WATCH/HOLD
-        # majority of the book).
-        for a in services.get_us_priority_actions():
-            item_id = f"us_priority_{_short_id(a['ticker'], a['verb'])}"
-            title = f"{a['verb']} {a['ticker']}: {a['label'].split(':', 1)[-1].strip() if ':' in a['label'] else a['label']}"
-            _upsert_new_only(conn, item_id, "US", "priority_actions", a['sector'], title, a['detail'], "OPEN")
+        # -- US: the one sequenced priority list (sequencer.py), replacing
+        # the old separate priority_actions (conviction-gated, could miss a
+        # bad TRADE on a high-conviction name entirely -- see position_heat's
+        # own history below) AND position_heat sync blocks. Tier 0 = a gate
+        # fired (earnings-risk, illiquid -- addresses "before anything else,"
+        # not a score penalty); Tier 1 = existing positions needing
+        # management, by real severity; Tier 2 = gate-clear new-entry
+        # candidates, by score+IV Rank. See dashboard/backend/app/sequencer.py
+        # and the plan this was built from for the full design.
+        _TIER_CATEGORY = {0: "TIER0_GATE", 1: "TIER1_MANAGE", 2: "TIER2_ENTER"}
+        for row in sequencer.build_priority_sequence():
+            if row["tier_source"] == "position_heat":
+                if row.get("type") == "CALL" and row.get("covered") is True:
+                    continue  # capped exposure via assignment, not the same urgency as naked -- see services.get_position_heat()
+                item_id = f"us_seq_{_short_id(row['symbol'], row['strike'], row['expiry'], row['type'])}"
+                title = f"{row['action']} {row['symbol']} {row['type']} ${row['strike']}"
+                stale_note = (
+                    f" [based on {row['data_source']} data as of {row['data_as_of']}, {row['days_stale']}d old]"
+                    if row.get("days_stale") is not None and row["days_stale"] > 3 else ""
+                )
+                score_note = (
+                    f"score={row['score']} (rank {row['rank']}/{row['population_size']}) | "
+                    f"conviction={row['conviction']} | iv_rank={row['iv_rank']} | "
+                    if row.get("score") is not None else ""
+                )
+                cov_note = ("naked" if row.get("covered") is False
+                            else f"partial ({row.get('covered_contracts')}/{row.get('total_contracts')})" if row.get("covered_contracts")
+                            else "cash-secured" if row.get("type") == "PUT" else "")
+                desc = f"{score_note}{row['color']} {row['action']}: exp {row['expiry']} ({row['dte']}d) | {row['reason']} | {cov_note}{stale_note}"
+            else:  # composite_score, Tier 2 new-entry candidate
+                item_id = f"us_seq_{_short_id(row['ticker'], 'entry')}"
+                title = f"ENTER {row['ticker']}: score={row.get('score')} (rank {row.get('rank')}/{row.get('population_size')})"
+                desc = (
+                    f"yield={row.get('yield_pct')}% | conviction={row.get('conviction')} | "
+                    f"iv_rank={row.get('iv_rank')} | sector={row.get('sector')}"
+                )
+            gate_note = f" -- GATE: {', '.join(row['gates_fired'])}" if row.get("gates_fired") else ""
+            _upsert_new_only(
+                conn, item_id, "US", "sequenced",
+                _TIER_CATEGORY.get(row["tier"], "TIER1_MANAGE"),
+                title, desc + gate_note, "OPEN",
+            )
 
         # -- US: active_decisions.yaml (only OPEN/BLOCKED items -- resolved
         # ones are historical, not something to re-track as an open action).
@@ -183,39 +219,6 @@ def sync_all():
                 d.get("account") or "General",
                 title, desc[:2000], status,
             )
-
-        # -- US: Position Heat (per LEG, services.get_position_heat() ->
-        # analysis.heat_scanner.assess_portfolio_heat) -- a real signal this
-        # ledger never saw before 2026-10-12: a position can be severely
-        # RED here (hard stop-loss territory on cost-to-close) while
-        # invisible to priority_actions above, because that list gates on
-        # ticker-level conviction<7 and a high-conviction name's bad TRADE
-        # never surfaces there. Only RED legs synced -- YELLOW/GREEN are
-        # routine, same "don't flood the tracker" principle priority_actions
-        # already follows.
-        #
-        # A RED CALL that's fully covered (real owned shares >= contracts,
-        # see services.get_position_heat()'s coverage calc) is NOT synced at
-        # the same urgency -- its real exposure is capped (assignment at the
-        # strike), not the open-ended "pay $X to buy it back" story the same
-        # cost-to-close math implies for a naked one. Confirmed real case,
-        # 2026-10-12: OKTA's three deep-ITM short calls looked like a 15x-
-        # loss naked emergency under a stale transactions file; the current
-        # position snapshot showed 600 real shares fully covering all of
-        # them. Partially-covered and naked calls, and all puts (already
-        # cash-secured by account design, a separate check), still sync at
-        # full urgency as before.
-        for leg in services.get_position_heat().get("by_color", {}).get("RED", []):
-            if leg.get("type") == "CALL" and leg.get("covered") is True:
-                continue
-            stale_note = (
-                f" [based on {leg['data_source']} data as of {leg['data_as_of']}, {leg['days_stale']}d old]"
-                if leg.get("days_stale") is not None and leg["days_stale"] > 3 else ""
-            )
-            item_id = f"us_posheat_{_short_id(leg['symbol'], leg['strike'], leg['expiry'], leg['type'])}"
-            title = f"{leg['action']} {leg['symbol']} {leg['type']} ${leg['strike']}"
-            desc = f"exp {leg['expiry']} ({leg['dte']}d) | {leg['reason']}{stale_note}"
-            _upsert_new_only(conn, item_id, "US", "position_heat", leg['action'], title, desc, "OPEN")
 
         # -- India: 6-month plan's F&O legs flagged for closing + equity exits
         plan = services.get_india_plan() or {}

@@ -225,6 +225,7 @@ def get_position_heat():
     from report_utils import load_us_positions
     from heat_scanner import assess_portfolio_heat
     from regime import detect_regime
+    from symbol_context import get_cached_symbol_context
 
     us_data = asyncio.run(load_us_positions())
     positions = us_data.get("positions", [])
@@ -242,6 +243,7 @@ def get_position_heat():
     # conservative (a leg shows covered only if EVERY account holding it has
     # enough shares).
     context: dict[tuple, dict] = {}
+    cost_to_close_by_key: dict[tuple, float] = {}
 
     def _key(symbol, strike, expiry, opt_type):
         return (symbol, round(float(strike), 4), expiry, opt_type)
@@ -296,6 +298,15 @@ def get_position_heat():
                 "cost_to_close": abs(lg.current_mark or 0),
                 "current_price": pos.current_price,
             })
+            cost_to_close_by_key[_key(pos.symbol, lg.strike, lg.expiry, lg.option_type)] = abs(lg.current_mark or 0)
+
+            # Shared gate/parameter bundle (symbol_context.py) -- cached
+            # per symbol per day, so calling it per-leg (not per-position)
+            # costs nothing extra after the first leg of a symbol, and lets
+            # the earnings-within-window gate use THIS leg's own DTE rather
+            # than a position-level average that could mask a near-dated
+            # leg's real exposure.
+            leg_ctx = get_cached_symbol_context(pos.symbol, dte=lg.dte)
 
             cov = leg_coverage.get(id(lg))
             k = _key(pos.symbol, lg.strike, lg.expiry, lg.option_type)
@@ -307,6 +318,8 @@ def get_position_heat():
                 "data_source": source_info.get("source"),
                 "data_as_of": source_info.get("as_of"),
                 "days_stale": source_info.get("days_stale"),
+                "sector": leg_ctx.get("sector"),
+                "gates_fired": leg_ctx.get("gates_fired", []),
             })
             if lg.option_type == "CALL":
                 entry["covered"] = entry["covered"] and not cov["naked"]
@@ -341,27 +354,40 @@ def get_position_heat():
                 row["data_source"] = ctx["data_source"]
                 row["data_as_of"] = ctx["data_as_of"]
                 row["days_stale"] = ctx["days_stale"]
+                row["sector"] = ctx["sector"]
+                row["gates_fired"] = ctx["gates_fired"]
         return rows
 
     for color_rows in result.get("by_color", {}).values():
         _annotate(color_rows)
     _annotate(result.get("top_actions", []))
 
+    # Sector rollup -- "which sector is actually bleeding right now," computed
+    # straight from these same real per-leg costs, not a second, differently-
+    # sourced sector view (the existing per-ticker Sector Heat on this
+    # dashboard reads enhanced_metrics.py's RSI/trend data; this reads real
+    # open-position cost-to-close instead -- complementary, not a duplicate).
+    sector_rollup: dict[str, dict] = {}
+    for color, color_rows in result.get("by_color", {}).items():
+        for row in color_rows:
+            sec = row.get("sector") or "Unknown"
+            bucket = sector_rollup.setdefault(sec, {"RED": 0, "YELLOW": 0, "GREEN": 0, "UNKNOWN": 0, "red_cost_to_close": 0.0})
+            bucket[color] = bucket.get(color, 0) + 1
+            if color == "RED":
+                opt_type = row.get("type") or row.get("option_type")
+                cost = cost_to_close_by_key.get(_key(row["symbol"], row["strike"], row["expiry"], opt_type), 0.0)
+                bucket["red_cost_to_close"] = round(bucket["red_cost_to_close"] + cost, 2)
+    result["sector_rollup"] = sector_rollup
+
     return _to_native(result)
 
 
 def _get_symbol_sector(ticker: str) -> str:
-    """Same CUSTOM_SECTOR_MAP-then-Yahoo-fallback logic sector_analysis.py
-    uses for held positions, reused directly for a watchlist symbol that
-    isn't in any open_positions DataFrame yet."""
-    from sector_analysis import SectorAnalyzer
-    if ticker in SectorAnalyzer.CUSTOM_SECTOR_MAP:
-        return SectorAnalyzer.CUSTOM_SECTOR_MAP[ticker]
-    import yfinance as yf
-    try:
-        return yf.Ticker(ticker).info.get('sector', 'Unknown')
-    except Exception:
-        return 'Unknown'
+    """Thin wrapper -- the real implementation moved to
+    sector_analysis.get_symbol_sector() so mcp/analysis/symbol_context.py
+    can share it too instead of a second drifting copy."""
+    from sector_analysis import get_symbol_sector
+    return get_symbol_sector(ticker)
 
 
 def analyze_watchlist_symbol(ticker: str) -> dict:

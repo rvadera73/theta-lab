@@ -23,6 +23,11 @@ data/premium_yield_cache.json
 # historical value.
 data/ticker_metrics_cache.json
 
+# Shared symbol gate/parameter cache (mcp/analysis/symbol_context.py,
+# 2026-10-12) -- same same-day-refresh pattern as premium_yield_cache.json
+# above, pure runtime state.
+data/symbol_context_cache.json
+
 # flock lockfile for macro_risk_history.yaml's atomic write (2026-10-02 fix)
 # -- empty, zero-byte, exists only to hold an flock(); no content ever.
 data/*.lock

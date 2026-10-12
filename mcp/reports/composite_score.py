@@ -104,6 +104,7 @@ from config import PERMANENT_EXITS, RISK
 from trend_verticals import get_verticals_for_ticker
 from premium_yield import average_annualized_yield, get_cached_batch_yield
 from enhanced_metrics import batch_get_metrics
+from symbol_context import get_cached_symbol_context
 
 TAIL_RISK_FLAGS = RISK.get("binary_exit_flags", {"ACCOUNTING_RISK", "DELISTING_RISK", "GOING_CONCERN", "PERMANENT_EXIT"})
 OVERVALUATION_THRESHOLD = -15.0  # matches enhanced_metrics.py's own "fundamentally_confirms_weakness" bar
@@ -174,12 +175,28 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
         )
 
         score = risk_reward_z + trend_bonus - quality_penalty - crash_penalty - valuation_penalty - outlier_penalty
+
+        # Shared parameter/gate bundle (IV Rank, dividend, earnings-date
+        # proximity, liquidity) -- shown as SEPARATE fields alongside score,
+        # never folded into it. IV Rank answers "is this premium rich
+        # relative to the stock's OWN history," a genuinely different
+        # question from yield_pct's "is this premium rich in absolute
+        # terms" -- blending them would hide exactly the disagreement that
+        # matters (a high yield at low IV Rank isn't really compensating
+        # you for anything). gates_fired (e.g. EARNINGS_RISK) doesn't touch
+        # score either -- a gate means "don't recommend this as a new
+        # entry regardless of score," which is the sequencer's job
+        # (dashboard/backend/app/sequencer.py), not a score penalty here.
+        ctx = get_cached_symbol_context(r["ticker"])
         r.update({
             "yield_z": round(yz, 2), "conviction_z": round(cz, 2), "risk_reward_z": round(risk_reward_z, 2),
             "trend_bonus": trend_bonus, "quality_penalty": round(quality_penalty, 2),
             "crash_penalty": crash_penalty, "valuation_penalty": valuation_penalty,
             "outlier_penalty": round(outlier_penalty, 2),
             "flags": non_tail_flags, "score": round(score, 3),
+            "iv_rank": ctx.get("iv_rank"), "iv_entry_signal": ctx.get("iv_entry_signal", False),
+            "dividend_yield_pct": ctx.get("dividend_yield_pct", 0.0),
+            "gates_fired": ctx.get("gates_fired", []),
         })
 
     yield_rank = _rank_by(scoreable, "yield_pct")

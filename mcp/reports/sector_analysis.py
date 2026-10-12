@@ -438,3 +438,22 @@ def batch_get_sector_analysis(open_positions: pd.DataFrame, metrics: Dict, price
     rotation_section = analyzer.get_sector_rotation_insights(sector_summary)
 
     return sector_summary, analysis_section, rotation_section, analyzer.sector_map
+
+
+def get_symbol_sector(ticker: str) -> str:
+    """Cheap, single-symbol sector lookup -- checks CUSTOM_SECTOR_MAP first
+    (free), falls back to a live yfinance info fetch only for a ticker not
+    in the map. Moved here (was duplicated as a private copy in
+    dashboard/backend/app/services.py's _get_symbol_sector, and an Explore
+    agent this session mis-cited it as living in report_utils.py -- it
+    didn't) so both the dashboard and mcp/analysis/symbol_context.py share
+    one real implementation instead of two copies that could drift. Do NOT
+    instantiate SectorAnalyzer just to look up one symbol -- that requires
+    the whole open_positions DataFrame and does a live fetch per
+    uncategorized ticker just to construct."""
+    if ticker in SectorAnalyzer.CUSTOM_SECTOR_MAP:
+        return SectorAnalyzer.CUSTOM_SECTOR_MAP[ticker]
+    try:
+        return yf.Ticker(ticker).info.get('sector', 'Unknown')
+    except Exception:
+        return 'Unknown'
