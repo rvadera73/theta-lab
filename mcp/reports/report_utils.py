@@ -601,6 +601,31 @@ def _clean_money(val: str) -> float:
         return 0.0
 
 
+def schwab_source_choice(snapshot_mtime: float, txn_mtime: float) -> str:
+    """Decide whether load_us_positions() should use the position snapshot
+    or reconstructed transaction history for a Schwab account. Compares
+    calendar DAY, not raw mtime seconds: snapshot and transactions files
+    are normally written by the same reconcile.py batch run, seconds apart
+    in either order, so a same-day snapshot is always preferred -- it
+    carries Schwab's own real share counts, which reconstruction cannot
+    produce at all. Only a snapshot that is missing, or from a strictly
+    earlier calendar day than the transactions file (meaning real trades
+    happened since the last snapshot was taken), falls back to
+    reconstruction. Confirmed real bug, 2026-10-13: Account C's snapshot
+    was written 31 seconds BEFORE its same-batch transactions file; a raw
+    `snapshot_mtime >= txn_mtime` check flipped to "transactions" for that
+    reason alone, and reconstruction (which has no equity-share tracking)
+    reported TWLO's real 324 shares as 0, misclassifying a covered call
+    as naked."""
+    if snapshot_mtime < 0:
+        return "transactions"
+    if txn_mtime <= 0:
+        return "snapshot"
+    snapshot_date = datetime.fromtimestamp(snapshot_mtime).date()
+    txn_date = datetime.fromtimestamp(txn_mtime).date()
+    return "snapshot" if snapshot_date >= txn_date else "transactions"
+
+
 def load_schwab_from_snapshot(account: str) -> list[Position] | None:
     """Build Positions directly from the current Schwab POSITION snapshot
     (data/positions/schwab_*.csv -- the same canonical file reconcile.py
@@ -896,7 +921,7 @@ async def load_us_positions() -> dict[str, Any]:
 
             positions = None
             used_source, used_mtime = "transactions", txn_mtime
-            if snapshot_mtime >= txn_mtime and snapshot_mtime >= 0:
+            if schwab_source_choice(snapshot_mtime, txn_mtime) == "snapshot":
                 positions = load_schwab_from_snapshot(label)
                 if positions:
                     used_source, used_mtime = "snapshot", snapshot_mtime

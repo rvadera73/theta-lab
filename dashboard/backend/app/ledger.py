@@ -172,6 +172,7 @@ def sync_all():
         # candidates, by score+IV Rank. See dashboard/backend/app/sequencer.py
         # and the plan this was built from for the full design.
         _TIER_CATEGORY = {0: "TIER0_GATE", 1: "TIER1_MANAGE", 2: "TIER2_ENTER"}
+        seen_sequenced_ids: set[str] = set()
         for row in sequencer.build_priority_sequence():
             if row["tier_source"] == "position_heat":
                 if row.get("type") == "CALL" and row.get("covered") is True:
@@ -199,10 +200,36 @@ def sync_all():
                     f"iv_rank={row.get('iv_rank')} | sector={row.get('sector')}"
                 )
             gate_note = f" -- GATE: {', '.join(row['gates_fired'])}" if row.get("gates_fired") else ""
+            seen_sequenced_ids.add(item_id)
             _upsert_new_only(
                 conn, item_id, "US", "sequenced",
                 _TIER_CATEGORY.get(row["tier"], "TIER1_MANAGE"),
                 title, desc + gate_note, "OPEN",
+            )
+
+        # Prune stale sequenced rows -- a row that's no longer produced by
+        # build_priority_sequence() (position closed, gate cleared, or a
+        # data-lineage fix like 2026-10-13's covered-call correction) must
+        # not just sit here with its old description forever: _upsert_new_only
+        # only ever inserts/refreshes rows it's handed, it never deletes, so
+        # without this the Action Tracker would keep showing conditions that
+        # no longer exist (confirmed real case: TWLO stayed flagged "naked"
+        # after the loader fix made it genuinely covered, until this prune
+        # was added).
+        existing_sequenced = {
+            r["id"] for r in conn.execute(
+                "SELECT id FROM action_items WHERE source = 'sequenced'"
+            ).fetchall()
+        }
+        stale_ids = existing_sequenced - seen_sequenced_ids
+        if stale_ids:
+            conn.executemany(
+                "DELETE FROM action_items WHERE id = ?",
+                [(i,) for i in stale_ids],
+            )
+            conn.executemany(
+                "DELETE FROM action_item_events WHERE action_item_id = ?",
+                [(i,) for i in stale_ids],
             )
 
         # -- US: active_decisions.yaml (only OPEN/BLOCKED items -- resolved
