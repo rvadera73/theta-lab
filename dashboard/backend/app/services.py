@@ -356,6 +356,9 @@ def get_position_heat():
                 row["days_stale"] = ctx["days_stale"]
                 row["sector"] = ctx["sector"]
                 row["gates_fired"] = ctx["gates_fired"]
+                row["cost_to_close"] = cost_to_close_by_key.get(
+                    _key(row["symbol"], row["strike"], row["expiry"], opt_type), 0.0
+                )
         return rows
 
     for color_rows in result.get("by_color", {}).values():
@@ -378,6 +381,43 @@ def get_position_heat():
                 cost = cost_to_close_by_key.get(_key(row["symbol"], row["strike"], row["expiry"], opt_type), 0.0)
                 bucket["red_cost_to_close"] = round(bucket["red_cost_to_close"] + cost, 2)
     result["sector_rollup"] = sector_rollup
+
+    # Grouped positions -- one record per real (symbol, account) position,
+    # not per leg. Real gap found 2026-10-13: ZS (3 legs: 1 naked call + 2
+    # puts) and ANET (8 legs across 2 accounts) are deliberate multi-leg
+    # "stagger" campaigns the trader manages as one structure, but by_color
+    # surfaced each leg as its own independent-looking alert with no sign
+    # they belong together. Coverage genuinely doesn't cross accounts (a
+    # call in Account A can only be covered by shares actually in Account
+    # A -- see the per-leg allocation above), so (symbol, account) is the
+    # correct real-world grouping key, not symbol alone. Every leg's own
+    # full numbers stay in "legs" -- grouping changes presentation/ranking
+    # only, nothing is hidden or averaged away.
+    groups: dict[tuple, dict] = {}
+    for color, color_rows in result.get("by_color", {}).items():
+        for row in color_rows:
+            key = (row["symbol"], row.get("account"))
+            g = groups.setdefault(key, {
+                "symbol": row["symbol"], "account": row.get("account"),
+                "sector": row.get("sector"), "legs": [],
+            })
+            g["legs"].append(row)
+
+    _COLOR_RANK = {"RED": 0, "YELLOW": 1, "UNKNOWN": 2, "GREEN": 3}
+    positions = []
+    for (symbol, account), g in groups.items():
+        g["legs"].sort(key=lambda r: _COLOR_RANK.get(r.get("color"), 2))
+        worst = g["legs"][0]
+        g["worst_color"] = worst.get("color")
+        g["worst_action"] = worst.get("action")
+        g["leg_count"] = len(g["legs"])
+        g["is_stagger"] = len(g["legs"]) > 1
+        g["total_cost_to_close"] = round(sum(abs(lg.get("cost_to_close") or 0) for lg in g["legs"]), 2)
+        g["naked_leg_count"] = sum(1 for lg in g["legs"] if lg.get("covered") is False)
+        g["gates_fired"] = sorted({gate for lg in g["legs"] for gate in (lg.get("gates_fired") or [])})
+        positions.append(g)
+    positions.sort(key=lambda g: _COLOR_RANK.get(g["worst_color"], 2))
+    result["positions"] = positions
 
     return _to_native(result)
 

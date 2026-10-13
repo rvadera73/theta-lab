@@ -34,29 +34,50 @@ _COVERAGE_RANK = {False: 0, None: 1, True: 2}  # naked < cash-secured-put/unknow
 _COMPOSITE_FIELDS = ("score", "yield_pct", "conviction", "rank", "population_size", "iv_rank", "iv_entry_signal")
 
 
+def _is_actionable_leg(leg: dict) -> bool:
+    """A leg needs attention now: RED/YELLOW and not a fully-covered call
+    (a covered call's risk is capped by assignment, not the same urgency as
+    naked -- see services.get_position_heat()). Used both to decide whether
+    a (symbol, account) position group belongs in Tier 1 at all, and to pick
+    the group's worst leg for severity/coverage ranking."""
+    return leg.get("color") in ("RED", "YELLOW") and not (
+        leg.get("type") == "CALL" and leg.get("covered") is True
+    )
+
+
 def _tier1_rows():
-    """Existing positions needing management -- RED/YELLOW Position Heat
-    legs, minus anything already promoted to Tier 0 by its own gate (handled
-    by the caller, not here, so a gated RED leg doesn't appear twice). Each
-    row also carries its composite score/IV Rank if that symbol is held and
-    scored (held rows always should be) -- the point of one sequenced list
-    is to see the full current picture per symbol, not just the heat verdict
-    with the score stripped out."""
+    """Existing positions needing management -- one row per real (symbol,
+    account) position, not per leg (real gap found 2026-10-13: a deliberate
+    multi-leg 'stagger' campaign like ZS's 3-leg structure or ANET's 8 legs
+    across 2 accounts was surfacing as N disconnected-looking alerts instead
+    of one position managed as a unit). Each row carries every leg's full
+    numbers in "legs" plus the symbol's composite score/IV Rank if it's held
+    and scored -- the point of one sequenced list is the full current
+    picture per position, not the heat verdict with the score stripped out.
+    A group is included only if at least one leg is actionable; severity/
+    coverage ranking comes from the worst actionable leg, but every leg
+    (including a fine GREEN sibling) stays visible in "legs" for context."""
     heat = services.get_position_heat()
     held_by_ticker = {r["ticker"]: r for r in services.get_composite_scores().get("held", [])}
 
     rows = []
-    for color in ("RED", "YELLOW"):
-        for leg in heat.get("by_color", {}).get(color, []):
-            row = dict(leg)
-            row["tier_source"] = "position_heat"
-            row["severity_rank"] = _SEVERITY_RANK.get(leg.get("action"), 2)
-            row["coverage_rank"] = _COVERAGE_RANK.get(leg.get("covered"))
-            comp = held_by_ticker.get(leg["symbol"])
-            if comp:
-                for f in _COMPOSITE_FIELDS:
-                    row[f] = comp.get(f)
-            rows.append(row)
+    for group in heat.get("positions", []):
+        actionable = [lg for lg in group["legs"] if _is_actionable_leg(lg)]
+        if not actionable:
+            continue
+        worst = min(
+            actionable,
+            key=lambda lg: (_SEVERITY_RANK.get(lg.get("action"), 2), _COVERAGE_RANK.get(lg.get("covered"), 1)),
+        )
+        row = dict(group)
+        row["tier_source"] = "position_heat"
+        row["severity_rank"] = _SEVERITY_RANK.get(worst.get("action"), 2)
+        row["coverage_rank"] = _COVERAGE_RANK.get(worst.get("covered"), 1)
+        comp = held_by_ticker.get(group["symbol"])
+        if comp:
+            for f in _COMPOSITE_FIELDS:
+                row[f] = comp.get(f)
+        rows.append(row)
     rows.sort(key=lambda r: (r["severity_rank"], r["coverage_rank"]))
     return rows
 

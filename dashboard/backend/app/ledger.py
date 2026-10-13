@@ -175,23 +175,40 @@ def sync_all():
         seen_sequenced_ids: set[str] = set()
         for row in sequencer.build_priority_sequence():
             if row["tier_source"] == "position_heat":
-                if row.get("type") == "CALL" and row.get("covered") is True:
-                    continue  # capped exposure via assignment, not the same urgency as naked -- see services.get_position_heat()
-                item_id = f"us_seq_{_short_id(row['symbol'], row['strike'], row['expiry'], row['type'])}"
-                title = f"{row['action']} {row['symbol']} {row['type']} ${row['strike']}"
-                stale_note = (
-                    f" [based on {row['data_source']} data as of {row['data_as_of']}, {row['days_stale']}d old]"
-                    if row.get("days_stale") is not None and row["days_stale"] > 3 else ""
+                # row is now one (symbol, account) position group, not a
+                # single leg -- real fix 2026-10-13: a deliberate multi-leg
+                # "stagger" campaign (ZS's 3 legs, ANET's 8 legs across 2
+                # accounts) was surfacing as N disconnected-looking alerts.
+                # Keyed by (symbol, account) so the item is stable as legs
+                # are added/removed from the same real position, instead of
+                # a new id per leg.
+                legs = row["legs"]
+                item_id = f"us_seq_{_short_id(row['symbol'], row['account'], 'position')}"
+                worst = legs[0]  # already sorted worst-color-first by services.get_position_heat()
+                title = (
+                    f"{worst['action']} {row['symbol']} ({len(legs)}-leg structure, {row['account']})"
+                    if len(legs) > 1
+                    else f"{worst['action']} {row['symbol']} {worst['type']} ${worst['strike']}"
                 )
                 score_note = (
                     f"score={row['score']} (rank {row['rank']}/{row['population_size']}) | "
                     f"conviction={row['conviction']} | iv_rank={row['iv_rank']} | "
                     if row.get("score") is not None else ""
                 )
-                cov_note = ("naked" if row.get("covered") is False
-                            else f"partial ({row.get('covered_contracts')}/{row.get('total_contracts')})" if row.get("covered_contracts")
-                            else "cash-secured" if row.get("type") == "PUT" else "")
-                desc = f"{score_note}{row['color']} {row['action']}: exp {row['expiry']} ({row['dte']}d) | {row['reason']} | {cov_note}{stale_note}"
+                leg_notes = []
+                for lg in legs:
+                    cov_note = ("naked" if lg.get("covered") is False
+                                else f"partial ({lg.get('covered_contracts')}/{lg.get('total_contracts')})" if lg.get("covered_contracts")
+                                else "cash-secured" if lg.get("type") == "PUT" else "")
+                    stale_note = (
+                        f" [{lg['data_source']} data as of {lg['data_as_of']}, {lg['days_stale']}d old]"
+                        if lg.get("days_stale") is not None and lg["days_stale"] > 3 else ""
+                    )
+                    leg_notes.append(
+                        f"{lg['color']} {lg['type']} ${lg['strike']} exp {lg['expiry']} ({lg['dte']}d) "
+                        f"{lg['action']}: {lg['reason']} | {cov_note}{stale_note}"
+                    )
+                desc = f"{score_note}" + "  ||  ".join(leg_notes)
             else:  # composite_score, Tier 2 new-entry candidate
                 item_id = f"us_seq_{_short_id(row['ticker'], 'entry')}"
                 title = f"ENTER {row['ticker']}: score={row.get('score')} (rank {row.get('rank')}/{row.get('population_size')})"
