@@ -377,19 +377,34 @@ class MacroRiskAnalyzer:
             elif signals["yield_curve"]["status"] == "RED":
                 red_count += 1
 
-        # Determine overall risk level
-        if red_count >= 2:
+        # Calculate crash probability forecast
+        crash_prob = self.calculate_crash_probability(signals)
+
+        # Determine overall risk level -- keyed off the continuous prob_30d
+        # this function already computes, matching the staged-response bands
+        # in trading_persona.md's "Macro Risk Framework" (<20% GREEN, 20-60%
+        # YELLOW covering both YELLOW-1/YELLOW-2, >=60% RED covering both
+        # RED-Emerging/RED-Critical -- the existing code only has 3 stages,
+        # not 5, so the two finer bands collapse at their shared boundary).
+        # Real bug this replaces (found 2026-10-13/14): the old rule counted
+        # how many of the 7 layers individually crossed their OWN threshold
+        # (red_count>=2, or yellow_count>=3, or 1 of each) -- completely
+        # disconnected from prob_30d. On 2026-10-14 only breadth went
+        # critical (red_count=1, yellow_count=0), so the old rule said GREEN
+        # even though prob_30d had already jumped to 33.1%, squarely inside
+        # the persona doc's own 20-40% YELLOW-1 action band. A single severe
+        # layer with no others elevated could never trip the old rule at
+        # all, no matter how high prob_30d actually climbed.
+        prob_30d = crash_prob.get("prob_30d", 6.0)
+        if prob_30d >= 60.0:
             risk_level = "RED"
             stage = 2
-        elif yellow_count >= 3 or (yellow_count >= 1 and red_count >= 1):
+        elif prob_30d >= 20.0:
             risk_level = "YELLOW"
             stage = 1
         else:
             risk_level = "GREEN"
             stage = 0
-
-        # Calculate crash probability forecast
-        crash_prob = self.calculate_crash_probability(signals)
 
         return {
             "risk_level": risk_level,

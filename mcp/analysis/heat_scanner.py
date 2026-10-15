@@ -75,12 +75,32 @@ class LegHeat:
         early_warn = HEAT_THRESHOLDS["early_warning_multiple"]
         profit_tgt = HEAT_THRESHOLDS["profit_target_pct"]
 
+        # Real bug found 2026-10-15: strike-proximity (distance_pct) and the
+        # hard loss-cut (loss_multiple) fired RED regardless of DTE, even
+        # when 90-180+ days remained -- directly contradicting this
+        # trader's own documented Roll Decision Framework ("Short put ITM,
+        # thesis intact, DTE > 45 -> HOLD, do not roll -- time is working").
+        # Confirmed live: 89 of 130 RED legs had 91+ DTE remaining, with only
+        # 2 inside 21 days -- the color was flagging "far-dated and merely
+        # close to strike" exactly as urgently as "expiring this week," which
+        # made the whole Position Heat view read as a portfolio-wide
+        # emergency when it wasn't one. loss_cut (hard stop, cost-to-close
+        # already a real multiple of premium) stays DTE-independent --- a
+        # genuine hard-stop loss is urgent regardless of time left. Strike
+        # proximity alone is not: it only becomes RED-urgent within the same
+        # "time is working" window this trader already uses for roll
+        # decisions.
+        RED_DTE_WINDOW = 45
         if self.dte <= 7:
             self.color = "RED"
         elif self.loss_multiple >= loss_cut:
             self.color = "RED"
-        elif self.distance_pct < red_dist:
+        elif self.distance_pct < red_dist and self.dte <= RED_DTE_WINDOW:
             self.color = "RED"
+        elif self.distance_pct < red_dist:
+            # Strike-proximity stress with real time still on the clock --
+            # matches "time is working," not yet an action-now signal.
+            self.color = "YELLOW"
         elif self.pnl_pct >= profit_tgt:
             # Profit target hit → YELLOW (action: harvest and redeploy)
             self.color = "YELLOW"

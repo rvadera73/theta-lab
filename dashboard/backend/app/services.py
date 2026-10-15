@@ -312,6 +312,7 @@ def get_position_heat():
             k = _key(pos.symbol, lg.strike, lg.expiry, lg.option_type)
             entry = context.setdefault(k, {
                 "account": pos.account,
+                "accounts": set(),  # every account holding this exact contract -- see _annotate()'s dedup
                 "covered": True,  # AND-combined below; True is the identity for AND
                 "covered_contracts": 0, "total_contracts": 0,
                 "strangle": lg.expiry in strangle_expiries,
@@ -321,6 +322,7 @@ def get_position_heat():
                 "sector": leg_ctx.get("sector"),
                 "gates_fired": leg_ctx.get("gates_fired", []),
             })
+            entry["accounts"].add(pos.account)
             if lg.option_type == "CALL":
                 entry["covered"] = entry["covered"] and not cov["naked"]
                 entry["covered_contracts"] += cov["covered_contracts"]
@@ -340,26 +342,47 @@ def get_position_heat():
         # heat_scanner.py's own two output shapes genuinely differ (confirmed
         # directly against its source, not assumed), not something to "fix"
         # there since it's pre-existing, relied-on-elsewhere behavior.
+        #
+        # Cross-account collision de-dup -- real bug found 2026-10-15: when
+        # the identical contract (symbol+strike+expiry+type) is held in TWO
+        # accounts (confirmed real case: NVO $40C 03/19/2027, 2 contracts in
+        # Account A + 1 in Account B), heat_scanner.py's LegHeat has no
+        # account field at all, so both accounts' legs produce separate
+        # output rows that then both get annotated from the SAME pooled
+        # context entry -- showing as two apparently-identical "duplicate"
+        # rows, both mislabeled with whichever account happened to populate
+        # the context first. The underlying pooled math (combined
+        # covered/total contracts) is intentional and correct -- see the
+        # context-building comment above -- but showing it twice is not.
+        # Collapse to one row per colliding key, explicitly labeled as
+        # spanning multiple accounts instead of silently wrong.
+        seen_keys: set[tuple] = set()
+        deduped = []
         for row in rows:
             opt_type = row.get("type") or row.get("option_type")
             if not opt_type:
+                deduped.append(row)
                 continue
-            ctx = context.get(_key(row["symbol"], row["strike"], row["expiry"], opt_type))
+            key = _key(row["symbol"], row["strike"], row["expiry"], opt_type)
+            ctx = context.get(key)
             if ctx:
+                if key in seen_keys:
+                    continue  # pooled contract already represented by an earlier row
+                seen_keys.add(key)
                 row["covered"] = ctx["covered"]
                 row["covered_contracts"] = ctx["covered_contracts"] if opt_type == "CALL" else None
                 row["total_contracts"] = ctx["total_contracts"] if opt_type == "CALL" else None
                 row["strangle"] = ctx["strangle"]
-                row["account"] = ctx["account"]
+                row["account"] = ctx["account"] if len(ctx["accounts"]) == 1 else "+".join(sorted(ctx["accounts"]))
+                row["multi_account_contract"] = len(ctx["accounts"]) > 1
                 row["data_source"] = ctx["data_source"]
                 row["data_as_of"] = ctx["data_as_of"]
                 row["days_stale"] = ctx["days_stale"]
                 row["sector"] = ctx["sector"]
                 row["gates_fired"] = ctx["gates_fired"]
-                row["cost_to_close"] = cost_to_close_by_key.get(
-                    _key(row["symbol"], row["strike"], row["expiry"], opt_type), 0.0
-                )
-        return rows
+                row["cost_to_close"] = cost_to_close_by_key.get(key, 0.0)
+            deduped.append(row)
+        return deduped
 
     for color_rows in result.get("by_color", {}).values():
         _annotate(color_rows)
