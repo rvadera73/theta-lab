@@ -89,9 +89,9 @@ def india_dashboard():
     return FileResponse(os.path.join(STATIC_DIR, "india.html"))
 
 
-@app.get("/actions")
-def actions_dashboard():
-    return FileResponse(os.path.join(STATIC_DIR, "actions.html"))
+@app.get("/today")
+def today_dashboard():
+    return FileResponse(os.path.join(STATIC_DIR, "today.html"))
 
 
 @app.get("/watchlist")
@@ -248,6 +248,52 @@ def us_position_heat():
     both-real signals rather than duplicates of each other."""
     value, computed_at = _get_or_compute("us_position_heat", services.get_position_heat)
     return {"data": value, "as_of": computed_at}
+
+
+class AccountStateUpdate(BaseModel):
+    account: str = "A"
+    cash: float | None = None
+    cash_plus_borrowing: float | None = None
+    option_requirement: float | None = None
+    balance_subject_to_interest: float | None = None
+    equity_pct: float | None = None
+    notes: str | None = None
+
+
+@app.get("/api/us/today")
+def us_today():
+    """The single 'what do I actually do right now' view. The EXPENSIVE part
+    (the full priority sequence -- reloads all 8 accounts + ~85 live Yahoo
+    prices, 60-90s) reads from the same 30-min cache as every other /api/us/*
+    endpoint; only the account-state lookup and the synthesis on top of it
+    are live, since those are cheap (a SQLite read + in-memory reorder) and
+    genuinely need to reflect a just-reported number immediately. Real bug
+    found 2026-10-15: calling the uncached version directly here timed out
+    every single request and left the page stuck on "Loading..." forever."""
+    full_sequence, _ = _get_or_compute("us_priority_sequence", services.get_priority_sequence_cacheable)
+    return services.get_today_plan(full_sequence=full_sequence)
+
+
+@app.get("/api/us/account-state")
+def us_account_state_get(account: str = "A"):
+    from . import account_state
+    return account_state.get_state(account)
+
+
+@app.post("/api/us/account-state")
+def us_account_state_set(body: AccountStateUpdate):
+    """Manual entry point for the one real number this system can't compute
+    itself (live cash/margin) -- see account_state.py's docstring. Returns
+    the refreshed Today plan immediately (against the cached sequence, not a
+    fresh 60-90s recompute) so the page can update in place without hanging."""
+    services.set_account_state(
+        body.account, cash=body.cash, cash_plus_borrowing=body.cash_plus_borrowing,
+        option_requirement=body.option_requirement,
+        balance_subject_to_interest=body.balance_subject_to_interest,
+        equity_pct=body.equity_pct, notes=body.notes,
+    )
+    full_sequence, _ = _get_or_compute("us_priority_sequence", services.get_priority_sequence_cacheable)
+    return services.get_today_plan(full_sequence=full_sequence)
 
 
 @app.get("/api/us/risk-macro")

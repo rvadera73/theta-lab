@@ -445,6 +445,126 @@ def get_position_heat():
     return _to_native(result)
 
 
+def get_priority_sequence_cacheable():
+    """Thin wrapper so sequencer.build_priority_sequence() -- which reloads
+    all 8 accounts' positions AND fetches ~85 live Yahoo prices via
+    get_position_heat()/get_composite_scores(), 60-90s -- gets computed ONCE
+    per cache.refresh_all() cycle like every other expensive US entry,
+    instead of live per-request. Real bug found 2026-10-15: /api/us/today
+    called this directly on every request and timed out (15s+) every time,
+    leaving the page stuck on "Loading..." forever -- the account-state
+    lookup it also needs is a trivial SQLite read and was never the slow
+    part; only this was."""
+    from . import sequencer
+    return sequencer.build_priority_sequence()
+
+
+def get_today_plan(full_sequence=None):
+    """The single 'what do I actually do right now' view, built 2026-10-15
+    directly off the trader's own complaint: every other tab is correct
+    math/facts in isolation (Position Heat's severity, the composite
+    score's ranking) but none of them know about each other or about the
+    one real-world thing that changes what matters right now -- current
+    cash/equity state, which this system can never compute itself (see
+    account_state.py's docstring). This is a genuine synthesis, not a
+    fourth independently-computed list: it takes the already-cached
+    priority sequence (see get_priority_sequence_cacheable) and the
+    trader-reported account state, and REORDERS around whichever is
+    actually binding today. full_sequence is optional ONLY for direct/
+    diagnostic calls -- the real API route always passes the cached one in.
+    """
+    from . import account_state as acct_state
+
+    CASH_FLOOR = 50_000.0
+    EQUITY_FLOOR_PCT = 50.0
+
+    state = acct_state.get_state("A")
+    if full_sequence is None:
+        full_sequence = get_priority_sequence_cacheable()
+
+    context_notes = []
+    cash_or_equity_stressed = False
+    if state:
+        if state.get("cash") is not None and state["cash"] < CASH_FLOOR:
+            cash_or_equity_stressed = True
+            context_notes.append(f"Cash ${state['cash']:,.0f} is below your documented ${CASH_FLOOR:,.0f} floor")
+        if state.get("equity_pct") is not None and state["equity_pct"] < EQUITY_FLOOR_PCT:
+            cash_or_equity_stressed = True
+            context_notes.append(
+                f"Equity {state['equity_pct']:.0f}% is below your documented {EQUITY_FLOOR_PCT:.0f}% bear-regime floor"
+            )
+        if state.get("days_stale", 0) > 3:
+            context_notes.append(f"Account state is {state['days_stale']}d old -- re-check before relying on this")
+    else:
+        context_notes.append("No account state on file yet -- cash/equity-aware sequencing is inactive until you report one")
+
+    tier0 = [r for r in full_sequence if r["tier"] == 0]
+    tier1 = [r for r in full_sequence if r["tier"] == 1]
+    tier2 = [r for r in full_sequence if r["tier"] == 2]
+
+    plan = []
+    for r in tier0:
+        label = r["symbol"] if r["tier_source"] == "position_heat" else r.get("ticker")
+        plan.append({"section": "GATE", "action": f"Review gate on {label}", "why": "Gate fired -- address before anything else, regardless of severity/score.", "ref": r})
+
+    # Margin-relief-first, ONLY when cash/equity is actually stressed --
+    # same logic already used live for GEV/MA/ULTA on 2026-10-15: among
+    # profitable (HARVEST_RESTAGGER) calls, largest strike/collateral first,
+    # since that's real margin relief at the least cost to close.
+    if cash_or_equity_stressed:
+        relief_candidates = []
+        for r in tier1:
+            if r["tier_source"] != "position_heat":
+                continue
+            for lg in r["legs"]:
+                if lg.get("type") == "CALL" and lg.get("action") == "HARVEST_RESTAGGER":
+                    relief_candidates.append((r, lg))
+        relief_candidates.sort(key=lambda pair: -(pair[1].get("strike") or 0))
+        for r, lg in relief_candidates[:5]:
+            plan.append({
+                "section": "CASH RELIEF FIRST",
+                "action": f"Close {r['symbol']} ${lg['strike']:.0f} CALL ({r['account']}, exp {lg['expiry']})",
+                "why": f"{'; '.join(context_notes)}. Profitable and large strike -- real margin relief before cutting hard-stop losses below.",
+                "detail": lg["reason"],
+                "ref": r,
+            })
+
+    for r in tier1[:10]:
+        legs = r["legs"]
+        worst = legs[0]
+        plan.append({
+            "section": "MANAGE HARD STOPS",
+            "action": f"{worst['action']} {r['symbol']} ({r['account']}, {r['leg_count']} leg(s))",
+            "why": worst["reason"],
+            "ref": r,
+        })
+
+    for r in tier2[:5]:
+        plan.append({
+            "section": "NEW ENTRY CANDIDATES",
+            "action": f"ENTER {r['ticker']}",
+            "why": f"score={r.get('score')} (rank {r.get('rank')}/{r.get('population_size')}), iv_rank={r.get('iv_rank')}",
+            "ref": r,
+        })
+
+    return _to_native({
+        "account_state": state,
+        "context_notes": context_notes,
+        "cash_or_equity_stressed": cash_or_equity_stressed,
+        "total_sequenced": len(full_sequence),
+        "plan": plan,
+    })
+
+
+def set_account_state(account: str, **fields):
+    """Updates the trader-reported numbers only -- does NOT recompute the
+    expensive priority sequence itself (same 60-90s trap as the GET route;
+    see get_priority_sequence_cacheable's docstring). The API route passes
+    the already-cached sequence into get_today_plan() after calling this."""
+    from . import account_state as acct_state
+    acct_state.set_state(account, **fields)
+
+
 def _get_symbol_sector(ticker: str) -> str:
     """Thin wrapper -- the real implementation moved to
     sector_analysis.get_symbol_sector() so mcp/analysis/symbol_context.py
