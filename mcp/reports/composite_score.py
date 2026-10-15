@@ -151,13 +151,35 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
     ranks are computed against)."""
     scoreable = [r for r in raw_rows if not r["tail_risk"] and r["yield_pct"] is not None and r["conviction"] is not None]
 
-    yields = [r["yield_pct"] for r in scoreable]
+    # Shared context (incl. beta) fetched ONCE per ticker, BEFORE population
+    # stats, because yield_z is now risk-adjusted by beta before z-scoring --
+    # the mean/std it's computed against has to reflect adjusted values too.
+    # Real finding 2026-10-15: speculative/high-beta names (OKLO, CIFR, ASTS)
+    # ranked 1-19 of 97 purely because higher implied vol pays fatter
+    # premium -- yield_z was rewarding volatility, not opportunity, with
+    # nothing in the formula adjusting for the risk that created the yield.
+    # Dividing by beta (floored at 0.5 so a very low/defensive beta doesn't
+    # blow up the adjustment) makes this a genuine risk-adjusted-return
+    # measure, completing what this score's own docstring already claims to
+    # be ("risk-adjusted premium"), not a new quality bolt-on.
+    ctx_by_ticker = {r["ticker"]: get_cached_symbol_context(r["ticker"]) for r in scoreable}
+
+    def _risk_adjusted_yield(r):
+        beta = ctx_by_ticker[r["ticker"]].get("beta")
+        if not beta or beta <= 0:
+            return r["yield_pct"]
+        return r["yield_pct"] / max(beta, 0.5)
+
+    real_yields = get_cached_batch_yield([r["ticker"] for r in scoreable])
+
+    adj_yields = [_risk_adjusted_yield(r) for r in scoreable]
     convictions = [r["conviction"] for r in scoreable]
-    yield_mean, yield_std = (statistics.mean(yields), statistics.pstdev(yields)) if yields else (0.0, 0.0)
+    yield_mean, yield_std = (statistics.mean(adj_yields), statistics.pstdev(adj_yields)) if adj_yields else (0.0, 0.0)
     conv_mean, conv_std = (statistics.mean(convictions), statistics.pstdev(convictions)) if convictions else (0.0, 0.0)
 
     for r in scoreable:
-        yz = _zscore(r["yield_pct"], yield_mean, yield_std)
+        adj_yield = _risk_adjusted_yield(r)
+        yz = _zscore(adj_yield, yield_mean, yield_std)
         cz = _zscore(r["conviction"], conv_mean, conv_std)
         risk_reward_z = 0.6 * yz + 0.4 * cz
 
@@ -187,7 +209,8 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
         # score either -- a gate means "don't recommend this as a new
         # entry regardless of score," which is the sequencer's job
         # (dashboard/backend/app/sequencer.py), not a score penalty here.
-        ctx = get_cached_symbol_context(r["ticker"])
+        ctx = ctx_by_ticker[r["ticker"]]
+        real_yield = real_yields.get(r["ticker"], {})
         r.update({
             "yield_z": round(yz, 2), "conviction_z": round(cz, 2), "risk_reward_z": round(risk_reward_z, 2),
             "trend_bonus": trend_bonus, "quality_penalty": round(quality_penalty, 2),
@@ -197,6 +220,25 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
             "iv_rank": ctx.get("iv_rank"), "iv_entry_signal": ctx.get("iv_entry_signal", False),
             "dividend_yield_pct": ctx.get("dividend_yield_pct", 0.0),
             "gates_fired": ctx.get("gates_fired", []),
+            "risk_adjusted_yield_pct": round(adj_yield, 2) if adj_yield is not None else None,
+            # Bucket 2 -- real, visible, NEVER merged into score (each is a
+            # genuine two-sided trade-off, see symbol_context._quality_fields).
+            "beta": ctx.get("beta"),
+            "market_cap": ctx.get("market_cap"),
+            "debt_to_equity": ctx.get("debt_to_equity"),
+            "profit_margin_pct": ctx.get("profit_margin_pct"),
+            "analyst_count": ctx.get("analyst_count"),
+            "analyst_rating_mean": ctx.get("analyst_rating_mean"),
+            # Real live option-chain premium (put_yield.py's annualized
+            # yield-on-capital) -- the actual dollar-premium answer, shown
+            # alongside IV Rank rather than replacing it, since they answer
+            # different questions (IV Rank: rich vs. this stock's OWN
+            # history; this: rich in absolute, tradeable terms right now).
+            # Confirmed real case 2026-10-13: ELF showed IV Rank 4.0 (looked
+            # weak) but real yield 30% (strongest in its comparison set) --
+            # IV Rank alone would have hidden this entirely.
+            "real_put_yield_pct": (real_yield.get("put") or {}).get("annualized_yield_pct"),
+            "real_call_yield_pct": (real_yield.get("call") or {}).get("annualized_yield_pct"),
         })
 
     yield_rank = _rank_by(scoreable, "yield_pct")

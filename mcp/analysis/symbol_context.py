@@ -49,6 +49,15 @@ _CACHE_FILE = os.path.join(_CACHE_DIR, "symbol_context_cache.json")
 MAX_LIQUID_SPREAD_PCT = 10.0
 EARNINGS_LOOKAHEAD_DAYS = 30
 
+# Commonly-cited "high leverage" cutoff for debt/equity (yfinance's
+# debtToEquity, already x100-scaled -- 200 means debt is 2x equity). A real,
+# simple heuristic, NOT sector-adjusted -- a capital-intensive utility and an
+# asset-light software name shouldn't really share one threshold, but this
+# is the single concrete, defensible gate the 2026-10-15 quality-vs-
+# risk-parameter discussion settled on: a named, asymmetric downside risk
+# (the AVGO $60-100B debt-raise case), not a trade-off to merge into score.
+HIGH_LEVERAGE_DEBT_TO_EQUITY = 200.0
+
 
 def _dividend_yield_pct(symbol: str) -> float:
     """Computed directly from dividendRate/currentPrice rather than trusted
@@ -72,6 +81,30 @@ def _dividend_yield_pct(symbol: str) -> float:
         return round(info.get("dividendYield") or 0.0, 2)
     except Exception:
         return 0.0
+
+
+def _quality_fields(symbol: str) -> dict:
+    """Bucket-2 trade-off context (market cap, beta, leverage, profitability,
+    analyst coverage) -- shown side-by-side, never merged into score, per
+    the 2026-10-15 discussion: each of these is a genuine two-sided
+    trade-off (small+growing vs. large+stable, thin coverage vs. crowded),
+    not a one-way quality signal. beta is the one exception that DOES feed
+    into score (composite_score.py risk-adjusts yield by beta directly,
+    since a high yield that's purely a volatility artifact isn't really
+    compensating for anything -- see that module's own comment)."""
+    try:
+        info = yf.Ticker(symbol).info
+        return {
+            "beta": info.get("beta"),
+            "market_cap": info.get("marketCap"),
+            "debt_to_equity": info.get("debtToEquity"),
+            "profit_margin_pct": round(info.get("profitMargins") * 100, 2) if info.get("profitMargins") is not None else None,
+            "analyst_count": info.get("numberOfAnalystOpinions"),
+            "analyst_rating_mean": info.get("recommendationMean"),
+        }
+    except Exception:
+        return {"beta": None, "market_cap": None, "debt_to_equity": None,
+                "profit_margin_pct": None, "analyst_count": None, "analyst_rating_mean": None}
 
 
 def _is_usable(entry: dict) -> bool:
@@ -100,8 +133,11 @@ def get_symbol_context(symbol: str, dte: Optional[int] = None,
     sector = get_symbol_sector(symbol)
     div_yield = _dividend_yield_pct(symbol)
     earnings_dates = upcoming_earnings(symbol, days=EARNINGS_LOOKAHEAD_DAYS)
+    quality = _quality_fields(symbol)
 
     gates_fired = []
+    if quality.get("debt_to_equity") is not None and quality["debt_to_equity"] > HIGH_LEVERAGE_DEBT_TO_EQUITY:
+        gates_fired.append("HIGH_LEVERAGE")
 
     earnings_within_window = earnings_dates
     if dte is not None and earnings_dates:
@@ -130,6 +166,7 @@ def get_symbol_context(symbol: str, dte: Optional[int] = None,
         "liquidity_ok": liquidity_ok,
         "spread_pct": spread_pct,
         "gates_fired": gates_fired,
+        **quality,
     }
 
 

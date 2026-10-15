@@ -30,6 +30,7 @@
   .tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; margin-right: 3px; background: #e8f4f8; color: #205493; }
   .tag-new { background: #e8f8ec; color: #00a91c; }
   .tag-flag { background: #fff3e0; color: #c05600; }
+  .tag-gate { background: #f4e3db; color: #b50909; font-weight: 700; }
   .heat-GREEN { color: #00a91c; font-weight: 700; }
   .heat-YELLOW { color: #c05600; font-weight: 700; }
   .heat-RED { color: #d54309; font-weight: 700; }
@@ -257,6 +258,8 @@
     { key: "ticker", label: "Ticker", get: r => r.ticker, numeric: false },
     { key: "score", label: "Score", get: r => r.score ?? -999, numeric: true },
     { key: "yield_pct", label: "Yield (rank)", get: r => r.yield_pct ?? -999, numeric: true },
+    { key: "real_yield", label: "Real Premium (put/call)", get: r => Math.max(r.real_put_yield_pct ?? -999, r.real_call_yield_pct ?? -999), numeric: true },
+    { key: "beta", label: "Beta", get: r => r.beta ?? -999, numeric: true },
     { key: "conviction", label: "Conviction (rank)", get: r => r.conviction ?? -999, numeric: true },
     { key: "target_upside_pct", label: "Analyst upside", get: r => r.target_upside_pct ?? -999, numeric: true },
     { key: "invested", label: "Invested (notional)", get: r => r.invested ?? -1, numeric: true },
@@ -303,12 +306,14 @@
         <td><strong>${r.ticker}</strong> ${r.is_new ? '<span class="tag tag-new">watchlist</span>' : ""}</td>
         <td class="num"><strong>${fmtNum(r.score)}</strong></td>
         <td class="num">${fmtPct(r.yield_pct)} <span class="rank">(#${r.yield_rank ?? "-"})</span></td>
+        <td class="num" title="Real live option-chain premium -- what IV Rank alone can miss (e.g. ELF: IV Rank 4, real yield 30%)">${r.real_put_yield_pct != null || r.real_call_yield_pct != null ? `P ${fmtPct(r.real_put_yield_pct)} / C ${fmtPct(r.real_call_yield_pct)}` : "-"}</td>
+        <td class="num" title="Score's yield is risk-adjusted by this (yield / beta) before ranking">${r.beta != null ? r.beta.toFixed(2) : "-"}</td>
         <td class="num">${fmtNum(r.conviction)} <span class="rank">(#${r.conviction_rank ?? "-"})</span></td>
         <td class="num">${r.target_upside_pct !== null && r.target_upside_pct !== undefined ? r.target_upside_pct.toFixed(0) + "%" : "-"}${r.valuation_penalty ? " ⚠" : ""}</td>
         <td class="num">${r.is_new ? "-" : fmtUsd(r.invested)}</td>
         <td>${r.heat ? `<span class="heat-${r.heat}">${r.heat}</span>` : "-"}</td>
         <td>${(r.verticals || []).map(v => `<span class="tag">${v}</span>`).join("") || "-"}</td>
-        <td>${(r.flags || []).map(f => `<span class="tag tag-flag">${f}</span>`).join("") || "-"}</td>
+        <td>${(r.gates_fired || []).map(g => `<span class="tag tag-gate">${g}</span>`).join("")}${(r.flags || []).map(f => `<span class="tag tag-flag">${f}</span>`).join("") || (!r.gates_fired?.length ? "-" : "")}</td>
       </tr>`).join("");
 
     // Columns where a bigger number is the more interesting end, so a
@@ -331,7 +336,7 @@
       ${errorBox}
       <table class="usa-table usa-table--borderless">
         <thead><tr>
-          ${headCells}<th>Hot-trend</th><th>Quality flags</th>
+          ${headCells}<th>Hot-trend</th><th>Gates &amp; flags</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
