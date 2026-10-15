@@ -69,7 +69,7 @@ const SECTION_CLASS = {
 };
 
 async function loadState() {
-  const r = await fetch("/api/us/account-state?account=A");
+  const r = await fetch("api/us/account-state?account=A");
   const s = await r.json();
   renderState(s);
   return s;
@@ -108,12 +108,12 @@ document.addEventListener("submit", async (e) => {
   const fd = new FormData(e.target);
   const body = { account: "A" };
   for (const [k, v] of fd.entries()) if (v !== "") body[k] = parseFloat(v);
-  await fetch("/api/us/account-state", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body) });
+  await fetch("api/us/account-state", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body) });
   loadPlan();
 });
 
 async function loadPlan() {
-  const r = await fetch("/api/us/today");
+  const r = await fetch("api/us/today");
   const data = await r.json();
   renderState(data.account_state);
 
