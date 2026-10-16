@@ -4,7 +4,7 @@ import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from pydantic import BaseModel
 
 from . import services
@@ -386,7 +386,23 @@ def india_refresh():
 # bug already hit once with today.html's absolute-vs-relative fetch paths.
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist")
 if os.path.isdir(FRONTEND_DIST):
+    # Real bug found 2026-10-16: index.html references its JS/CSS as
+    # relative "./assets/..." (vite.config.ts's base: "./"), which the
+    # BROWSER resolves against the current URL's directory -- "/app" with
+    # no trailing slash is treated as a FILE, so "./assets/x.js" resolves
+    # as a SIBLING ("/assets/x.js", or "/theta-lab/assets/x.js" once the
+    # gateway's /theta-lab prefix is back in), not a child of /app at all.
+    # That sibling path doesn't exist -- confirmed live, real 404
+    # {"detail":"Not Found"}, exactly what the trader saw. Same fix Caddy's
+    # own Caddyfile already uses for /theta-lab itself: redirect the
+    # no-slash form to the slash form, so relative paths resolve as
+    # children of /app/ (-> /app/assets/..., matching the mount below)
+    # instead of siblings of it.
     @app.get("/app")
+    def app_shell_redirect():
+        return RedirectResponse(url="app/")
+
+    @app.get("/app/")
     def app_shell():
         return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
 
