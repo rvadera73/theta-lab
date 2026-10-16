@@ -42,17 +42,21 @@ export default function AccountStateCard({
   ];
 
   return (
-    <section className="bg-white rounded-md p-4 md:px-5 mb-4">
+    <section className="bg-white rounded-lg shadow-sm p-5 md:px-6 mb-4">
       {!state && <p className="text-sm text-faint mb-2">No account state on file yet — enter it below.</p>}
-      <div className="flex flex-wrap gap-6 mb-3">
+      <div className="flex flex-wrap gap-8 mb-4">
         {stats.map((s) => (
           <div key={s.label}>
-            <div className="text-[11px] uppercase text-muted">{s.label}</div>
-            <div className="text-lg font-bold text-ink">{s.value}</div>
+            <div className="text-[11px] uppercase tracking-wide text-muted mb-0.5">{s.label}</div>
+            <div className="text-2xl font-bold text-ink tracking-tight tabular-nums">{s.value}</div>
           </div>
         ))}
         {state && state.days_stale > 0 && (
-          <span className="inline-flex items-center self-start rounded-full bg-red-100 text-bad text-[10px] font-bold px-2 py-0.5">
+          <span
+            className="inline-flex items-center self-start gap-1 rounded-full text-[10px] font-bold px-2 py-0.5"
+            style={{ backgroundColor: "#d03b3b1a", color: "#d03b3b" }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#d03b3b]" />
             {state.days_stale}d old
           </span>
         )}

@@ -4,6 +4,7 @@ import { getTodayPlan, setAccountState } from "../api";
 import AccountStateCard from "../components/AccountStateCard";
 import DetailPane from "../components/DetailPane";
 import ItemList from "../components/ItemList";
+import SectionChart from "../components/SectionChart";
 
 export default function TodayPage() {
   const [plan, setPlan] = useState<TodayPlan | null>(null);
@@ -52,6 +53,8 @@ export default function TodayPage() {
           {note}
         </div>
       ))}
+
+      <SectionChart plan={plan.plan} />
 
       <DetailPane item={selectedIdx !== null ? plan.plan[selectedIdx] : null} />
 

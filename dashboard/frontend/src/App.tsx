@@ -35,7 +35,7 @@ function NavTab({ to, label }: { to: string; label: string }) {
 export default function App() {
   return (
     <HashRouter>
-      <div className="min-h-screen bg-[#f0f0f0] flex flex-col">
+      <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
         {/* Desktop top bar */}
         <header className="hidden md:flex items-center justify-between bg-[#2e2e38] text-white px-6 py-3">
           <strong>theta-lab</strong>
