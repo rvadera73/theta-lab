@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import type { TodayPlan } from "../types";
 import { getTodayPlan, setAccountState } from "../api";
 import AccountStateCard from "../components/AccountStateCard";
-import DetailPane from "../components/DetailPane";
 import DetailViewer from "../components/DetailViewer";
 import ItemsTable from "../components/ItemsTable";
 
@@ -15,7 +14,6 @@ const SECTION_SHORT: Record<string, string> = {
 
 export default function TodayPage() {
   const [plan, setPlan] = useState<TodayPlan | null>(null);
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [viewerIdx, setViewerIdx] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +21,6 @@ export default function TodayPage() {
     try {
       const data = await getTodayPlan();
       setPlan(data);
-      setSelectedIdx(data.plan.length ? 0 : null);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -54,6 +51,14 @@ export default function TodayPage() {
 
   return (
     <div>
+      {/* Real fix (2026-10-16, trader correction): account state is the
+          at-a-glance summary the trader looks at FIRST -- it belongs at the
+          top, not buried below the action table. The prior commit moved it
+          down as a side effect of putting the table "on top" (mirroring the
+          reference's Positions-table placement) without noticing this
+          regression. */}
+      <AccountStateCard state={plan.account_state} onSubmit={handleStateUpdate} />
+
       {plan.context_notes.map((note, i) => (
         <div key={i} className="bg-accent/10 border-l-2 border-accent px-3 py-1.5 text-[12.5px] text-ink/90 mb-2 rounded-sm">
           {note}
@@ -69,19 +74,7 @@ export default function TodayPage() {
         ))}
       </div>
 
-      {/* Primary surface: the wide multi-column table, full width -- like
-          the Positions table in the reference. */}
-      <div className="mb-3">
-        <ItemsTable plan={plan.plan} selectedIdx={selectedIdx} onSelect={setSelectedIdx} />
-      </div>
-
-      {/* Secondary row: two side-by-side panels -- account state (left) and
-          the selected row's detail (right) -- a real quadrant layout, not
-          another stacked block. Stacks to one column on mobile. */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <AccountStateCard state={plan.account_state} onSubmit={handleStateUpdate} />
-        <DetailPane item={selectedIdx !== null ? plan.plan[selectedIdx] : null} onViewFull={() => setViewerIdx(selectedIdx)} />
-      </div>
+      <ItemsTable plan={plan.plan} onViewFull={setViewerIdx} />
 
       <DetailViewer item={viewerIdx !== null ? plan.plan[viewerIdx] : null} onClose={() => setViewerIdx(null)} />
     </div>
