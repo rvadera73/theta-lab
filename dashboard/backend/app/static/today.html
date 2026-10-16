@@ -6,6 +6,16 @@
 <title>theta-lab — Today</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@uswds/uswds@3.14.0/dist/css/uswds.min.css">
 <style>
+  /* Minimal overrides only -- everything else below is real USWDS markup
+     (usa-accordion, usa-alert, usa-tag, usa-table, usa-form), per the
+     2026-10-16 fix: the first version of this page used ad-hoc custom CSS
+     that ignored the design system the rest of the dashboard is built on,
+     AND relied on color alone (border-left colors) to convey severity --
+     a WCAG failure (color must never be the only way information is
+     conveyed) on top of the inconsistency. usa-accordion also solves the
+     "clutter on a long page" complaint directly: panels are collapsed by
+     default, keyboard/screen-reader accessible out of the box via USWDS's
+     own JS (aria-expanded/hidden managed for us, not hand-rolled). */
   body { margin: 0; background: #f0f0f0; }
   .topbar {
     background: #2e2e38; color: #fff; padding: 12px 24px; display: flex;
@@ -14,41 +24,12 @@
   .topbar a { color: #fff; }
   .topbar .crumbs a { color: #d3d3db; text-decoration: none; font-size: 13px; margin-left: 12px; }
   main { max-width: 820px; margin: 0 auto; padding: 24px 16px 64px; }
-
-  .state-card {
-    background: #fff; border: 1px solid #dfe1e2; border-radius: 4px; padding: 16px 20px;
-    margin-bottom: 20px; display: flex; gap: 32px; flex-wrap: wrap; align-items: center;
-  }
-  .state-card .stat { min-width: 110px; }
-  .state-card .stat .label { font-size: 11px; text-transform: uppercase; color: #71767a; }
-  .state-card .stat .value { font-size: 20px; font-weight: 700; color: #1b1b1b; }
-  .state-card .stale { color: #b50909; font-size: 12px; margin-left: auto; }
-  .state-form { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
-  .state-form input { width: 100px; padding: 4px 6px; font-size: 13px; }
-
-  .context-notes { margin-bottom: 20px; }
-  .context-notes .note {
-    background: #fef0c8; border-left: 4px solid #c3762a; padding: 8px 14px;
-    font-size: 13.5px; margin-bottom: 6px; border-radius: 2px;
-  }
-
-  .section-head {
-    font-size: 13px; text-transform: uppercase; font-weight: 700; color: #565c65;
-    margin: 24px 0 8px; letter-spacing: .04em;
-  }
-  .section-head.relief { color: #936316; }
-  .section-head.gate { color: #b50909; }
-
-  .item { background: #fff; border: 1px solid #dfe1e2; border-left: 4px solid #a9aeb1;
-          border-radius: 3px; padding: 12px 16px; margin-bottom: 8px; }
-  .item.relief { border-left-color: #c3762a; }
-  .item.gate { border-left-color: #b50909; }
-  .item.manage { border-left-color: #565c65; }
-  .item.entry { border-left-color: #1a7a1a; }
-  .item .action { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
-  .item .why { font-size: 13px; color: #3d4551; }
-  .item .detail { font-size: 12.5px; color: #71767a; margin-top: 4px; }
-
+  .state-card { background: #fff; border: 1px solid #dfe1e2; border-radius: 4px; padding: 16px 20px; margin-bottom: 1rem; }
+  .state-stats { display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 12px; }
+  .state-stats .stat .usa-tag { margin-bottom: 4px; }
+  .state-stats .stat .value { font-size: 20px; font-weight: 700; color: #1b1b1b; }
+  .section-head { margin: 1.5rem 0 .5rem; }
+  .leg-reason-row td { font-size: 13px; color: #3d4551; padding-top: 0; }
   .empty { color: #757575; font-style: italic; padding: 24px; text-align: center; }
 </style>
 </head>
@@ -58,52 +39,72 @@
   <span class="crumbs"><a href="/">&larr; both dashboards</a><a href="us">US</a><a href="composite-scores">Composite Scores</a><a href="watchlist">Watchlist</a></span>
 </div>
 <main>
-  <div class="state-card" id="state-card">Loading account state...</div>
-  <div class="context-notes" id="context-notes"></div>
-  <div id="plan-container"><p class="empty">Loading...</p></div>
-</main>
-<script>
-const SECTION_CLASS = {
-  "GATE": "gate", "CASH RELIEF FIRST": "relief",
-  "MANAGE HARD STOPS": "manage", "NEW ENTRY CANDIDATES": "entry",
-};
+  <section class="state-card" aria-labelledby="state-heading">
+    <h2 id="state-heading" class="usa-prose" style="margin-top:0;">Account A — current state</h2>
+    <div id="state-stats" class="state-stats">Loading…</div>
+    <form class="usa-form" id="state-form">
+      <div class="grid-row grid-gap-sm">
+        <div class="tablet:grid-col-3">
+          <label class="usa-label" for="f-cash">Cash</label>
+          <input class="usa-input" id="f-cash" name="cash" type="number" step="0.01">
+        </div>
+        <div class="tablet:grid-col-3">
+          <label class="usa-label" for="f-cpb">Cash + borrowing</label>
+          <input class="usa-input" id="f-cpb" name="cash_plus_borrowing" type="number" step="0.01">
+        </div>
+        <div class="tablet:grid-col-3">
+          <label class="usa-label" for="f-oreq">Option requirement</label>
+          <input class="usa-input" id="f-oreq" name="option_requirement" type="number" step="0.01">
+        </div>
+        <div class="tablet:grid-col-2">
+          <label class="usa-label" for="f-eq">Equity %</label>
+          <input class="usa-input" id="f-eq" name="equity_pct" type="number" step="0.1">
+        </div>
+        <div class="tablet:grid-col-1" style="display:flex; align-items:flex-end;">
+          <button class="usa-button" type="submit">Update</button>
+        </div>
+      </div>
+    </form>
+  </section>
 
-async function loadState() {
-  const r = await fetch("api/us/account-state?account=A");
-  const s = await r.json();
-  renderState(s);
-  return s;
-}
+  <div id="context-notes"></div>
+  <div id="plan-container"><p class="empty">Loading…</p></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@uswds/uswds@3.14.0/dist/js/uswds.min.js"></script>
+<script>
+// Section -> USWDS tag color class (text label always present alongside
+// color, never color-only -- see the top-of-file note on WCAG).
+const SECTION_TAG = {
+  "GATE": "bg-secondary-dark",
+  "CASH RELIEF FIRST": "bg-gold",
+  "MANAGE HARD STOPS": "bg-base-dark",
+  "NEW ENTRY CANDIDATES": "bg-green",
+};
+const COLOR_TAG = { RED: "bg-secondary-dark", YELLOW: "bg-gold", GREEN: "bg-green", UNKNOWN: "bg-base-dark" };
+
+function fmtUsd(v) { return v == null ? "—" : "$" + Number(v).toLocaleString(); }
 
 function renderState(s) {
-  const card = document.getElementById("state-card");
+  const el = document.getElementById("state-stats");
+  const form = document.getElementById("state-form");
   if (!s) {
-    card.innerHTML = `<span>No account state on file yet.</span>` + stateForm({});
+    el.innerHTML = `<span>No account state on file yet — enter it below.</span>`;
     return;
   }
-  const fmt = (v) => v == null ? "—" : "$" + Number(v).toLocaleString();
-  card.innerHTML = `
-    <div class="stat"><div class="label">Cash</div><div class="value">${fmt(s.cash)}</div></div>
-    <div class="stat"><div class="label">Cash + Borrowing</div><div class="value">${fmt(s.cash_plus_borrowing)}</div></div>
-    <div class="stat"><div class="label">Option Req.</div><div class="value">${fmt(s.option_requirement)}</div></div>
-    <div class="stat"><div class="label">Equity %</div><div class="value">${s.equity_pct == null ? "—" : s.equity_pct + "%"}</div></div>
-    ${s.days_stale > 0 ? `<div class="stale">${s.days_stale}d old</div>` : ""}
-  ` + stateForm(s);
+  el.innerHTML = `
+    <div class="stat"><span class="usa-tag bg-base-light text-ink">Cash</span><div class="value">${fmtUsd(s.cash)}</div></div>
+    <div class="stat"><span class="usa-tag bg-base-light text-ink">Cash + borrowing</span><div class="value">${fmtUsd(s.cash_plus_borrowing)}</div></div>
+    <div class="stat"><span class="usa-tag bg-base-light text-ink">Option requirement</span><div class="value">${fmtUsd(s.option_requirement)}</div></div>
+    <div class="stat"><span class="usa-tag bg-base-light text-ink">Equity %</span><div class="value">${s.equity_pct == null ? "—" : s.equity_pct + "%"}</div></div>
+    ${s.days_stale > 0 ? `<span class="usa-tag bg-secondary-dark">${s.days_stale}d old — re-check</span>` : ""}
+  `;
+  form.cash.value = s.cash ?? "";
+  form.cash_plus_borrowing.value = s.cash_plus_borrowing ?? "";
+  form.option_requirement.value = s.option_requirement ?? "";
+  form.equity_pct.value = s.equity_pct ?? "";
 }
 
-function stateForm(s) {
-  return `
-    <form class="state-form" id="state-form">
-      <input name="cash" placeholder="Cash" type="number" value="${s.cash ?? ''}">
-      <input name="cash_plus_borrowing" placeholder="Cash+Borrow" type="number" value="${s.cash_plus_borrowing ?? ''}">
-      <input name="option_requirement" placeholder="Opt. Req." type="number" value="${s.option_requirement ?? ''}">
-      <input name="equity_pct" placeholder="Equity %" type="number" step="0.1" value="${s.equity_pct ?? ''}">
-      <button class="usa-button usa-button--outline" type="submit" style="margin:0;">Update</button>
-    </form>`;
-}
-
-document.addEventListener("submit", async (e) => {
-  if (e.target.id !== "state-form") return;
+document.getElementById("state-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
   const body = { account: "A" };
@@ -112,34 +113,83 @@ document.addEventListener("submit", async (e) => {
   loadPlan();
 });
 
+function renderLegDetail(ref) {
+  if (ref && Array.isArray(ref.legs)) {
+    const rows = ref.legs.map((lg, i) => `
+      <tr>
+        <td><span class="usa-tag ${COLOR_TAG[lg.color] || 'bg-base-dark'}">${lg.color || '-'}</span></td>
+        <td>${lg.type || '-'} $${lg.strike ?? '-'}</td>
+        <td>${lg.expiry || '-'} (${lg.dte ?? '-'}d)</td>
+        <td>${lg.action || '-'}</td>
+        <td>${lg.covered === true ? 'covered' : lg.covered === false ? (lg.strangle ? 'naked (strangle-paired)' : 'naked') : (lg.type === 'PUT' ? 'cash-secured' : '-')}</td>
+      </tr>
+      <tr class="leg-reason-row"><td colspan="5">${lg.reason || ''}</td></tr>
+    `).join("");
+    return `
+      <table class="usa-table usa-table--borderless usa-table--compact" style="width:100%;">
+        <caption class="usa-sr-only">All legs for ${ref.symbol}, account ${ref.account}</caption>
+        <thead><tr><th scope="col">Color</th><th scope="col">Leg</th><th scope="col">Expiry</th><th scope="col">Action</th><th scope="col">Coverage</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="usa-prose" style="font-size:13px; color:#3d4551;">Sector: ${ref.sector || '-'} · Total cost-to-close: ${fmtUsd(ref.total_cost_to_close)} · ${ref.leg_count} leg(s) total</p>`;
+  }
+  if (ref) {
+    return `<p class="usa-prose" style="font-size:13px;">
+      score=${ref.score ?? '-'} (rank ${ref.rank ?? '-'}/${ref.population_size ?? '-'}) ·
+      yield=${ref.yield_pct ?? '-'}% · conviction=${ref.conviction ?? '-'} ·
+      iv_rank=${ref.iv_rank ?? '-'} · real put/call yield=${ref.real_put_yield_pct ?? '-'}%/${ref.real_call_yield_pct ?? '-'}% ·
+      beta=${ref.beta ?? '-'} · sector=${ref.sector ?? '-'}
+      ${ref.gates_fired && ref.gates_fired.length ? `<br><span class="usa-tag bg-secondary-dark">Gates: ${ref.gates_fired.join(", ")}</span>` : ""}
+    </p>`;
+  }
+  return "";
+}
+
+function renderPlanHtml(plan) {
+  const container = document.getElementById("plan-container");
+  if (!plan.length) {
+    container.innerHTML = `<p class="empty">Nothing actionable right now.</p>`;
+    return;
+  }
+  let html = "";
+  let lastSection = null;
+  let openSections = [];
+  plan.forEach((item, idx) => {
+    if (item.section !== lastSection) {
+      html += `<h3 class="section-head"><span class="usa-tag ${SECTION_TAG[item.section] || 'bg-base-dark'}">${item.section}</span></h3>`;
+      html += `<div class="usa-accordion usa-accordion--bordered" data-allow-multiple>`;
+      lastSection = item.section;
+    }
+    const headingId = `h-${idx}`, contentId = `c-${idx}`;
+    html += `
+      <h4 class="usa-accordion__heading">
+        <button type="button" class="usa-accordion__button" aria-expanded="false" aria-controls="${contentId}" id="${headingId}">
+          ${item.action}
+        </button>
+      </h4>
+      <div id="${contentId}" class="usa-accordion__content usa-prose" hidden aria-labelledby="${headingId}">
+        <p>${item.why}</p>
+        ${item.detail ? `<p style="font-size:13px; color:#71767a;">${item.detail}</p>` : ""}
+        ${renderLegDetail(item.ref)}
+      </div>`;
+    const next = plan[idx + 1];
+    if (!next || next.section !== item.section) html += `</div>`; // close usa-accordion
+  });
+  container.innerHTML = html;
+}
+
 async function loadPlan() {
   const r = await fetch("api/us/today");
   const data = await r.json();
   renderState(data.account_state);
 
   const notesEl = document.getElementById("context-notes");
-  notesEl.innerHTML = (data.context_notes || []).map(n => `<div class="note">${n}</div>`).join("");
+  notesEl.innerHTML = (data.context_notes || []).map(n => `
+    <div class="usa-alert usa-alert--warning usa-alert--slim" style="margin-bottom:8px;">
+      <div class="usa-alert__body"><p class="usa-alert__text">${n}</p></div>
+    </div>`).join("");
 
-  const container = document.getElementById("plan-container");
-  if (!data.plan || !data.plan.length) {
-    container.innerHTML = `<p class="empty">Nothing actionable right now.</p>`;
-    return;
-  }
-  let html = "";
-  let lastSection = null;
-  for (const item of data.plan) {
-    if (item.section !== lastSection) {
-      html += `<div class="section-head ${SECTION_CLASS[item.section] || ''}">${item.section}</div>`;
-      lastSection = item.section;
-    }
-    html += `
-      <div class="item ${SECTION_CLASS[item.section] || ''}">
-        <div class="action">${item.action}</div>
-        <div class="why">${item.why}</div>
-        ${item.detail ? `<div class="detail">${item.detail}</div>` : ""}
-      </div>`;
-  }
-  container.innerHTML = html;
+  renderPlanHtml(data.plan || []);
 }
 
 loadPlan();
