@@ -1,25 +1,18 @@
 import type { PlanItem } from "../types";
 import { isPositionGroup } from "../types";
 
-// Validated status palette (dataviz skill, references/palette.md) -- same
-// exact values as DetailPane/SectionChart, applied consistently across the
-// whole app rather than three slightly-different ad-hoc color sets.
-const STATUS = { critical: "#d03b3b", warning: "#fab219", serious: "#ec835a", good: "#0ca30c", muted: "#898781" };
-const COLOR_HEX: Record<string, string> = { RED: STATUS.critical, YELLOW: STATUS.warning, GREEN: STATUS.good, UNKNOWN: STATUS.muted };
-const SECTION_HEX: Record<string, string> = {
-  GATE: STATUS.critical,
-  "CASH RELIEF FIRST": STATUS.warning,
-  "MANAGE HARD STOPS": STATUS.serious,
-  "NEW ENTRY CANDIDATES": STATUS.good,
-};
+// Color discipline fixed against the real reference (Robinhood Legend,
+// 2026-10-16): that screen reserves green/red STRICTLY for gain/loss
+// direction, never for generic category labels. RED/YELLOW/GREEN here are
+// genuine position-heat severity (a real directional signal, same family
+// as P&L color), so they keep a color dot; the SECTION grouping (GATE,
+// CASH RELIEF, etc.) is a category, not a direction -- it no longer gets
+// its own arbitrary color, just a plain group header, same as "Positions"
+// is a plain header in the reference, not color-coded.
+const SEVERITY_HEX: Record<string, string> = { RED: "#ff5a5f", YELLOW: "#f7941d", GREEN: "#1ec47c", UNKNOWN: "#5c6578" };
 
-function ColorTag({ color, children }: { color: string; children: React.ReactNode }) {
-  return (
-    <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: `${color}1a`, color }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-      {children}
-    </span>
-  );
+function Dot({ color }: { color: string }) {
+  return <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: color }} />;
 }
 
 export default function ItemList({
@@ -32,7 +25,7 @@ export default function ItemList({
   onSelect: (idx: number) => void;
 }) {
   if (!plan.length) {
-    return <p className="text-gray-500 italic text-center py-8">Nothing actionable right now.</p>;
+    return <p className="text-faint italic text-center py-8 text-sm">Nothing actionable right now.</p>;
   }
 
   const sections: { name: string; items: { item: PlanItem; idx: number }[] }[] = [];
@@ -46,11 +39,11 @@ export default function ItemList({
   });
 
   return (
-    <>
-      {sections.map((section) => (
+    <div className="bg-panel border border-border rounded-md overflow-hidden">
+      {sections.map((section, si) => (
         <div key={section.name}>
-          <div className="text-xs uppercase font-bold tracking-wide text-muted mt-5 mb-2">
-            {section.name} <span className="text-gray-400 font-normal normal-case tracking-normal">({section.items.length})</span>
+          <div className={`px-3 py-1.5 text-[10.5px] uppercase font-semibold tracking-wide text-muted bg-panelAlt ${si > 0 ? "border-t border-border" : ""}`}>
+            {section.name} <span className="text-faint font-normal normal-case tracking-normal">({section.items.length})</span>
           </div>
           {section.items.map(({ item, idx }) => {
             const worstColor = isPositionGroup(item.ref) ? item.ref.worst_color : null;
@@ -60,18 +53,22 @@ export default function ItemList({
                 key={idx}
                 type="button"
                 onClick={() => onSelect(idx)}
-                className={`flex items-center gap-2.5 w-full text-left bg-white rounded-md px-3.5 py-2.5 mb-1.5 border-l-[3px] text-[13.5px] shadow-sm transition-colors ${
-                  isSelected ? "bg-blue-50 font-semibold" : "hover:bg-[#f9f9f7]"
+                className={`flex items-center w-full text-left px-3 py-[6px] text-[12.5px] border-t border-border/60 transition-colors ${
+                  isSelected ? "bg-panelAlt" : "hover:bg-panelAlt/50"
                 }`}
-                style={{ borderLeftColor: SECTION_HEX[item.section] || "#c3c2b7" }}
               >
-                <span>{item.action}</span>
-                {worstColor && <ColorTag color={COLOR_HEX[worstColor] || STATUS.muted}>{worstColor}</ColorTag>}
+                <span className={`truncate ${isSelected ? "text-ink font-medium" : "text-ink/90"}`}>{item.action}</span>
+                {worstColor && (
+                  <span className="ml-auto flex items-center text-[11px] text-muted shrink-0 pl-3 tabular-nums">
+                    <Dot color={SEVERITY_HEX[worstColor] || SEVERITY_HEX.UNKNOWN} />
+                    {worstColor}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
       ))}
-    </>
+    </div>
   );
 }

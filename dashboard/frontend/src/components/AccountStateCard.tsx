@@ -42,21 +42,17 @@ export default function AccountStateCard({
   ];
 
   return (
-    <section className="bg-white rounded-lg shadow-sm p-5 md:px-6 mb-4">
-      {!state && <p className="text-sm text-faint mb-2">No account state on file yet — enter it below.</p>}
-      <div className="flex flex-wrap gap-8 mb-4">
+    <section className="bg-panel border border-border rounded-md p-4 md:px-5 mb-3">
+      {!state && <p className="text-[13px] text-faint mb-2">No account state on file yet — enter it below.</p>}
+      <div className="flex flex-wrap gap-8 mb-3">
         {stats.map((s) => (
           <div key={s.label}>
-            <div className="text-[11px] uppercase tracking-wide text-muted mb-0.5">{s.label}</div>
-            <div className="text-2xl font-bold text-ink tracking-tight tabular-nums">{s.value}</div>
+            <div className="text-[10.5px] uppercase tracking-wide text-muted mb-0.5">{s.label}</div>
+            <div className="text-xl font-semibold text-ink tabular-nums">{s.value}</div>
           </div>
         ))}
         {state && state.days_stale > 0 && (
-          <span
-            className="inline-flex items-center self-start gap-1 rounded-full text-[10px] font-bold px-2 py-0.5"
-            style={{ backgroundColor: "#d03b3b1a", color: "#d03b3b" }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#d03b3b]" />
+          <span className="inline-flex items-center self-start gap-1 rounded text-[10px] font-medium px-1.5 py-0.5 bg-down/10 text-down">
             {state.days_stale}d old
           </span>
         )}
@@ -64,7 +60,7 @@ export default function AccountStateCard({
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end">
         {(["cash", "cash_plus_borrowing", "option_requirement", "equity_pct"] as const).map((key) => (
           <div key={key} className="flex flex-col gap-0.5">
-            <label htmlFor={`f-${key}`} className="text-[10.5px] text-muted">
+            <label htmlFor={`f-${key}`} className="text-[10px] text-faint">
               {key.replace(/_/g, " ")}
             </label>
             <input
@@ -73,11 +69,11 @@ export default function AccountStateCard({
               step="0.01"
               value={form[key]}
               onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-              className="text-[12.5px] px-2 py-1 border border-gray-300 rounded w-[105px]"
+              className="text-[12.5px] px-2 py-1 bg-panelAlt border border-border rounded text-ink w-[105px] focus:outline-none focus:border-accent"
             />
           </div>
         ))}
-        <button type="submit" className="text-[12.5px] px-3.5 py-1.5 rounded bg-accent text-white">
+        <button type="submit" className="text-[12.5px] px-3.5 py-1.5 rounded bg-accent text-surface font-medium">
           Update
         </button>
       </form>

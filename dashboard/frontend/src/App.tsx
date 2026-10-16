@@ -2,13 +2,8 @@ import { HashRouter, Routes, Route, NavLink } from "react-router-dom";
 import TodayPage from "./pages/Today";
 import PlaceholderPage from "./pages/Placeholder";
 
-// HashRouter deliberately, not BrowserRouter: this app can be served behind
-// an unknown path prefix (the existing dashboard is reachable through a
-// shared gateway at a prefix like /theta-lab/ -- see today.html's own
-// 2026-10-15 bug history, where an absolute vs. relative path mismatch
-// broke it under exactly this kind of prefix). Hash-based routes
-// (#/today) never depend on the server-side path at all, so this class of
-// bug can't recur here regardless of what sits in front of the app.
+// HashRouter deliberately -- see git history for why (gateway path-prefix
+// robustness, confirmed real bug class already hit once).
 const TABS = [
   { to: "/today", label: "Today" },
   { to: "/us", label: "US" },
@@ -22,8 +17,8 @@ function NavTab({ to, label }: { to: string; label: string }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex-1 md:flex-none text-center md:text-left px-3 py-2 md:py-1.5 rounded-md text-sm font-medium transition-colors ${
-          isActive ? "bg-accent text-white" : "text-ink hover:bg-gray-100"
+        `flex-1 md:flex-none text-center md:text-left px-3 py-2 md:py-1.5 rounded text-[13px] font-medium transition-colors ${
+          isActive ? "bg-panelAlt text-ink" : "text-muted hover:text-ink"
         }`
       }
     >
@@ -35,23 +30,35 @@ function NavTab({ to, label }: { to: string; label: string }) {
 export default function App() {
   return (
     <HashRouter>
-      <div className="min-h-screen bg-[#f9f9f7] flex flex-col">
-        {/* Desktop top bar */}
-        <header className="hidden md:flex items-center justify-between bg-[#2e2e38] text-white px-6 py-3">
-          <strong>theta-lab</strong>
-          <nav className="flex gap-2">
-            {TABS.map((t) => (
-              <NavTab key={t.to} {...t} />
-            ))}
-          </nav>
+      <div className="min-h-screen bg-surface flex flex-col">
+        {/* Desktop top bar -- matches a real reference (Robinhood Legend,
+            2026-10-16): dark chrome, a market-status dot, icon-weight
+            right-side controls, not plain text links alone. */}
+        <header className="hidden md:flex items-center justify-between bg-panel border-b border-border px-5 py-2.5">
+          <div className="flex items-center gap-6">
+            <span className="w-2 h-2 rounded-sm bg-accent" />
+            <strong className="text-ink text-[13px] tracking-wide">theta-lab</strong>
+            <nav className="flex gap-1">
+              {TABS.map((t) => (
+                <NavTab key={t.to} {...t} />
+              ))}
+            </nav>
+          </div>
+          <div className="flex items-center gap-4 text-[12px] text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-up" />
+              Market hours
+            </span>
+            <span className="text-faint">Account A</span>
+          </div>
         </header>
 
-        {/* Mobile top bar (title only -- nav lives in the bottom bar) */}
-        <header className="md:hidden bg-[#2e2e38] text-white px-4 py-3 text-center font-semibold">
-          theta-lab
+        {/* Mobile top bar */}
+        <header className="md:hidden bg-panel border-b border-border px-4 py-3 text-center">
+          <strong className="text-ink text-[13px]">theta-lab</strong>
         </header>
 
-        <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 md:px-8 py-6 pb-20 md:pb-6">
+        <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 md:px-6 py-5 pb-20 md:pb-5">
           <Routes>
             <Route path="/" element={<TodayPage />} />
             <Route path="/today" element={<TodayPage />} />
@@ -62,10 +69,8 @@ export default function App() {
           </Routes>
         </main>
 
-        {/* Mobile bottom tab bar -- matches real trading-app conventions
-            (Robinhood/Schwab mobile) rather than a top nav that eats
-            vertical space on a small screen. */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border flex">
+        {/* Mobile bottom tab bar */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-panel border-t border-border flex">
           {TABS.map((t) => (
             <NavTab key={t.to} {...t} />
           ))}
