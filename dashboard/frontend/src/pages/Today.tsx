@@ -4,7 +4,7 @@ import { getTodayPlan, setAccountState } from "../api";
 import AccountStateCard from "../components/AccountStateCard";
 import DetailPane from "../components/DetailPane";
 import DetailViewer from "../components/DetailViewer";
-import ItemList from "../components/ItemList";
+import ItemsTable from "../components/ItemsTable";
 
 const SECTION_SHORT: Record<string, string> = {
   GATE: "gates",
@@ -49,27 +49,17 @@ export default function TodayPage() {
     return counts;
   }, [plan]);
 
-  if (error) {
-    return <p className="text-sm text-down">Failed to load: {error}</p>;
-  }
-
-  if (!plan) {
-    return <p className="text-faint italic text-center py-8 text-sm">Loading…</p>;
-  }
+  if (error) return <p className="text-sm text-down">Failed to load: {error}</p>;
+  if (!plan) return <p className="text-faint italic text-center py-8 text-sm">Loading…</p>;
 
   return (
     <div>
-      <AccountStateCard state={plan.account_state} onSubmit={handleStateUpdate} />
-
       {plan.context_notes.map((note, i) => (
         <div key={i} className="bg-accent/10 border-l-2 border-accent px-3 py-1.5 text-[12.5px] text-ink/90 mb-2 rounded-sm">
           {note}
         </div>
       ))}
 
-      {/* Plain, un-colored stat line -- category counts are not a
-          direction/severity signal, so (per the Robinhood Legend
-          reference) they don't get color, just numbers. */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-muted mb-3 tabular-nums">
         {Object.entries(sectionCounts).map(([section, n]) => (
           <span key={section}>
@@ -79,9 +69,19 @@ export default function TodayPage() {
         ))}
       </div>
 
-      <DetailPane item={selectedIdx !== null ? plan.plan[selectedIdx] : null} onViewFull={() => setViewerIdx(selectedIdx)} />
+      {/* Primary surface: the wide multi-column table, full width -- like
+          the Positions table in the reference. */}
+      <div className="mb-3">
+        <ItemsTable plan={plan.plan} selectedIdx={selectedIdx} onSelect={setSelectedIdx} />
+      </div>
 
-      <ItemList plan={plan.plan} selectedIdx={selectedIdx} onSelect={setSelectedIdx} />
+      {/* Secondary row: two side-by-side panels -- account state (left) and
+          the selected row's detail (right) -- a real quadrant layout, not
+          another stacked block. Stacks to one column on mobile. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <AccountStateCard state={plan.account_state} onSubmit={handleStateUpdate} />
+        <DetailPane item={selectedIdx !== null ? plan.plan[selectedIdx] : null} onViewFull={() => setViewerIdx(selectedIdx)} />
+      </div>
 
       <DetailViewer item={viewerIdx !== null ? plan.plan[viewerIdx] : null} onClose={() => setViewerIdx(null)} />
     </div>
