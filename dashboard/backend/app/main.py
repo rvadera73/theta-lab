@@ -375,4 +375,22 @@ def india_refresh():
     return {"status": "refreshing"}
 
 
+# ----------------------------------------------------- New React SPA shell --
+# dashboard/frontend -- the 2026-10-16 rebuild (Today page as the reference
+# implementation; other tabs still served from their original pages below
+# until migrated). Built output is plain static files (Vite), so FastAPI
+# serves it exactly like every existing page -- no Node runtime needed in
+# this container. Uses HashRouter client-side (see App.tsx), so the server
+# only ever needs to serve index.html at this one path; the #/today-style
+# route never reaches the server at all, avoiding the path-prefix class of
+# bug already hit once with today.html's absolute-vs-relative fetch paths.
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist")
+if os.path.isdir(FRONTEND_DIST):
+    @app.get("/app")
+    def app_shell():
+        return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
+
+    app.mount("/app/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="app-assets")
+
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

@@ -1,3 +1,11 @@
+# Frontend SPA (dashboard/frontend) -- build artifacts and dependencies,
+# not source. Built locally (npm run build) and deployed, not committed.
+dashboard/frontend/node_modules/
+dashboard/frontend/dist/
+dashboard/frontend/*.tsbuildinfo
+dashboard/frontend/vite.config.js
+dashboard/frontend/vite.config.d.ts
+
 # Trade data and financial documents — never commit
 data/**/*.csv
 data/**/*.xlsx
