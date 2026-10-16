@@ -197,7 +197,19 @@ def sync_all():
                 )
                 leg_notes = []
                 for lg in legs:
-                    cov_note = ("naked" if lg.get("covered") is False
+                    # Real fix 2026-10-16 (trader correction): a "naked" CALL
+                    # that's actually strangle-paired (a cash-secured PUT sold
+                    # alongside it on the same name/expiry) is an intentional,
+                    # documented structure per Account A's own strategy
+                    # ("naked calls are hedged by the short puts... premium on
+                    # both sides widens the break-even range") -- NOT the same
+                    # thing as an isolated naked call. Confirmed real case:
+                    # META/ANET/CRWD's "naked" calls were all strangle legs,
+                    # flagged identically to genuinely isolated ones (ZS, CRM,
+                    # ADBE, etc.), losing exactly the context that changes how
+                    # urgently it should read.
+                    cov_note = ("naked (strangle-paired -- hedged by the put leg, not isolated)" if lg.get("covered") is False and lg.get("strangle")
+                                else "naked" if lg.get("covered") is False
                                 else f"partial ({lg.get('covered_contracts')}/{lg.get('total_contracts')})" if lg.get("covered_contracts")
                                 else "cash-secured" if lg.get("type") == "PUT" else "")
                     stale_note = (

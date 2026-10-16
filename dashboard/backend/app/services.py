@@ -502,6 +502,19 @@ def get_today_plan(full_sequence=None):
     tier1 = [r for r in full_sequence if r["tier"] == 1]
     tier2 = [r for r in full_sequence if r["tier"] == 2]
 
+    def _strangle_note(lg):
+        """Real fix 2026-10-16 (trader correction): a 'naked' CALL that's
+        actually strangle-paired (a cash-secured PUT sold alongside it on
+        the same name/expiry) is Account A's own documented, intentional
+        strategy ("naked calls are hedged by the short puts... premium on
+        both sides widens the break-even range"), not an isolated naked
+        emergency. Confirmed real case: META/ANET/CRWD's naked calls were
+        all strangle legs, indistinguishable in the plan text from genuinely
+        isolated ones (ZS, CRM, ADBE, etc.) before this fix."""
+        if lg.get("type") == "CALL" and lg.get("covered") is False and lg.get("strangle"):
+            return " [strangle-paired -- hedged by the put leg, not an isolated naked call]"
+        return ""
+
     plan = []
     for r in tier0:
         label = r["symbol"] if r["tier_source"] == "position_heat" else r.get("ticker")
@@ -535,7 +548,7 @@ def get_today_plan(full_sequence=None):
         plan.append({
             "section": "MANAGE HARD STOPS",
             "action": f"{worst['action']} {r['symbol']} ({r['account']}, {r['leg_count']} leg(s))",
-            "why": worst["reason"],
+            "why": worst["reason"] + _strangle_note(worst),
             "ref": r,
         })
 
