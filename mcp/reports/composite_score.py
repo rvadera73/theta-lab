@@ -114,6 +114,7 @@ VALUATION_PENALTY = 0.5
 QUALITY_PENALTY_PER_FLAG = 0.2
 OUTLIER_Z_THRESHOLD = 2.0
 OUTLIER_PENALTY_PER_SIGMA = 1.0
+CONVICTION_DIVERGENCE_THRESHOLD = -0.5  # conviction_z below this = "fundamentals disagree with the yield," not just "below average"
 
 
 def _raw_row(ticker, yield_pct, conviction, target_upside_pct, verticals, sector,
@@ -164,10 +165,21 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
     # be ("risk-adjusted premium"), not a new quality bolt-on.
     ctx_by_ticker = {r["ticker"]: get_cached_symbol_context(r["ticker"]) for r in scoreable}
 
+    # Real bug found 2026-10-16: CRWV's beta came back None (likely too
+    # recently IPO'd for yfinance to have computed one) and the old fallback
+    # ("if no beta, don't adjust") let its full, unadjusted yield through
+    # untouched -- exactly the kind of high-premium/high-uncertainty name
+    # this whole fix exists to catch, slipping through specifically BECAUSE
+    # its risk is the least measured, not because it's safe. Missing beta
+    # now assumes NO_BETA_PENALTY_ASSUMPTION (elevated, not neutral) instead
+    # of skipping the adjustment -- same magnitude as the confirmed
+    # high-beta names (CIFR 3.2, HUT 5.9) this fix was built around.
+    NO_BETA_PENALTY_ASSUMPTION = 2.0
+
     def _risk_adjusted_yield(r):
         beta = ctx_by_ticker[r["ticker"]].get("beta")
-        if not beta or beta <= 0:
-            return r["yield_pct"]
+        if beta is None or beta <= 0:
+            beta = NO_BETA_PENALTY_ASSUMPTION
         return r["yield_pct"] / max(beta, 0.5)
 
     real_yields = get_cached_batch_yield([r["ticker"] for r in scoreable])
@@ -192,8 +204,23 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
         valuation_penalty = VALUATION_PENALTY if (
             r["target_upside_pct"] is not None and r["target_upside_pct"] < OVERVALUATION_THRESHOLD
         ) else 0.0
+        # Real gap found 2026-10-16: this used to fire ONLY when a ticker
+        # also carried a hand-curated quality flag -- a yield_z past the
+        # outlier threshold with NO flag sailed through untouched. Confirmed
+        # three real, escalating cases the same week: OKTA (yield_z=2.79,
+        # conviction_z=-1.09, 2.1% analyst upside), PBF (yield_z=5.08,
+        # conviction_z=-1.63, -8% upside, RED heat), both ranking top-3
+        # purely because 60% weight on an extreme yield outlier swamped
+        # clearly negative conviction. The flag-gated version was built for
+        # a DIFFERENT case (ONDS: yield_z=2.66 paired with conviction_z=1.64,
+        # a real high-conviction outlier, not a divergence) -- the real
+        # signal worth penalizing isn't "yield is an outlier," it's "yield
+        # is an outlier WHILE conviction disagrees," which a flag was never
+        # a reliable proxy for.
+        conviction_diverges = cz < CONVICTION_DIVERGENCE_THRESHOLD
         outlier_penalty = (
-            max(0.0, yz - OUTLIER_Z_THRESHOLD) * OUTLIER_PENALTY_PER_SIGMA if non_tail_flags else 0.0
+            max(0.0, yz - OUTLIER_Z_THRESHOLD) * OUTLIER_PENALTY_PER_SIGMA
+            if (non_tail_flags or conviction_diverges) else 0.0
         )
 
         score = risk_reward_z + trend_bonus - quality_penalty - crash_penalty - valuation_penalty - outlier_penalty
