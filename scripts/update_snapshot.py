@@ -2,9 +2,20 @@
 Auto-generate portfolio_snapshot.yaml from:
   - Schwab positions CSV  (holdings, open options)  — data/statements/
   - Schwab per-account Transactions CSVs (232/275/634)  — data/positions/
+  - Schwab per-account Balances exports (232/275/634)  — data/positions/
   - Fidelity per-person Accounts_History CSVs (Rahul/Rajul)  — data/positions/
   - Vanguard export  (vanguard_rahul.csv)  — data/positions/
   - Robinhood activity CSVs (Individual + Traditional IRA)  — data/positions/
+
+Schwab Balances exports (Account → Balances → Export) are a real-time view
+of Option Requirement, Equity %, and Intraday Margin Buying Power — the
+numbers that actually describe margin health. Until 2026-11, this script had
+NO code path to read them at all: the file was exported every week and
+dropped alongside positions/transactions, but Option Requirement/Equity %/
+Buying Power sat as a manually-typed, never-refreshed number instead of
+coming from the freshest real export (see the Account A margin-crisis
+retrospective, 2026-11-01 — the data was never missing, the parser was).
+See parse_schwab_balances() / find_schwab_balances() below.
 
 Vanguard's export (vanguard_rahul.csv) is actually THREE concatenated
 sections in one file: a small current-holdings snapshot, a full transaction
@@ -23,13 +34,16 @@ data/account_files.yaml — so don't drop in a YTD file just to "have something 
 Weekly workflow:
   1. Export positions from Schwab (Account A) → drop in data/statements/
   2. Export per-account transactions from Schwab (232/275/634) → data/positions/
-  3. Export Accounts_History from Fidelity (Rahul + Rajul) → data/positions/
-  4. Export Vanguard activity → data/positions/vanguard_rahul.csv
-  5. Export Robinhood activity (full history, not YTD) → data/positions/  (optional
+  3. Export per-account Balances from Schwab (232/275/634) → data/positions/
+     (rename to schwab_rahul_individual_balances.csv / schwab_pinky_ira_balances.csv /
+     schwab_designated-bene_balances.csv — see _SCHWAB_BALANCES_FILES)
+  4. Export Accounts_History from Fidelity (Rahul + Rajul) → data/positions/
+  5. Export Vanguard activity → data/positions/vanguard_rahul.csv
+  6. Export Robinhood activity (full history, not YTD) → data/positions/  (optional
      — reuses the last good file if skipped)
-  6. python3 scripts/update_snapshot.py
-  7. Set month_to_date_equity_change manually
-  8. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
+  7. python3 scripts/update_snapshot.py
+  8. Set month_to_date_equity_change manually
+  9. git add data/portfolio_snapshot.yaml && git commit -m 'Weekly snapshot' && git push
 """
 
 import os
@@ -87,6 +101,27 @@ def find_schwab_transactions() -> dict[str, str]:
         files = glob.glob(os.path.join(POSITIONS_DIR, pattern))
         if files:
             found[label] = max(files, key=os.path.getmtime)
+    return found
+
+
+_SCHWAB_BALANCES_FILES = {
+    "Account A (232)": "schwab_rahul_individual_balances.csv",
+    "Account B (275)": "schwab_pinky_ira_balances.csv",
+    "Account C (634)": "schwab_designated-bene_balances.csv",
+}
+
+
+def find_schwab_balances() -> dict[str, str]:
+    """Canonical per-account Schwab Balances-export CSVs in data/positions/ —
+    the real-time Option Requirement / Equity % / Intraday Margin Buying Power
+    figures. Export path: Schwab → Accounts → [account] → Balances → Export.
+    Rename the download to the canonical name per _SCHWAB_BALANCES_FILES above
+    (same pattern as the positions files)."""
+    found = {}
+    for label, filename in _SCHWAB_BALANCES_FILES.items():
+        path = os.path.join(POSITIONS_DIR, filename)
+        if os.path.exists(path):
+            found[label] = path
     return found
 
 
@@ -459,6 +494,79 @@ def parse_schwab_transactions(filepath: str, account_label: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Schwab per-account Balances CSV parser.
+# NOT a tabular CSV — a free-form "label,value" export with several sections
+# that reuse generic labels ("Cash & Cash Investments", "Market Value",
+# "Options") for different things. Only a fixed set of labels confirmed
+# single-occurrence-and-unambiguous across both a margin account's export
+# (Account A) and a cash-secured account's export (Account B) are extracted;
+# first occurrence wins, everything else is left alone rather than guessed at.
+# Margin-only fields (Intraday Margin Buying Power, Margin Equity, Equity
+# Percent, Margin Rate) are simply absent from a cash-secured account's file —
+# that's correct, not a parse failure.
+# ---------------------------------------------------------------------------
+
+_BALANCES_AS_OF_RE = re.compile(
+    r"as of\s+(\d{1,2}/\d{1,2}/\d{4})\s+(\d{1,2}:\d{2}\s*[AP]M)", re.IGNORECASE
+)
+
+_BALANCES_DOLLAR_FIELDS = {
+    "Account Value": "account_value",
+    "Day Change": "day_change",
+    "Cash & Cash Investments": "cash_and_investments",
+    "Option Requirement": "option_requirement",
+    "Cash Secured Put Requirement": "cash_secured_put_requirement",
+    "Intraday Margin Buying Power": "intraday_margin_buying_power",
+    "Margin Equity": "margin_equity",
+    "Cash on Hold": "cash_on_hold",
+    "Money Due": "money_due",
+}
+
+_BALANCES_PERCENT_FIELDS = {
+    "Day Change %": "day_change_pct",
+    "Equity Percent": "equity_percent",
+    "Margin Rate": "margin_rate_pct",
+}
+
+
+def parse_schwab_balances(filepath: str) -> dict:
+    """Parse one Schwab 'Balances for account ... as of ...' export into a
+    flat dict of the fields listed above, plus 'as_of' (ISO date) and
+    'as_of_raw' (the exact exported timestamp string) parsed from the file's
+    own header line — this is what lets the caller flag a stale export
+    instead of silently trusting an old number."""
+    result: dict = {}
+    with open(filepath, newline="", encoding="utf-8-sig") as f:
+        lines = f.readlines()
+
+    if lines:
+        m = _BALANCES_AS_OF_RE.search(lines[0])
+        if m:
+            as_of_date = _parse_date(m.group(1))
+            result["as_of"] = as_of_date.isoformat() if as_of_date else None
+            result["as_of_raw"] = f"{m.group(1)} {m.group(2)}"
+
+    for row in csv.reader(lines):
+        if len(row) < 2:
+            continue
+        key, value = row[0].strip(), row[1].strip()
+        if not value:
+            continue
+        if key in _BALANCES_DOLLAR_FIELDS:
+            field = _BALANCES_DOLLAR_FIELDS[key]
+            if field not in result:
+                result[field] = _parse_amount(value)
+        elif key in _BALANCES_PERCENT_FIELDS:
+            field = _BALANCES_PERCENT_FIELDS[key]
+            if field not in result:
+                try:
+                    result[field] = float(value.replace("%", "").strip())
+                except ValueError:
+                    pass
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Fidelity Accounts_History CSV parser (one file per person, splits into
 # sub-accounts by Account Number — see _FIDELITY_ACCOUNT_LABELS).
 # Columns: Run Date, Account, Account Number, Action, Symbol, Description,
@@ -806,6 +914,7 @@ def compute_metrics(txns: list[dict], equity_symbols: list[str]) -> dict:
 # ---------------------------------------------------------------------------
 
 def build_snapshot() -> dict:
+    today = date.today()
     schwab_pos_files = find_schwab_positions()
     schwab_txn_files = find_schwab_transactions()
     fidelity_txn_files = find_fidelity_transactions()
@@ -848,6 +957,36 @@ def build_snapshot() -> dict:
 
     equity_symbols = [p["symbol"] for p in equity_positions]
     print(f"  Total equity: {len(equity_positions)} positions | Total short options: {len(short_options)} contracts")
+
+    # Real-time margin health (Option Requirement / Equity % / Buying Power) —
+    # see parse_schwab_balances() docstring for why this didn't exist before.
+    account_balances = {}
+    for label, path in find_schwab_balances().items():
+        bal = parse_schwab_balances(path)
+        if not bal:
+            print(f"  WARNING: {os.path.basename(path)} for {label} parsed to nothing — check its format.")
+            continue
+        as_of = bal.get("as_of")
+        age_days = (today - date.fromisoformat(as_of)).days if as_of else None
+        bal["age_days"] = age_days
+        bal["stale"] = age_days is not None and age_days > 7
+        account_balances[label] = bal
+        flag = f" ⚠ STALE ({age_days}d old)" if bal["stale"] else ""
+        req = bal.get("option_requirement")
+        bp = bal.get("intraday_margin_buying_power")
+        eq_pct = bal.get("equity_percent")
+        extra = "".join([
+            f" | OptReq=${req:,.0f}" if req is not None else "",
+            f" | BuyingPower=${bp:,.0f}" if bp is not None else "",
+            f" | Equity%={eq_pct:.0f}%" if eq_pct is not None else "",
+        ])
+        print(f"  Schwab balances ({label}) — {os.path.basename(path)}: as_of={as_of}{flag}{extra}")
+    for label in _SCHWAB_BALANCES_FILES:
+        if label not in account_balances:
+            print(f"  WARNING: no Balances export found for {label} "
+                  f"({_SCHWAB_BALANCES_FILES[label]}) — Option Requirement / "
+                  f"Equity % / Buying Power will be MISSING from the snapshot "
+                  f"for this account, not just stale.")
 
     txns = []
     for label, path in schwab_txn_files.items():
@@ -935,7 +1074,6 @@ def build_snapshot() -> dict:
     ]
     print(f"  Open short puts      : {len(open_puts_list)}")
 
-    today = date.today()
     # Real per-account realized figures (FIFO-matched) for the master report's
     # by-account section — replaces the old approach of just splitting the
     # portfolio-wide total proportionally by balance, which attributed premium
@@ -960,6 +1098,7 @@ def build_snapshot() -> dict:
         "month_to_date_equity_change": 0,
         "assigned_positions": assigned_list,
         "open_puts": open_puts_list,
+        "account_balances": account_balances,
         "per_account_realized": per_account_realized,
         "portfolio_target_covered": int(realized["portfolio_target_covered"]),
         "portfolio_unmatched_amount": int(realized["portfolio_unmatched_amount"]),
@@ -983,6 +1122,13 @@ def main():
     print(f"  Assigned book    : ${snapshot['assigned_equity_book_value']:,.0f}")
     print(f"  YTD capture rate : {snapshot['ytd_premium_capture_rate']}%")
     print(f"  MTD premium      : ${snapshot['month_to_date_premium']:,.0f}")
+    bal = snapshot.get("account_balances", {})
+    missing = [l for l in _SCHWAB_BALANCES_FILES if l not in bal]
+    stale = [l for l, v in bal.items() if v.get("stale")]
+    if missing or stale:
+        print(f"  Balances status  : MISSING for {missing or 'none'}; STALE for {stale or 'none'}")
+    else:
+        print(f"  Balances status  : fresh for {list(bal.keys())}")
     print()
     print("Next steps:")
     print("  1. Set month_to_date_equity_change (net stock mark-to-market this month)")
