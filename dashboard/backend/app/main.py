@@ -250,6 +250,15 @@ def us_position_heat():
     return {"data": value, "as_of": computed_at}
 
 
+@app.get("/api/us/leg-decisions")
+def us_leg_decisions():
+    """One LegDecisionRecord per open short leg plus the portfolio rollup
+    (ADR 0001, docs/design/adr/0001-decision-engine-foundation.md) -- the
+    Advisor surface's data source. See services.get_leg_decisions()."""
+    value, computed_at = _get_or_compute("us_leg_decisions", services.get_leg_decisions)
+    return {"data": value, "as_of": computed_at}
+
+
 class AccountStateUpdate(BaseModel):
     account: str = "A"
     cash: float | None = None

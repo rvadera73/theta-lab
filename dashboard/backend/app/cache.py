@@ -67,13 +67,20 @@ def age_seconds(computed_at: str) -> float:
 # job below to iterate over. String values (report text) are wrapped in a
 # dict since set_cached always JSON-encodes.
 def _build_us_entries(services):
+    # Computed once and reused for us_leg_decisions below -- get_position_heat()
+    # does a full 8-account reload + a live Yahoo fetch per held symbol
+    # (~90s); calling it twice per refresh cycle (found in review,
+    # 2026-11-05) doubled that cost for no benefit, since get_leg_decisions()
+    # is a pure projection of the same data through decision_engine.py.
+    position_heat = services.get_position_heat()
     return {
         "us_account_status": services.get_account_status(),
         "us_composite_scores": services.get_composite_scores(),
         "us_pnl_trend": services.get_pnl_trend(),
         "us_cash_margin_forecast": services.get_cash_margin_forecast(),
         "us_sector_heat": {"text": services.extract_markdown_section("daily", "## Section 6: POSITION HEAT MATRIX", "\n## Section 6.5")},
-        "us_position_heat": services.get_position_heat(),
+        "us_position_heat": position_heat,
+        "us_leg_decisions": services.get_leg_decisions(heat=position_heat),
         "us_priority_sequence": services.get_priority_sequence_cacheable(),
         "us_risk_macro": {"text": (
             services.extract_markdown_section("daily", "## Section 6.5: CRASH EARLY WARNING", "\n## Section 6.6")
