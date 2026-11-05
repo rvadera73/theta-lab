@@ -890,6 +890,21 @@ async def list_tools():
             },
         ),
         Tool(
+            name="get_leg_decisions",
+            description=(
+                "Returns one LegDecisionRecord per open short option leg across all accounts, plus a "
+                "portfolio-level rollup (ADR 0001): explicit coverage (NAKED/COVERED/PARTIAL/CASH_SECURED_PUT), "
+                "assignment cash impact and resulting position if assigned today, a Reg-T margin estimate, "
+                "a dividend/early-exercise gate on short calls, Black-Scholes delta, and sector/symbol "
+                "concentration gates -- the same data the dashboard's Advisor surface uses, so assignment/margin "
+                "questions don't need to be worked out by hand from scan_position_heat/get_position_detail output."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
+        Tool(
             name="research_symbol",
             description=(
                 "Deep-dive research on a specific symbol. Returns: signal (ENTER/WATCH/SKIP), "
@@ -1432,6 +1447,11 @@ async def call_tool(name: str, arguments: dict):
             }
             if not accounts:
                 result["note"] = "No open position found across configured accounts."
+            return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+        elif name == "get_leg_decisions":
+            from leg_decisions_tool import get_leg_decisions_for_mcp
+            result = get_leg_decisions_for_mcp()
             return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
         elif name == "research_symbol":

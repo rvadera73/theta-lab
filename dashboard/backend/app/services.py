@@ -244,6 +244,13 @@ def get_position_heat():
     # enough shares).
     context: dict[tuple, dict] = {}
     cost_to_close_by_key: dict[tuple, float] = {}
+    # premium_received was computed into heat_scanner's loss_multiple/pnl_pct
+    # internally but never passed through to the leg dict itself (confirmed
+    # 2026-11-03, ADR 0001 step 3) -- decision_engine.py needs the real
+    # number directly (e.g. to size an assignment's cash impact), not a
+    # value re-derived from cost_to_close/loss_multiple, which is undefined
+    # whenever loss_multiple is 0 (GREEN legs).
+    premium_received_by_key: dict[tuple, float] = {}
 
     def _key(symbol, strike, expiry, opt_type):
         return (symbol, round(float(strike), 4), expiry, opt_type)
@@ -299,6 +306,7 @@ def get_position_heat():
                 "current_price": pos.current_price,
             })
             cost_to_close_by_key[_key(pos.symbol, lg.strike, lg.expiry, lg.option_type)] = abs(lg.current_mark or 0)
+            premium_received_by_key[_key(pos.symbol, lg.strike, lg.expiry, lg.option_type)] = premium
 
             # Shared gate/parameter bundle (symbol_context.py) -- cached
             # per symbol per day, so calling it per-leg (not per-position)
@@ -321,6 +329,14 @@ def get_position_heat():
                 "days_stale": source_info.get("days_stale"),
                 "sector": leg_ctx.get("sector"),
                 "gates_fired": leg_ctx.get("gates_fired", []),
+                "dividend_rate": leg_ctx.get("dividend_rate"),
+                "next_ex_dividend_date": leg_ctx.get("next_ex_dividend_date"),
+                # iv_rank/current_iv were computed here all along but never
+                # passed through to the leg dict (ADR 0001 step 7) --
+                # decision_engine.py's portfolio Greeks rollup needs a vol
+                # input per leg; current_iv is real when a caller upstream
+                # supplied one (step 6), else iv_rank's own HV-proxy fallback.
+                "current_iv": leg_ctx.get("current_iv"),
             })
             entry["accounts"].add(pos.account)
             if lg.option_type == "CALL":
@@ -380,7 +396,11 @@ def get_position_heat():
                 row["days_stale"] = ctx["days_stale"]
                 row["sector"] = ctx["sector"]
                 row["gates_fired"] = ctx["gates_fired"]
+                row["dividend_rate"] = ctx.get("dividend_rate")
+                row["next_ex_dividend_date"] = ctx.get("next_ex_dividend_date")
+                row["current_iv"] = ctx.get("current_iv")
                 row["cost_to_close"] = cost_to_close_by_key.get(key, 0.0)
+                row["premium_received"] = premium_received_by_key.get(key, 0.0)
             deduped.append(row)
         return deduped
 
@@ -443,6 +463,38 @@ def get_position_heat():
     result["positions"] = positions
 
     return _to_native(result)
+
+
+def get_leg_decisions(heat: dict | None = None):
+    """LegDecisionRecord for every open short leg, plus the portfolio-level
+    rollup (ADR 0001, docs/design/adr/0001-decision-engine-foundation.md) --
+    the completeness-by-construction alternative to one-off scripts that
+    checked a fixed symbol list and silently missed a newly-naked leg (real
+    case, 2026-11-03: a hardcoded naked-call list missed a newly-naked OKTA
+    $140C). Reuses get_position_heat()'s already-computed legs (same real
+    data this refresh cycle already produced) rather than a second position
+    load -- this is a projection of that same data through decision_engine.py,
+    not an independent computation that could drift from it.
+
+    `heat`, if the caller already has a fresh get_position_heat() result
+    (e.g. cache.py's refresh cycle computes it once for us_position_heat),
+    is reused directly instead of triggering a second ~90s live reload +
+    Yahoo fetch for the same data (found in review, 2026-11-05 -- cache.py's
+    refresh was paying this cost twice every cycle). A standalone caller
+    (e.g. the get_leg_decisions MCP tool, called outside any refresh cycle)
+    omits it and gets a fresh load, same as before.
+    """
+    from decision_engine import build_decisions, portfolio_rollup
+
+    if heat is None:
+        heat = get_position_heat()
+    legs = [lg for p in heat.get("positions", []) for lg in p["legs"]]
+    decisions = build_decisions(legs)
+    rollup = portfolio_rollup(decisions)
+    return _to_native({
+        "decisions": [d.to_dict() for d in decisions],
+        "rollup": rollup,
+    })
 
 
 def get_priority_sequence_cacheable():
@@ -613,7 +665,16 @@ def analyze_watchlist_symbol(ticker: str) -> dict:
         price = float(hist["Close"].iloc[-1]) if len(hist) else None
 
     metrics = get_ticker_metrics(ticker, price, option_type=None) if price else {"error": "no_price"}
-    iv = get_iv_rank(ticker)
+    # Real current IV, if the yield fetch above resolved one (ADR 0001 step
+    # 6) -- same option-chain fetch, no extra cost -- instead of silently
+    # falling back to iv_rank's HV-proxy the way this call used to.
+    real_iv = None
+    for side in ("call", "put"):
+        side_data = yield_data.get(side)
+        if side_data and side_data.get("iv") is not None:
+            real_iv = side_data["iv"]
+            break
+    iv = get_iv_rank(ticker, current_iv=real_iv)
     sector = _get_symbol_sector(ticker)
     verticals = get_verticals_for_ticker(ticker)
 
@@ -748,7 +809,18 @@ def get_cash_margin_forecast():
     opt_req = gen.option_requirements.get(acct_a_name, 0)
     stress_low = total_n * 0.15 * 0.18
     stress_high = total_n * 0.20 * 0.18
-    emergency_reserve = 200000
+
+    # Emergency reserve -- was hardcoded to a stale $200K literal (ADR 0001,
+    # found 2026-11-03). The real fund was repurposed 2026-10-15 to co-fund
+    # the Dubai property purchase and is actively draining (~$140K as of
+    # 2026-10-15, per skills/options-trader/SKILL.md) -- there is no live
+    # feed for this number, same as the rest of account_state.py's fields,
+    # so it's read from there instead of a literal here. Falls back to the
+    # last-confirmed figure only if the trader hasn't recorded one yet.
+    from . import account_state as acct_state
+    a_state = acct_state.get_state("A") or {}
+    emergency_reserve = a_state.get("emergency_reserve") or 140000
+    reserve_days_stale = a_state.get("days_stale")
     operating_cash_target = 100000
 
     return _to_native({
@@ -759,6 +831,7 @@ def get_cash_margin_forecast():
         "stress_high": stress_high,
         "operating_cash_target": operating_cash_target,
         "emergency_reserve": emergency_reserve,
+        "reserve_days_stale": reserve_days_stale,
         "reserve_covers_stress": emergency_reserve >= stress_high,
         "capacity": ACCOUNTS_CONFIG[acct_a_name].get('capacity'),
         "capacity_as_of": ACCOUNTS_CONFIG[acct_a_name].get('capacity_as_of'),

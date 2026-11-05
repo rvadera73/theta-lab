@@ -2,7 +2,9 @@ import { Fragment, useEffect } from "react";
 import type { PlanItem } from "../types";
 import { isPositionGroup } from "../types";
 
-const SEVERITY_HEX: Record<string, string> = { RED: "#ff5a5f", YELLOW: "#f7941d", GREEN: "#1ec47c", UNKNOWN: "#5c6578" };
+// Reuses the good/warning/critical pair from the dataviz skill's validated
+// status palette, same mapping as ItemsTable.tsx.
+const SEVERITY_HEX: Record<string, string> = { RED: "#d03b3b", YELLOW: "#fab219", GREEN: "#0ca30c", UNKNOWN: "#9aa1ad" };
 
 function Dot({ color }: { color: string }) {
   return <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: color }} />;
@@ -111,7 +113,7 @@ export default function DetailViewer({ item, onClose }: { item: PlanItem | null;
               <div>sector={ref.sector ?? "-"}</div>
               {ref.gates_fired && ref.gates_fired.length > 0 && (
                 <div className="pt-1 text-down">
-                  <Dot color="#ff5a5f" />
+                  <Dot color={SEVERITY_HEX.RED} />
                   Gates: {ref.gates_fired.join(", ")}
                 </div>
               )}
