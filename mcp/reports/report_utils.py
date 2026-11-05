@@ -2,9 +2,11 @@ import asyncio
 import calendar
 import csv
 import json
+import logging
 import math
 import os
 import re
+import time
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -103,6 +105,24 @@ _US_PRICE_CACHE: dict[str, dict[str, Any]] = {}
 _INDIA_PRICE_CACHE: dict[str, dict[str, Any]] = {}
 _OPTION_CHAIN_CACHE: dict[tuple[str, str], Any] = {}
 _EARNINGS_CACHE: dict[str, list[str]] = {}
+
+# How long a cached price is trusted before _history_cache() re-fetches it.
+# Found live 2026-11-05: this cache previously had NO expiry at all, so a
+# long-running MCP server process (container uptime since 2026-11-04 17:04
+# UTC) served the SAME frozen price through an overnight earnings move and a
+# +22% pre-market rally the next day -- confirmed via a direct yfinance pull
+# showing the real contemporaneous price was $331+ while this cache kept
+# returning a mid-session Nov-4 print of $236.94. 15 minutes bounds the
+# worst case to "one refresh cycle," not "the life of the process," without
+# re-fetching on every single call during normal use.
+_PRICE_CACHE_TTL_SECONDS = 900
+
+_logger = logging.getLogger(__name__)
+
+
+def _now() -> float:
+    """Isolated so tests can freeze/advance time without real sleeping."""
+    return time.time()
 
 
 def ensure_logs_dir() -> Path:
@@ -230,14 +250,15 @@ def yf_symbol(symbol: str, india: bool = False) -> str:
 def _history_cache(symbol: str, india: bool = False):
     cache = _INDIA_PRICE_CACHE if india else _US_PRICE_CACHE
     key = yf_symbol(symbol, india)
-    if key in cache:
-        return cache[key]
+    cached = cache.get(key)
+    if cached is not None and (_now() - cached.get("fetched_at", 0)) < _PRICE_CACHE_TTL_SECONDS:
+        return cached
     try:
         ticker = yf.Ticker(key)
         hist = ticker.history(period="1y", auto_adjust=False)
-        cache[key] = {"ticker": ticker, "hist": hist}
+        cache[key] = {"ticker": ticker, "hist": hist, "fetched_at": _now()}
     except Exception:
-        cache[key] = {"ticker": None, "hist": None}
+        cache[key] = {"ticker": None, "hist": None, "fetched_at": _now()}
     return cache[key]
 
 
@@ -564,25 +585,50 @@ def fallback_us_positions() -> dict[str, Any]:
     }
 
 
-_SNAPSHOT_HOLDINGS_CACHE: set | None = None
+_SNAPSHOT_HOLDINGS_CACHE: dict[str, Any] | None = None  # {"date": iso-date, "holdings": set}
+
+
+def _today() -> str:
+    """Isolated so tests can simulate a day change without real waiting."""
+    return date.today().isoformat()
 
 
 def _snapshot_holdings() -> set:
     """Ground-truth held tickers from the position SNAPSHOTS (accurate, no phantoms).
-    Uses open_positions_loader_v2 but skips the Yahoo price fetch for speed. Cached."""
+    Uses open_positions_loader_v2 but skips the Yahoo price fetch for speed.
+    Same-day cache (found live 2026-11-05: this previously cached its result
+    for the life of the process with no expiry at all -- get_position_detail
+    filters through this set, and a long-running server missed a real
+    Fidelity position that only entered the snapshot after the cache had
+    already been populated; a fresh process, with no cache yet, found it
+    immediately). Day-based, not a short TTL like _history_cache's price
+    cache, since holdings only change when the trader exports a new
+    snapshot -- matches symbol_context.py's existing same-day-cache
+    convention for the same reason."""
     global _SNAPSHOT_HOLDINGS_CACHE
-    if _SNAPSHOT_HOLDINGS_CACHE is not None:
-        return _SNAPSHOT_HOLDINGS_CACHE
+    today = _today()
+    if _SNAPSHOT_HOLDINGS_CACHE is not None and _SNAPSHOT_HOLDINGS_CACHE.get("date") == today:
+        return _SNAPSHOT_HOLDINGS_CACHE["holdings"]
     try:
         import sys
         sys.path.insert(0, "/home/rahulvadera/projects/theta-lab/scripts")
         from open_positions_loader_v2 import OpenPositionsLoaderV2
         loader = OpenPositionsLoaderV2()
-        loader.load_all_data()  # full load (cached once per process)
-        _SNAPSHOT_HOLDINGS_CACHE = set(loader.open_positions["ticker"].dropna().str.upper().unique())
-    except Exception:
-        _SNAPSHOT_HOLDINGS_CACHE = set()
-    return _SNAPSHOT_HOLDINGS_CACHE
+        loader.load_all_data()
+        holdings = set(loader.open_positions["ticker"].dropna().str.upper().unique())
+    except Exception as exc:
+        # Deliberately NOT cached (found in review, 2026-11-05): a transient
+        # failure (e.g. a momentary lock while the snapshot file is being
+        # written) must be retried on the NEXT call, not locked in as
+        # "no holdings" for the rest of the calendar day -- the ground-truth
+        # filter at this function's one call site fails OPEN on an empty set
+        # (`if holdings: filter(...)`), so caching a failure silently
+        # disables phantom-position filtering for the remainder of the day.
+        _logger.warning("_snapshot_holdings: load failed, will retry next call -- %s: %s",
+                         type(exc).__name__, exc)
+        return set()
+    _SNAPSHOT_HOLDINGS_CACHE = {"date": today, "holdings": holdings}
+    return holdings
 
 
 _SCHWAB_SNAPSHOT_FILE = {
@@ -877,11 +923,29 @@ def _fill_current_marks(lookups: list[tuple[str, str, float, str, "OptionLeg"]])
             leg.current_mark = round(mid * 100 * qty, 2)
 
 
+def _record_account_failure(errors: list[str], label: str, exc: Exception) -> None:
+    """A per-account load failure stays non-fatal (one bad account must
+    never block the other 7), but must be VISIBLE, not indistinguishable
+    from "this account genuinely doesn't hold the symbol" -- found live
+    2026-11-05: `except Exception: pass` here meant a transient per-account
+    failure and a real absence looked identical to every caller. Logged
+    immediately (so it shows up in server logs even if a caller ignores the
+    returned warning) and recorded into `errors` so load_us_positions()'s
+    own "warning" field -- previously hardcoded to None -- can actually
+    report it."""
+    message = f"{label}: {type(exc).__name__}: {exc}"
+    _logger.warning("load_us_positions: account load failed -- %s", message)
+    errors.append(message)
+
+
 async def load_us_positions() -> dict[str, Any]:
     """
     Load all US positions from every configured account in the ACCOUNTS registry.
     Schwab accounts fetched live in parallel; CSV-based accounts loaded from file.
-    Non-fatal per account — one failure never blocks others.
+    Non-fatal per account — one failure never blocks others, but every
+    failure is recorded (see _record_account_failure) into this function's
+    own "warning" field instead of being silently indistinguishable from
+    "this account has no position in this symbol."
     """
     from config import ACCOUNTS
     from analysis.pnl import (
@@ -895,6 +959,7 @@ async def load_us_positions() -> dict[str, Any]:
     # (e.g. Position Heat) show "based on data from N days ago" per leg
     # instead of silently trusting whichever file happened to load.
     account_sources: dict[str, dict[str, Any]] = {}
+    load_errors: list[str] = []
 
     # ── Schwab accounts — from the current position snapshot when it's at
     # least as fresh as the transactions file, else reconstructed from
@@ -933,8 +998,8 @@ async def load_us_positions() -> dict[str, Any]:
                 as_of = datetime.fromtimestamp(used_mtime).date().isoformat() if used_mtime > 0 else None
                 days_stale = (date.today() - datetime.fromtimestamp(used_mtime).date()).days if used_mtime > 0 else None
                 account_sources[label] = {"source": used_source, "as_of": as_of, "days_stale": days_stale}
-        except Exception:
-            pass  # never block on one account
+        except Exception as exc:
+            _record_account_failure(load_errors, label, exc)  # never block on one account
 
     # ── CSV-based accounts (non-fatal each) ──────────────────────────────────
     csv_brokers = ("fidelity_csv", "robinhood_csv", "vanguard_csv")
@@ -972,8 +1037,8 @@ async def load_us_positions() -> dict[str, Any]:
                 else:
                     continue
                 all_positions.extend(positions)
-        except Exception:
-            pass  # never block on one account
+        except Exception as exc:
+            _record_account_failure(load_errors, label, exc)  # never block on one account
 
     # If the live parsers produced nothing, use the fallback dataset as the source.
     data_source = "LIVE"
@@ -1008,7 +1073,7 @@ async def load_us_positions() -> dict[str, Any]:
         "positions": all_positions,
         "balances": balances,
         "data_source": data_source,
-        "warning": None,
+        "warning": "; ".join(load_errors) if load_errors else None,
         "snapshot": load_snapshot(),
         "transactions": load_account_transactions(),
         "account_sources": account_sources,

@@ -6,6 +6,7 @@ Free tier: 3,000 emails/month, no credit card required.
 Default sender: onboarding@resend.dev (works without a custom domain).
 """
 
+import html
 import os
 from datetime import datetime
 
@@ -283,9 +284,16 @@ def _progress_bar(current: float, target: float, label: str = "") -> str:
 
 
 def _warning_banner(message: str) -> str:
+    # Escaped (found in review, 2026-11-05): load_us_positions()'s "warning"
+    # field used to always be a hardcoded None/controlled string, so this was
+    # never fed untrusted content. It can now carry a real exception message
+    # (_record_account_failure, report_utils.py) built from parser/library
+    # error text that can itself contain HTML-significant characters (e.g. a
+    # malformed CSV row embedded in a pandas ParserError) -- escape it so a
+    # data-driven failure message can't distort or break the email's markup.
     return f"""
 <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:10px 14px;margin:10px 0;font-size:13px;">
-  ⚠️ <b>DATA WARNING:</b> {message}
+  ⚠️ <b>DATA WARNING:</b> {html.escape(message)}
 </div>"""
 
 
