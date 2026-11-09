@@ -235,7 +235,7 @@ def _fake_parse_fidelity_csv(csv_path, account_filter=None):
     return {account_filter: [pos]}
 
 
-def _fake_parse_robinhood_csv(csv_path, account_label=None):
+def _fake_load_robinhood_positions(csv_path, account_label=None):
     return [Position(symbol="TESTRH1", account=account_label, shares=0, stock_cost_basis=0.0, current_price=25.0)]
 
 
@@ -252,7 +252,7 @@ with mock.patch.object(config, "ACCOUNTS", _fake_accounts), \
      mock.patch.object(report_utils.os.path, "exists", side_effect=_fake_exists), \
      mock.patch.object(report_utils.os.path, "getmtime", side_effect=_fake_getmtime), \
      mock.patch.object(pnl_module, "parse_fidelity_csv", side_effect=_fake_parse_fidelity_csv), \
-     mock.patch.object(pnl_module, "parse_robinhood_csv", side_effect=_fake_parse_robinhood_csv, create=True), \
+     mock.patch.object(report_utils, "load_robinhood_positions", side_effect=_fake_load_robinhood_positions), \
      mock.patch.object(pnl_module, "parse_vanguard_csv", side_effect=_fake_parse_vanguard_csv), \
      mock.patch.object(report_utils, "_snapshot_holdings", return_value=set()):
     us_data = asyncio.run(report_utils.load_us_positions())

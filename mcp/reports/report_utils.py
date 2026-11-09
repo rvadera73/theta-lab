@@ -25,6 +25,15 @@ for _ in range(5):
 import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
 
+# This module's own directory (mcp/reports/) -- so `robinhood_netting`
+# (a sibling module, see docs/design/adr/0003-robinhood-position-ingestion.md)
+# is bare-importable regardless of whether this file was reached via
+# server.py's "reports.report_utils" package import (which only puts mcp/
+# itself on sys.path) or a test's own flat sys.path setup.
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+if _this_dir not in _sys.path:
+    _sys.path.insert(0, _this_dir)
+
 from bootstrap import load_credentials as _load_credentials
 
 
@@ -35,6 +44,7 @@ from analysis.pnl import OptionLeg, Position, parse_schwab_positions, parse_robi
 from analysis.india_statement_parser import build_positions_from_statements, load_india_config
 from config import PORTFOLIO, RISK, PERMANENT_EXITS, OVERNIGHT_MOVE_GATE_PCT
 from routines.email_report import send_email
+from robinhood_netting import parse_robinhood_transaction_csv, net_robinhood_option_legs
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
@@ -1028,6 +1038,59 @@ def _fill_current_marks(lookups: list[tuple[str, str, float, str, "OptionLeg"]])
             leg.current_mark = round(mid * 100 * qty, 2)
 
 
+def load_robinhood_positions(csv_path: str, account_label: str) -> list[Position]:
+    """
+    Parse a REAL Robinhood transaction-log export (ADR 0003,
+    docs/design/adr/0003-robinhood-position-ingestion.md) into Position/
+    OptionLeg objects -- replaces the old parse_robinhood_csv(), which
+    required a "Symbol" header no real Robinhood export has ever had and
+    therefore always returned [] against this account's actual files.
+
+    Mirrors reconstruct_positions_from_transactions()'s established pattern
+    in this same module: net the transaction log via the shared
+    mcp/reports/robinhood_netting.py helpers, build OptionLeg objects with a
+    current_mark=0 placeholder, then backfill real cost-to-close via the
+    same _fill_current_marks() live option-chain lookup every other
+    transaction-reconstructed leg already uses.
+    """
+    rows = parse_robinhood_transaction_csv(csv_path)
+    legs = net_robinhood_option_legs(rows)
+
+    positions: dict[str, Position] = {}
+    pending_mark_lookups: list[tuple[str, str, float, str, "OptionLeg"]] = []
+
+    for leg_data in legs:
+        ticker = leg_data["ticker"]
+        if ticker not in positions:
+            positions[ticker] = Position(
+                symbol=ticker, account=account_label,
+                shares=0, stock_cost_basis=0.0, current_price=0.0,
+            )
+        is_short = leg_data["quantity"] < 0
+        contracts = int(abs(leg_data["quantity"]))
+        leg = OptionLeg(
+            description=f"{leg_data['option_type']} {leg_data['strike']} {leg_data['expiry']}",
+            strike=leg_data["strike"],
+            expiry=leg_data["expiry"],
+            option_type=leg_data["option_type"],
+            quantity=-contracts if is_short else contracts,
+            # Net credit only means "premium received" for a short leg; a
+            # net-long leg's net_credit is a net debit (cost basis paid),
+            # which OptionLeg has no slot for -- matches every other
+            # broker's own parser convention here (parse_fidelity_csv etc.
+            # also hardcode premium_received=0.0 for a long leg).
+            premium_received=max(0.0, leg_data["net_credit"]) if is_short else 0.0,
+            current_mark=0.0,  # filled in below via a live option-chain lookup
+            dte=leg_data["dte"],
+        )
+        positions[ticker].option_legs.append(leg)
+        pending_mark_lookups.append((ticker, leg_data["expiry"], leg_data["strike"], leg_data["option_type"], leg))
+
+    _fill_current_marks(pending_mark_lookups)
+
+    return list(positions.values())
+
+
 def _record_account_failure(errors: list[str], label: str, exc: Exception) -> None:
     """A per-account load failure stays non-fatal (one bad account must
     never block the other 7), but must be VISIBLE, not indistinguishable
@@ -1140,8 +1203,7 @@ async def load_us_positions() -> dict[str, Any]:
                 csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
                 if not csv_path or not os.path.exists(csv_path):
                     continue
-                from analysis.pnl import parse_robinhood_csv
-                positions = parse_robinhood_csv(csv_path, account_label=label)
+                positions = load_robinhood_positions(csv_path, account_label=label)
                 all_positions.extend(positions)
                 file_mtime = os.path.getmtime(csv_path)
                 as_of_date = datetime.fromtimestamp(file_mtime).date()

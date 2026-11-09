@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from datetime import date
+import os
 import sys
 import logging
 from collections import defaultdict
@@ -17,6 +18,14 @@ logger = logging.getLogger(__name__)
 
 sys.path.insert(0, '/home/rahulvadera/projects/theta-lab/scripts')
 from yahoo_price_fetcher import YahooFinanceFetcher
+
+# mcp/reports/robinhood_netting.py -- shared option-transaction netting
+# decision (see docs/design/adr/0003-robinhood-position-ingestion.md).
+# Relative to this script's own location (not hardcoded to the main
+# checkout, unlike the scripts/ insert above) so it resolves correctly from
+# any worktree.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'mcp', 'reports'))
+from robinhood_netting import classify_action
 
 
 class OpenPositionsLoaderV2:
@@ -867,20 +876,15 @@ class OpenPositionsLoaderV2:
                 # Check if this is an opening transaction
                 # Position files show open positions directly, so mark them as having opening
                 source = row.get('source') if 'source' in row.index else ''
-                if source == 'position_file':
+                # Shared decision (see docs/design/adr/0003-robinhood-position-ingestion.md):
+                # classify_action() is a byte-for-byte port of this chain's
+                # original logic, now the one implementation both this
+                # all-broker netter and the Robinhood-specific per-leg
+                # netter (mcp/reports/robinhood_netting.py) call.
+                delta, is_opening_row = classify_action(action, qty, source)
+                net_qty += delta
+                if is_opening_row:
                     has_opening = True
-                elif 'SELL' in action or 'OPEN' in action or 'STO' in action or 'BTO' in action or 'SOLD' in action or 'BOUGHT OPENING' in action or 'SOLD OPENING' in action:
-                    has_opening = True
-
-                # Logic: Sells/Opens = positive, Buys/Closes = negative
-                if 'SELL' in action or 'STC' in action or 'STO' in action or 'SOLD' in action:
-                    net_qty += qty
-                elif 'BUY' in action or 'BTC' in action or 'BTO' in action or 'BOUGHT' in action:
-                    net_qty -= qty
-                elif qty < 0:  # For accounts without action info, negative qty = short
-                    net_qty -= qty
-                else:
-                    net_qty += qty
 
             # Only include if:
             # 1. Net quantity is non-zero (position is open)

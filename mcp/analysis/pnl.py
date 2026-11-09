@@ -400,98 +400,16 @@ def parse_fidelity_csv(csv_path: str, account_filter: str | None = None) -> dict
 
 
 # ---------------------------------------------------------------------------
-# Robinhood CSV parser
-# Format detected from exported CSV — will be confirmed when user provides file.
-# Robinhood exports: Symbol, Average Cost, Quantity, Equity, Percent Change, etc.
-# Option rows typically: "{ticker} $STRIKE {call/put} {date}"
+# Robinhood CSV ingestion -- retired (ADR 0003,
+# docs/design/adr/0003-robinhood-position-ingestion.md). The old
+# parse_robinhood_csv() here required a "Symbol" header no real Robinhood
+# export has ever had (real exports are transaction logs: "Activity Date",
+# "Process Date", "Settle Date", "Instrument", "Description", "Trans Code",
+# "Quantity", "Price", "Amount") and always returned [] in production.
+# Replaced by mcp/reports/report_utils.py's load_robinhood_positions(),
+# which nets the real transaction-log format via the shared
+# mcp/reports/robinhood_netting.py helpers.
 # ---------------------------------------------------------------------------
-
-def parse_robinhood_csv(csv_path: str, account_label: str) -> list["Position"]:
-    """
-    Parse a Robinhood positions CSV export into Position objects.
-    Call this once a real CSV is provided; format will be confirmed then.
-    Currently returns empty list if file format is unrecognised — non-fatal.
-    """
-    equity_map: dict[str, "Position"] = {}
-    option_legs: dict[str, list["OptionLeg"]] = {}
-    today = date.today()
-
-    with open(csv_path, newline="", encoding="utf-8-sig") as fh:
-        lines = fh.readlines()
-
-    # Detect header row
-    header_idx = next(
-        (i for i, l in enumerate(lines) if "Symbol" in l and ("Quantity" in l or "Average Cost" in l)),
-        None,
-    )
-    if header_idx is None:
-        return []  # Unknown format — skip silently
-
-    import io
-    reader = csv.DictReader(io.StringIO("".join(lines[header_idx:])))
-
-    for row in reader:
-        symbol = row.get("Symbol", "").strip()
-        if not symbol:
-            continue
-
-        def _f(key):
-            return row.get(key, "").replace("$", "").replace(",", "").strip()
-
-        try:
-            qty = float(_f("Quantity")) if _f("Quantity") else 0.0
-            avg_cost = float(_f("Average Cost")) if _f("Average Cost") else 0.0
-            price = float(_f("Last Price") or _f("Price") or "0")
-        except ValueError:
-            continue
-
-        # Robinhood option rows: symbol looks like "AAPL 01/17/2025 Call $200.00"
-        opt_match = re.match(
-            r"^([A-Z]+)\s+(\d{2}/\d{2}/\d{4})\s+(Call|Put)\s+\$([\d.]+)$", symbol, re.IGNORECASE
-        )
-        if opt_match:
-            underlying, date_str, cp, strike_s = opt_match.groups()
-            try:
-                expiry = datetime.strptime(date_str, "%m/%d/%Y").strftime("%Y-%m-%d")
-                raw_dte = (datetime.strptime(expiry, "%Y-%m-%d").date() - today).days
-            except ValueError:
-                expiry, raw_dte = "", 0
-            if raw_dte < 0:
-                continue  # already expired — not an open position
-            dte = raw_dte
-            contracts = int(abs(qty))
-            is_short = qty < 0
-            avg_cost_per_contract = avg_cost * 100
-            leg = OptionLeg(
-                description=f"{cp.upper()} {strike_s} {expiry}",
-                strike=float(strike_s),
-                expiry=expiry,
-                option_type="CALL" if cp.lower() == "call" else "PUT",
-                quantity=-contracts if is_short else contracts,
-                premium_received=avg_cost_per_contract * contracts if is_short else 0.0,
-                current_mark=price * 100 * contracts,
-                dte=dte,
-            )
-            option_legs.setdefault(underlying, []).append(leg)
-        else:
-            equity_map[symbol] = Position(
-                symbol=symbol,
-                account=account_label,
-                shares=int(abs(qty)) if qty else 0,
-                stock_cost_basis=avg_cost,
-                current_price=price,
-            )
-
-    for underlying, legs in option_legs.items():
-        if underlying not in equity_map:
-            equity_map[underlying] = Position(
-                symbol=underlying, account=account_label,
-                shares=0, stock_cost_basis=0.0, current_price=0.0,
-            )
-        equity_map[underlying].option_legs.extend(legs)
-
-    return list(equity_map.values())
-
 
 # ---------------------------------------------------------------------------
 # Vanguard PDF + CSV parser
