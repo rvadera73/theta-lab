@@ -1,15 +1,21 @@
-import { HashRouter, Routes, Route, NavLink } from "react-router-dom";
+import { HashRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
 import TodayPage from "./pages/Today";
-import PlaceholderPage from "./pages/Placeholder";
+import USPage from "./pages/US";
+import IndiaPage from "./pages/India";
+import WatchlistPage from "./pages/Watchlist";
 
 // HashRouter deliberately -- see git history for why (gateway path-prefix
 // robustness, confirmed real bug class already hit once).
+//
+// Real fix (2026-10-16, trader decision): Watchlist and Scores merged into
+// one tab -- Scores was just the ranked view of the same symbols Watchlist
+// manages, so two tabs for one dataset meant extra clicks for no reason.
+// /composite-scores still redirects below for any old link/bookmark.
 const TABS = [
   { to: "/today", label: "Today" },
   { to: "/us", label: "US" },
   { to: "/india", label: "India" },
   { to: "/watchlist", label: "Watchlist" },
-  { to: "/composite-scores", label: "Scores" },
 ];
 
 function NavTab({ to, label }: { to: string; label: string }) {
@@ -62,10 +68,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<TodayPage />} />
             <Route path="/today" element={<TodayPage />} />
-            <Route path="/us" element={<PlaceholderPage name="US Markets" />} />
-            <Route path="/india" element={<PlaceholderPage name="India Markets" />} />
-            <Route path="/watchlist" element={<PlaceholderPage name="Watchlist" />} />
-            <Route path="/composite-scores" element={<PlaceholderPage name="Composite Scores" />} />
+            <Route path="/us" element={<USPage />} />
+            <Route path="/india" element={<IndiaPage />} />
+            <Route path="/watchlist" element={<WatchlistPage />} />
+            <Route path="/composite-scores" element={<Navigate to="/watchlist" replace />} />
           </Routes>
         </main>
 

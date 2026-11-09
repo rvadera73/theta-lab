@@ -79,3 +79,153 @@ export interface TodayPlan {
 export function isPositionGroup(ref: PositionGroupRef | CompositeScoreRef): ref is PositionGroupRef {
   return Array.isArray((ref as PositionGroupRef).legs);
 }
+
+// ---- Watchlist / composite-scores tab (merged, 2026-10-16) --------------
+
+export interface CompositeScoreRow {
+  ticker: string;
+  tail_risk: boolean;
+  error?: string;
+  flags: string[];
+  yield_pct: number | null;
+  conviction: number | null;
+  target_upside_pct: number | null;
+  sector: string;
+  verticals: string[];
+  invested: number | null;
+  heat: string | null;
+  rsi: number | null;
+  price: number | null;
+  is_new: boolean;
+  score: number | null;
+  iv_rank: number | null;
+  real_put_yield_pct: number | null;
+  real_call_yield_pct: number | null;
+  beta: number | null;
+  yield_rank: number | null;
+  conviction_rank: number | null;
+  rank: number | null;
+  population_size: number | null;
+  gates_fired?: string[];
+  valuation_penalty?: number;
+  notes?: string;
+}
+
+export interface RealizedRow {
+  ticker: string;
+  realized_pnl_90d: number;
+  closed_count_90d: number;
+  composite_rank: number | null;
+  tail_risk: boolean;
+  conviction: number | null;
+  conviction_rank: number | null;
+  yield_pct: number | null;
+  yield_rank: number | null;
+  flags: string[];
+}
+
+export interface CompositeScoresData {
+  held: CompositeScoreRow[];
+  watchlist: CompositeScoreRow[];
+  regime: string;
+  macro_stage: string;
+  severity_smoothed: number;
+  high_exposure_sectors: string[];
+  sensitivity_confidence: string;
+  realized_top_performers_90d: RealizedRow[];
+  realized_losses_90d: RealizedRow[];
+  realized_no_activity_90d: RealizedRow[];
+  realized_cutoff: string;
+}
+
+export interface WatchlistRow {
+  symbol: string;
+  tracked: number | boolean;
+  notes: string;
+  added_at: string;
+  updated_at: string;
+}
+
+// ---- US tab ---------------------------------------------------------------
+
+export interface AccountStatusRow {
+  account: string;
+  balance: number;
+  pct: number;
+  account_type: string;
+  is_margin: boolean;
+  notional: number;
+  opt_req: number;
+  utilization: number;
+  status: string;
+  opt_req_real: number | null;
+  opt_req_real_as_of: string | null;
+  has_positions: boolean;
+  position_count: number;
+  target: number;
+  actual: number;
+  gap: number;
+  pct_gap: number;
+  balance_as_of: string;
+  balance_days_stale: number;
+}
+
+export interface PnlAccountRow {
+  ytd_realized: number;
+  mtd_realized: number;
+  annual_target: number;
+  unmatched_amount: number;
+  unmatched_count: number;
+}
+
+export interface PnlTrendData {
+  as_of: string;
+  per_account: Record<string, PnlAccountRow>;
+  portfolio_qtd_realized: number;
+  [key: string]: unknown;
+}
+
+export interface CashMarginForecast {
+  as_of: string;
+  total_notional: number;
+  opt_req: number;
+  stress_low: number;
+  stress_high: number;
+  operating_cash_target: number;
+  emergency_reserve: number;
+  reserve_covers_stress: boolean;
+  capacity: number;
+  capacity_as_of: string;
+  dte_buckets: { label: string; pct: number; target_lo: number; target_hi: number; status: string }[];
+  top_expiry_dates: { date: string; notional: number; pct: number; status: string }[];
+}
+
+export interface HeatLeg {
+  symbol: string;
+  type: string;
+  strike: number;
+  expiry: string;
+  dte: number;
+  current_price: number | null;
+  distance_pct: number | null;
+  pnl_pct: number | null;
+  loss_multiple: number | null;
+  color: "RED" | "YELLOW" | "GREEN" | "UNKNOWN";
+  action: string;
+  reason: string;
+  covered: boolean | null;
+  covered_contracts: number | null;
+  total_contracts: number | null;
+  strangle: boolean;
+  account: string;
+  sector?: string;
+  gates_fired?: string[];
+  cost_to_close: number;
+}
+
+export interface PositionHeatData {
+  by_color: Record<string, HeatLeg[]>;
+  counts: Record<string, number>;
+  regime: string;
+  sector_rollup: Record<string, { RED: number; YELLOW: number; GREEN: number; UNKNOWN: number; red_cost_to_close: number }>;
+}
