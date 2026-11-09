@@ -55,7 +55,7 @@ from mcp.server.stdio import stdio_server
 from mcp.server.sse import SseServerTransport
 from mcp.types import Tool, TextContent
 
-from config import ACCOUNT_A, ACCOUNT_B, ACCOUNTS, UNIVERSE, Tier, PERMANENT_EXITS, RISK
+from config import ACCOUNT_A, ACCOUNT_B, ACCOUNTS, UNIVERSE, Tier, PERMANENT_EXITS, RISK, OVERNIGHT_MOVE_GATE_PCT
 from analysis.iv_rank import get_iv_rank, batch_iv_rank
 from analysis.regime import detect_regime
 from analysis.india_regime import detect_india_regime
@@ -1188,6 +1188,7 @@ async def call_tool(name: str, arguments: dict):
             if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
             from analysis.heat_scanner import assess_portfolio_heat
+            from reports.report_utils import extended_hours_context
             account_filter = arguments.get("account", "all")
             regime_data = detect_regime()
             regime_str = regime_data.get("regime", "CAUTIOUS_BULL")
@@ -1212,6 +1213,24 @@ async def call_tool(name: str, arguments: dict):
             if not all_legs:
                 return [TextContent(type="text", text="⚠️ No open option legs found (or live data unavailable).")]
             result = assess_portfolio_heat(all_legs, regime_str)
+
+            # Extended-hours overnight-move annotation (ADR 0004) -- this
+            # tool builds its own per-leg output independent of the
+            # dashboard's get_position_heat(), so it gets its own annotation
+            # pass rather than sharing that one's. Read-only: item["current_price"]
+            # (the regular close margin/heat math already used above) is
+            # never modified.
+            overnight_flagged = []
+            for color in ("RED", "YELLOW", "GREEN", "UNKNOWN"):
+                for item in result["by_color"][color]:
+                    eh_ctx = extended_hours_context(item["symbol"], item.get("current_price"))
+                    item["live_price"] = eh_ctx["live_price"]
+                    item["live_price_source"] = eh_ctx["live_price_source"]
+                    item["overnight_move_pct"] = eh_ctx["overnight_move_pct"]
+                    item["gates_fired"] = eh_ctx["gates_fired"]
+                    if "OVERNIGHT_MOVE" in eh_ctx["gates_fired"]:
+                        overnight_flagged.append(item)
+
             unknown_ct = result["counts"].get("UNKNOWN", 0)
             lines = [
                 f"## 🌡️ Position Heat Scan — Regime: {regime_str}",
@@ -1224,17 +1243,31 @@ async def call_tool(name: str, arguments: dict):
             if result["scale_back_new_entries"]:
                 lines.append("⛔ **Scale back new strangles until RED/YELLOW calls are resolved.**")
                 lines.append("")
+            if overnight_flagged:
+                lines.append(f"⚡ **{len(overnight_flagged)} leg(s) with an OVERNIGHT_MOVE gate** (live pre/post-market price moved >{OVERNIGHT_MOVE_GATE_PCT:.0f}% from the regular close used above):")
+                for item in overnight_flagged:
+                    lines.append(
+                        f"- {item['symbol']} {item['type']} ${item['strike']:.0f}: live ${item['live_price']:,.2f} "
+                        f"({item['live_price_source']}) vs regular close ${item['current_price']:,.2f} "
+                        f"({item['overnight_move_pct']:+.1f}%)"
+                    )
+                lines.append("")
             for color, emoji in [("RED", "🔴"), ("YELLOW", "🟡"), ("GREEN", "🟢"), ("UNKNOWN", "⚪")]:
                 items = result["by_color"][color]
                 if not items:
                     continue
                 lines.append(f"### {emoji} {color} ({len(items)})")
                 for item in items:
+                    overnight_note = (
+                        f" ⚡ live=${item['live_price']:,.2f} ({item['live_price_source']}), "
+                        f"{item['overnight_move_pct']:+.1f}% vs close"
+                        if "OVERNIGHT_MOVE" in item.get("gates_fired", []) else ""
+                    )
                     lines.append(
                         f"- **{item['symbol']} {item['type']} ${item['strike']:.0f}** exp {item['expiry']} ({item['dte']}d) | "
                         f"price=${item['current_price']:,.2f} | {item['distance_pct']:.0f}% to strike | "
                         f"P&L: {item['pnl_pct']:.0f}% captured | "
-                        f"**{item['action']}** — {item['reason']}"
+                        f"**{item['action']}** — {item['reason']}{overnight_note}"
                     )
                 lines.append("")
             return [TextContent(type="text", text="\n".join(lines))]
@@ -1327,17 +1360,26 @@ async def call_tool(name: str, arguments: dict):
             if not configured:
                 return [TextContent(type="text", text=_no_credentials_message())]
             # File-based (Schwab/Robinhood live API removed): positions from exported CSVs.
+            from reports.report_utils import extended_hours_context
             account = arguments.get("account", "all")
             all_positions = await _load_positions_all(account)
             results: dict[str, Any] = {}
             for pos in all_positions:
                 r = results.setdefault(pos.account, {"equities": [], "options": [], "total_positions": 0})
                 r["total_positions"] += 1
+                # Extended-hours overnight-move signal (ADR 0004) -- one
+                # quote per position's underlying, shared by its equity row
+                # and every option leg below (same stock, same live quote).
+                eh_ctx = extended_hours_context(pos.symbol, pos.current_price)
                 if getattr(pos, "shares", 0):
                     r["equities"].append({
                         "symbol": pos.symbol,
                         "qty": int(pos.shares),
                         "current_price": round(pos.current_price, 2),
+                        "live_price": eh_ctx["live_price"],
+                        "live_price_source": eh_ctx["live_price_source"],
+                        "overnight_move_pct": eh_ctx["overnight_move_pct"],
+                        "gates_fired": eh_ctx["gates_fired"],
                     })
                 for leg in pos.option_legs:
                     r["options"].append({
@@ -1346,6 +1388,10 @@ async def call_tool(name: str, arguments: dict):
                         "qty": leg.quantity,
                         "strike": getattr(leg, "strike", None),
                         "type": leg.option_type,
+                        "live_price": eh_ctx["live_price"],
+                        "live_price_source": eh_ctx["live_price_source"],
+                        "overnight_move_pct": eh_ctx["overnight_move_pct"],
+                        "gates_fired": eh_ctx["gates_fired"],
                     })
             return [TextContent(type="text", text=json.dumps(results, indent=2))]
 
@@ -1388,7 +1434,15 @@ async def call_tool(name: str, arguments: dict):
                 "premium_received": 0.0,
                 "cost_to_close_options": 0.0,
             }
-            all_positions = await _load_positions_all("all")
+            # load_us_positions() directly (not _load_positions_all, which
+            # discards account_sources) -- ADR 0004 needs per-account
+            # data_source/data_as_of/days_stale here, previously missing
+            # from this tool's JSON output entirely.
+            from reports.report_utils import load_us_positions, extended_hours_context, current_price
+            us_data = await load_us_positions()
+            all_positions = us_data.get("positions", [])
+            account_sources = us_data.get("account_sources", {})
+            regular_close_price = None
             for pos in all_positions:
                 if pos.symbol.upper() != symbol:
                     continue
@@ -1396,8 +1450,14 @@ async def call_tool(name: str, arguments: dict):
                 profit_signal = pos.profit_take_signal(regime)
                 roll_signal = pos.roll_signal()
                 loss_signal = pos.loss_flag()
+                source_info = account_sources.get(acct_label, {})
+                if pos.current_price:
+                    regular_close_price = pos.current_price
                 accounts[acct_label] = {
                     "shares": pos.shares,
+                    "data_source": source_info.get("source"),
+                    "data_as_of": source_info.get("as_of"),
+                    "days_stale": source_info.get("days_stale"),
                     "stock_cost_basis": round(pos.stock_cost_basis, 2),
                     "current_price": round(pos.current_price, 2),
                     "stock_pnl": round(pos.stock_pnl, 2),
@@ -1445,6 +1505,25 @@ async def call_tool(name: str, arguments: dict):
                 },
                 "technical": technical_snapshot(symbol),
             }
+            # Extended-hours overnight-move signal (ADR 0004) -- one quote
+            # per symbol (not per account; the live price is the same stock
+            # regardless of which account holds it), compared against
+            # whichever account's regular-close price we saw above. Only
+            # computed when the symbol is actually held somewhere -- no
+            # position means nothing for this signal to annotate.
+            if accounts:
+                if regular_close_price is None:
+                    regular_close_price = current_price(symbol)
+                eh_ctx = extended_hours_context(symbol, regular_close_price)
+                result["live_price"] = eh_ctx["live_price"]
+                result["live_price_source"] = eh_ctx["live_price_source"]
+                result["overnight_move_pct"] = eh_ctx["overnight_move_pct"]
+                result["gates_fired"] = eh_ctx["gates_fired"]
+            else:
+                result["live_price"] = None
+                result["live_price_source"] = None
+                result["overnight_move_pct"] = None
+                result["gates_fired"] = []
             if not accounts:
                 result["note"] = "No open position found across configured accounts."
             return [TextContent(type="text", text=json.dumps(result, indent=2))]

@@ -33,7 +33,7 @@ _load_credentials()
 from analysis.metrics import breakeven_velocity, premium_capture_rate, profit_factor, sortino_ratio
 from analysis.pnl import OptionLeg, Position, parse_schwab_positions, parse_robinhood_positions
 from analysis.india_statement_parser import build_positions_from_statements, load_india_config
-from config import PORTFOLIO, RISK, PERMANENT_EXITS
+from config import PORTFOLIO, RISK, PERMANENT_EXITS, OVERNIGHT_MOVE_GATE_PCT
 from routines.email_report import send_email
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -316,6 +316,111 @@ def technical_snapshot(symbol: str, india: bool = False) -> dict[str, Any]:
         "week_52_low": round(week_52_low, 2) if week_52_low else None,
         "pct_off_high": round((current - week_52_high) / week_52_high * 100, 1) if week_52_high else None,
         "pe": round(float(pe), 2) if pe else None,
+    }
+
+
+_EXTENDED_HOURS_CACHE_FILE = DATA_DIR / "extended_hours_cache.json"
+
+
+def get_extended_hours_quote(symbol: str) -> dict[str, Any]:
+    """Live extended-hours price signal for `symbol` (ADR 0004,
+    docs/design/adr/0004-extended-hours-pricing-signal.md). Uses
+    yfinance's Ticker.info, NOT fast_info -- verified LIVE 2026-11-09
+    against AAPL and APP during regular trading hours: fast_info's schema
+    has no preMarketPrice/postMarketPrice/marketState keys at all, so it
+    structurally cannot distinguish a pre/post-market quote from a regular
+    one, while .info carries marketState ("PRE"/"POST"/"REGULAR"/"CLOSED")
+    plus real preMarketPrice/postMarketPrice fields that Yahoo only
+    populates outside regular hours. Never raises (same fail-quiet
+    convention as premium_yield.get_yield_on_capital) -- a failure or an
+    unresolvable quote comes back with live_price=None and an "error" key,
+    not an exception.
+    """
+    try:
+        info = yf.Ticker(symbol).info
+        market_state = info.get("marketState")
+        regular_price = info.get("regularMarketPrice") or info.get("currentPrice")
+        pre_price = info.get("preMarketPrice")
+        post_price = info.get("postMarketPrice")
+
+        if market_state in ("PRE", "PREPRE") and pre_price:
+            return {"symbol": symbol, "live_price": round(float(pre_price), 2), "live_price_source": "pre_market"}
+        if market_state in ("POST", "POSTPOST") and post_price:
+            return {"symbol": symbol, "live_price": round(float(post_price), 2), "live_price_source": "after_hours"}
+        if regular_price:
+            return {"symbol": symbol, "live_price": round(float(regular_price), 2), "live_price_source": "regular"}
+        return {"symbol": symbol, "live_price": None, "live_price_source": None, "error": "no_live_price"}
+    except Exception as exc:
+        return {"symbol": symbol, "live_price": None, "live_price_source": None, "error": str(exc)}
+
+
+def _extended_hours_is_usable(entry: dict) -> bool:
+    """Same convention as premium_yield._is_usable / symbol_context._is_usable:
+    only a quote that actually resolved a live_price is worth caching."""
+    return not entry.get("error") and entry.get("live_price") is not None
+
+
+def get_cached_extended_hours_quote(symbol: str) -> dict[str, Any]:
+    """Same-day cache, mirroring premium_yield.get_cached_batch_yield's JSON
+    disk-cache shape exactly (date-keyed file, stale/unusable entries
+    dropped on read so a transient failure cached earlier today never blocks
+    a retry) -- this codebase's established same-day caching pattern for
+    per-symbol enrichment data (ADR 0004), not a new mechanism. One extra
+    yfinance call per symbol per refresh cycle, not per request."""
+    today = _today()
+    cache: dict = {}
+    if _EXTENDED_HOURS_CACHE_FILE.exists():
+        try:
+            with _EXTENDED_HOURS_CACHE_FILE.open() as f:
+                stored = json.load(f)
+            if stored.get("date") == today:
+                cache = {s: v for s, v in stored.get("data", {}).items() if _extended_hours_is_usable(v)}
+        except Exception:
+            pass
+
+    if symbol not in cache:
+        fresh = get_extended_hours_quote(symbol)
+        if _extended_hours_is_usable(fresh):
+            cache[symbol] = fresh
+            try:
+                DATA_DIR.mkdir(parents=True, exist_ok=True)
+                with _EXTENDED_HOURS_CACHE_FILE.open("w") as f:
+                    json.dump({"date": today, "data": cache}, f)
+            except Exception:
+                pass
+        else:
+            return fresh
+
+    return cache[symbol]
+
+
+def overnight_move_pct(regular_close_price: float | None, live_price: float | None) -> float | None:
+    """The live extended-hours price vs. the regular-session close already
+    used for margin/P&L math -- a read-only signal, never fed back into any
+    dollar calculation (ADR 0004)."""
+    if not regular_close_price or live_price is None:
+        return None
+    return round((live_price - regular_close_price) / regular_close_price * 100, 2)
+
+
+def extended_hours_context(symbol: str, regular_close_price: float | None) -> dict[str, Any]:
+    """One-stop per-symbol extended-hours annotation -- live_price/
+    live_price_source/overnight_move_pct, plus gates_fired containing
+    "OVERNIGHT_MOVE" when abs(overnight_move_pct) exceeds
+    OVERNIGHT_MOVE_GATE_PCT (mcp/config.py). Shared by every per-leg/
+    per-symbol pricing output path (dashboard Position Heat,
+    get_position_detail, scan_position_heat, get_live_positions) so the
+    field/gate shape can't drift between them (ADR 0004)."""
+    quote = get_cached_extended_hours_quote(symbol)
+    live_price = quote.get("live_price")
+    source = quote.get("live_price_source")
+    move_pct = overnight_move_pct(regular_close_price, live_price)
+    gates = ["OVERNIGHT_MOVE"] if (move_pct is not None and abs(move_pct) > OVERNIGHT_MOVE_GATE_PCT) else []
+    return {
+        "live_price": live_price,
+        "live_price_source": source,
+        "overnight_move_pct": move_pct,
+        "gates_fired": gates,
     }
 
 
@@ -1018,6 +1123,18 @@ async def load_us_positions() -> dict[str, Any]:
                     for pos in positions:
                         pos.account = label
                     all_positions.extend(positions)
+                # account_sources parity with the Schwab loop (ADR 0004) --
+                # previously only Schwab populated this, so data_source/
+                # data_as_of/days_stale came back None for every Fidelity/
+                # Vanguard/Robinhood leg downstream. "as_of"/"days_stale"
+                # here are the backing CSV export's own file age, same
+                # meaning as the Schwab snapshot/transactions mtime above.
+                file_mtime = os.path.getmtime(csv_path)
+                as_of_date = datetime.fromtimestamp(file_mtime).date()
+                account_sources[label] = {
+                    "source": broker, "as_of": as_of_date.isoformat(),
+                    "days_stale": (date.today() - as_of_date).days,
+                }
 
             elif broker == "robinhood_csv":
                 csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
@@ -1026,17 +1143,32 @@ async def load_us_positions() -> dict[str, Any]:
                 from analysis.pnl import parse_robinhood_csv
                 positions = parse_robinhood_csv(csv_path, account_label=label)
                 all_positions.extend(positions)
+                file_mtime = os.path.getmtime(csv_path)
+                as_of_date = datetime.fromtimestamp(file_mtime).date()
+                account_sources[label] = {
+                    "source": broker, "as_of": as_of_date.isoformat(),
+                    "days_stale": (date.today() - as_of_date).days,
+                }
 
             elif broker == "vanguard_csv":
                 pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
                 csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+                used_path = None
                 if pdf_path and os.path.exists(pdf_path):
                     positions = parse_vanguard_pdf(pdf_path, account_label=label)
+                    used_path = pdf_path
                 elif csv_path and os.path.exists(csv_path):
                     positions = parse_vanguard_csv(csv_path, account_label=label)
+                    used_path = csv_path
                 else:
                     continue
                 all_positions.extend(positions)
+                file_mtime = os.path.getmtime(used_path)
+                as_of_date = datetime.fromtimestamp(file_mtime).date()
+                account_sources[label] = {
+                    "source": broker, "as_of": as_of_date.isoformat(),
+                    "days_stale": (date.today() - as_of_date).days,
+                }
         except Exception as exc:
             _record_account_failure(load_errors, label, exc)  # never block on one account
 

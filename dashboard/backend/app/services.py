@@ -222,7 +222,7 @@ def get_position_heat():
     """
     import asyncio
     from collections import defaultdict
-    from report_utils import load_us_positions
+    from report_utils import load_us_positions, extended_hours_context
     from heat_scanner import assess_portfolio_heat
     from regime import detect_regime
     from symbol_context import get_cached_symbol_context
@@ -316,6 +316,14 @@ def get_position_heat():
             # leg's real exposure.
             leg_ctx = get_cached_symbol_context(pos.symbol, dte=lg.dte)
 
+            # Extended-hours overnight-move signal (ADR 0004,
+            # docs/design/adr/0004-extended-hours-pricing-signal.md) --
+            # read-only context alongside the regular-close price
+            # (pos.current_price) that margin/P&L math keeps using
+            # unchanged; adds OVERNIGHT_MOVE to gates_fired when the live
+            # pre/post-market price has moved far enough from that close.
+            eh_ctx = extended_hours_context(pos.symbol, pos.current_price)
+
             cov = leg_coverage.get(id(lg))
             k = _key(pos.symbol, lg.strike, lg.expiry, lg.option_type)
             entry = context.setdefault(k, {
@@ -328,7 +336,10 @@ def get_position_heat():
                 "data_as_of": source_info.get("as_of"),
                 "days_stale": source_info.get("days_stale"),
                 "sector": leg_ctx.get("sector"),
-                "gates_fired": leg_ctx.get("gates_fired", []),
+                # OVERNIGHT_MOVE (ADR 0004) folded into the same gates_fired
+                # list symbol_context.py's HIGH_LEVERAGE/EARNINGS_RISK/
+                # ILLIQUID already populate -- one list, one convention.
+                "gates_fired": leg_ctx.get("gates_fired", []) + eh_ctx["gates_fired"],
                 "dividend_rate": leg_ctx.get("dividend_rate"),
                 "next_ex_dividend_date": leg_ctx.get("next_ex_dividend_date"),
                 # iv_rank/current_iv were computed here all along but never
@@ -337,6 +348,13 @@ def get_position_heat():
                 # input per leg; current_iv is real when a caller upstream
                 # supplied one (step 6), else iv_rank's own HV-proxy fallback.
                 "current_iv": leg_ctx.get("current_iv"),
+                # Extended-hours overnight-move signal (ADR 0004) -- live_price
+                # is the current pre-market/after-hours/regular quote;
+                # overnight_move_pct compares it to pos.current_price (the
+                # regular close margin/P&L math uses, unchanged by this).
+                "live_price": eh_ctx["live_price"],
+                "live_price_source": eh_ctx["live_price_source"],
+                "overnight_move_pct": eh_ctx["overnight_move_pct"],
             })
             entry["accounts"].add(pos.account)
             if lg.option_type == "CALL":
@@ -399,6 +417,9 @@ def get_position_heat():
                 row["dividend_rate"] = ctx.get("dividend_rate")
                 row["next_ex_dividend_date"] = ctx.get("next_ex_dividend_date")
                 row["current_iv"] = ctx.get("current_iv")
+                row["live_price"] = ctx.get("live_price")
+                row["live_price_source"] = ctx.get("live_price_source")
+                row["overnight_move_pct"] = ctx.get("overnight_move_pct")
                 row["cost_to_close"] = cost_to_close_by_key.get(key, 0.0)
                 row["premium_received"] = premium_received_by_key.get(key, 0.0)
             deduped.append(row)

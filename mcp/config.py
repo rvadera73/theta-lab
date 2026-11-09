@@ -217,6 +217,15 @@ TRADING_RULES = {
 # Backward-compat alias used by report_utils.py
 RISK = TRADING_RULES
 
+# Extended-hours overnight-move gate (ADR 0004,
+# docs/design/adr/0004-extended-hours-pricing-signal.md): how far a symbol's
+# live pre-market/after-hours price can diverge from the regular-session
+# close (the figure margin/P&L math already uses, unchanged by this gate)
+# before it's flagged. 10% is a conservative, named floor below the real
+# incident that prompted this (APP +22% pre-market, 2026-11-05) -- not a
+# tuned guess.
+OVERNIGHT_MOVE_GATE_PCT = 10.0
+
 # ---------------------------------------------------------------------------
 # Stock universe by tier
 # ---------------------------------------------------------------------------
