@@ -43,12 +43,27 @@ CREATE TABLE IF NOT EXISTS action_item_events (
 );
 """
 
+# Real gap found 2026-11-02: every sequenced item DID carry a real tier
+# (TIER0_GATE/TIER1_MANAGE/TIER2_ENTER in `category`) and a real severity
+# (CUT_RESTAGGER/WATCH_CLOSE/etc. embedded in `description`), but neither
+# list_action_items() nor the Action Tracker UI ever sorted by either one --
+# both just ordered by status then recency, so a RED hard-stop and a
+# routine watch item looked identical in priority. `priority` is the one
+# explicit sort key every source writes at sync time (lower = more urgent);
+# RESOLVED always sinks below it regardless (see list_action_items).
+_PRIORITY_COLUMN_MIGRATION = "ALTER TABLE action_items ADD COLUMN priority INTEGER DEFAULT 999999"
+
 
 def _conn():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.executescript(_SCHEMA)
+    try:
+        conn.execute(_PRIORITY_COLUMN_MIGRATION)
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists -- SQLite has no "ADD COLUMN IF NOT EXISTS"
     return conn
 
 
@@ -60,26 +75,27 @@ def _short_id(*parts) -> str:
     return hashlib.sha1("|".join(str(p) for p in parts).encode()).hexdigest()[:12]
 
 
-def _upsert_new_only(conn, item_id, market, source, category, title, description, status):
+def _upsert_new_only(conn, item_id, market, source, category, title, description, status, priority=999999):
     """Inserts a new item if it doesn't exist yet. Deliberately does NOT
     update an existing row's status/title on re-sync -- see module
     docstring: this ledger, not the source file, owns status once an item
     has been seen once, so a dashboard resolution isn't clobbered by the
-    next sync. (title/description/category ARE refreshed, since those are
-    just descriptive text, not a decision the dashboard makes.)
+    next sync. (title/description/category/priority ARE refreshed, since
+    those are just descriptive text/ordering, not a decision the dashboard
+    makes.)
     """
     existing = conn.execute("SELECT id FROM action_items WHERE id = ?", (item_id,)).fetchone()
     now = _now()
     if existing:
         conn.execute(
-            "UPDATE action_items SET category=?, title=?, description=?, updated_at=? WHERE id=?",
-            (category, title, description, now, item_id),
+            "UPDATE action_items SET category=?, title=?, description=?, priority=?, updated_at=? WHERE id=?",
+            (category, title, description, priority, now, item_id),
         )
     else:
         conn.execute(
-            "INSERT INTO action_items (id, market, source, category, title, description, status, created_at, updated_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?)",
-            (item_id, market, source, category, title, description, status, now, now),
+            "INSERT INTO action_items (id, market, source, category, title, description, status, priority, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (item_id, market, source, category, title, description, status, priority, now, now),
         )
         conn.execute(
             "INSERT INTO action_item_events (action_item_id, event_type, timestamp, detail) VALUES (?,?,?,?)",
@@ -159,6 +175,7 @@ def sync_all():
     """
     from . import services  # local import: avoids a circular import at module load
     from . import sequencer
+    from decision_engine import build_decision  # mcp/analysis already on sys.path (see services.py)
 
     conn = _conn()
     try:
@@ -216,9 +233,24 @@ def sync_all():
                         f" [{lg['data_source']} data as of {lg['data_as_of']}, {lg['days_stale']}d old]"
                         if lg.get("days_stale") is not None and lg["days_stale"] > 3 else ""
                     )
+                    # Decision-engine enrichment (ADR 0001 step 10): surfaces
+                    # assignment cash impact, the Reg-T margin estimate, and
+                    # any dividend/earnings gate through the SAME tracked
+                    # action item + Accept/Defer/Reject status history this
+                    # ledger already provides -- not a second, parallel
+                    # feedback mechanism for the same underlying leg.
+                    decision = build_decision(lg)
+                    decision_note = ""
+                    if decision.assignment_cash_impact is not None:
+                        sign = "+" if decision.assignment_cash_impact >= 0 else "-"
+                        decision_note += f" | if assigned: {sign}${abs(decision.assignment_cash_impact):,.0f} ({decision.assignment_resulting_position})"
+                    if decision.est_margin_requirement is not None:
+                        decision_note += f" | est margin ${decision.est_margin_requirement:,.0f}"
+                    if decision.gates_fired:
+                        decision_note += f" | GATES: {', '.join(decision.gates_fired)}"
                     leg_notes.append(
                         f"{lg['color']} {lg['type']} ${lg['strike']} exp {lg['expiry']} ({lg['dte']}d) "
-                        f"{lg['action']}: {lg['reason']} | {cov_note}{stale_note}"
+                        f"{lg['action']}: {lg['reason']} | {cov_note}{stale_note}{decision_note}"
                     )
                 desc = f"{score_note}" + "  ||  ".join(leg_notes)
             else:  # composite_score, Tier 2 new-entry candidate
@@ -230,10 +262,15 @@ def sync_all():
                 )
             gate_note = f" -- GATE: {', '.join(row['gates_fired'])}" if row.get("gates_fired") else ""
             seen_sequenced_ids.add(item_id)
+            # rank_in_sequence is already the exact desired total order --
+            # Tier 0 gates first, then Tier 1 by real severity, then Tier 2
+            # by score+IV Rank (see sequencer.build_priority_sequence) --
+            # so it IS the priority, not just a tiebreak.
             _upsert_new_only(
                 conn, item_id, "US", "sequenced",
                 _TIER_CATEGORY.get(row["tier"], "TIER1_MANAGE"),
                 title, desc + gate_note, "OPEN",
+                priority=row["rank_in_sequence"],
             )
 
         # Prune stale sequenced rows -- a row that's no longer produced by
@@ -270,10 +307,16 @@ def sync_all():
             item_id = f"us_ad_{d.get('id')}"
             desc = (d.get("description") or "").strip()
             title = _title_from_description(desc, d.get("id"))
+            # Portfolio-level gates -- a BLOCKED one is as urgent as any
+            # Tier 0 symbol-level gate (it's blocking a whole class of new
+            # entries), so it sorts into that same top band; an OPEN one
+            # (a plan in progress, not actively blocking anything) sorts
+            # just below.
             _upsert_new_only(
                 conn, item_id, "US", "active_decisions",
                 d.get("account") or "General",
                 title, desc[:2000], status,
+                priority=0 if status == "BLOCKED" else 5,
             )
 
         # -- India: 6-month plan's F&O legs flagged for closing + equity exits
@@ -283,11 +326,11 @@ def sync_all():
             item_id = f"india_fno_{_short_id(contract)}"
             title = f"Close {contract}"
             desc = f"Planned close, P&L if closed as planned: {leg.get('pnl')}"
-            _upsert_new_only(conn, item_id, "India", "india_6month_plan", "F&O", title, desc, "OPEN")
+            _upsert_new_only(conn, item_id, "India", "india_6month_plan", "F&O", title, desc, "OPEN", priority=100)
         for symbol, exit_info in (plan.get("equity_exits") or {}).items():
             item_id = f"india_exit_{_short_id(symbol)}"
             title = f"Exit {exit_info.get('name', symbol)} ({symbol})"
-            _upsert_new_only(conn, item_id, "India", "india_6month_plan", "Equity", title, exit_info.get("note", ""), "OPEN")
+            _upsert_new_only(conn, item_id, "India", "india_6month_plan", "Equity", title, exit_info.get("note", ""), "OPEN", priority=100)
 
         conn.commit()
     finally:
@@ -308,7 +351,10 @@ def create_manual_item(market: str, category: str, title: str, description: str 
     item_id = f"manual_{_short_id(market, title)}"
     conn = _conn()
     try:
-        _upsert_new_only(conn, item_id, market, "manual", category, title, description, "OPEN")
+        # Process/review items (quarterly checks, framework backlog, a
+        # trader-flagged observation), not a live position needing
+        # management -- sorts below every real sequenced item by default.
+        _upsert_new_only(conn, item_id, market, "manual", category, title, description, "OPEN", priority=1000)
         conn.commit()
         return item_id
     finally:
@@ -316,14 +362,18 @@ def create_manual_item(market: str, category: str, title: str, description: str 
 
 
 def list_action_items(market: str = None):
+    # RESOLVED always sinks to the bottom regardless of priority; within
+    # each bucket, lower priority = more urgent (Tier 0 gates and BLOCKED
+    # decisions first, then Tier 1 by real severity, then everything else).
+    order_clause = "(status = 'RESOLVED'), priority, updated_at DESC"
     conn = _conn()
     try:
         if market and market.lower() != "all":
             rows = conn.execute(
-                "SELECT * FROM action_items WHERE market = ? ORDER BY status, updated_at DESC", (market,)
+                f"SELECT * FROM action_items WHERE market = ? ORDER BY {order_clause}", (market,)
             ).fetchall()
         else:
-            rows = conn.execute("SELECT * FROM action_items ORDER BY market, status, updated_at DESC").fetchall()
+            rows = conn.execute(f"SELECT * FROM action_items ORDER BY {order_clause}").fetchall()
         return [dict(r) for r in rows]
     finally:
         conn.close()
