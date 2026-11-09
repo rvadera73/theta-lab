@@ -148,7 +148,7 @@ in sync by hand is error-prone — see cleanup notes.
 | `scripts/data_loader_final.py` | Loader for the CLI report engine | CLI/legacy |
 | `scripts/unified_master_report.py` | Legacy CLI closed-loop report engine | LEGACY (superseded by MCP) |
 | `scripts/screener_loader.py` | Reads Portfolio xlsx watchlists | CLI |
-| `scripts/thesis_state_tracker.py`, `master_framework_engine.py`, `hedge_fund_framework.py`, `greeks_calculator.py`, `citadel_regime_detector.py`, `yahoo_price_fetcher.py` | Support the legacy CLI engine | CLI/legacy |
+| `scripts/thesis_state_tracker.py`, `master_framework_engine.py`, `hedge_fund_framework.py`, `greeks_calculator.py`, `yahoo_price_fetcher.py` | Support the legacy CLI engine | CLI/legacy |
 
 ### Used by the CLI 4-type report engine — KEEP (verified via import closure)
 `scripts/unified_master_report.py` imports these directly; they build the
@@ -163,19 +163,40 @@ plus transitively `data_loader.py`, `greeks_calculator_from_market.py`, `yahoo_p
 
 ### Genuinely NOT in any report pipeline (closure-verified)
 Standalone analysis tools (run by hand, nothing imports them, not in report flow):
-`analyze_sector_data.py`, `attribution_tracker.py`, `citadel_regime_detector.py`,
-`pnl_calculator.py`, `position_decision_analyzer.py`, `risk_budget_calculator.py`,
-`stress_tester.py`, `trade_recommendation_engine.py`, `analysis_closed_pnl.py`,
+`pnl_calculator.py`, `trade_recommendation_engine.py`, `analysis_closed_pnl.py`,
 `example_usage.py`, `analysis/persona_analyzer.py`.
 
-Legacy / superseded (dead — hardcode old May-11 filenames or old broker naming):
-`data_loader_may11.py`, `data_loader_may11_v2.py`, `open_positions_loader.py` (v1),
-`data_schema_validator.py`, `extract_clean_symbols.py`,
-`reconstruct_positions_from_transactions.py`.
+~~`analyze_sector_data.py`, `attribution_tracker.py`, `citadel_regime_detector.py`,
+`position_decision_analyzer.py`, `risk_budget_calculator.py`, `stress_tester.py`~~ —
+**deleted** (bolt/b5-dead-code-cleanup, 2026-11-09): re-confirmed zero importers
+repo-wide and no live CLI invocation in any skill/doc before removal.
+
+> `citadel_regime_detector.py` contradiction resolved: this file was previously listed
+> both here (dead) and in the "`scripts/` used by the live path or as current CLI — KEEP"
+> table above ("Support the legacy CLI engine"). Re-verified: `scripts/unified_master_report.py`
+> doesn't actually exist at that path (it's `mcp/reports/unified_master_report.py`, which
+> doesn't import it either); no `.py` file anywhere imports `CitadelRegimeDetector`; and the
+> only docs mentioning it (`PRODUCTION_FRAMEWORK_INTEGRATION.md`, `WEEKLY_TARGETS_BY_REGIME.md`)
+> are themselves stale June-2026 artifacts from the superseded legacy framework, not current
+> operating docs. It was genuinely dead; the KEEP listing was the error. Deleted.
+
+Legacy / superseded (dead — hardcode old May-11 filenames or old broker naming),
+**deleted** (bolt/b5-dead-code-cleanup, 2026-11-09):
+~~`data_loader_may11.py`, `data_loader_may11_v2.py`, `open_positions_loader.py` (v1),
+`data_schema_validator.py`, `reconstruct_positions_from_transactions.py`~~
+(re-confirmed zero importers before removal; `reconstruct_positions_from_transactions()`
+lives on as the real, live implementation in `mcp/reports/report_utils.py`).
+`extract_clean_symbols.py` was left alone — out of scope for this cleanup pass.
 
 > Correction note: an earlier draft mislabeled several CLI-engine scripts (and `data_loader.py`)
 > as orphans by measuring only the live MCP path. The lists above are verified by full
 > transitive import closure from all report entry points.
+>
+> Note: `scripts/strategy_attribution.py` was investigated in the same cleanup pass (flagged
+> as an orphan by direct grep) but is **not** dead — it's cited by name in
+> `logs/quarterly_portfolio_direction_us_2026-Q3.md` as the real source of that log's
+> strategy-performance findings, and that log is a standing quarterly artifact meant to be
+> re-run each quarter. Left in place.
 
 ---
 
