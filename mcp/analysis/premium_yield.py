@@ -108,12 +108,21 @@ def get_yield_on_capital(
             mid = (bid + ask) / 2
             premium = mid * 100
             annualized = (premium / capital) * (365 / dte) * 100
+            # yfinance's option_chain() rows carry impliedVolatility natively
+            # -- the SAME fetch this function already made, no extra cost.
+            # Exposed here (ADR 0001 step 6) so callers that already fetch
+            # this chain for yield can also get a REAL current IV instead of
+            # iv_rank.get_iv_rank()'s HV-proxy fallback, which every live
+            # caller used to silently accept by never passing current_iv.
+            iv_raw = row.get("impliedVolatility")
+            iv = float(iv_raw.values[0]) if iv_raw is not None and len(iv_raw) else None
             return {
                 "strike": float(row["strike"].values[0]),
                 "bid": bid, "ask": ask, "mid": round(mid, 2),
                 "premium_dollars": round(premium, 2),
                 "capital_required": round(capital, 2),
                 "annualized_yield_pct": round(annualized, 2),
+                "iv": iv,
             }
 
         put_capital = float(put_row["strike"].values[0]) * 100 if len(put_row) else None

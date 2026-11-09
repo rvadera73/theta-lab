@@ -35,6 +35,13 @@ def _conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.executescript(_SCHEMA)
+    # emergency_reserve added 2026-11-03 (ADR 0001) -- the Dubai-purchase-
+    # repurposed emergency fund balance, previously hardcoded to a stale
+    # $200K literal inside services.get_cash_margin_forecast(). Added via
+    # ALTER since the table may already exist without this column.
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(account_state)")}
+    if "emergency_reserve" not in cols:
+        conn.execute("ALTER TABLE account_state ADD COLUMN emergency_reserve REAL")
     return conn
 
 
@@ -48,19 +55,21 @@ def set_state(account: str, **fields) -> None:
         merged = dict(existing) if existing else {
             "account": account, "cash": None, "cash_plus_borrowing": None,
             "option_requirement": None, "balance_subject_to_interest": None,
-            "equity_pct": None, "notes": None,
+            "equity_pct": None, "notes": None, "emergency_reserve": None,
         }
         merged.update({k: v for k, v in fields.items() if v is not None})
         merged["updated_at"] = datetime.now(timezone.utc).isoformat()
         conn.execute(
             "INSERT INTO account_state (account, cash, cash_plus_borrowing, option_requirement, "
-            "balance_subject_to_interest, equity_pct, notes, updated_at) VALUES (?,?,?,?,?,?,?,?) "
+            "balance_subject_to_interest, equity_pct, notes, emergency_reserve, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?) "
             "ON CONFLICT(account) DO UPDATE SET cash=excluded.cash, "
             "cash_plus_borrowing=excluded.cash_plus_borrowing, option_requirement=excluded.option_requirement, "
             "balance_subject_to_interest=excluded.balance_subject_to_interest, equity_pct=excluded.equity_pct, "
-            "notes=excluded.notes, updated_at=excluded.updated_at",
+            "notes=excluded.notes, emergency_reserve=excluded.emergency_reserve, updated_at=excluded.updated_at",
             (account, merged["cash"], merged["cash_plus_borrowing"], merged["option_requirement"],
-             merged["balance_subject_to_interest"], merged["equity_pct"], merged.get("notes"), merged["updated_at"]),
+             merged["balance_subject_to_interest"], merged["equity_pct"], merged.get("notes"),
+             merged.get("emergency_reserve"), merged["updated_at"]),
         )
         conn.commit()
     finally:

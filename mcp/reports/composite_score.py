@@ -163,7 +163,25 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
     # blow up the adjustment) makes this a genuine risk-adjusted-return
     # measure, completing what this score's own docstring already claims to
     # be ("risk-adjusted premium"), not a new quality bolt-on.
-    ctx_by_ticker = {r["ticker"]: get_cached_symbol_context(r["ticker"]) for r in scoreable}
+    # Fetched BEFORE ctx_by_ticker (reordered 2026-11-03, ADR 0001 step 6) so
+    # each ticker's real current IV -- already sitting unused in this same
+    # chain fetch's "iv" field -- can be passed into get_cached_symbol_context
+    # instead of letting iv_rank.get_iv_rank() silently fall back to its
+    # HV-proxy, which every live caller did before this fix.
+    real_yields_for_iv = get_cached_batch_yield([r["ticker"] for r in scoreable])
+
+    def _real_iv(ticker):
+        yd = real_yields_for_iv.get(ticker) or {}
+        for side in ("call", "put"):
+            side_data = yd.get(side)
+            if side_data and side_data.get("iv") is not None:
+                return side_data["iv"]
+        return None
+
+    ctx_by_ticker = {
+        r["ticker"]: get_cached_symbol_context(r["ticker"], current_iv=_real_iv(r["ticker"]))
+        for r in scoreable
+    }
 
     # Real bug found 2026-10-16: CRWV's beta came back None (likely too
     # recently IPO'd for yfinance to have computed one) and the old fallback
@@ -182,7 +200,9 @@ def score_population(raw_rows: list[dict], high_exposure_sectors, sensitivity_co
             beta = NO_BETA_PENALTY_ASSUMPTION
         return r["yield_pct"] / max(beta, 0.5)
 
-    real_yields = get_cached_batch_yield([r["ticker"] for r in scoreable])
+    # Same fetch as real_yields_for_iv above (get_cached_batch_yield is
+    # itself same-day cached) -- reused directly instead of calling twice.
+    real_yields = real_yields_for_iv
 
     adj_yields = [_risk_adjusted_yield(r) for r in scoreable]
     convictions = [r["conviction"] for r in scoreable]

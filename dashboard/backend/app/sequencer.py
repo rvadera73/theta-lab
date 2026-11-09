@@ -24,9 +24,16 @@ from . import services
 _SEVERITY_RANK = {
     "CUT_RESTAGGER": 0, "CLOSE_NOW": 0,
     "ROLL_OR_CUT_PUT": 1, "ROLL_CALL": 1,
-    "WATCH_CLOSE": 2,
-    "HARVEST_RESTAGGER": 3,
-    "PREPARE_ROLL": 3,
+    # CLOSE_RESTAGGER is YELLOW (heat_scanner.py) but DTE<=21-forced -- time-
+    # bound like a RED roll, not market-driven like WATCH_CLOSE below. Ranked
+    # ahead of the non-time-bound YELLOW actions so a forced near-expiry close
+    # never falls back to the same default rank as a merely-watched position
+    # (real bug found 2026-11-03: this action had no entry here at all and
+    # silently fell to rank 2, tied with WATCH_CLOSE).
+    "CLOSE_RESTAGGER": 2,
+    "WATCH_CLOSE": 3,
+    "HARVEST_RESTAGGER": 4,
+    "PREPARE_ROLL": 4,
 }
 _COVERAGE_RANK = {False: 0, None: 1, True: 2}  # naked < cash-secured-put/unknown < covered
 
@@ -90,6 +97,16 @@ def _tier2_rows():
     scores = services.get_composite_scores()
     rows = []
     for row in scores.get("watchlist", []):
+        if row.get("error"):
+            # Not a real candidate -- gather_watchlist_rows() couldn't price
+            # it (no option expiry in the 75-135 DTE window, delisted, etc.),
+            # so it has no score/conviction/iv_rank to sequence by at all.
+            # Confirmed real case 2026-11-02: 12 of 17 watchlist tickers
+            # (ETN, JNJ, MCD, MOS, MPC, NLST, NTR, PBF, PEP, SW, TGT, VALE)
+            # hit "no_expiry_in_75-135_dte_window" and were surfacing as
+            # "ENTER {ticker}: score=None" noise in the Action Tracker --
+            # there's nothing actionable here, just a pricing gap.
+            continue
         r = dict(row)
         r["tier_source"] = "composite_score"
         rows.append(r)

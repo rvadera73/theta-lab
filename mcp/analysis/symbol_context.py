@@ -22,7 +22,7 @@ pattern iv_rank.get_iv_rank(symbol, current_iv=...) already uses.
 import json
 import os
 import sys
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 _p = os.path.dirname(os.path.abspath(__file__))
@@ -59,28 +59,56 @@ EARNINGS_LOOKAHEAD_DAYS = 30
 HIGH_LEVERAGE_DEBT_TO_EQUITY = 200.0
 
 
-def _dividend_yield_pct(symbol: str) -> float:
-    """Computed directly from dividendRate/currentPrice rather than trusted
-    off yfinance's own `dividendYield` field, whose scaling convention isn't
-    worth gambling on -- verified live 2026-10-12 against 7 real tickers
-    that THIS version's `dividendYield` already IS the percentage (GOOGL:
-    dividendYield=0.25, dividendRate=$0.88/$352.72=0.25% -- matches exactly;
-    PFE: dividendYield=6.08, $1.72/$28.40=6.06% -- matches), but an earlier
-    version of this function assumed the opposite (fraction needing *100)
-    and silently reported GOOGL at 25% instead of 0.25% -- a 100x error
-    caught only because the real number was checked, not assumed. Computing
-    it directly from rate/price sidesteps trusting any one field's
-    convention at all. Falls back to the pre-computed field only if
-    dividendRate or price is unavailable."""
+def _dividend_info(symbol: str) -> dict:
+    """Yield, raw per-share rate, and next ex-dividend date from ONE Yahoo
+    call (yield alone used to be its own function, _dividend_yield_pct --
+    merged here 2026-11-03, ADR 0001 step 5, so the new DIVIDEND_RISK
+    early-exercise gate doesn't need a second live fetch for the same
+    ticker's info payload).
+
+    Yield is computed directly from dividendRate/currentPrice rather than
+    trusted off yfinance's own `dividendYield` field, whose scaling
+    convention isn't worth gambling on -- verified live 2026-10-12 against 7
+    real tickers that THIS version's `dividendYield` already IS the
+    percentage (GOOGL: dividendYield=0.25, dividendRate=$0.88/$352.72=0.25%
+    -- matches exactly; PFE: dividendYield=6.08, $1.72/$28.40=6.06% --
+    matches), but an earlier version of this function assumed the opposite
+    (fraction needing *100) and silently reported GOOGL at 25% instead of
+    0.25% -- a 100x error caught only because the real number was checked,
+    not assumed. Falls back to the pre-computed field only if dividendRate
+    or price is unavailable.
+
+    next_ex_dividend_date: yfinance's `exDividendDate` is a Unix timestamp
+    (seconds) on this version -- converted to an ISO date, or None if
+    missing/unparseable (a non-dividend-payer has none; that's a normal
+    result, not a failure). KNOWN LIMITATION, verified live 2026-11-03: this
+    field often holds the MOST RECENT PAST ex-div date rather than a
+    confirmed future one, until the company formally declares its next date
+    (real case: MU/CRM/PYPL all returned past dates the same day LMT
+    returned a real future one) -- decision_engine.py's DIVIDEND_RISK gate
+    already guards against this (only fires when today <= ex_div_date <=
+    expiry), so a stale past date just means the gate correctly doesn't
+    fire, never a false positive. Not worth a quarterly-cadence projection
+    heuristic on top of an already-labeled estimate."""
     try:
         info = yf.Ticker(symbol).info
         rate = info.get("dividendRate")
         price = info.get("currentPrice") or info.get("regularMarketPrice")
-        if rate and price:
-            return round(rate / price * 100, 2)
-        return round(info.get("dividendYield") or 0.0, 2)
+        yield_pct = round(rate / price * 100, 2) if rate and price else round(info.get("dividendYield") or 0.0, 2)
+        ex_div_ts = info.get("exDividendDate")
+        ex_div_date = None
+        if ex_div_ts:
+            try:
+                ex_div_date = datetime.fromtimestamp(float(ex_div_ts)).date().isoformat()
+            except Exception:
+                ex_div_date = None
+        return {
+            "dividend_yield_pct": yield_pct,
+            "dividend_rate": rate or 0.0,
+            "next_ex_dividend_date": ex_div_date,
+        }
     except Exception:
-        return 0.0
+        return {"dividend_yield_pct": 0.0, "dividend_rate": 0.0, "next_ex_dividend_date": None}
 
 
 def _quality_fields(symbol: str) -> dict:
@@ -119,7 +147,8 @@ def _is_usable(entry: dict) -> bool:
 
 
 def get_symbol_context(symbol: str, dte: Optional[int] = None,
-                        bid: Optional[float] = None, ask: Optional[float] = None) -> dict:
+                        bid: Optional[float] = None, ask: Optional[float] = None,
+                        current_iv: Optional[float] = None) -> dict:
     """The shared bundle. `dte` is the specific option leg's days-to-expiry
     if the caller has one (Position Heat does; a fresh composite-score entry
     candidate may not yet) -- used to decide whether an upcoming earnings
@@ -127,11 +156,16 @@ def get_symbol_context(symbol: str, dte: Optional[int] = None,
     the next 30 days" in the abstract. `bid`/`ask`, if passed, come from a
     chain the caller already fetched (premium_yield.py); if omitted,
     liquidity simply isn't assessed for this call rather than triggering a
-    second live chain fetch.
+    second live chain fetch. `current_iv`, if passed (also from a chain the
+    caller already fetched -- premium_yield.py's `iv` field, ADR 0001 step
+    6), replaces iv_rank.get_iv_rank()'s HV-proxy fallback with the real
+    current implied vol; every live caller omitted this before, so IV Rank
+    was always ranking recent realized vol against its own history, never
+    actual current IV richness.
     """
-    iv = get_iv_rank(symbol)
+    iv = get_iv_rank(symbol, current_iv=current_iv)
     sector = get_symbol_sector(symbol)
-    div_yield = _dividend_yield_pct(symbol)
+    dividend = _dividend_info(symbol)
     earnings_dates = upcoming_earnings(symbol, days=EARNINGS_LOOKAHEAD_DAYS)
     quality = _quality_fields(symbol)
 
@@ -160,7 +194,14 @@ def get_symbol_context(symbol: str, dte: Optional[int] = None,
         "symbol": symbol,
         "iv_rank": iv.get("iv_rank"),
         "iv_entry_signal": iv.get("entry_signal", False),
-        "dividend_yield_pct": div_yield,
+        # The resolved vol iv_rank actually ranked against -- real current_iv
+        # if a caller passed one (step 6), else its own HV-proxy fallback.
+        # Computed here all along but never surfaced in this dict until now
+        # (ADR 0001 step 7) -- decision_engine.py's Greeks rollup needs it.
+        "current_iv": iv.get("current_iv"),
+        "dividend_yield_pct": dividend["dividend_yield_pct"],
+        "dividend_rate": dividend["dividend_rate"],
+        "next_ex_dividend_date": dividend["next_ex_dividend_date"],
         "earnings_within_dte": earnings_within_window,
         "sector": sector,
         "liquidity_ok": liquidity_ok,
@@ -195,9 +236,16 @@ def get_cached_symbol_context(symbol: str, **kwargs) -> dict:
 
     dte = kwargs.get("dte")
     bid, ask = kwargs.get("bid"), kwargs.get("ask")
+    current_iv = kwargs.get("current_iv")
 
     if symbol not in cache:
-        fresh = get_symbol_context(symbol, dte=None)  # cache the dte-independent facts only
+        # current_iv only matters on a cache MISS -- iv_rank is baked into
+        # the cached payload at first-fetch time, same as every other
+        # symbol-level fact here (not re-applied per-call the way dte/bid/
+        # ask-derived fields are below). Whichever caller happens to run
+        # first for a symbol on a given day -- and passes a real current_iv
+        # -- determines that day's cached IV Rank for every other caller.
+        fresh = get_symbol_context(symbol, dte=None, current_iv=current_iv)
         if _is_usable(fresh):
             cache[symbol] = fresh
             try:

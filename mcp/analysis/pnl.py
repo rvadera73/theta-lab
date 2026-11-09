@@ -313,30 +313,38 @@ def parse_fidelity_csv(csv_path: str, account_filter: str | None = None) -> dict
         # Skip disclaimer rows until we hit the header
         lines = fh.readlines()
 
+    # Header casing isn't stable across Fidelity export vintages -- confirmed
+    # 2026-11-04: the current real export uses "Account number"/"Last price"/
+    # "Cost basis total" (sentence case) while this parser was written against
+    # an older "Account Number"/"Last Price"/"Cost Basis Total" (title case)
+    # export. A case-sensitive match on either the header line or the
+    # DictReader keys silently returned {} for every row with no error --
+    # match case-insensitively instead of assuming one vintage.
     header_idx = next(
-        (i for i, l in enumerate(lines) if l.strip().startswith("Account Number")), None
+        (i for i, l in enumerate(lines) if l.strip().lower().startswith("account number")), None
     )
     if header_idx is None:
         return {}
 
     import io
-    reader = csv.DictReader(io.StringIO("".join(lines[header_idx:])))
+    raw_reader = csv.DictReader(io.StringIO("".join(lines[header_idx:])))
 
-    for row in reader:
-        acct_num = row.get("Account Number", "").strip()
+    for raw_row in raw_reader:
+        row = {(k or "").strip().lower(): v for k, v in raw_row.items()}
+        acct_num = row.get("account number", "").strip()
         if not acct_num or not acct_num.isdigit():
             continue
         if account_filter and acct_num != account_filter:
             continue
 
-        raw_sym = row.get("Symbol", "").strip()
+        raw_sym = row.get("symbol", "").strip()
         if not raw_sym or raw_sym.endswith("**"):
             continue  # skip money market rows
 
-        acct_name = row.get("Account Name", acct_num).strip()
+        acct_name = row.get("account name", acct_num).strip()
 
         def _f(key):
-            return row.get(key, "").replace("$", "").replace(",", "").replace("+", "").strip()
+            return row.get(key.lower(), "").replace("$", "").replace(",", "").replace("+", "").strip()
 
         try:
             qty = float(_f("Quantity")) if _f("Quantity") else 0.0

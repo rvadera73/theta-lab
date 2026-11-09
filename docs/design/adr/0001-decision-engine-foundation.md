@@ -1,6 +1,6 @@
 # ADR 0001: Decision Engine Foundation — From Monitoring to Deciding
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-11-03
 
 ## Context
@@ -247,3 +247,33 @@ Engine build-out, in order:
   change, out of scope here).
 - Whether `thesis_state` should eventually move into personal-assistant
   once/if it gains per-ticker structure — revisit after Phase 1 ships.
+
+## Deferred
+
+Verified 2026-11-09 against Section 6's own sequencing list: steps 1-2
+(sequencer `CLOSE_RESTAGGER` severity fix + ledger `priority` column/
+`decision_note` wiring — the real-world equivalent of the
+`get_cash_margin_forecast` literal, now sourced from `account_state`'s new
+`emergency_reserve` column), 3-8 (`decision_engine.py`'s already-committed,
+tested coverage/margin/dividend-gate/Greeks-rollup/position-sizing logic),
+and 9 (`cache.py`'s `us_leg_decisions` snapshot persisted every refresh,
+confirmed at `dashboard/backend/app/cache.py:83`) are all genuinely done,
+each with passing test coverage.
+
+Step 10 is only HALF done. The Advisor surface itself exists and is real:
+the `get_leg_decisions` MCP tool (`mcp/analysis/leg_decisions_tool.py`) and
+`GET /api/us/leg-decisions` (`dashboard/backend/app/main.py:253`) both call
+`services.get_leg_decisions()`, which is a straight projection through
+`decision_engine.py` — tested in `tests/test_leg_decisions_tool.py`.
+
+What's NOT built is the second half of step 10: the **Accept/Defer/Reject
+feedback loop that closes into an outcome record**. Confirmed via
+`grep -rni "accept\|defer\|reject" dashboard/backend/app/main.py
+dashboard/backend/app/ledger.py` — the only hit is a comment in
+`ledger.py` describing the intent, not an implementation. There is no
+mutation endpoint, no outcome-record table, and nothing that captures
+what the trader actually did with a recommendation versus what the engine
+suggested. This is tracked as explicit follow-up work, not silently
+dropped — Phase 1's own "Consequences" section already anticipated that
+outcome-tracking history is a prerequisite for Phase 2, so this gap blocks
+that transition until it's closed.
