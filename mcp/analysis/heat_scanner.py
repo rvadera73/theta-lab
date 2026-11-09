@@ -357,11 +357,26 @@ def heat_from_positions(positions: list, regime: str) -> dict:
                 "current_price":    pos.current_price,
             })
     if not legs:
-        return {"counts": {"RED": 0, "YELLOW": 0, "GREEN": 0},
-                "by_color": {"RED": [], "YELLOW": [], "GREEN": []},
+        # Real bug found while writing characterization tests (2026-11-09):
+        # this shortcut dict omitted the "UNKNOWN" bucket that
+        # assess_portfolio_heat() always includes (by_color + counts), and
+        # omitted "stagger_capacity"/"regime" too. format_heat_block() and
+        # format_heat_html() both index heat["by_color"]["UNKNOWN"] directly
+        # (no .get/default) -- and both real call sites (weekly_report.py,
+        # monthly_objectives_report.py) call heat_from_positions() and pipe
+        # the result straight into one of those formatters. Any no-open-legs
+        # week (a real, unremarkable case, not a hypothetical) crashed report
+        # generation with KeyError: 'UNKNOWN'. Shape now matches
+        # assess_portfolio_heat()'s return exactly so both formatters (and
+        # any other consumer) see a consistent dict whether or not there are
+        # open legs.
+        return {"counts": {"RED": 0, "YELLOW": 0, "GREEN": 0, "UNKNOWN": 0},
+                "by_color": {"RED": [], "YELLOW": [], "GREEN": [], "UNKNOWN": []},
+                "regime": regime,
                 "scale_back_new_entries": False,
                 "protocol": "No open legs to assess.",
-                "top_actions": []}
+                "top_actions": [],
+                "stagger_capacity": {}}
     return assess_portfolio_heat(legs, regime)
 
 
