@@ -4,12 +4,24 @@ services:
     # personal-assistant's ADR 0018 pattern) can target this container by
     # hostname regardless of what other local projects call their own
     # compose service. Set unconditionally (harmless without the gateway).
+    #
+    # The actual network join lives in the optional docker-compose.gateway.yml
+    # overlay, not here (local-gateway-net is external:true - see that file).
+    # Always deploy with BOTH files (`-f docker-compose.yml -f
+    # docker-compose.gateway.yml up -d --build`) so the join survives a
+    # rebuild - a bare `docker network connect` done by hand does not.
     container_name: theta-lab-web
     build:
       context: ..
       dockerfile: dashboard/backend/Dockerfile
     ports:
       - "8020:8000"
+    # Confirmed missing 2026-11-04: without this, report_utils.load_us_positions()'s
+    # os.getenv(csv_path_env) calls for Fidelity/Vanguard/Robinhood all resolve to ""
+    # and those three brokers silently contribute zero legs to position-heat/
+    # leg-decisions (per-account load failures are caught and skipped, not raised).
+    env_file:
+      - ../.env
     volumes:
       # This codebase has TWO different path-resolution conventions, both
       # real, confirmed live 2026-09-25 -- mount the same host dirs at

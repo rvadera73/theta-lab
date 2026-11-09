@@ -27,6 +27,10 @@
   .tag-open { background: #fef0c8; color: #936316; }
   .tag-blocked { background: #f4e3db; color: #b50909; }
   .tag-resolved { background: #d5f2d5; color: #1a7a1a; }
+  .tag-critical { background: #f4e3db; color: #b50909; }
+  .tag-manage { background: #ffe9c2; color: #915f0b; }
+  .tag-entry { background: #d9e8f6; color: #205493; }
+  .tag-task { background: #e6e6e6; color: #565c65; }
   .market-us { color: #005ea2; font-weight: 600; }
   .market-india { color: #8b2b2b; font-weight: 600; }
   tr.item-row { cursor: pointer; }
@@ -56,10 +60,29 @@
   <div id="table-container"><p class="empty">Loading...</p></div>
 </main>
 <script>
-  let state = { items: [], market: "all", sortField: "status", sortDir: 1, expanded: null };
+  // Default view leads with what's actually critical: RESOLVED always
+  // sinks to the bottom, then lower `priority` (Tier 0 gates and BLOCKED
+  // portfolio decisions first, Tier 1 by real severity, Tier 2/manual/
+  // India items last) sorts first -- same order the backend computes in
+  // ledger.list_action_items(), mirrored here so a manual column-sort can
+  // still get back to it by clicking "Priority" again.
+  let state = { items: [], market: "all", sortField: "priority", sortDir: 1, expanded: null };
 
   function tagClass(status) {
     return "tag tag-" + status.toLowerCase();
+  }
+
+  // Maps a row's real tier (sequenced items' category) or decision status
+  // to one visible badge, so "what's critical" reads at a glance instead
+  // of requiring the viewer to parse raw category strings or description
+  // text. Mirrors the server's own tier bands (see ledger.sync_all).
+  function priorityBadge(item) {
+    if (item.source === "active_decisions" && item.status === "BLOCKED") return ["tag-critical", "GATE"];
+    if (item.category === "TIER0_GATE") return ["tag-critical", "CRITICAL"];
+    if (item.category === "TIER1_MANAGE") return ["tag-manage", "MANAGE"];
+    if (item.category === "TIER2_ENTER") return ["tag-entry", "ENTRY"];
+    if (item.source === "active_decisions") return ["tag-task", "DECISION"];
+    return ["tag-task", "TASK"];
   }
 
   async function loadItems(sync) {
@@ -73,6 +96,13 @@
     if (state.market !== "all") items = items.filter(i => i.market === state.market);
     const statusOrder = { OPEN: 0, BLOCKED: 1, RESOLVED: 2 };
     items = [...items].sort((a, b) => {
+      // RESOLVED always sinks below OPEN/BLOCKED regardless of sort field
+      // or direction -- a resolved item keeps whatever priority it had
+      // when last synced, so without this it could still show up first.
+      const aResolved = a.status === "RESOLVED" ? 1 : 0;
+      const bResolved = b.status === "RESOLVED" ? 1 : 0;
+      if (aResolved !== bResolved) return aResolved - bResolved;
+
       let av = a[state.sortField], bv = b[state.sortField];
       if (state.sortField === "status") { av = statusOrder[av] ?? 9; bv = statusOrder[bv] ?? 9; }
       if (av < bv) return -1 * state.sortDir;
@@ -118,8 +148,10 @@
     let rows = "";
     for (const item of items) {
       const marketClass = item.market === "US" ? "market-us" : "market-india";
+      const [badgeClass, badgeLabel] = priorityBadge(item);
       rows += `
         <tr class="item-row" data-id="${item.id}">
+          <td><span class="tag ${badgeClass}">${badgeLabel}</span></td>
           <td class="${marketClass}">${item.market}</td>
           <td>${item.category || ""}</td>
           <td>${item.title}</td>
@@ -127,13 +159,14 @@
           <td>${new Date(item.updated_at).toLocaleDateString()}</td>
         </tr>`;
       if (state.expanded === item.id) {
-        rows += `<tr class="detail-row"><td colspan="5"><div id="detail-${item.id}">Loading...</div></td></tr>`;
+        rows += `<tr class="detail-row"><td colspan="6"><div id="detail-${item.id}">Loading...</div></td></tr>`;
       }
     }
 
     document.getElementById("table-container").innerHTML = `
       <table class="usa-table usa-table--borderless">
         <thead><tr>
+          ${headerCell("Priority", "priority")}
           ${headerCell("Market", "market")}
           ${headerCell("Category", "category")}
           ${headerCell("Title", "title")}

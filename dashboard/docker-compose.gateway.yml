@@ -1,16 +1,33 @@
 # Optional overlay: joins the shared local-gateway proxy's network so this
-# dashboard is also reachable at http://localhost:9000/theta-lab/, same
-# pattern as personal-assistant's ADR 0018 (docs/DASHBOARD_PLAN.md).
+# dashboard is reachable at http://localhost:9000/theta-lab/... without
+# claiming a dedicated host port. Same pattern as personal-assistant's ADR
+# 0018 (docs/design/adr/0018-shared-local-reverse-proxy.md in that repo) -
+# reused here rather than reinvented, since `~/local-gateway` already fronts
+# multiple unrelated local projects the same way.
 #
-# Not part of the base docker-compose.yml -- `local-gateway-net` is
-# `external: true` (owned by the separate ~/local-gateway project), so
-# Compose fails outright if it doesn't exist yet. Use both files together
-# only once the gateway is already running:
+# Not part of the base docker-compose.yml on purpose: `local-gateway-net` is
+# `external: true` (owned by the separate ~/local-gateway project, not this
+# one) - Compose fails outright if that network doesn't exist yet, so baking
+# this into the base file would break plain `docker compose up` for anyone
+# who hasn't set up the gateway.
+#
+# Deploy with BOTH files together, every time, so Compose reconciles network
+# membership on every `up`/rebuild:
 #
 #   docker compose -f docker-compose.yml -f docker-compose.gateway.yml up -d --build
 #
-# Without this overlay, the dashboard works exactly as before (host port
-# 8020) -- the gateway is purely additive.
+# This is the fix for the 2026-11-04 incident: theta-lab-web had been joined
+# to local-gateway-net by hand (`docker network connect`), which is NOT
+# compose-managed state - a later `docker compose build && up -d` recreated
+# the container and silently dropped that attachment, leaving the gateway
+# unable to resolve "theta-lab-web" (502 on every route, dashboard stuck on
+# "loading") until someone happened to check. Declaring the join here instead
+# makes it part of the container's desired state, re-applied on every
+# `up`/recreate - run scripts/smoke_test_gateway.sh after any deploy to
+# confirm.
+#
+# Without this overlay, theta-lab's dashboard works exactly as before (host
+# port 8020, direct access) - the gateway is purely additive.
 services:
   dashboard:
     networks:
