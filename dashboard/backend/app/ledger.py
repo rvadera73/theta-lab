@@ -144,6 +144,201 @@ def _title_from_description(description: str, fallback: str, max_len: int = 150)
     return first_sentence.rstrip(".") + "." if not first_sentence.endswith(("...", ".")) else first_sentence
 
 
+# Tier 0 = a gate fired (earnings-risk, illiquid -- addresses "before
+# anything else," not a score penalty); Tier 1 = existing positions needing
+# management, by real severity; Tier 2 = gate-clear new-entry candidates, by
+# score+IV Rank. See dashboard/backend/app/sequencer.py and the plan this
+# was built from for the full design.
+_TIER_CATEGORY = {0: "TIER0_GATE", 1: "TIER1_MANAGE", 2: "TIER2_ENTER"}
+
+
+def _leg_coverage_note(lg: dict) -> str:
+    """Real fix 2026-10-16 (trader correction): a "naked" CALL that's
+    actually strangle-paired (a cash-secured PUT sold alongside it on the
+    same name/expiry) is an intentional, documented structure per Account
+    A's own strategy ("naked calls are hedged by the short puts... premium
+    on both sides widens the break-even range") -- NOT the same thing as an
+    isolated naked call. Confirmed real case: META/ANET/CRWD's "naked" calls
+    were all strangle legs, flagged identically to genuinely isolated ones
+    (ZS, CRM, ADBE, etc.), losing exactly the context that changes how
+    urgently it should read.
+    """
+    if lg.get("covered") is False and lg.get("strangle"):
+        return "naked (strangle-paired -- hedged by the put leg, not isolated)"
+    if lg.get("covered") is False:
+        return "naked"
+    if lg.get("covered_contracts"):
+        return f"partial ({lg.get('covered_contracts')}/{lg.get('total_contracts')})"
+    if lg.get("type") == "PUT":
+        return "cash-secured"
+    return ""
+
+
+def _leg_stale_note(lg: dict) -> str:
+    if lg.get("days_stale") is not None and lg["days_stale"] > 3:
+        return f" [{lg['data_source']} data as of {lg['data_as_of']}, {lg['days_stale']}d old]"
+    return ""
+
+
+def _leg_decision_note(lg: dict, build_decision) -> str:
+    """Decision-engine enrichment (ADR 0001 step 10): surfaces assignment
+    cash impact, the Reg-T margin estimate, and any dividend/earnings gate
+    through the SAME tracked action item + Accept/Defer/Reject status
+    history this ledger already provides -- not a second, parallel feedback
+    mechanism for the same underlying leg.
+    """
+    decision = build_decision(lg)
+    note = ""
+    if decision.assignment_cash_impact is not None:
+        sign = "+" if decision.assignment_cash_impact >= 0 else "-"
+        note += f" | if assigned: {sign}${abs(decision.assignment_cash_impact):,.0f} ({decision.assignment_resulting_position})"
+    if decision.est_margin_requirement is not None:
+        note += f" | est margin ${decision.est_margin_requirement:,.0f}"
+    if decision.gates_fired:
+        note += f" | GATES: {', '.join(decision.gates_fired)}"
+    return note
+
+
+def _build_leg_note(lg: dict, build_decision) -> str:
+    cov_note = _leg_coverage_note(lg)
+    stale_note = _leg_stale_note(lg)
+    decision_note = _leg_decision_note(lg, build_decision)
+    return (
+        f"{lg['color']} {lg['type']} ${lg['strike']} exp {lg['expiry']} ({lg['dte']}d) "
+        f"{lg['action']}: {lg['reason']} | {cov_note}{stale_note}{decision_note}"
+    )
+
+
+def _build_position_heat_item(row: dict, build_decision) -> tuple[str, str, str]:
+    """One (symbol, account) position group, not a single leg -- real fix
+    2026-10-13: a deliberate multi-leg "stagger" campaign (ZS's 3 legs,
+    ANET's 8 legs across 2 accounts) was surfacing as N disconnected-
+    looking alerts. Keyed by (symbol, account) so the item is stable as
+    legs are added/removed from the same real position, instead of a new
+    id per leg. Returns (item_id, title, description).
+    """
+    legs = row["legs"]
+    item_id = f"us_seq_{_short_id(row['symbol'], row['account'], 'position')}"
+    worst = legs[0]  # already sorted worst-color-first by services.get_position_heat()
+    title = (
+        f"{worst['action']} {row['symbol']} ({len(legs)}-leg structure, {row['account']})"
+        if len(legs) > 1
+        else f"{worst['action']} {row['symbol']} {worst['type']} ${worst['strike']}"
+    )
+    score_note = (
+        f"score={row['score']} (rank {row['rank']}/{row['population_size']}) | "
+        f"conviction={row['conviction']} | iv_rank={row['iv_rank']} | "
+        if row.get("score") is not None else ""
+    )
+    leg_notes = [_build_leg_note(lg, build_decision) for lg in legs]
+    desc = f"{score_note}" + "  ||  ".join(leg_notes)
+    return item_id, title, desc
+
+
+def _build_entry_item(row: dict) -> tuple[str, str, str]:
+    """A composite_score, Tier 2 new-entry candidate row. Returns (item_id,
+    title, description)."""
+    item_id = f"us_seq_{_short_id(row['ticker'], 'entry')}"
+    title = f"ENTER {row['ticker']}: score={row.get('score')} (rank {row.get('rank')}/{row.get('population_size')})"
+    desc = (
+        f"yield={row.get('yield_pct')}% | conviction={row.get('conviction')} | "
+        f"iv_rank={row.get('iv_rank')} | sector={row.get('sector')}"
+    )
+    return item_id, title, desc
+
+
+def _sync_sequenced_items(conn, sequencer, build_decision) -> set[str]:
+    """US: the one sequenced priority list (sequencer.py), replacing the old
+    separate priority_actions (conviction-gated, could miss a bad TRADE on a
+    high-conviction name entirely) AND position_heat sync blocks. Returns
+    the set of item ids it just wrote, for stale-row pruning.
+    """
+    seen_sequenced_ids: set[str] = set()
+    for row in sequencer.build_priority_sequence():
+        if row["tier_source"] == "position_heat":
+            item_id, title, desc = _build_position_heat_item(row, build_decision)
+        else:
+            item_id, title, desc = _build_entry_item(row)
+        gate_note = f" -- GATE: {', '.join(row['gates_fired'])}" if row.get("gates_fired") else ""
+        seen_sequenced_ids.add(item_id)
+        # rank_in_sequence is already the exact desired total order -- Tier
+        # 0 gates first, then Tier 1 by real severity, then Tier 2 by
+        # score+IV Rank (see sequencer.build_priority_sequence) -- so it IS
+        # the priority, not just a tiebreak.
+        _upsert_new_only(
+            conn, item_id, "US", "sequenced",
+            _TIER_CATEGORY.get(row["tier"], "TIER1_MANAGE"),
+            title, desc + gate_note, "OPEN",
+            priority=row["rank_in_sequence"],
+        )
+    return seen_sequenced_ids
+
+
+def _prune_stale_sequenced(conn, seen_sequenced_ids: set[str]) -> None:
+    """A row that's no longer produced by build_priority_sequence() (position
+    closed, gate cleared, or a data-lineage fix like 2026-10-13's covered-
+    call correction) must not just sit here with its old description forever:
+    _upsert_new_only only ever inserts/refreshes rows it's handed, it never
+    deletes, so without this the Action Tracker would keep showing conditions
+    that no longer exist (confirmed real case: TWLO stayed flagged "naked"
+    after the loader fix made it genuinely covered, until this prune was
+    added).
+    """
+    existing_sequenced = {
+        r["id"] for r in conn.execute(
+            "SELECT id FROM action_items WHERE source = 'sequenced'"
+        ).fetchall()
+    }
+    stale_ids = existing_sequenced - seen_sequenced_ids
+    if stale_ids:
+        conn.executemany(
+            "DELETE FROM action_items WHERE id = ?",
+            [(i,) for i in stale_ids],
+        )
+        conn.executemany(
+            "DELETE FROM action_item_events WHERE action_item_id = ?",
+            [(i,) for i in stale_ids],
+        )
+
+
+def _sync_active_decisions(conn, services) -> None:
+    """US: active_decisions.yaml (only OPEN/BLOCKED items -- resolved ones
+    are historical, not something to re-track as an open action)."""
+    for d in services.get_active_decisions():
+        status = (d.get("status") or "").upper()
+        if status not in ("OPEN", "BLOCKED"):
+            continue
+        item_id = f"us_ad_{d.get('id')}"
+        desc = (d.get("description") or "").strip()
+        title = _title_from_description(desc, d.get("id"))
+        # Portfolio-level gates -- a BLOCKED one is as urgent as any Tier 0
+        # symbol-level gate (it's blocking a whole class of new entries), so
+        # it sorts into that same top band; an OPEN one (a plan in progress,
+        # not actively blocking anything) sorts just below.
+        _upsert_new_only(
+            conn, item_id, "US", "active_decisions",
+            d.get("account") or "General",
+            title, desc[:2000], status,
+            priority=0 if status == "BLOCKED" else 5,
+        )
+
+
+def _sync_india_fno_closes(conn, plan: dict) -> None:
+    for leg in plan.get("fno_legs_to_close_month_1", []):
+        contract = leg.get("contract", "unknown")
+        item_id = f"india_fno_{_short_id(contract)}"
+        title = f"Close {contract}"
+        desc = f"Planned close, P&L if closed as planned: {leg.get('pnl')}"
+        _upsert_new_only(conn, item_id, "India", "india_6month_plan", "F&O", title, desc, "OPEN", priority=100)
+
+
+def _sync_india_equity_exits(conn, plan: dict) -> None:
+    for symbol, exit_info in (plan.get("equity_exits") or {}).items():
+        item_id = f"india_exit_{_short_id(symbol)}"
+        title = f"Exit {exit_info.get('name', symbol)} ({symbol})"
+        _upsert_new_only(conn, item_id, "India", "india_6month_plan", "Equity", title, exit_info.get("note", ""), "OPEN", priority=100)
+
+
 def sync_all():
     """Pulls every market's real open-item sources into the ledger. Call
     this before list_action_items() so a first-ever run isn't empty, and
@@ -166,12 +361,15 @@ def sync_all():
     Also deliberately does NOT sync every WATCH/HOLD position from the
     Sector Heat table -- only the bottom-up CLOSE/TRIM/ENTER priority list
     (services.get_us_priority_actions(), itself already gated to a real,
-    usually-small set: RED-heat-plus-low-conviction for close/trim, top-3
-    HIGH-conviction GREEN-heat for enter). Trader's own stated worry
-    2026-09-25: "hoping there are not 100 of trackable actions if
-    portfolio is stable" -- syncing the full ~92-ticker table would
-    guarantee exactly that; this list was 3 items out of 92 tickers on a
-    normal day, verified live.
+    usually-small set). Trader's own stated worry 2026-09-25: "hoping there
+    are not 100 of trackable actions if portfolio is stable" -- syncing the
+    full ~92-ticker table would guarantee exactly that; this list was 3
+    items out of 92 tickers on a normal day, verified live.
+
+    Thin orchestrator: each distinct sync block (US sequenced priority list
+    + its stale-row prune, US active_decisions.yaml, India's two 6-month-
+    plan sources) lives in its own helper above, called here in the same
+    order this function always ran them in.
     """
     from . import services  # local import: avoids a circular import at module load
     from . import sequencer
@@ -179,158 +377,13 @@ def sync_all():
 
     conn = _conn()
     try:
-        # -- US: the one sequenced priority list (sequencer.py), replacing
-        # the old separate priority_actions (conviction-gated, could miss a
-        # bad TRADE on a high-conviction name entirely -- see position_heat's
-        # own history below) AND position_heat sync blocks. Tier 0 = a gate
-        # fired (earnings-risk, illiquid -- addresses "before anything else,"
-        # not a score penalty); Tier 1 = existing positions needing
-        # management, by real severity; Tier 2 = gate-clear new-entry
-        # candidates, by score+IV Rank. See dashboard/backend/app/sequencer.py
-        # and the plan this was built from for the full design.
-        _TIER_CATEGORY = {0: "TIER0_GATE", 1: "TIER1_MANAGE", 2: "TIER2_ENTER"}
-        seen_sequenced_ids: set[str] = set()
-        for row in sequencer.build_priority_sequence():
-            if row["tier_source"] == "position_heat":
-                # row is now one (symbol, account) position group, not a
-                # single leg -- real fix 2026-10-13: a deliberate multi-leg
-                # "stagger" campaign (ZS's 3 legs, ANET's 8 legs across 2
-                # accounts) was surfacing as N disconnected-looking alerts.
-                # Keyed by (symbol, account) so the item is stable as legs
-                # are added/removed from the same real position, instead of
-                # a new id per leg.
-                legs = row["legs"]
-                item_id = f"us_seq_{_short_id(row['symbol'], row['account'], 'position')}"
-                worst = legs[0]  # already sorted worst-color-first by services.get_position_heat()
-                title = (
-                    f"{worst['action']} {row['symbol']} ({len(legs)}-leg structure, {row['account']})"
-                    if len(legs) > 1
-                    else f"{worst['action']} {row['symbol']} {worst['type']} ${worst['strike']}"
-                )
-                score_note = (
-                    f"score={row['score']} (rank {row['rank']}/{row['population_size']}) | "
-                    f"conviction={row['conviction']} | iv_rank={row['iv_rank']} | "
-                    if row.get("score") is not None else ""
-                )
-                leg_notes = []
-                for lg in legs:
-                    # Real fix 2026-10-16 (trader correction): a "naked" CALL
-                    # that's actually strangle-paired (a cash-secured PUT sold
-                    # alongside it on the same name/expiry) is an intentional,
-                    # documented structure per Account A's own strategy
-                    # ("naked calls are hedged by the short puts... premium on
-                    # both sides widens the break-even range") -- NOT the same
-                    # thing as an isolated naked call. Confirmed real case:
-                    # META/ANET/CRWD's "naked" calls were all strangle legs,
-                    # flagged identically to genuinely isolated ones (ZS, CRM,
-                    # ADBE, etc.), losing exactly the context that changes how
-                    # urgently it should read.
-                    cov_note = ("naked (strangle-paired -- hedged by the put leg, not isolated)" if lg.get("covered") is False and lg.get("strangle")
-                                else "naked" if lg.get("covered") is False
-                                else f"partial ({lg.get('covered_contracts')}/{lg.get('total_contracts')})" if lg.get("covered_contracts")
-                                else "cash-secured" if lg.get("type") == "PUT" else "")
-                    stale_note = (
-                        f" [{lg['data_source']} data as of {lg['data_as_of']}, {lg['days_stale']}d old]"
-                        if lg.get("days_stale") is not None and lg["days_stale"] > 3 else ""
-                    )
-                    # Decision-engine enrichment (ADR 0001 step 10): surfaces
-                    # assignment cash impact, the Reg-T margin estimate, and
-                    # any dividend/earnings gate through the SAME tracked
-                    # action item + Accept/Defer/Reject status history this
-                    # ledger already provides -- not a second, parallel
-                    # feedback mechanism for the same underlying leg.
-                    decision = build_decision(lg)
-                    decision_note = ""
-                    if decision.assignment_cash_impact is not None:
-                        sign = "+" if decision.assignment_cash_impact >= 0 else "-"
-                        decision_note += f" | if assigned: {sign}${abs(decision.assignment_cash_impact):,.0f} ({decision.assignment_resulting_position})"
-                    if decision.est_margin_requirement is not None:
-                        decision_note += f" | est margin ${decision.est_margin_requirement:,.0f}"
-                    if decision.gates_fired:
-                        decision_note += f" | GATES: {', '.join(decision.gates_fired)}"
-                    leg_notes.append(
-                        f"{lg['color']} {lg['type']} ${lg['strike']} exp {lg['expiry']} ({lg['dte']}d) "
-                        f"{lg['action']}: {lg['reason']} | {cov_note}{stale_note}{decision_note}"
-                    )
-                desc = f"{score_note}" + "  ||  ".join(leg_notes)
-            else:  # composite_score, Tier 2 new-entry candidate
-                item_id = f"us_seq_{_short_id(row['ticker'], 'entry')}"
-                title = f"ENTER {row['ticker']}: score={row.get('score')} (rank {row.get('rank')}/{row.get('population_size')})"
-                desc = (
-                    f"yield={row.get('yield_pct')}% | conviction={row.get('conviction')} | "
-                    f"iv_rank={row.get('iv_rank')} | sector={row.get('sector')}"
-                )
-            gate_note = f" -- GATE: {', '.join(row['gates_fired'])}" if row.get("gates_fired") else ""
-            seen_sequenced_ids.add(item_id)
-            # rank_in_sequence is already the exact desired total order --
-            # Tier 0 gates first, then Tier 1 by real severity, then Tier 2
-            # by score+IV Rank (see sequencer.build_priority_sequence) --
-            # so it IS the priority, not just a tiebreak.
-            _upsert_new_only(
-                conn, item_id, "US", "sequenced",
-                _TIER_CATEGORY.get(row["tier"], "TIER1_MANAGE"),
-                title, desc + gate_note, "OPEN",
-                priority=row["rank_in_sequence"],
-            )
+        seen_sequenced_ids = _sync_sequenced_items(conn, sequencer, build_decision)
+        _prune_stale_sequenced(conn, seen_sequenced_ids)
+        _sync_active_decisions(conn, services)
 
-        # Prune stale sequenced rows -- a row that's no longer produced by
-        # build_priority_sequence() (position closed, gate cleared, or a
-        # data-lineage fix like 2026-10-13's covered-call correction) must
-        # not just sit here with its old description forever: _upsert_new_only
-        # only ever inserts/refreshes rows it's handed, it never deletes, so
-        # without this the Action Tracker would keep showing conditions that
-        # no longer exist (confirmed real case: TWLO stayed flagged "naked"
-        # after the loader fix made it genuinely covered, until this prune
-        # was added).
-        existing_sequenced = {
-            r["id"] for r in conn.execute(
-                "SELECT id FROM action_items WHERE source = 'sequenced'"
-            ).fetchall()
-        }
-        stale_ids = existing_sequenced - seen_sequenced_ids
-        if stale_ids:
-            conn.executemany(
-                "DELETE FROM action_items WHERE id = ?",
-                [(i,) for i in stale_ids],
-            )
-            conn.executemany(
-                "DELETE FROM action_item_events WHERE action_item_id = ?",
-                [(i,) for i in stale_ids],
-            )
-
-        # -- US: active_decisions.yaml (only OPEN/BLOCKED items -- resolved
-        # ones are historical, not something to re-track as an open action).
-        for d in services.get_active_decisions():
-            status = (d.get("status") or "").upper()
-            if status not in ("OPEN", "BLOCKED"):
-                continue
-            item_id = f"us_ad_{d.get('id')}"
-            desc = (d.get("description") or "").strip()
-            title = _title_from_description(desc, d.get("id"))
-            # Portfolio-level gates -- a BLOCKED one is as urgent as any
-            # Tier 0 symbol-level gate (it's blocking a whole class of new
-            # entries), so it sorts into that same top band; an OPEN one
-            # (a plan in progress, not actively blocking anything) sorts
-            # just below.
-            _upsert_new_only(
-                conn, item_id, "US", "active_decisions",
-                d.get("account") or "General",
-                title, desc[:2000], status,
-                priority=0 if status == "BLOCKED" else 5,
-            )
-
-        # -- India: 6-month plan's F&O legs flagged for closing + equity exits
         plan = services.get_india_plan() or {}
-        for leg in plan.get("fno_legs_to_close_month_1", []):
-            contract = leg.get("contract", "unknown")
-            item_id = f"india_fno_{_short_id(contract)}"
-            title = f"Close {contract}"
-            desc = f"Planned close, P&L if closed as planned: {leg.get('pnl')}"
-            _upsert_new_only(conn, item_id, "India", "india_6month_plan", "F&O", title, desc, "OPEN", priority=100)
-        for symbol, exit_info in (plan.get("equity_exits") or {}).items():
-            item_id = f"india_exit_{_short_id(symbol)}"
-            title = f"Exit {exit_info.get('name', symbol)} ({symbol})"
-            _upsert_new_only(conn, item_id, "India", "india_6month_plan", "Equity", title, exit_info.get("note", ""), "OPEN", priority=100)
+        _sync_india_fno_closes(conn, plan)
+        _sync_india_equity_exits(conn, plan)
 
         conn.commit()
     finally:
