@@ -19,7 +19,6 @@ bid/ask pair the caller already has (e.g. from premium_yield.py's put/call
 dicts), passed in explicitly, matching the same optional-pre-fetched-data
 pattern iv_rank.get_iv_rank(symbol, current_iv=...) already uses.
 """
-import json
 import os
 import sys
 from datetime import date, datetime
@@ -34,6 +33,7 @@ for _ in range(5):
     _p = os.path.dirname(_p)
 import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
+from same_day_cache import same_day_json_cache
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports"))
 from iv_rank import get_iv_rank
@@ -212,52 +212,39 @@ def get_symbol_context(symbol: str, dte: Optional[int] = None,
 
 
 def get_cached_symbol_context(symbol: str, **kwargs) -> dict:
-    """Same-day cache, modeled directly on premium_yield.get_cached_batch_yield
-    -- iv_rank.get_iv_rank() alone does an uncached 1-year history fetch per
-    call, and this bundle also adds a dividend/earnings/sector fetch on top,
-    so re-running it per symbol on every report/refresh cycle is real,
-    avoidable latency and rate-limit risk for data that doesn't move
-    intraday. Keyed by symbol only (dte/bid/ask are per-call context, not
-    part of what's cached) -- the earnings-within-window filter is applied
-    AFTER the cache read using the caller's own dte, so two different DTEs
-    on the same symbol correctly see different earnings_within_dte without
-    needing two cache entries.
+    """Same-day cache, built on the shared same_day_json_cache helper
+    (modeled directly on premium_yield.get_cached_batch_yield, the original
+    implementation of this pattern) -- iv_rank.get_iv_rank() alone does an
+    uncached 1-year history fetch per call, and this bundle also adds a
+    dividend/earnings/sector fetch on top, so re-running it per symbol on
+    every report/refresh cycle is real, avoidable latency and rate-limit
+    risk for data that doesn't move intraday. Keyed by symbol only (dte/
+    bid/ask are per-call context, not part of what's cached) -- the
+    earnings-within-window filter is applied AFTER the cache read using the
+    caller's own dte, so two different DTEs on the same symbol correctly
+    see different earnings_within_dte without needing two cache entries.
     """
     today = date.today().isoformat()
-    cache: dict = {}
-    if os.path.exists(_CACHE_FILE):
-        try:
-            with open(_CACHE_FILE) as f:
-                stored = json.load(f)
-            if stored.get("date") == today:
-                cache = {s: v for s, v in stored.get("data", {}).items() if _is_usable(v)}
-        except Exception:
-            pass
-
     dte = kwargs.get("dte")
     bid, ask = kwargs.get("bid"), kwargs.get("ask")
     current_iv = kwargs.get("current_iv")
 
-    if symbol not in cache:
-        # current_iv only matters on a cache MISS -- iv_rank is baked into
-        # the cached payload at first-fetch time, same as every other
-        # symbol-level fact here (not re-applied per-call the way dte/bid/
-        # ask-derived fields are below). Whichever caller happens to run
-        # first for a symbol on a given day -- and passes a real current_iv
-        # -- determines that day's cached IV Rank for every other caller.
-        fresh = get_symbol_context(symbol, dte=None, current_iv=current_iv)
-        if _is_usable(fresh):
-            cache[symbol] = fresh
-            try:
-                os.makedirs(_CACHE_DIR, exist_ok=True)
-                with open(_CACHE_FILE, "w") as f:
-                    json.dump({"date": today, "data": cache}, f)
-            except Exception:
-                pass
-        else:
-            return fresh  # don't cache a genuinely unresolved result
+    # current_iv only matters on a cache MISS -- iv_rank is baked into the
+    # cached payload at first-fetch time, same as every other symbol-level
+    # fact here (not re-applied per-call the way dte/bid/ask-derived fields
+    # are below). Whichever caller happens to run first for a symbol on a
+    # given day -- and passes a real current_iv -- determines that day's
+    # cached IV Rank for every other caller.
+    cached = same_day_json_cache(
+        _CACHE_FILE, today, [symbol],
+        loader_fn=lambda missing: {missing[0]: get_symbol_context(missing[0], dte=None, current_iv=current_iv)},
+        is_usable=_is_usable,
+    )
+    fetched = cached.get(symbol)
+    if fetched is None or not _is_usable(fetched):
+        return fetched  # don't cache a genuinely unresolved result
 
-    result = dict(cache[symbol])
+    result = dict(fetched)
     # Re-apply the caller's own dte/bid/ask against the cached, symbol-level
     # facts rather than re-fetching -- the earnings list and raw bid/ask
     # context differ per call even though the underlying symbol data is the

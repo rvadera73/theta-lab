@@ -40,6 +40,7 @@ from bootstrap import load_credentials as _load_credentials
 _load_credentials()
 
 from analysis.metrics import breakeven_velocity, premium_capture_rate, profit_factor, sortino_ratio
+from analysis.same_day_cache import ensure_same_day, same_day_json_cache
 from analysis.pnl import OptionLeg, Position, parse_schwab_positions, parse_robinhood_positions
 from analysis.india_statement_parser import build_positions_from_statements, load_india_config
 from config import PORTFOLIO, RISK, PERMANENT_EXITS, OVERNIGHT_MOVE_GATE_PCT
@@ -113,8 +114,23 @@ _INDIA_SYMBOL_MAP = {
 
 _US_PRICE_CACHE: dict[str, dict[str, Any]] = {}
 _INDIA_PRICE_CACHE: dict[str, dict[str, Any]] = {}
+
+# _OPTION_CHAIN_CACHE / _EARNINGS_CACHE: plain in-process dicts, NOT
+# file-backed. Found, while reading every cache in this file for the
+# same-day-cache unification, to have had NO staleness check at all -- a
+# dict that memoized for the entire life of the process, the same
+# unbounded-cache bug class already fixed live 2026-11-05 for
+# _US_PRICE_CACHE (see _PRICE_CACHE_TTL_SECONDS below) and
+# _SNAPSHOT_HOLDINGS_CACHE (see _snapshot_holdings()). Given a calendar-day
+# bound here too via same_day_cache.ensure_same_day, for consistency with
+# those two and because neither has a legitimate reason to serve a chain or
+# an earnings date list fetched on a prior day. Each `*_DATE` holder is the
+# "last reset day" cell ensure_same_day needs (see that helper's docstring
+# for why a 1-element list, not a bare str/None).
 _OPTION_CHAIN_CACHE: dict[tuple[str, str], Any] = {}
+_OPTION_CHAIN_CACHE_DATE: list = [None]
 _EARNINGS_CACHE: dict[str, list[str]] = {}
+_EARNINGS_CACHE_DATE: list = [None]
 
 # How long a cached price is trusted before _history_cache() re-fetches it.
 # Found live 2026-11-05: this cache previously had NO expiry at all, so a
@@ -371,37 +387,20 @@ def _extended_hours_is_usable(entry: dict) -> bool:
 
 
 def get_cached_extended_hours_quote(symbol: str) -> dict[str, Any]:
-    """Same-day cache, mirroring premium_yield.get_cached_batch_yield's JSON
-    disk-cache shape exactly (date-keyed file, stale/unusable entries
-    dropped on read so a transient failure cached earlier today never blocks
-    a retry) -- this codebase's established same-day caching pattern for
-    per-symbol enrichment data (ADR 0004), not a new mechanism. One extra
-    yfinance call per symbol per refresh cycle, not per request."""
+    """Same-day cache, built on the shared same_day_json_cache helper
+    (mirrors premium_yield.get_cached_batch_yield's JSON disk-cache shape
+    exactly -- date-keyed file, stale/unusable entries dropped on read so a
+    transient failure cached earlier today never blocks a retry) -- this
+    codebase's established same-day caching pattern for per-symbol
+    enrichment data (ADR 0004), not a new mechanism. One extra yfinance call
+    per symbol per refresh cycle, not per request."""
     today = _today()
-    cache: dict = {}
-    if _EXTENDED_HOURS_CACHE_FILE.exists():
-        try:
-            with _EXTENDED_HOURS_CACHE_FILE.open() as f:
-                stored = json.load(f)
-            if stored.get("date") == today:
-                cache = {s: v for s, v in stored.get("data", {}).items() if _extended_hours_is_usable(v)}
-        except Exception:
-            pass
-
-    if symbol not in cache:
-        fresh = get_extended_hours_quote(symbol)
-        if _extended_hours_is_usable(fresh):
-            cache[symbol] = fresh
-            try:
-                DATA_DIR.mkdir(parents=True, exist_ok=True)
-                with _EXTENDED_HOURS_CACHE_FILE.open("w") as f:
-                    json.dump({"date": today, "data": cache}, f)
-            except Exception:
-                pass
-        else:
-            return fresh
-
-    return cache[symbol]
+    cached = same_day_json_cache(
+        _EXTENDED_HOURS_CACHE_FILE, today, [symbol],
+        loader_fn=lambda missing: {missing[0]: get_extended_hours_quote(missing[0])},
+        is_usable=_extended_hours_is_usable,
+    )
+    return cached[symbol]
 
 
 def overnight_move_pct(regular_close_price: float | None, live_price: float | None) -> float | None:
@@ -435,6 +434,7 @@ def extended_hours_context(symbol: str, regular_close_price: float | None) -> di
 
 
 def upcoming_earnings(symbol: str, days: int = 14) -> list[str]:
+    ensure_same_day(_EARNINGS_CACHE, _EARNINGS_CACHE_DATE, _today())
     if symbol in _EARNINGS_CACHE:
         return _EARNINGS_CACHE[symbol]
     found: list[str] = []
@@ -474,6 +474,7 @@ def upcoming_earnings(symbol: str, days: int = 14) -> list[str]:
 
 
 def option_market_price(symbol: str, expiry: str, strike: float, option_type: str) -> float | None:
+    ensure_same_day(_OPTION_CHAIN_CACHE, _OPTION_CHAIN_CACHE_DATE, _today())
     key = (symbol, expiry)
     chain = _OPTION_CHAIN_CACHE.get(key)
     if chain is None:
@@ -521,6 +522,7 @@ def option_probability_itm(symbol: str, expiry: str, strike: float, option_type:
     from enhanced_metrics import BlackScholesGreeks
     from scipy.stats import norm
 
+    ensure_same_day(_OPTION_CHAIN_CACHE, _OPTION_CHAIN_CACHE_DATE, _today())
     key = (symbol, expiry)
     chain = _OPTION_CHAIN_CACHE.get(key)
     if chain is None:

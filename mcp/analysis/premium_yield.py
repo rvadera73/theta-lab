@@ -9,7 +9,6 @@ iv_rank.py or enhanced_metrics.py -- this is genuinely a different
 question (capital efficiency vs. volatility-richness) with a different
 data need (a live option chain, not just price history).
 """
-import json
 import os
 import sys
 from datetime import date, datetime
@@ -24,6 +23,7 @@ for _ in range(5):
     _p = os.path.dirname(_p)
 import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
+from same_day_cache import same_day_json_cache
 
 DEFAULT_OTM_PCT = 0.10
 DEFAULT_DTE_LOW = 75
@@ -182,49 +182,20 @@ def get_cached_batch_yield(symbols: list[str], **kwargs) -> dict[str, dict]:
     re-fetching all 92 on every report run is real, avoidable latency and
     yfinance rate-limit risk for strikes 90-135 DTE out that don't move
     enough intraday to justify a same-day re-fetch. A stale cache from a
-    prior day is never reused -- the date check below forces a fresh pull
-    the first time any report runs on a new day.
+    prior day is never reused -- the date check in same_day_json_cache
+    forces a fresh pull the first time any report runs on a new day.
+
+    This is the reference implementation of this codebase's same-day JSON
+    cache pattern (see same_day_cache.same_day_json_cache's own docstring)
+    -- `_is_usable` encodes the two real, previously-confirmed-live cache
+    poisoning bugs (an explicit error, 2026-10-04; a structurally
+    "successful" fetch where both put and call still came back None,
+    2026-10-09) as the `is_usable` predicate the shared helper drops before
+    ever writing to disk.
     """
     today = date.today().isoformat()
-    cache: dict = {}
-    if os.path.exists(_CACHE_FILE):
-        try:
-            with open(_CACHE_FILE) as f:
-                stored = json.load(f)
-            if stored.get("date") == today:
-                # Drop any unusable entries a pre-fix version of this
-                # function may have already persisted today (see the
-                # write-side check below) -- an old cached failure (error
-                # OR a structurally-successful-but-empty result) should
-                # never block a retry just because it happens to share
-                # today's date.
-                cache = {s: v for s, v in stored.get("data", {}).items() if _is_usable(v)}
-        except Exception:
-            pass
-
-    missing = [s for s in symbols if s not in cache]
-    if missing:
-        fresh = batch_get_yield_on_capital(missing, **kwargs)
-        # Never persist an unusable result (an explicit error, OR a
-        # structurally "successful" fetch where both put and call still
-        # came back None) into the day's cache -- confirmed live
-        # 2026-10-04 for the error case and 2026-10-09 for the empty-
-        # result case; same underlying problem (a transient Yahoo data
-        # gap getting cached as if it were final for the rest of the day),
-        # different shape. Same bug class already fixed once in
-        # enhanced_metrics.py's metrics cache (a "Data unavailable" result
-        # is never cached there either). `cache` (already filtered above)
-        # plus only fresh's usable entries is what gets written back to
-        # disk; the in-memory `result` below still carries this call's own
-        # fresh failures so the immediate caller sees them.
-        cacheable = {s: v for s, v in fresh.items() if _is_usable(v)}
-        if cacheable:
-            try:
-                os.makedirs(_CACHE_DIR, exist_ok=True)
-                with open(_CACHE_FILE, "w") as f:
-                    json.dump({"date": today, "data": {**cache, **cacheable}}, f)
-            except Exception:
-                pass
-        cache.update(fresh)
-
-    return {s: cache[s] for s in symbols if s in cache}
+    return same_day_json_cache(
+        _CACHE_FILE, today, symbols,
+        loader_fn=lambda missing: batch_get_yield_on_capital(missing, **kwargs),
+        is_usable=_is_usable,
+    )
