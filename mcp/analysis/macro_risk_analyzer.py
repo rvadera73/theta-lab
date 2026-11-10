@@ -18,7 +18,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import requests
 import json
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -80,46 +80,52 @@ class MacroRiskAnalyzer:
         curve = self.fetch_fred_data("T10Y2Y")
         return curve if curve is not None else 0.6  # Default to normal if unavailable
 
+    # Top 100 S&P 500 names by market cap (representative sample). This
+    # includes most liquid names and covers major sectors.
+    _SP500_BREADTH_SAMPLE = [
+        'NVDA', 'MSFT', 'AAPL', 'AMZN', 'GOOGL', 'GOOG', 'META', 'TSLA', 'JNJ', 'WMT',
+        'XOM', 'JPM', 'V', 'MA', 'MRK', 'PG', 'ABBV', 'NYT', 'PFE', 'BAC',
+        'CVX', 'KO', 'COST', 'NFLX', 'AMD', 'ADBE', 'INTC', 'CRM', 'INTU', 'CSCO',
+        'QCOM', 'HON', 'UNH', 'AMGN', 'ISRG', 'BKNG', 'NOW', 'GE', 'UBER', 'AVGO',
+        'AMAT', 'CRWD', 'AXON', 'ORCL', 'ROST', 'LRCX', 'SNPS', 'PEP', 'KKR', 'AXP',
+        'ETN', 'MU', 'ABNB', 'ANET', 'NVDA', 'LLY', 'COIN', 'RBLX', 'PLTR', 'MSTR',
+        'MCHP', 'CDNS', 'NXPI', 'STX', 'IDXX', 'ANSS', 'SPLK', 'TTD', 'OKTA', 'DDOG',
+        'HOOD', 'PTON', 'SNAP', 'PINS', 'ZM', 'ROKU', 'DASH', 'LYFT', 'RBLX', 'APP',
+        'CPRT', 'RRR', 'APP', 'ELF', 'ULTA', 'KMX', 'VROOM', 'LEA', 'APTV', 'XPEV'
+    ]
+
+    def _count_above_50ma(self, tickers: List[str]) -> Tuple[int, int]:
+        """Fetch 3mo history for each ticker and count how many are trading
+        above their own 50-day moving average. Returns (above_ma, total
+        successfully-fetched-with-enough-history) -- a per-ticker fetch
+        failure is silently skipped, not counted in either number."""
+        import yfinance as yf
+
+        above_ma = 0
+        total = 0
+        for ticker in tickers:
+            try:
+                data = yf.Ticker(ticker)
+                hist = data.history(period="3mo")
+
+                if len(hist) >= 50:
+                    close = hist['Close']
+                    ma50 = close.rolling(window=50).mean()
+                    if close.iloc[-1] > ma50.iloc[-1]:
+                        above_ma += 1
+                    total += 1
+            except:
+                pass
+        return above_ma, total
+
     def get_breadth_from_yahoo(self) -> float:
         """
         Calculate % of S&P 500 stocks above 50-day MA using Yahoo Finance
         Fetches top 100 S&P 500 names (by weight) for speed; scales result to full 500
         """
         try:
-            import yfinance as yf
-            import pandas as pd
-
-            # Top 100 S&P 500 names by market cap (representative sample)
-            # This includes most liquid names and covers major sectors
-            sp500_top = [
-                'NVDA', 'MSFT', 'AAPL', 'AMZN', 'GOOGL', 'GOOG', 'META', 'TSLA', 'JNJ', 'WMT',
-                'XOM', 'JPM', 'V', 'MA', 'MRK', 'PG', 'ABBV', 'NYT', 'PFE', 'BAC',
-                'CVX', 'KO', 'COST', 'NFLX', 'AMD', 'ADBE', 'INTC', 'CRM', 'INTU', 'CSCO',
-                'QCOM', 'HON', 'UNH', 'AMGN', 'ISRG', 'BKNG', 'NOW', 'GE', 'UBER', 'AVGO',
-                'AMAT', 'CRWD', 'AXON', 'ORCL', 'ROST', 'LRCX', 'SNPS', 'PEP', 'KKR', 'AXP',
-                'ETN', 'MU', 'ABNB', 'ANET', 'NVDA', 'LLY', 'COIN', 'RBLX', 'PLTR', 'MSTR',
-                'MCHP', 'CDNS', 'NXPI', 'STX', 'IDXX', 'ANSS', 'SPLK', 'TTD', 'OKTA', 'DDOG',
-                'HOOD', 'PTON', 'SNAP', 'PINS', 'ZM', 'ROKU', 'DASH', 'LYFT', 'RBLX', 'APP',
-                'CPRT', 'RRR', 'APP', 'ELF', 'ULTA', 'KMX', 'VROOM', 'LEA', 'APTV', 'XPEV'
-            ]
-
-            # Fetch 50-day MA data
-            above_ma = 0
-            total = 0
-
-            for ticker in sp500_top[:80]:  # Use 80 for faster execution
-                try:
-                    data = yf.Ticker(ticker)
-                    hist = data.history(period="3mo")
-
-                    if len(hist) >= 50:
-                        close = hist['Close']
-                        ma50 = close.rolling(window=50).mean()
-                        if close.iloc[-1] > ma50.iloc[-1]:
-                            above_ma += 1
-                        total += 1
-                except:
-                    pass
+            # Use 80 for faster execution
+            above_ma, total = self._count_above_50ma(self._SP500_BREADTH_SAMPLE[:80])
 
             if total > 0:
                 breadth_pct = (above_ma / total) * 100
@@ -189,56 +195,65 @@ class MacroRiskAnalyzer:
         """Wrapper for get_ad_ratio_from_yahoo for backwards compatibility"""
         return self.get_ad_ratio_from_yahoo()
 
+    # Fallback when VIX futures data can't be fetched at all.
+    _VIX_TERM_FALLBACK = {
+        "type": "CONTANGO",
+        "front_vix": 15.8,
+        "back_vix": 18.2,
+    }
+
+    def _fetch_vix_futures_closes(self) -> Optional[Tuple[float, float]]:
+        """Fetch latest VIXM (front-month) / VIXN (next-month) closes.
+        Note: VIX futures symbols are typically VIXM (front month), VIXN
+        (next month) -- this is a simplified approach. Returns None if the
+        fetch fails or doesn't have data for both tickers; an import failure
+        propagates to the caller (the import sits outside this inner
+        try/except, matching the original control flow)."""
+        import yfinance as yf
+
+        try:
+            vix_m = yf.Ticker("VIXM")
+            vix_n = yf.Ticker("VIXN")
+
+            hist_m = vix_m.history(period="1d")
+            hist_n = vix_n.history(period="1d")
+
+            if len(hist_m) > 0 and len(hist_n) > 0:
+                return float(hist_m['Close'].iloc[-1]), float(hist_n['Close'].iloc[-1])
+        except:
+            pass
+        return None
+
+    @staticmethod
+    def _classify_vix_term_type(front: float, back: float) -> str:
+        """CONTANGO (front well below back, normal) / BACKWARDATION (front
+        well above back, alert) / FLAT (within 5% of each other, caution)."""
+        if front < back * 0.95:
+            return "CONTANGO"
+        elif front > back * 1.05:
+            return "BACKWARDATION"
+        else:
+            return "FLAT"
+
     def get_vix_term_structure(self) -> Dict:
         """
         Get VIX term structure (front month vs back month)
         Uses CBOE VIX futures data
         """
         try:
-            # Try fetching from Yahoo Finance (VIX futures available)
-            import yfinance as yf
-
-            # Note: VIX futures symbols are typically VIXM (front month), VIXN (next month)
-            # This is a simplified approach
-            try:
-                vix_m = yf.Ticker("VIXM")
-                vix_n = yf.Ticker("VIXN")
-
-                hist_m = vix_m.history(period="1d")
-                hist_n = vix_n.history(period="1d")
-
-                if len(hist_m) > 0 and len(hist_n) > 0:
-                    front = hist_m['Close'].iloc[-1]
-                    back = hist_n['Close'].iloc[-1]
-
-                    if front < back * 0.95:
-                        term_type = "CONTANGO"
-                    elif front > back * 1.05:
-                        term_type = "BACKWARDATION"
-                    else:
-                        term_type = "FLAT"
-
-                    return {
-                        "type": term_type,
-                        "front_vix": float(front),
-                        "back_vix": float(back),
-                    }
-            except:
-                pass
-
+            closes = self._fetch_vix_futures_closes()
+            if closes is not None:
+                front, back = closes
+                return {
+                    "type": self._classify_vix_term_type(front, back),
+                    "front_vix": front,
+                    "back_vix": back,
+                }
             # Fallback
-            return {
-                "type": "CONTANGO",
-                "front_vix": 15.8,
-                "back_vix": 18.2,
-            }
+            return dict(self._VIX_TERM_FALLBACK)
         except Exception as e:
             logger.warning(f"Error getting VIX term structure: {e}")
-            return {
-                "type": "CONTANGO",
-                "front_vix": 15.8,
-                "back_vix": 18.2,
-            }
+            return dict(self._VIX_TERM_FALLBACK)
 
     def get_put_call_ratio(self) -> float:
         """
@@ -260,95 +275,60 @@ class MacroRiskAnalyzer:
             logger.warning(f"Error getting Put/Call ratio: {e}")
             return 0.75
 
-    def analyze_risk(self, market_data: Dict) -> Dict:
-        """
-        Analyze all 7 layers and return risk assessment
-
-        Args:
-            market_data: Dict with current market metrics
-                - vix: float (current VIX level)
-                - spx_price: float
-                - spx_50ma: float
-                - spx_200ma: float
-
-        Returns:
-            {
-                "risk_level": "GREEN|YELLOW|RED",
-                "signals": {indicator: {value, status, threshold}},
-                "stage": int (0=GREEN, 1=YELLOW, 2=RED),
-                "summary": str,
-                "actions": [str],
-                "rotation_playbook": str
-            }
-        """
-
-        signals = {}
-        yellow_count = 0
-        red_count = 0
-
-        # Layer 1: REGIME (already handled by main report)
-        # We focus on Layers 2-6 here
-
-        # Layer 2: Oscillators (Breadth, A-D Ratio)
+    def _build_breadth_signal(self, market_data: Dict) -> Dict:
+        """Layer 2: Oscillators -- breadth signal"""
         breadth = self.estimate_breadth(market_data)
-        signals["breadth"] = {
+        return {
             "value": breadth,
             "status": "RED" if breadth < self.thresholds["breadth_red"]
                      else "YELLOW" if breadth < self.thresholds["breadth_yellow"]
                      else "GREEN",
             "threshold": f"{self.thresholds['breadth_yellow']}% (caution), {self.thresholds['breadth_red']}% (alert)"
         }
-        if signals["breadth"]["status"] == "YELLOW":
-            yellow_count += 1
-        elif signals["breadth"]["status"] == "RED":
-            red_count += 1
 
+    def _build_ad_ratio_signal(self) -> Dict:
+        """Layer 2: Oscillators -- advance/decline ratio signal"""
         ad_ratio = self.estimate_ad_ratio()
-        signals["ad_ratio"] = {
+        return {
             "value": ad_ratio,
             "status": "RED" if ad_ratio < self.thresholds["ad_ratio_red"]
                      else "YELLOW" if ad_ratio < self.thresholds["ad_ratio_yellow"]
                      else "GREEN",
             "threshold": f"{self.thresholds['ad_ratio_yellow']} (caution), {self.thresholds['ad_ratio_red']} (alert)"
         }
-        if signals["ad_ratio"]["status"] == "YELLOW":
-            yellow_count += 1
-        elif signals["ad_ratio"]["status"] == "RED":
-            red_count += 1
 
-        # Layer 3: VIX Term Structure
+    def _build_vix_term_signal(self) -> Dict:
+        """Layer 3: VIX term structure signal"""
         vix_term = self.get_vix_term_structure()
-        signals["vix_term"] = {
+        return {
             "value": vix_term["type"],
             "status": "RED" if vix_term["type"] == "BACKWARDATION"
                      else "YELLOW" if vix_term["type"] == "FLAT"
                      else "GREEN",
             "threshold": "Contango (normal) → Flat (caution) → Backwardation (alert)"
         }
-        if signals["vix_term"]["status"] == "YELLOW":
-            yellow_count += 1
-        elif signals["vix_term"]["status"] == "RED":
-            red_count += 1
 
-        # Layer 4: Credit Spreads (HY OAS)
+    def _build_hyoas_signal(self) -> Optional[Dict]:
+        """Layer 4: Credit spreads (HY OAS) signal. Returns None when hyoas
+        itself is falsy, matching the original `if hyoas:` guard -- so the
+        "hyoas" key is simply absent from signals rather than present with
+        a GREEN/zero value."""
         hyoas = self.get_hyoas()
-        if hyoas:
-            signals["hyoas"] = {
-                "value": f"{hyoas:.0f} bps",
-                "raw_value": hyoas,
-                "status": "RED" if hyoas > self.thresholds["hyoas_red"]
-                         else "YELLOW" if hyoas > self.thresholds["hyoas_yellow"]
-                         else "GREEN",
-                "threshold": f"{self.thresholds['hyoas_yellow']} (caution), {self.thresholds['hyoas_red']} (alert)"
-            }
-            if signals["hyoas"]["status"] == "YELLOW":
-                yellow_count += 1
-            elif signals["hyoas"]["status"] == "RED":
-                red_count += 1
+        if not hyoas:
+            return None
+        return {
+            "value": f"{hyoas:.0f} bps",
+            "raw_value": hyoas,
+            "status": "RED" if hyoas > self.thresholds["hyoas_red"]
+                     else "YELLOW" if hyoas > self.thresholds["hyoas_yellow"]
+                     else "GREEN",
+            "threshold": f"{self.thresholds['hyoas_yellow']} (caution), {self.thresholds['hyoas_red']} (alert)"
+        }
 
-        # Layer 5: Put/Call Ratio
+    def _build_pcr_signal(self) -> Dict:
+        """Layer 5: Put/Call ratio signal"""
         pcr = self.get_put_call_ratio()
-        signals["pcr"] = {
+        return {
             "value": f"{pcr:.2f}",
             "raw_value": pcr,
             "status": "RED" if pcr > self.thresholds["pcr_red"]
@@ -356,55 +336,84 @@ class MacroRiskAnalyzer:
                      else "GREEN",
             "threshold": f"{self.thresholds['pcr_yellow']} (caution), {self.thresholds['pcr_red']} (alert)"
         }
-        if signals["pcr"]["status"] == "YELLOW":
-            yellow_count += 1
-        elif signals["pcr"]["status"] == "RED":
-            red_count += 1
+
+    def _build_yield_curve_signal(self) -> Optional[Dict]:
+        """Layer 6: Yield curve signal. Returns None when get_yield_curve()
+        itself returns None, matching the original `if yield_curve is not
+        None:` guard."""
+        yield_curve = self.get_yield_curve()
+        if yield_curve is None:
+            return None
+        return {
+            "value": f"{yield_curve:.2f}%",
+            "raw_value": yield_curve,
+            "status": "RED" if yield_curve < self.thresholds["yield_curve_red"]
+                     else "YELLOW" if yield_curve < self.thresholds["yield_curve_yellow"]
+                     else "GREEN",
+            "threshold": f"Inverted (alert), <0.1% (caution), >0.5% (normal)"
+        }
+
+    def _classify_risk_level(self, prob_30d: float) -> Tuple[str, int]:
+        """Determine overall risk level -- keyed off the continuous prob_30d
+        analyze_risk already computes, matching the staged-response bands
+        in trading_persona.md's "Macro Risk Framework" (<20% GREEN, 20-60%
+        YELLOW covering both YELLOW-1/YELLOW-2, >=60% RED covering both
+        RED-Emerging/RED-Critical -- the existing code only has 3 stages,
+        not 5, so the two finer bands collapse at their shared boundary).
+        Real bug this replaces (found 2026-10-13/14): the old rule counted
+        how many of the 7 layers individually crossed their OWN threshold
+        (red_count>=2, or yellow_count>=3, or 1 of each) -- completely
+        disconnected from prob_30d. On 2026-10-14 only breadth went
+        critical (red_count=1, yellow_count=0), so the old rule said GREEN
+        even though prob_30d had already jumped to 33.1%, squarely inside
+        the persona doc's own 20-40% YELLOW-1 action band. A single severe
+        layer with no others elevated could never trip the old rule at
+        all, no matter how high prob_30d actually climbed."""
+        if prob_30d >= 60.0:
+            return "RED", 2
+        elif prob_30d >= 20.0:
+            return "YELLOW", 1
+        else:
+            return "GREEN", 0
+
+    def analyze_risk(self, market_data: Dict) -> Dict:
+        """Analyze all 7 layers (breadth, A-D ratio, VIX term structure, HY
+        OAS, put/call ratio, yield curve) and return the full risk
+        assessment: risk_level ("GREEN|YELLOW|RED"), signals (per-indicator
+        value/status/threshold), stage (0/1/2), summary, actions,
+        crash_probability, playbook, sector_sensitivity. `market_data`'s
+        documented vix/spx_price/spx_50ma/spx_200ma fields are accepted but
+        not read by this method (see module-level notes)."""
+        signals = {}
+
+        # Layer 1: REGIME (already handled by main report)
+        # We focus on Layers 2-6 here
+
+        # Layer 2: Oscillators (Breadth, A-D Ratio)
+        signals["breadth"] = self._build_breadth_signal(market_data)
+        signals["ad_ratio"] = self._build_ad_ratio_signal()
+
+        # Layer 3: VIX Term Structure
+        signals["vix_term"] = self._build_vix_term_signal()
+
+        # Layer 4: Credit Spreads (HY OAS)
+        hyoas_signal = self._build_hyoas_signal()
+        if hyoas_signal:
+            signals["hyoas"] = hyoas_signal
+
+        # Layer 5: Put/Call Ratio
+        signals["pcr"] = self._build_pcr_signal()
 
         # Layer 6: Yield Curve
-        yield_curve = self.get_yield_curve()
-        if yield_curve is not None:
-            signals["yield_curve"] = {
-                "value": f"{yield_curve:.2f}%",
-                "raw_value": yield_curve,
-                "status": "RED" if yield_curve < self.thresholds["yield_curve_red"]
-                         else "YELLOW" if yield_curve < self.thresholds["yield_curve_yellow"]
-                         else "GREEN",
-                "threshold": f"Inverted (alert), <0.1% (caution), >0.5% (normal)"
-            }
-            if signals["yield_curve"]["status"] == "YELLOW":
-                yellow_count += 1
-            elif signals["yield_curve"]["status"] == "RED":
-                red_count += 1
+        yield_curve_signal = self._build_yield_curve_signal()
+        if yield_curve_signal:
+            signals["yield_curve"] = yield_curve_signal
 
         # Calculate crash probability forecast
         crash_prob = self.calculate_crash_probability(signals)
 
-        # Determine overall risk level -- keyed off the continuous prob_30d
-        # this function already computes, matching the staged-response bands
-        # in trading_persona.md's "Macro Risk Framework" (<20% GREEN, 20-60%
-        # YELLOW covering both YELLOW-1/YELLOW-2, >=60% RED covering both
-        # RED-Emerging/RED-Critical -- the existing code only has 3 stages,
-        # not 5, so the two finer bands collapse at their shared boundary).
-        # Real bug this replaces (found 2026-10-13/14): the old rule counted
-        # how many of the 7 layers individually crossed their OWN threshold
-        # (red_count>=2, or yellow_count>=3, or 1 of each) -- completely
-        # disconnected from prob_30d. On 2026-10-14 only breadth went
-        # critical (red_count=1, yellow_count=0), so the old rule said GREEN
-        # even though prob_30d had already jumped to 33.1%, squarely inside
-        # the persona doc's own 20-40% YELLOW-1 action band. A single severe
-        # layer with no others elevated could never trip the old rule at
-        # all, no matter how high prob_30d actually climbed.
         prob_30d = crash_prob.get("prob_30d", 6.0)
-        if prob_30d >= 60.0:
-            risk_level = "RED"
-            stage = 2
-        elif prob_30d >= 20.0:
-            risk_level = "YELLOW"
-            stage = 1
-        else:
-            risk_level = "GREEN"
-            stage = 0
+        risk_level, stage = self._classify_risk_level(prob_30d)
 
         return {
             "risk_level": risk_level,
@@ -587,6 +596,59 @@ class MacroRiskAnalyzer:
                 return max(0.0, min(1.0, (yellow_t - value) / gap))
             return 1.0 + max(0.0, min(1.0, (red_t - value) / past_red_scale))
 
+    def _compute_severity_sum(self, signals: Dict) -> float:
+        """Continuous severity sum across all scoreable indicators — this is
+        what drives the crash probability. A reading that's barely past its
+        threshold contributes near 0; one deep in the red zone contributes
+        up to 2.0. vix_term (no numeric threshold) falls back to a flat
+        1.0/0.4 RED/YELLOW severity so it still counts, just without
+        magnitude sensitivity."""
+        severity_sum = 0.0
+        for indicator, details in signals.items():
+            if not isinstance(details, dict):
+                continue
+            if indicator in self._SEVERITY_SPEC:
+                severity_sum += self._indicator_severity(indicator, details.get('raw_value', details.get('value')))
+            elif details.get('status') == 'RED':
+                severity_sum += 1.0
+            elif details.get('status') == 'YELLOW':
+                severity_sum += 0.4
+        return severity_sum
+
+    def _select_primary_risk(self, signals: Dict) -> str:
+        """Identify primary risk factor — picks the indicator with the
+        HIGHEST severity (not just "first RED found in dict order"), so it
+        actually reflects which signal is doing the most damage. On an exact
+        severity tie, the first indicator encountered in `signals`'
+        insertion order wins (strict `>` comparison) -- current, documented
+        behavior, not changed."""
+        worst_indicator, worst_severity = None, 0.0
+        for indicator, details in signals.items():
+            if not isinstance(details, dict):
+                continue
+            sev = (self._indicator_severity(indicator, details.get('raw_value', details.get('value')))
+                   if indicator in self._SEVERITY_SPEC
+                   else (1.0 if details.get('status') == 'RED' else 0.4 if details.get('status') == 'YELLOW' else 0.0))
+            if sev > worst_severity:
+                worst_severity, worst_indicator = sev, indicator
+        if worst_indicator:
+            status = signals[worst_indicator].get('status')
+            return f"{worst_indicator.upper()} critical" if status == 'RED' else f"{worst_indicator.upper()} elevated"
+        return "Market neutral"
+
+    @staticmethod
+    def _action_trigger_for_prob30d(prob_30d: float) -> Tuple[str, float]:
+        """Determine action based on 30-day probability -> (action_trigger
+        text, position_reduction_pct)."""
+        if prob_30d >= 70:
+            return "🔴 EMERGENCY: Reduce gross exposure by 50% immediately", 0.50
+        elif prob_30d >= 50:
+            return "🟠 HIGH RISK: Reduce gross exposure by 30-40%", 0.35
+        elif prob_30d >= 30:
+            return "🟡 CAUTION: Reduce overbought positions by 20-25%", 0.20
+        else:
+            return "🟢 NORMAL: Proceed with standard sizing", 0.0
+
     def calculate_crash_probability(self, signals: Dict) -> Dict:
         """
         Calculate probabilistic crash forecast for 30/60/90-day windows
@@ -606,72 +668,20 @@ class MacroRiskAnalyzer:
         base_prob_60d = 11.0
         base_prob_90d = 16.0
 
-        # Count red and yellow signals (still used for vix_term, which has no
-        # numeric severity, and as the basis for primary-risk-factor selection)
-        red_count = sum(1 for v in signals.values() if isinstance(v, dict) and v.get('status') == 'RED')
-        yellow_count = sum(1 for v in signals.values() if isinstance(v, dict) and v.get('status') == 'YELLOW')
-
-        # Continuous severity sum across all scoreable indicators — this is
-        # what actually drives the probability now, not the red/yellow counts
-        # above. A reading that's barely past its threshold contributes near
-        # 0; one deep in the red zone contributes up to 2.0. vix_term (no
-        # numeric threshold) falls back to a flat 1.0/0.4 RED/YELLOW severity
-        # so it still counts, just without magnitude sensitivity.
-        severity_sum = 0.0
-        for indicator, details in signals.items():
-            if not isinstance(details, dict):
-                continue
-            if indicator in self._SEVERITY_SPEC:
-                severity_sum += self._indicator_severity(indicator, details.get('raw_value', details.get('value')))
-            elif details.get('status') == 'RED':
-                severity_sum += 1.0
-            elif details.get('status') == 'YELLOW':
-                severity_sum += 0.4
+        severity_sum = self._compute_severity_sum(signals)
 
         # Adjust probabilities based on continuous severity (replaces the old
         # flat red_count*15/yellow_count*5-style bumps — same rough scale at
         # severity=1.0 (a reading exactly at its red threshold) as the old
         # red_count=1 case, but now scales smoothly past that point instead of
-        # staying frozen for any reading beyond the threshold.
-        prob_30d = base_prob_30d + severity_sum * 15
-        prob_60d = base_prob_60d + severity_sum * 25
-        prob_90d = base_prob_90d + severity_sum * 35
+        # staying frozen for any reading beyond the threshold. Capped at 95%
+        # (never 100% certain).
+        prob_30d = min(base_prob_30d + severity_sum * 15, 95.0)
+        prob_60d = min(base_prob_60d + severity_sum * 25, 95.0)
+        prob_90d = min(base_prob_90d + severity_sum * 35, 95.0)
 
-        # Cap at 95% (never 100% certain)
-        prob_30d = min(prob_30d, 95.0)
-        prob_60d = min(prob_60d, 95.0)
-        prob_90d = min(prob_90d, 95.0)
-
-        # Identify primary risk factor — now picks the indicator with the
-        # HIGHEST severity (not just "first RED found in dict order"), so it
-        # actually reflects which signal is doing the most damage.
-        primary_risk = "Market neutral"
-        worst_indicator, worst_severity = None, 0.0
-        for indicator, details in signals.items():
-            if not isinstance(details, dict):
-                continue
-            sev = (self._indicator_severity(indicator, details.get('raw_value', details.get('value')))
-                   if indicator in self._SEVERITY_SPEC
-                   else (1.0 if details.get('status') == 'RED' else 0.4 if details.get('status') == 'YELLOW' else 0.0))
-            if sev > worst_severity:
-                worst_severity, worst_indicator = sev, indicator
-        if worst_indicator:
-            status = signals[worst_indicator].get('status')
-            primary_risk = f"{worst_indicator.upper()} critical" if status == 'RED' else f"{worst_indicator.upper()} elevated"
-
-        # Determine action based on 30-day probability
-        if prob_30d >= 70:
-            action_trigger = "🔴 EMERGENCY: Reduce gross exposure by 50% immediately"
-            position_reduction = 0.50
-        elif prob_30d >= 50:
-            action_trigger = "🟠 HIGH RISK: Reduce gross exposure by 30-40%"
-            position_reduction = 0.35
-        elif prob_30d >= 30:
-            action_trigger = "🟡 CAUTION: Reduce overbought positions by 20-25%"
-            position_reduction = 0.20
-        else:
-            action_trigger = "🟢 NORMAL: Proceed with standard sizing"
-            position_reduction = 0.0
+        primary_risk = self._select_primary_risk(signals)
+        action_trigger, position_reduction = self._action_trigger_for_prob30d(prob_30d)
 
         return {
             "prob_30d": prob_30d,
@@ -682,26 +692,22 @@ class MacroRiskAnalyzer:
             "position_reduction_pct": position_reduction
         }
 
-    def _get_rotation_playbook(self, stage: int, crash_prob: Dict = None) -> str:
-        """Get detailed rotation playbook with probability-driven actions"""
-        if crash_prob is None:
-            crash_prob = {}
-
-        prob_30d = crash_prob.get('prob_30d', 6)
-        prob_60d = crash_prob.get('prob_60d', 11)
-        prob_90d = crash_prob.get('prob_90d', 16)
-        reduction_pct = crash_prob.get('position_reduction_pct', 0)
-
-        playbooks = {
-            0: f"""
+    @staticmethod
+    def _playbook_stage_0(prob_30d: float, prob_60d: float, prob_90d: float) -> str:
+        """Stage 0 (GREEN) rotation playbook text."""
+        return f"""
 GREEN LIGHT — Proceed with normal operations (Crash prob: {prob_30d:.0f}% in 30d)
   • New entries: Full size (Account A BULL sizing)
   • Position management: Normal weekly review
   • Defensive rotation: Not needed
   • Cash level: Maintain tactical 10-15%
   • 60/90-day outlook: {prob_60d:.0f}% / {prob_90d:.0f}% crash probability
-            """,
-            1: f"""
+            """
+
+    @staticmethod
+    def _playbook_stage_1(prob_30d: float, prob_60d: float, prob_90d: float, reduction_pct: float) -> str:
+        """Stage 1 (YELLOW) rotation playbook text."""
+        return f"""
 YELLOW FLAG — Stage 1 Rotation (Crash prob: {prob_30d:.0f}% in 30d | {prob_60d:.0f}% in 60d)
   PROBABILITY-DRIVEN ACTIONS:
     • Position reduction: Cut {reduction_pct*100:.0f}% of notional exposure
@@ -723,8 +729,12 @@ YELLOW FLAG — Stage 1 Rotation (Crash prob: {prob_30d:.0f}% in 30d | {prob_60d
   DECISION GATE:
     • IF prob increases to >50% in next 3 days → Move to Stage 2
     • IF prob decreases to <20% → Resume normal sizing
-            """,
-            2: f"""
+            """
+
+    @staticmethod
+    def _playbook_stage_2(prob_30d: float, prob_60d: float, prob_90d: float, reduction_pct: float) -> str:
+        """Stage 2 (RED) rotation playbook text."""
+        return f"""
 RED FLAG — Stage 2-3 Rotation (CRASH RISK: {prob_30d:.0f}% prob in 30d)
   ⚠️ EMERGENCY PROTOCOL ACTIVATED
 
@@ -751,6 +761,21 @@ RED FLAG — Stage 2-3 Rotation (CRASH RISK: {prob_30d:.0f}% prob in 30d)
     • IF VIX spikes >30 AND prob stays >60% → FULL CASH (100% defensive)
     • IF regime breaks (S&P below 200-MA) → Redeploy cash on 5%+ dips ONLY
             """
+
+    def _get_rotation_playbook(self, stage: int, crash_prob: Dict = None) -> str:
+        """Get detailed rotation playbook with probability-driven actions"""
+        if crash_prob is None:
+            crash_prob = {}
+
+        prob_30d = crash_prob.get('prob_30d', 6)
+        prob_60d = crash_prob.get('prob_60d', 11)
+        prob_90d = crash_prob.get('prob_90d', 16)
+        reduction_pct = crash_prob.get('position_reduction_pct', 0)
+
+        playbooks = {
+            0: self._playbook_stage_0(prob_30d, prob_60d, prob_90d),
+            1: self._playbook_stage_1(prob_30d, prob_60d, prob_90d, reduction_pct),
+            2: self._playbook_stage_2(prob_30d, prob_60d, prob_90d, reduction_pct),
         }
         return playbooks.get(stage, "Unknown stage")
 
