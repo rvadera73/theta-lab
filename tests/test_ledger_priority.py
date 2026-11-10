@@ -132,20 +132,38 @@ finally:
 # CONTAINS the expected call shape, not that it behaves correctly at
 # runtime -- that behavioral claim is covered by decision_engine.py's own
 # unit tests (tests/test_decision_engine.py) plus this file's direct
-# _upsert_new_only()/list_action_items() checks above.
+# _upsert_new_only()/list_action_items() checks above, AND (since the Bolt
+# b15 Code Quality Gate refactor) by tests/test_ledger_sync_all.py's live,
+# monkeypatched sync_all() runs, which assert the ACTUAL resulting row
+# fields (priority == rank_in_sequence; a fake build_decision()'s output
+# threaded into the description) end to end.
+#
+# Bolt b15 (2026-11) split sync_all() into named per-block helpers so the
+# function itself stays within the Code Quality Gate's size/complexity
+# limits; the rank_in_sequence-priority wiring now lives in
+# _sync_sequenced_items(), and the per-leg build_decision(lg) call now lives
+# in _leg_decision_note() (called via _build_leg_note()) -- sync_all() no
+# longer contains either literal substring itself, so these two checks now
+# inspect that combined source instead of sync_all()'s alone. This IS an
+# edit to this file's assertions (not just sync_all()'s source), made
+# because the refactor the Bolt was scoped to do genuinely requires it --
+# a static substring check against the wrong function would either need to
+# be weakened to meaninglessness or simply not find what it's looking for.
 # ---------------------------------------------------------------------------
 print("\nsync_all() source inspection (no live call -- see comment above)")
 
 sync_all_source = inspect.getsource(ledger.sync_all)
+sequenced_wiring_source = sync_all_source + inspect.getsource(ledger._sync_sequenced_items)
+leg_decision_source = sync_all_source + inspect.getsource(ledger._leg_decision_note)
 check("sync_all() imports build_decision from decision_engine",
       "from decision_engine import build_decision" in sync_all_source,
       "import line not found in sync_all() source")
-check("sync_all() uses rank_in_sequence as the sequenced-row priority",
-      'priority=row["rank_in_sequence"]' in sync_all_source,
-      "rank_in_sequence priority wiring not found in sync_all() source")
-check("sync_all() calls build_decision(lg) per leg to build a decision_note",
-      "build_decision(lg)" in sync_all_source,
-      "build_decision(lg) call not found in sync_all() source")
+check("sync_all()'s sequenced-sync wiring uses rank_in_sequence as the sequenced-row priority",
+      'priority=row["rank_in_sequence"]' in sequenced_wiring_source,
+      "rank_in_sequence priority wiring not found in sync_all()/_sync_sequenced_items() source")
+check("sync_all()'s per-leg wiring calls build_decision(lg) to build a decision_note",
+      "build_decision(lg)" in leg_decision_source,
+      "build_decision(lg) call not found in sync_all()/_leg_decision_note() source")
 
 print()
 if failures:
