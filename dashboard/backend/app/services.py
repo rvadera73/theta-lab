@@ -6,6 +6,7 @@ docs/DASHBOARD_PLAN.md (Phase 1: read-only dashboard).
 """
 import sys
 import os
+from collections import defaultdict
 import yaml
 
 
@@ -79,16 +80,52 @@ _WATCHLIST_SECTOR_HINTS = {
 }
 
 
+def _merge_watchlist_notes(watchlist_rows, tracked_rows):
+    """In-place merges each tracked Watchlist row's own free-text "notes"
+    onto its matching scored watchlist row (keyed by symbol/ticker)."""
+    notes_by_symbol = {row["symbol"]: row.get("notes", "") for row in tracked_rows}
+    for r in watchlist_rows:
+        r["notes"] = notes_by_symbol.get(r["ticker"], "")
+
+
+def _realized_perf_row(ticker, pnl, closed_count, held_by_ticker):
+    row = held_by_ticker.get(ticker, {})
+    return {
+        "ticker": ticker, "realized_pnl_90d": pnl, "closed_count_90d": closed_count,
+        "composite_rank": row.get("rank"), "composite_score": row.get("score"),
+        "conviction": row.get("conviction"), "conviction_rank": row.get("conviction_rank"),
+        "yield_pct": row.get("yield_pct"), "yield_rank": row.get("yield_rank"),
+        "flags": row.get("flags"), "tail_risk": row.get("tail_risk"),
+    }
+
+
+def _realized_performance_views(held_by_ticker, realized):
+    """Splits realized_pnl_by_ticker()'s flat "ranked" list into the 3 views
+    the dashboard shows side by side: top performers, real realized losses,
+    and held names with zero realized activity in the window at all (see
+    get_composite_scores' own docstring for why these stay 3 separate lists
+    rather than one blended ranking)."""
+    top_performers = [_realized_perf_row(t, pnl, cc, held_by_ticker) for t, pnl, cc in realized["ranked"][:15]]
+
+    losses = [_realized_perf_row(t, pnl, cc, held_by_ticker) for t, pnl, cc in realized["ranked"] if pnl < 0]
+    losses.sort(key=lambda r: r["realized_pnl_90d"])  # worst (most negative) first
+
+    realized_tickers = {t for t, _pnl, _cc in realized["ranked"]}
+    no_activity = [_realized_perf_row(t, 0.0, 0, held_by_ticker) for t in held_by_ticker if t not in realized_tickers]
+    # Best-ranked-but-still-inactive first (most worth a second look --
+    # good forward score, yet nothing realized in 90 days); unranked
+    # (missing yield/conviction data) sort to the end.
+    no_activity.sort(key=lambda r: r["composite_rank"] if r["composite_rank"] is not None else 9999)
+
+    return top_performers, losses, no_activity
+
+
 def get_composite_scores():
-    """Composite risk-adjusted scores for every held ticker AND every tracked
-    Watchlist symbol, scored TOGETHER as one population (see mcp/reports/
-    composite_score.py's module docstring for the full z-score formula and
-    its revision history) -- so a new candidate's rank and z-scores reflect
-    genuine standing against everything already held, not a separate
-    standalone number. This is the real gap the trader flagged (a technical
-    screener's "new names" don't mean anything until scored the same way,
-    against the same population, as what's already held).
-    """
+    """Composite risk-adjusted scores for every held ticker AND every
+    tracked Watchlist symbol, scored TOGETHER as one population (see
+    mcp/reports/composite_score.py's module docstring for the full z-score
+    formula) -- so a new candidate's rank/z-scores reflect genuine standing
+    against everything already held, not a separate standalone number."""
     from composite_score import compute_composite_scores
     from realized_performance import realized_pnl_by_ticker
     from . import watchlist as _watchlist
@@ -97,10 +134,8 @@ def get_composite_scores():
     gen.get_priority_actions()  # ensure self.metrics/premium_yields/ticker_sector_map are populated
 
     tracked = _watchlist.list_watchlist(tracked_only=True)
-    notes_by_symbol = {row["symbol"]: row.get("notes", "") for row in tracked}
     result = compute_composite_scores(gen, [row["symbol"] for row in tracked], _WATCHLIST_SECTOR_HINTS)
-    for r in result["watchlist"]:
-        r["notes"] = notes_by_symbol.get(r["ticker"], "")
+    _merge_watchlist_notes(result["watchlist"], tracked)
 
     # Real, realized (FIFO-matched) 90-day P&L per ticker -- a SEPARATE
     # result from the composite score above, never blended into it. Past
@@ -110,36 +145,7 @@ def get_composite_scores():
     # one ranked list.
     held_by_ticker = {r["ticker"]: r for r in result["held"]}
     realized = realized_pnl_by_ticker(days=90)
-
-    def _row(ticker, pnl, closed_count):
-        row = held_by_ticker.get(ticker, {})
-        return {
-            "ticker": ticker, "realized_pnl_90d": pnl, "closed_count_90d": closed_count,
-            "composite_rank": row.get("rank"), "composite_score": row.get("score"),
-            "conviction": row.get("conviction"), "conviction_rank": row.get("conviction_rank"),
-            "yield_pct": row.get("yield_pct"), "yield_rank": row.get("yield_rank"),
-            "flags": row.get("flags"), "tail_risk": row.get("tail_risk"),
-        }
-
-    top_performers = [_row(t, pnl, cc) for t, pnl, cc in realized["ranked"][:15]]
-
-    # Laggards -- the symmetric opposite view, never blended into the top-
-    # performers list above: real realized LOSSES (not just "lowest
-    # profit"), plus currently-held names with ZERO realized activity at
-    # all in the window (no close means no FIFO match, so they never
-    # appear in realized["ranked"] to begin with -- capital sitting in a
-    # position with literally no completed, measurable result yet, which
-    # is a different and arguably more important "laggard" signal than a
-    # small realized loss).
-    losses = [_row(t, pnl, cc) for t, pnl, cc in realized["ranked"] if pnl < 0]
-    losses.sort(key=lambda r: r["realized_pnl_90d"])  # worst (most negative) first
-
-    realized_tickers = {t for t, _pnl, _cc in realized["ranked"]}
-    no_activity = [_row(t, 0.0, 0) for t in held_by_ticker if t not in realized_tickers]
-    # Best-ranked-but-still-inactive first (most worth a second look --
-    # good forward score, yet nothing realized in 90 days); unranked
-    # (missing yield/conviction data) sort to the end.
-    no_activity.sort(key=lambda r: r["composite_rank"] if r["composite_rank"] is not None else 9999)
+    top_performers, losses, no_activity = _realized_performance_views(held_by_ticker, realized)
 
     return _to_native({
         "held": result["held"],
@@ -195,174 +201,34 @@ def get_us_priority_actions():
 
 
 def get_position_heat():
-    """Position Heat (per LEG) -- a different concept from the per-TICKER
-    'Technical Heat' everywhere else on this dashboard (get_composite_scores,
+    """Position Heat (per LEG) -- different from the per-TICKER 'Technical
+    Heat' elsewhere on this dashboard (get_composite_scores,
     get_us_priority_actions, Sector Heat all read UnifiedReportProduction's
-    self.metrics, which scores a stock's own RSI/Bollinger/52-week-range
-    extendedness). This instead reuses analysis.heat_scanner.assess_portfolio_heat
-    -- the engine behind the scan_position_heat MCP tool -- which scores each
-    individual OPEN OPTION LEG by cost-to-close-vs-premium ratio, DTE, and
-    strike distance: "is this specific trade in trouble," not "is this stock
-    technically extended." The two never conflict because they were never
-    wired together: this dashboard never showed the per-leg signal at all
-    before this function existed (confirmed 2026-10-12 -- a real position,
-    META $670P, was RED and 62% underwater here while invisible to every
-    other dashboard view, including the Action Tracker, because none of
-    them read this computation).
+    RSI/Bollinger/52-week-range scoring). Reuses
+    analysis.heat_scanner.assess_portfolio_heat (the scan_position_heat MCP
+    tool's own engine) to score each OPEN OPTION LEG by cost-to-close-vs-
+    premium ratio, DTE, and strike distance -- confirmed 2026-10-12: a real
+    position, META $670P, was RED and 62% underwater here while invisible
+    to every other dashboard view (none of them read this computation).
 
     Reuses report_utils.load_us_positions() -- the SAME file-based loader
-    (Schwab reconstructed from transaction CSVs, no live broker API; Fidelity/
-    Robinhood/Vanguard from their CSV/PDF exports; prices backfilled live from
-    Yahoo) that mcp/server.py's scan_position_heat tool handler already uses,
-    so this is the identical real signal already proven this session, not a
-    second, parallel computation of "what's open" built from a different
-    loader (scripts/open_positions_loader_v2.py, used by UnifiedReportProduction,
-    has no premium_received/current_mark fields at all -- this data only
-    exists via load_us_positions()'s Position/OptionLeg objects).
+    (Schwab from transaction CSVs, Fidelity/Robinhood/Vanguard from CSV/PDF
+    exports, Yahoo-backfilled prices) mcp/server.py's scan_position_heat
+    tool handler already uses -- NOT scripts/open_positions_loader_v2.py
+    (used by UnifiedReportProduction), which has no premium_received/
+    current_mark fields at all.
     """
     import asyncio
-    from collections import defaultdict
-    from report_utils import load_us_positions, extended_hours_context
+    from report_utils import load_us_positions
     from heat_scanner import assess_portfolio_heat
     from regime import detect_regime
-    from symbol_context import get_cached_symbol_context
 
     us_data = asyncio.run(load_us_positions())
     positions = us_data.get("positions", [])
     account_sources = us_data.get("account_sources", {})
     regime_str = detect_regime().get("regime", "CAUTIOUS_BULL")
 
-    # Real position-context annotations heat_scanner.py itself has no concept
-    # of (confirmed by source -- zero references to "covered"/"shares"
-    # anywhere in that file): per-leg coverage, strangle pairing, and data
-    # staleness. Computed here and merged into assess_portfolio_heat's output
-    # afterward, keyed by (symbol, strike, expiry, option_type) -- a leg
-    # identifier can collide across two accounts holding the identical
-    # contract, a known rare edge case; when it happens the two accounts'
-    # context is combined rather than picked arbitrarily, which is
-    # conservative (a leg shows covered only if EVERY account holding it has
-    # enough shares).
-    context: dict[tuple, dict] = {}
-    cost_to_close_by_key: dict[tuple, float] = {}
-    # premium_received was computed into heat_scanner's loss_multiple/pnl_pct
-    # internally but never passed through to the leg dict itself (confirmed
-    # 2026-11-03, ADR 0001 step 3) -- decision_engine.py needs the real
-    # number directly (e.g. to size an assignment's cash impact), not a
-    # value re-derived from cost_to_close/loss_multiple, which is undefined
-    # whenever loss_multiple is 0 (GREEN legs).
-    premium_received_by_key: dict[tuple, float] = {}
-
-    def _key(symbol, strike, expiry, opt_type):
-        return (symbol, round(float(strike), 4), expiry, opt_type)
-
-    legs = []
-    for pos in positions:
-        # Covered-call allocation: real owned shares in THIS account/symbol,
-        # consumed by its own call legs only (coverage doesn't cross
-        # accounts in practice -- the shares and the short call have to sit
-        # in the same brokerage account to actually be "covered"). Calls
-        # sorted by strike ascending so the most likely to be assigned
-        # (closest to/through the money) draws on available shares first.
-        shares_remaining = pos.shares or 0
-        calls_sorted = sorted(
-            (lg for lg in pos.option_legs if lg.option_type == "CALL"),
-            key=lambda lg: lg.strike,
-        )
-        leg_coverage = {}
-        for lg in calls_sorted:
-            contracts = abs(lg.quantity)
-            covered = min(shares_remaining // 100, contracts)
-            shares_remaining -= covered * 100
-            leg_coverage[id(lg)] = {
-                "covered_contracts": int(covered),
-                "total_contracts": int(contracts),
-                "naked": covered < contracts,
-            }
-
-        # Strangle pairing: a put + call on the same underlying/account
-        # sharing an expiry is one coordinated structure, not two unrelated
-        # alarms -- matches how this book's own strategy docs already treat
-        # strangles.
-        puts_by_expiry = defaultdict(list)
-        calls_by_expiry = defaultdict(list)
-        for lg in pos.option_legs:
-            (calls_by_expiry if lg.option_type == "CALL" else puts_by_expiry)[lg.expiry].append(lg)
-        strangle_expiries = set(puts_by_expiry) & set(calls_by_expiry)
-
-        source_info = account_sources.get(pos.account, {})
-
-        for lg in pos.option_legs:
-            premium = abs(lg.premium_received or 0)
-            if premium <= 0:
-                continue  # assess_portfolio_heat can't compute loss_multiple against a zero premium
-            legs.append({
-                "symbol": pos.symbol,
-                "option_type": lg.option_type,
-                "strike": lg.strike,
-                "dte": lg.dte,
-                "expiry": lg.expiry,
-                "premium_received": premium,
-                "cost_to_close": abs(lg.current_mark or 0),
-                "current_price": pos.current_price,
-            })
-            cost_to_close_by_key[_key(pos.symbol, lg.strike, lg.expiry, lg.option_type)] = abs(lg.current_mark or 0)
-            premium_received_by_key[_key(pos.symbol, lg.strike, lg.expiry, lg.option_type)] = premium
-
-            # Shared gate/parameter bundle (symbol_context.py) -- cached
-            # per symbol per day, so calling it per-leg (not per-position)
-            # costs nothing extra after the first leg of a symbol, and lets
-            # the earnings-within-window gate use THIS leg's own DTE rather
-            # than a position-level average that could mask a near-dated
-            # leg's real exposure.
-            leg_ctx = get_cached_symbol_context(pos.symbol, dte=lg.dte)
-
-            # Extended-hours overnight-move signal (ADR 0004,
-            # docs/design/adr/0004-extended-hours-pricing-signal.md) --
-            # read-only context alongside the regular-close price
-            # (pos.current_price) that margin/P&L math keeps using
-            # unchanged; adds OVERNIGHT_MOVE to gates_fired when the live
-            # pre/post-market price has moved far enough from that close.
-            eh_ctx = extended_hours_context(pos.symbol, pos.current_price)
-
-            cov = leg_coverage.get(id(lg))
-            k = _key(pos.symbol, lg.strike, lg.expiry, lg.option_type)
-            entry = context.setdefault(k, {
-                "account": pos.account,
-                "accounts": set(),  # every account holding this exact contract -- see _annotate()'s dedup
-                "covered": True,  # AND-combined below; True is the identity for AND
-                "covered_contracts": 0, "total_contracts": 0,
-                "strangle": lg.expiry in strangle_expiries,
-                "data_source": source_info.get("source"),
-                "data_as_of": source_info.get("as_of"),
-                "days_stale": source_info.get("days_stale"),
-                "sector": leg_ctx.get("sector"),
-                # OVERNIGHT_MOVE (ADR 0004) folded into the same gates_fired
-                # list symbol_context.py's HIGH_LEVERAGE/EARNINGS_RISK/
-                # ILLIQUID already populate -- one list, one convention.
-                "gates_fired": leg_ctx.get("gates_fired", []) + eh_ctx["gates_fired"],
-                "dividend_rate": leg_ctx.get("dividend_rate"),
-                "next_ex_dividend_date": leg_ctx.get("next_ex_dividend_date"),
-                # iv_rank/current_iv were computed here all along but never
-                # passed through to the leg dict (ADR 0001 step 7) --
-                # decision_engine.py's portfolio Greeks rollup needs a vol
-                # input per leg; current_iv is real when a caller upstream
-                # supplied one (step 6), else iv_rank's own HV-proxy fallback.
-                "current_iv": leg_ctx.get("current_iv"),
-                # Extended-hours overnight-move signal (ADR 0004) -- live_price
-                # is the current pre-market/after-hours/regular quote;
-                # overnight_move_pct compares it to pos.current_price (the
-                # regular close margin/P&L math uses, unchanged by this).
-                "live_price": eh_ctx["live_price"],
-                "live_price_source": eh_ctx["live_price_source"],
-                "overnight_move_pct": eh_ctx["overnight_move_pct"],
-            })
-            entry["accounts"].add(pos.account)
-            if lg.option_type == "CALL":
-                entry["covered"] = entry["covered"] and not cov["naked"]
-                entry["covered_contracts"] += cov["covered_contracts"]
-                entry["total_contracts"] += cov["total_contracts"]
-            else:
-                entry["covered"] = None  # not a meaningful concept for puts -- cash-secured by account design, checked separately
+    legs, context, cost_to_close_by_key, premium_received_by_key = _build_legs_and_context(positions, account_sources)
 
     if not legs:
         return _to_native({"by_color": {"RED": [], "YELLOW": [], "GREEN": [], "UNKNOWN": []},
@@ -371,71 +237,223 @@ def get_position_heat():
 
     result = assess_portfolio_heat(legs, regime_str)
 
-    def _annotate(rows):
-        # top_actions rows use "option_type"; by_color rows use "type" --
-        # heat_scanner.py's own two output shapes genuinely differ (confirmed
-        # directly against its source, not assumed), not something to "fix"
-        # there since it's pre-existing, relied-on-elsewhere behavior.
-        #
-        # Cross-account collision de-dup -- real bug found 2026-10-15: when
-        # the identical contract (symbol+strike+expiry+type) is held in TWO
-        # accounts (confirmed real case: NVO $40C 03/19/2027, 2 contracts in
-        # Account A + 1 in Account B), heat_scanner.py's LegHeat has no
-        # account field at all, so both accounts' legs produce separate
-        # output rows that then both get annotated from the SAME pooled
-        # context entry -- showing as two apparently-identical "duplicate"
-        # rows, both mislabeled with whichever account happened to populate
-        # the context first. The underlying pooled math (combined
-        # covered/total contracts) is intentional and correct -- see the
-        # context-building comment above -- but showing it twice is not.
-        # Collapse to one row per colliding key, explicitly labeled as
-        # spanning multiple accounts instead of silently wrong.
-        seen_keys: set[tuple] = set()
-        deduped = []
-        for row in rows:
-            opt_type = row.get("type") or row.get("option_type")
-            if not opt_type:
-                deduped.append(row)
-                continue
-            key = _key(row["symbol"], row["strike"], row["expiry"], opt_type)
-            ctx = context.get(key)
-            if ctx:
-                if key in seen_keys:
-                    continue  # pooled contract already represented by an earlier row
-                seen_keys.add(key)
-                row["covered"] = ctx["covered"]
-                row["covered_contracts"] = ctx["covered_contracts"] if opt_type == "CALL" else None
-                row["total_contracts"] = ctx["total_contracts"] if opt_type == "CALL" else None
-                row["strangle"] = ctx["strangle"]
-                row["account"] = ctx["account"] if len(ctx["accounts"]) == 1 else "+".join(sorted(ctx["accounts"]))
-                row["multi_account_contract"] = len(ctx["accounts"]) > 1
-                row["data_source"] = ctx["data_source"]
-                row["data_as_of"] = ctx["data_as_of"]
-                row["days_stale"] = ctx["days_stale"]
-                row["sector"] = ctx["sector"]
-                row["gates_fired"] = ctx["gates_fired"]
-                row["dividend_rate"] = ctx.get("dividend_rate")
-                row["next_ex_dividend_date"] = ctx.get("next_ex_dividend_date")
-                row["current_iv"] = ctx.get("current_iv")
-                row["live_price"] = ctx.get("live_price")
-                row["live_price_source"] = ctx.get("live_price_source")
-                row["overnight_move_pct"] = ctx.get("overnight_move_pct")
-                row["cost_to_close"] = cost_to_close_by_key.get(key, 0.0)
-                row["premium_received"] = premium_received_by_key.get(key, 0.0)
-            deduped.append(row)
-        return deduped
-
     for color_rows in result.get("by_color", {}).values():
-        _annotate(color_rows)
-    _annotate(result.get("top_actions", []))
+        _annotate_heat_rows(color_rows, context, cost_to_close_by_key, premium_received_by_key)
+    _annotate_heat_rows(result.get("top_actions", []), context, cost_to_close_by_key, premium_received_by_key)
 
-    # Sector rollup -- "which sector is actually bleeding right now," computed
-    # straight from these same real per-leg costs, not a second, differently-
-    # sourced sector view (the existing per-ticker Sector Heat on this
-    # dashboard reads enhanced_metrics.py's RSI/trend data; this reads real
-    # open-position cost-to-close instead -- complementary, not a duplicate).
+    result["sector_rollup"] = _build_sector_rollup(result.get("by_color", {}), cost_to_close_by_key)
+    result["positions"] = _group_positions_by_symbol_account(result.get("by_color", {}))
+
+    return _to_native(result)
+
+
+def _key(symbol, strike, expiry, opt_type):
+    return (symbol, round(float(strike), 4), expiry, opt_type)
+
+
+def _leg_coverage_and_strangle_expiries(pos):
+    """Per-position prep for _process_position_legs(): (1) covered-call
+    allocation -- real owned shares in THIS account/symbol, consumed by its
+    own call legs only (coverage doesn't cross accounts -- the shares and
+    the short call must sit in the same brokerage account), calls sorted by
+    strike ascending so the most likely to be assigned draws on shares
+    first; (2) strangle pairing -- a put + call sharing an expiry is one
+    coordinated structure, not two unrelated alarms (matches this book's own
+    strategy docs). Returns ({id(leg): {...}}, {shared expiries})."""
+    shares_remaining = pos.shares or 0
+    calls_sorted = sorted(
+        (lg for lg in pos.option_legs if lg.option_type == "CALL"),
+        key=lambda lg: lg.strike,
+    )
+    leg_coverage = {}
+    for lg in calls_sorted:
+        contracts = abs(lg.quantity)
+        covered = min(shares_remaining // 100, contracts)
+        shares_remaining -= covered * 100
+        leg_coverage[id(lg)] = {
+            "covered_contracts": int(covered),
+            "total_contracts": int(contracts),
+            "naked": covered < contracts,
+        }
+
+    puts_by_expiry = defaultdict(list)
+    calls_by_expiry = defaultdict(list)
+    for lg in pos.option_legs:
+        (calls_by_expiry if lg.option_type == "CALL" else puts_by_expiry)[lg.expiry].append(lg)
+    strangle_expiries = set(puts_by_expiry) & set(calls_by_expiry)
+
+    return leg_coverage, strangle_expiries
+
+
+def _build_leg_context_entry(pos, lg, signals: dict):
+    """The initial per-contract context dict (see _build_legs_and_context's
+    docstring for why this is keyed by contract identity, not by leg).
+    `signals` bundles leg_ctx/eh_ctx/strangle_expiries/source_info so this
+    stays within the 4-param limit."""
+    leg_ctx, eh_ctx = signals["leg_ctx"], signals["eh_ctx"]
+    return {
+        "account": pos.account,
+        "accounts": set(),  # every account holding this exact contract -- see _annotate_heat_rows()'s dedup
+        "covered": True,  # AND-combined below; True is the identity for AND
+        "covered_contracts": 0, "total_contracts": 0,
+        "strangle": lg.expiry in signals["strangle_expiries"],
+        "data_source": signals["source_info"].get("source"),
+        "data_as_of": signals["source_info"].get("as_of"),
+        "days_stale": signals["source_info"].get("days_stale"),
+        "sector": leg_ctx.get("sector"),
+        # OVERNIGHT_MOVE (ADR 0004) folded into the same gates_fired list
+        # symbol_context.py's HIGH_LEVERAGE/EARNINGS_RISK/ILLIQUID already
+        # populate -- one list, one convention.
+        "gates_fired": leg_ctx.get("gates_fired", []) + eh_ctx["gates_fired"],
+        "dividend_rate": leg_ctx.get("dividend_rate"),
+        "next_ex_dividend_date": leg_ctx.get("next_ex_dividend_date"),
+        # iv_rank/current_iv were computed here all along but never passed
+        # through to the leg dict (ADR 0001 step 7) -- decision_engine.py's
+        # portfolio Greeks rollup needs a vol input per leg; current_iv is
+        # real when a caller upstream supplied one (step 6), else iv_rank's
+        # own HV-proxy fallback.
+        "current_iv": leg_ctx.get("current_iv"),
+        # Extended-hours overnight-move signal (ADR 0004) -- live_price is
+        # the current pre-market/after-hours/regular quote; overnight_move_pct
+        # compares it to pos.current_price (the regular close margin/P&L math
+        # uses, unchanged by this).
+        "live_price": eh_ctx["live_price"],
+        "live_price_source": eh_ctx["live_price_source"],
+        "overnight_move_pct": eh_ctx["overnight_move_pct"],
+    }
+
+
+def _process_position_legs(pos, account_sources, acc: dict):
+    """One position's option legs -> acc["legs"] (for assess_portfolio_heat)
+    plus acc["context"]/cost/premium lookups (for _annotate_heat_rows),
+    keyed by (symbol, strike, expiry, option_type) -- see
+    _build_legs_and_context's docstring for why a leg key can collide
+    across two accounts. `acc` bundles all 4 outputs so this stays within
+    the 4-param limit; premium_received_by_key specifically is needed
+    because decision_engine.py wants the real premium directly, not one
+    re-derived from cost_to_close/loss_multiple (undefined when
+    loss_multiple is 0, i.e. GREEN legs -- ADR 0001 step 3)."""
+    from report_utils import extended_hours_context
+    from symbol_context import get_cached_symbol_context
+
+    leg_coverage, strangle_expiries = _leg_coverage_and_strangle_expiries(pos)
+    source_info = account_sources.get(pos.account, {})
+
+    for lg in pos.option_legs:
+        premium = abs(lg.premium_received or 0)
+        if premium <= 0:
+            continue  # assess_portfolio_heat can't compute loss_multiple against a zero premium
+        acc["legs"].append({
+            "symbol": pos.symbol, "option_type": lg.option_type, "strike": lg.strike,
+            "dte": lg.dte, "expiry": lg.expiry, "premium_received": premium,
+            "cost_to_close": abs(lg.current_mark or 0), "current_price": pos.current_price,
+        })
+        k = _key(pos.symbol, lg.strike, lg.expiry, lg.option_type)
+        acc["cost_to_close_by_key"][k] = abs(lg.current_mark or 0)
+        acc["premium_received_by_key"][k] = premium
+
+        # Same-day-cached gate/parameter bundle + ADR 0004 extended-hours
+        # overnight-move signal -- per-leg (not per-position) so the
+        # earnings/DTE gate uses THIS leg's own DTE. See
+        # _build_leg_context_entry()'s docstring for the full rationale.
+        leg_ctx = get_cached_symbol_context(pos.symbol, dte=lg.dte)
+        eh_ctx = extended_hours_context(pos.symbol, pos.current_price)
+        signals = {"leg_ctx": leg_ctx, "eh_ctx": eh_ctx,
+                   "strangle_expiries": strangle_expiries, "source_info": source_info}
+        entry = acc["context"].setdefault(k, _build_leg_context_entry(pos, lg, signals))
+
+        cov = leg_coverage.get(id(lg))
+        entry["accounts"].add(pos.account)
+        if lg.option_type == "CALL":
+            entry["covered"] = entry["covered"] and not cov["naked"]
+            entry["covered_contracts"] += cov["covered_contracts"]
+            entry["total_contracts"] += cov["total_contracts"]
+        else:
+            entry["covered"] = None  # not a meaningful concept for puts -- cash-secured by account design, checked separately
+
+
+def _build_legs_and_context(positions, account_sources):
+    """Builds the flat per-leg `legs` list assess_portfolio_heat() scores,
+    plus the per-contract context/cost/premium lookups _annotate_heat_rows()
+    merges back on afterward -- real position-context (per-leg coverage,
+    strangle pairing, data staleness) heat_scanner.py itself has no concept
+    of. A leg identifier can collide across two accounts holding the
+    identical contract; when it happens the two accounts' context is
+    combined rather than picked arbitrarily (conservative: covered only if
+    EVERY account holding it has enough shares)."""
+    acc = {"legs": [], "context": {}, "cost_to_close_by_key": {}, "premium_received_by_key": {}}
+    for pos in positions:
+        _process_position_legs(pos, account_sources, acc)
+    return acc["legs"], acc["context"], acc["cost_to_close_by_key"], acc["premium_received_by_key"]
+
+
+def _merge_context_onto_row(row, ctx, cost_to_close_by_key, premium_received_by_key):
+    """Merges one pooled context entry onto its matching heat row in place.
+    top_actions rows use "option_type"; by_color rows use "type" --
+    heat_scanner.py's own two output shapes genuinely differ (confirmed by
+    source), not something to "fix" here."""
+    opt_type = row.get("type") or row.get("option_type")
+    key = _key(row["symbol"], row["strike"], row["expiry"], opt_type)
+    row["covered"] = ctx["covered"]
+    row["covered_contracts"] = ctx["covered_contracts"] if opt_type == "CALL" else None
+    row["total_contracts"] = ctx["total_contracts"] if opt_type == "CALL" else None
+    row["strangle"] = ctx["strangle"]
+    row["account"] = ctx["account"] if len(ctx["accounts"]) == 1 else "+".join(sorted(ctx["accounts"]))
+    row["multi_account_contract"] = len(ctx["accounts"]) > 1
+    row["data_source"] = ctx["data_source"]
+    row["data_as_of"] = ctx["data_as_of"]
+    row["days_stale"] = ctx["days_stale"]
+    row["sector"] = ctx["sector"]
+    row["gates_fired"] = ctx["gates_fired"]
+    row["dividend_rate"] = ctx.get("dividend_rate")
+    row["next_ex_dividend_date"] = ctx.get("next_ex_dividend_date")
+    row["current_iv"] = ctx.get("current_iv")
+    row["live_price"] = ctx.get("live_price")
+    row["live_price_source"] = ctx.get("live_price_source")
+    row["overnight_move_pct"] = ctx.get("overnight_move_pct")
+    row["cost_to_close"] = cost_to_close_by_key.get(key, 0.0)
+    row["premium_received"] = premium_received_by_key.get(key, 0.0)
+
+
+def _annotate_heat_rows(rows, context, cost_to_close_by_key, premium_received_by_key):
+    """Cross-account collision de-dup -- real bug found 2026-10-15: the
+    identical contract (symbol+strike+expiry+type) held in TWO accounts
+    (confirmed real case: NVO $40C 03/19/2027) produces two separate
+    heat_scanner.py rows (LegHeat has no account field), both pointing at
+    the SAME pooled context entry. Meant to collapse to one row per
+    colliding key, explicitly labeled as spanning multiple accounts.
+
+    NOTE (found, not fixed -- preserved as-is per this refactor's
+    behavior-preservation scope): the `deduped` list built below is
+    discarded at both of get_position_heat()'s call sites, so the second/
+    duplicate row is left un-annotated rather than actually removed from
+    by_color/top_actions.
+    """
+    seen_keys: set[tuple] = set()
+    deduped = []
+    for row in rows:
+        opt_type = row.get("type") or row.get("option_type")
+        if not opt_type:
+            deduped.append(row)
+            continue
+        key = _key(row["symbol"], row["strike"], row["expiry"], opt_type)
+        if context.get(key):
+            if key in seen_keys:
+                continue  # pooled contract already represented by an earlier row
+            seen_keys.add(key)
+            _merge_context_onto_row(row, context[key], cost_to_close_by_key, premium_received_by_key)
+        deduped.append(row)
+    return deduped
+
+
+def _build_sector_rollup(by_color, cost_to_close_by_key):
+    """"Which sector is actually bleeding right now," computed straight from
+    these same real per-leg costs, not a second, differently-sourced sector
+    view (the existing per-ticker Sector Heat on this dashboard reads
+    enhanced_metrics.py's RSI/trend data; this reads real open-position
+    cost-to-close instead -- complementary, not a duplicate)."""
     sector_rollup: dict[str, dict] = {}
-    for color, color_rows in result.get("by_color", {}).items():
+    for color, color_rows in by_color.items():
         for row in color_rows:
             sec = row.get("sector") or "Unknown"
             bucket = sector_rollup.setdefault(sec, {"RED": 0, "YELLOW": 0, "GREEN": 0, "UNKNOWN": 0, "red_cost_to_close": 0.0})
@@ -444,21 +462,22 @@ def get_position_heat():
                 opt_type = row.get("type") or row.get("option_type")
                 cost = cost_to_close_by_key.get(_key(row["symbol"], row["strike"], row["expiry"], opt_type), 0.0)
                 bucket["red_cost_to_close"] = round(bucket["red_cost_to_close"] + cost, 2)
-    result["sector_rollup"] = sector_rollup
+    return sector_rollup
 
-    # Grouped positions -- one record per real (symbol, account) position,
-    # not per leg. Real gap found 2026-10-13: ZS (3 legs: 1 naked call + 2
-    # puts) and ANET (8 legs across 2 accounts) are deliberate multi-leg
-    # "stagger" campaigns the trader manages as one structure, but by_color
-    # surfaced each leg as its own independent-looking alert with no sign
-    # they belong together. Coverage genuinely doesn't cross accounts (a
-    # call in Account A can only be covered by shares actually in Account
-    # A -- see the per-leg allocation above), so (symbol, account) is the
-    # correct real-world grouping key, not symbol alone. Every leg's own
-    # full numbers stay in "legs" -- grouping changes presentation/ranking
-    # only, nothing is hidden or averaged away.
+
+_POSITION_COLOR_RANK = {"RED": 0, "YELLOW": 1, "UNKNOWN": 2, "GREEN": 3}
+
+
+def _group_positions_by_symbol_account(by_color):
+    """Grouped positions -- one record per real (symbol, account) position,
+    not per leg. Real gap found 2026-10-13: ZS/ANET-style multi-leg
+    "stagger" campaigns the trader manages as one structure instead
+    surfaced as independent-looking by_color alerts with no sign they
+    belong together. Coverage doesn't cross accounts, so (symbol, account)
+    is the correct grouping key, not symbol alone -- every leg's own full
+    numbers stay in "legs", grouping only changes presentation/ranking."""
     groups: dict[tuple, dict] = {}
-    for color, color_rows in result.get("by_color", {}).items():
+    for color, color_rows in by_color.items():
         for row in color_rows:
             key = (row["symbol"], row.get("account"))
             g = groups.setdefault(key, {
@@ -467,10 +486,9 @@ def get_position_heat():
             })
             g["legs"].append(row)
 
-    _COLOR_RANK = {"RED": 0, "YELLOW": 1, "UNKNOWN": 2, "GREEN": 3}
     positions = []
     for (symbol, account), g in groups.items():
-        g["legs"].sort(key=lambda r: _COLOR_RANK.get(r.get("color"), 2))
+        g["legs"].sort(key=lambda r: _POSITION_COLOR_RANK.get(r.get("color"), 2))
         worst = g["legs"][0]
         g["worst_color"] = worst.get("color")
         g["worst_action"] = worst.get("action")
@@ -480,30 +498,21 @@ def get_position_heat():
         g["naked_leg_count"] = sum(1 for lg in g["legs"] if lg.get("covered") is False)
         g["gates_fired"] = sorted({gate for lg in g["legs"] for gate in (lg.get("gates_fired") or [])})
         positions.append(g)
-    positions.sort(key=lambda g: _COLOR_RANK.get(g["worst_color"], 2))
-    result["positions"] = positions
-
-    return _to_native(result)
+    positions.sort(key=lambda g: _POSITION_COLOR_RANK.get(g["worst_color"], 2))
+    return positions
 
 
 def get_leg_decisions(heat: dict | None = None):
-    """LegDecisionRecord for every open short leg, plus the portfolio-level
-    rollup (ADR 0001, docs/design/adr/0001-decision-engine-foundation.md) --
-    the completeness-by-construction alternative to one-off scripts that
-    checked a fixed symbol list and silently missed a newly-naked leg (real
-    case, 2026-11-03: a hardcoded naked-call list missed a newly-naked OKTA
-    $140C). Reuses get_position_heat()'s already-computed legs (same real
-    data this refresh cycle already produced) rather than a second position
-    load -- this is a projection of that same data through decision_engine.py,
-    not an independent computation that could drift from it.
+    """LegDecisionRecord for every open short leg + portfolio rollup (ADR
+    0001) -- completeness-by-construction vs. one-off scripts that checked a
+    fixed symbol list and missed a newly-naked leg (real case, 2026-11-03:
+    OKTA $140C). Projects get_position_heat()'s already-computed legs through
+    decision_engine.py rather than a second position load.
 
     `heat`, if the caller already has a fresh get_position_heat() result
-    (e.g. cache.py's refresh cycle computes it once for us_position_heat),
-    is reused directly instead of triggering a second ~90s live reload +
-    Yahoo fetch for the same data (found in review, 2026-11-05 -- cache.py's
-    refresh was paying this cost twice every cycle). A standalone caller
-    (e.g. the get_leg_decisions MCP tool, called outside any refresh cycle)
-    omits it and gets a fresh load, same as before.
+    (e.g. cache.py's refresh cycle), is reused directly instead of a second
+    ~90s live reload + Yahoo fetch (found in review 2026-11-05 -- cache.py
+    was paying this cost twice every cycle). Omitted, it does a fresh load.
     """
     from decision_engine import build_decisions, portfolio_rollup
 
@@ -519,17 +528,105 @@ def get_leg_decisions(heat: dict | None = None):
 
 
 def get_priority_sequence_cacheable():
-    """Thin wrapper so sequencer.build_priority_sequence() -- which reloads
-    all 8 accounts' positions AND fetches ~85 live Yahoo prices via
-    get_position_heat()/get_composite_scores(), 60-90s -- gets computed ONCE
-    per cache.refresh_all() cycle like every other expensive US entry,
-    instead of live per-request. Real bug found 2026-10-15: /api/us/today
-    called this directly on every request and timed out (15s+) every time,
-    leaving the page stuck on "Loading..." forever -- the account-state
-    lookup it also needs is a trivial SQLite read and was never the slow
-    part; only this was."""
+    """Thin wrapper so sequencer.build_priority_sequence() -- 60-90s to
+    reload all 8 accounts + ~85 live Yahoo prices -- gets computed ONCE per
+    cache.refresh_all() cycle, not live per-request. Real bug found
+    2026-10-15: /api/us/today called this directly and timed out (15s+)
+    every time; the account-state lookup it also needs is a trivial SQLite
+    read and was never the slow part."""
     from . import sequencer
     return sequencer.build_priority_sequence()
+
+
+_CASH_FLOOR = 50_000.0
+_EQUITY_FLOOR_PCT = 50.0
+
+
+def _build_context_notes(state):
+    """Cash/equity-floor + staleness notes off the trader-reported account
+    state (see get_today_plan's docstring). Returns (notes, is_stressed)."""
+    if not state:
+        return (["No account state on file yet -- cash/equity-aware sequencing is inactive until you report one"],
+                 False)
+    notes = []
+    stressed = False
+    if state.get("cash") is not None and state["cash"] < _CASH_FLOOR:
+        stressed = True
+        notes.append(f"Cash ${state['cash']:,.0f} is below your documented ${_CASH_FLOOR:,.0f} floor")
+    if state.get("equity_pct") is not None and state["equity_pct"] < _EQUITY_FLOOR_PCT:
+        stressed = True
+        notes.append(f"Equity {state['equity_pct']:.0f}% is below your documented {_EQUITY_FLOOR_PCT:.0f}% bear-regime floor")
+    if state.get("days_stale", 0) > 3:
+        notes.append(f"Account state is {state['days_stale']}d old -- re-check before relying on this")
+    return notes, stressed
+
+
+def _strangle_note(lg):
+    """Real fix 2026-10-16 (trader correction): a 'naked' CALL that's
+    actually strangle-paired (a cash-secured PUT sold alongside it on the
+    same name/expiry) is Account A's own documented, intentional strategy,
+    not an isolated naked emergency (confirmed real case: META/ANET/CRWD's
+    naked calls were all strangle legs before this fix)."""
+    if lg.get("type") == "CALL" and lg.get("covered") is False and lg.get("strangle"):
+        return " [strangle-paired -- hedged by the put leg, not an isolated naked call]"
+    return ""
+
+
+def _build_gate_items(tier0):
+    return [
+        {"section": "GATE",
+         "action": f"Review gate on {r['symbol'] if r['tier_source'] == 'position_heat' else r.get('ticker')}",
+         "why": "Gate fired -- address before anything else, regardless of severity/score.", "ref": r}
+        for r in tier0
+    ]
+
+
+def _build_cash_relief_items(tier1, context_notes):
+    """Margin-relief-first, meant to be called ONLY when cash/equity is
+    actually stressed -- same logic already used live for GEV/MA/ULTA on
+    2026-10-15: among profitable (HARVEST_RESTAGGER) calls, largest
+    strike/collateral first, since that's real margin relief at the least
+    cost to close."""
+    relief_candidates = [
+        (r, lg) for r in tier1 if r["tier_source"] == "position_heat"
+        for lg in r["legs"] if lg.get("type") == "CALL" and lg.get("action") == "HARVEST_RESTAGGER"
+    ]
+    relief_candidates.sort(key=lambda pair: -(pair[1].get("strike") or 0))
+    return [
+        {
+            "section": "CASH RELIEF FIRST",
+            "action": f"Close {r['symbol']} ${lg['strike']:.0f} CALL ({r['account']}, exp {lg['expiry']})",
+            "why": f"{'; '.join(context_notes)}. Profitable and large strike -- real margin relief before cutting hard-stop losses below.",
+            "detail": lg["reason"],
+            "ref": r,
+        }
+        for r, lg in relief_candidates[:5]
+    ]
+
+
+def _build_hard_stop_items(tier1):
+    items = []
+    for r in tier1[:10]:
+        worst = r["legs"][0]
+        items.append({
+            "section": "MANAGE HARD STOPS",
+            "action": f"{worst['action']} {r['symbol']} ({r['account']}, {r['leg_count']} leg(s))",
+            "why": worst["reason"] + _strangle_note(worst),
+            "ref": r,
+        })
+    return items
+
+
+def _build_new_entry_items(tier2):
+    return [
+        {
+            "section": "NEW ENTRY CANDIDATES",
+            "action": f"ENTER {r['ticker']}",
+            "why": f"score={r.get('score')} (rank {r.get('rank')}/{r.get('population_size')}), iv_rank={r.get('iv_rank')}",
+            "ref": r,
+        }
+        for r in tier2[:5]
+    ]
 
 
 def get_today_plan(full_sequence=None):
@@ -548,90 +645,20 @@ def get_today_plan(full_sequence=None):
     """
     from . import account_state as acct_state
 
-    CASH_FLOOR = 50_000.0
-    EQUITY_FLOOR_PCT = 50.0
-
     state = acct_state.get_state("A")
     if full_sequence is None:
         full_sequence = get_priority_sequence_cacheable()
-
-    context_notes = []
-    cash_or_equity_stressed = False
-    if state:
-        if state.get("cash") is not None and state["cash"] < CASH_FLOOR:
-            cash_or_equity_stressed = True
-            context_notes.append(f"Cash ${state['cash']:,.0f} is below your documented ${CASH_FLOOR:,.0f} floor")
-        if state.get("equity_pct") is not None and state["equity_pct"] < EQUITY_FLOOR_PCT:
-            cash_or_equity_stressed = True
-            context_notes.append(
-                f"Equity {state['equity_pct']:.0f}% is below your documented {EQUITY_FLOOR_PCT:.0f}% bear-regime floor"
-            )
-        if state.get("days_stale", 0) > 3:
-            context_notes.append(f"Account state is {state['days_stale']}d old -- re-check before relying on this")
-    else:
-        context_notes.append("No account state on file yet -- cash/equity-aware sequencing is inactive until you report one")
+    context_notes, cash_or_equity_stressed = _build_context_notes(state)
 
     tier0 = [r for r in full_sequence if r["tier"] == 0]
     tier1 = [r for r in full_sequence if r["tier"] == 1]
     tier2 = [r for r in full_sequence if r["tier"] == 2]
 
-    def _strangle_note(lg):
-        """Real fix 2026-10-16 (trader correction): a 'naked' CALL that's
-        actually strangle-paired (a cash-secured PUT sold alongside it on
-        the same name/expiry) is Account A's own documented, intentional
-        strategy ("naked calls are hedged by the short puts... premium on
-        both sides widens the break-even range"), not an isolated naked
-        emergency. Confirmed real case: META/ANET/CRWD's naked calls were
-        all strangle legs, indistinguishable in the plan text from genuinely
-        isolated ones (ZS, CRM, ADBE, etc.) before this fix."""
-        if lg.get("type") == "CALL" and lg.get("covered") is False and lg.get("strangle"):
-            return " [strangle-paired -- hedged by the put leg, not an isolated naked call]"
-        return ""
-
-    plan = []
-    for r in tier0:
-        label = r["symbol"] if r["tier_source"] == "position_heat" else r.get("ticker")
-        plan.append({"section": "GATE", "action": f"Review gate on {label}", "why": "Gate fired -- address before anything else, regardless of severity/score.", "ref": r})
-
-    # Margin-relief-first, ONLY when cash/equity is actually stressed --
-    # same logic already used live for GEV/MA/ULTA on 2026-10-15: among
-    # profitable (HARVEST_RESTAGGER) calls, largest strike/collateral first,
-    # since that's real margin relief at the least cost to close.
+    plan = _build_gate_items(tier0)
     if cash_or_equity_stressed:
-        relief_candidates = []
-        for r in tier1:
-            if r["tier_source"] != "position_heat":
-                continue
-            for lg in r["legs"]:
-                if lg.get("type") == "CALL" and lg.get("action") == "HARVEST_RESTAGGER":
-                    relief_candidates.append((r, lg))
-        relief_candidates.sort(key=lambda pair: -(pair[1].get("strike") or 0))
-        for r, lg in relief_candidates[:5]:
-            plan.append({
-                "section": "CASH RELIEF FIRST",
-                "action": f"Close {r['symbol']} ${lg['strike']:.0f} CALL ({r['account']}, exp {lg['expiry']})",
-                "why": f"{'; '.join(context_notes)}. Profitable and large strike -- real margin relief before cutting hard-stop losses below.",
-                "detail": lg["reason"],
-                "ref": r,
-            })
-
-    for r in tier1[:10]:
-        legs = r["legs"]
-        worst = legs[0]
-        plan.append({
-            "section": "MANAGE HARD STOPS",
-            "action": f"{worst['action']} {r['symbol']} ({r['account']}, {r['leg_count']} leg(s))",
-            "why": worst["reason"] + _strangle_note(worst),
-            "ref": r,
-        })
-
-    for r in tier2[:5]:
-        plan.append({
-            "section": "NEW ENTRY CANDIDATES",
-            "action": f"ENTER {r['ticker']}",
-            "why": f"score={r.get('score')} (rank {r.get('rank')}/{r.get('population_size')}), iv_rank={r.get('iv_rank')}",
-            "ref": r,
-        })
+        plan += _build_cash_relief_items(tier1, context_notes)
+    plan += _build_hard_stop_items(tier1)
+    plan += _build_new_entry_items(tier2)
 
     return _to_native({
         "account_state": state,
@@ -659,43 +686,45 @@ def _get_symbol_sector(ticker: str) -> str:
     return get_symbol_sector(ticker)
 
 
+def _resolve_watchlist_price(ticker, yield_data):
+    """Price first from get_yield_on_capital's own cheap fetch (reused, not a
+    third separate call); falls back to a direct yfinance history call only
+    when that resolves nothing."""
+    price = yield_data.get("price")
+    if price is not None:
+        return price
+    import yfinance as yf
+    hist = yf.Ticker(ticker).history(period="1d")
+    return float(hist["Close"].iloc[-1]) if len(hist) else None
+
+
+def _resolve_real_iv(yield_data):
+    """Real current IV from the yield fetch above (ADR 0001 step 6, call
+    side checked first) instead of silently falling back to iv_rank's
+    HV-proxy the way this call used to."""
+    for side in ("call", "put"):
+        side_data = yield_data.get(side)
+        if side_data and side_data.get("iv") is not None:
+            return side_data["iv"]
+    return None
+
+
 def analyze_watchlist_symbol(ticker: str) -> dict:
     """The combined view the trader asked for: heat/conviction (the SAME
-    enhanced_metrics.get_ticker_metrics real positions get -- no separate,
-    lesser treatment for a candidate not yet held), sector + trend-vertical
-    tags, IV Rank (richness relative to the stock's OWN history), and
-    annualized yield-on-capital (opportunity cost vs. other candidates for
-    the same capital) -- combined, per the trader's explicit direction,
-    not treated as two separate, disconnected checks.
-    """
+    treatment real positions get via enhanced_metrics.get_ticker_metrics),
+    sector + trend-vertical tags, IV Rank, and annualized yield-on-capital --
+    combined per the trader's explicit direction, not two disconnected
+    checks."""
     from enhanced_metrics import get_ticker_metrics
     from iv_rank import get_iv_rank
     from premium_yield import get_yield_on_capital
     from trend_verticals import get_verticals_for_ticker
 
     ticker = ticker.upper().strip()
-
-    # Price first (from a cheap history call inside get_yield_on_capital's
-    # own fetch, but get_ticker_metrics needs it passed in) -- reuse
-    # premium_yield's own live fetch rather than a third separate call.
     yield_data = get_yield_on_capital(ticker)
-    price = yield_data.get("price")
-    if price is None:
-        import yfinance as yf
-        hist = yf.Ticker(ticker).history(period="1d")
-        price = float(hist["Close"].iloc[-1]) if len(hist) else None
-
+    price = _resolve_watchlist_price(ticker, yield_data)
     metrics = get_ticker_metrics(ticker, price, option_type=None) if price else {"error": "no_price"}
-    # Real current IV, if the yield fetch above resolved one (ADR 0001 step
-    # 6) -- same option-chain fetch, no extra cost -- instead of silently
-    # falling back to iv_rank's HV-proxy the way this call used to.
-    real_iv = None
-    for side in ("call", "put"):
-        side_data = yield_data.get(side)
-        if side_data and side_data.get("iv") is not None:
-            real_iv = side_data["iv"]
-            break
-    iv = get_iv_rank(ticker, current_iv=real_iv)
+    iv = get_iv_rank(ticker, current_iv=_resolve_real_iv(yield_data))
     sector = _get_symbol_sector(ticker)
     verticals = get_verticals_for_ticker(ticker)
 
@@ -738,18 +767,12 @@ def get_report_text(report_type: str) -> str:
 
 def extract_section_from_text(text: str, start_marker: str, end_marker: str = None) -> str:
     """Pulls one section's markdown out of a full report by its own real
-    heading text, rather than re-deriving that section's content with new
-    logic. This is how Sector Heat / Risk & Macro / India's 6-Month Plan
-    reach the dashboard as ONE deduplicated section (shown once) while
-    still tracing back to the exact same computation the report engine
-    already does -- no second, drifting implementation of that logic.
-
-    start_marker: exact heading text to search for (e.g. "## Section 6:")
-    -- matched as a substring so a caller doesn't need the full heading
-    including its dynamic counts. end_marker: exact next-heading text; if
-    omitted, cuts at the next line starting with "## " (a level-2 heading)
-    after start_marker, or end of text if there isn't one.
-    """
+    heading text instead of re-deriving it -- how Sector Heat / Risk & Macro
+    / India's 6-Month Plan reach the dashboard as ONE deduplicated section
+    while still tracing back to the report engine's own computation.
+    start_marker is matched as a substring (no need for the full heading
+    incl. dynamic counts); end_marker, if omitted, cuts at the next "## "
+    heading or end of text."""
     start_idx = text.find(start_marker)
     if start_idx == -1:
         return f"_Section not found: {start_marker}_"
@@ -767,6 +790,75 @@ def extract_markdown_section(report_type: str, start_marker: str, end_marker: st
     return extract_section_from_text(get_report_text(report_type), start_marker, end_marker)
 
 
+_ACCOUNT_A_NAME = "Account A (232)"
+_DTE_BUCKET_TARGETS = {'near': (10, 15), 'core': (35, 40), 'mid': (20, 24), 'far': (10, 15)}
+_DTE_BUCKET_LABELS = {'near': 'Near (<60 DTE)', 'core': 'Core (60-135 DTE)', 'mid': 'Mid (135-195 DTE)', 'far': 'Far (195+ DTE)'}
+
+
+def _dte_bucket(dte):
+    import pandas as pd
+    if pd.isna(dte):
+        return 'unknown'
+    if dte < 60:
+        return 'near'
+    if dte < 135:
+        return 'core'
+    if dte < 195:
+        return 'mid'
+    return 'far'
+
+
+def _load_account_a_options(gen, today):
+    """Account A's real open option positions with notional/DTE/bucket
+    columns added -- the same real per-leg data
+    unified_master_report_production.py's Section 6 already computes from
+    (see get_cash_margin_forecast's docstring)."""
+    import pandas as pd
+    opt = gen.open_positions[
+        (gen.open_positions['account_name'] == _ACCOUNT_A_NAME) &
+        (gen.open_positions['option_type'].isin(['C', 'P']))
+    ].copy()
+    opt['px'] = opt['ticker'].map(gen.prices).fillna(0)
+    opt['notional'] = opt['px'] * opt['net_quantity'].abs() * 100
+    opt['expiry_dt'] = pd.to_datetime(opt['expiry_date'], errors='coerce')
+    opt['dte'] = (opt['expiry_dt'] - pd.Timestamp(today)).dt.days
+    opt['bucket'] = opt['dte'].apply(_dte_bucket)
+    return opt
+
+
+def _build_dte_buckets(opt, total_n):
+    by_bucket = opt.groupby('bucket')['notional'].sum()
+    buckets = []
+    for b in ['near', 'core', 'mid', 'far']:
+        pct = (by_bucket.get(b, 0) / total_n * 100) if total_n else 0
+        lo, hi = _DTE_BUCKET_TARGETS[b]
+        status = "ok" if lo <= pct <= hi else ("light" if pct < lo else "heavy")
+        buckets.append({"label": _DTE_BUCKET_LABELS[b], "pct": round(pct, 1), "target_lo": lo, "target_hi": hi, "status": status})
+    return buckets
+
+
+def _build_top_expiry_dates(opt, total_n):
+    by_date = opt.groupby(opt['expiry_dt'].dt.date)['notional'].sum().sort_values(ascending=False)
+    top_dates = []
+    for d, n in by_date.head(5).items():
+        pct = n / total_n * 100 if total_n else 0
+        top_dates.append({"date": str(d), "notional": round(float(n), 2), "pct": round(pct, 1),
+                           "status": "over" if pct > 25 else ("edge" if pct > 20 else "ok")})
+    return top_dates
+
+
+def _resolve_cash_reserve_info():
+    """Emergency reserve -- was hardcoded to a stale $200K literal (ADR
+    0001, found 2026-11-03). The real fund is actively draining (~$140K as
+    of 2026-10-15, co-funding the Dubai purchase, per
+    skills/options-trader/SKILL.md) with no live feed, so it's read from
+    account_state.py instead, falling back to the last-confirmed figure.
+    Returns (emergency_reserve, reserve_days_stale)."""
+    from . import account_state as acct_state
+    a_state = acct_state.get_state("A") or {}
+    return a_state.get("emergency_reserve") or 140000, a_state.get("days_stale")
+
+
 def get_cash_margin_forecast():
     """Crash-scenario cash requirement + expiry-curve concentration for
     Account A (the only margin account) -- the SAME formulas
@@ -778,71 +870,21 @@ def get_cash_margin_forecast():
     since they're the identical computation over the same live position
     data -- see docs/DASHBOARD_PLAN.md's "no rewrite" boundary).
     """
-    import pandas as pd
     from datetime import date
     from accounts_config import ACCOUNTS_CONFIG
 
     gen = _get_generator()
     today = date.today()
-    acct_a_name = "Account A (232)"
 
-    opt = gen.open_positions[
-        (gen.open_positions['account_name'] == acct_a_name) &
-        (gen.open_positions['option_type'].isin(['C', 'P']))
-    ].copy()
-    opt['px'] = opt['ticker'].map(gen.prices).fillna(0)
-    opt['notional'] = opt['px'] * opt['net_quantity'].abs() * 100
-    opt['expiry_dt'] = pd.to_datetime(opt['expiry_date'], errors='coerce')
-    opt['dte'] = (opt['expiry_dt'] - pd.Timestamp(today)).dt.days
+    opt = _load_account_a_options(gen, today)
     total_n = opt['notional'].sum()
+    buckets = _build_dte_buckets(opt, total_n)
+    top_dates = _build_top_expiry_dates(opt, total_n)
 
-    def bucket(dte):
-        if pd.isna(dte):
-            return 'unknown'
-        if dte < 60:
-            return 'near'
-        if dte < 135:
-            return 'core'
-        if dte < 195:
-            return 'mid'
-        return 'far'
-
-    opt['bucket'] = opt['dte'].apply(bucket)
-    by_bucket = opt.groupby('bucket')['notional'].sum()
-    targets = {'near': (10, 15), 'core': (35, 40), 'mid': (20, 24), 'far': (10, 15)}
-    labels = {'near': 'Near (<60 DTE)', 'core': 'Core (60-135 DTE)', 'mid': 'Mid (135-195 DTE)', 'far': 'Far (195+ DTE)'}
-    buckets = []
-    for b in ['near', 'core', 'mid', 'far']:
-        pct = (by_bucket.get(b, 0) / total_n * 100) if total_n else 0
-        lo, hi = targets[b]
-        status = "ok" if lo <= pct <= hi else ("light" if pct < lo else "heavy")
-        buckets.append({"label": labels[b], "pct": round(pct, 1), "target_lo": lo, "target_hi": hi, "status": status})
-
-    by_date = opt.groupby(opt['expiry_dt'].dt.date)['notional'].sum().sort_values(ascending=False)
-    top_dates = []
-    for d, n in by_date.head(5).items():
-        pct = n / total_n * 100 if total_n else 0
-        top_dates.append({
-            "date": str(d), "notional": round(float(n), 2), "pct": round(pct, 1),
-            "status": "over" if pct > 25 else ("edge" if pct > 20 else "ok"),
-        })
-
-    opt_req = gen.option_requirements.get(acct_a_name, 0)
+    opt_req = gen.option_requirements.get(_ACCOUNT_A_NAME, 0)
     stress_low = total_n * 0.15 * 0.18
     stress_high = total_n * 0.20 * 0.18
-
-    # Emergency reserve -- was hardcoded to a stale $200K literal (ADR 0001,
-    # found 2026-11-03). The real fund was repurposed 2026-10-15 to co-fund
-    # the Dubai property purchase and is actively draining (~$140K as of
-    # 2026-10-15, per skills/options-trader/SKILL.md) -- there is no live
-    # feed for this number, same as the rest of account_state.py's fields,
-    # so it's read from there instead of a literal here. Falls back to the
-    # last-confirmed figure only if the trader hasn't recorded one yet.
-    from . import account_state as acct_state
-    a_state = acct_state.get_state("A") or {}
-    emergency_reserve = a_state.get("emergency_reserve") or 140000
-    reserve_days_stale = a_state.get("days_stale")
-    operating_cash_target = 100000
+    emergency_reserve, reserve_days_stale = _resolve_cash_reserve_info()
 
     return _to_native({
         "as_of": today.isoformat(),
@@ -850,12 +892,12 @@ def get_cash_margin_forecast():
         "opt_req": opt_req,
         "stress_low": stress_low,
         "stress_high": stress_high,
-        "operating_cash_target": operating_cash_target,
+        "operating_cash_target": 100000,
         "emergency_reserve": emergency_reserve,
         "reserve_days_stale": reserve_days_stale,
         "reserve_covers_stress": emergency_reserve >= stress_high,
-        "capacity": ACCOUNTS_CONFIG[acct_a_name].get('capacity'),
-        "capacity_as_of": ACCOUNTS_CONFIG[acct_a_name].get('capacity_as_of'),
+        "capacity": ACCOUNTS_CONFIG[_ACCOUNT_A_NAME].get('capacity'),
+        "capacity_as_of": ACCOUNTS_CONFIG[_ACCOUNT_A_NAME].get('capacity_as_of'),
         "dte_buckets": buckets,
         "top_expiry_dates": top_dates,
     })
@@ -895,14 +937,11 @@ _india_report_cache = None
 
 
 def get_india_report_text(force_refresh: bool = False) -> str:
-    """The full India weekly report -- same treatment as the US
-    get_report_text(): a real, existing generator function's output,
-    cached (India's own report also does live yfinance/statement-parsing
-    work) rather than re-run on every dashboard hit. Called with empty
-    credentials, same as india_weekly_report.py's own __main__ demo --
-    real behavior for this trader (statements-only, no live Breeze
-    session token kept lying around), not a stub.
-    """
+    """The full India weekly report -- same treatment as get_report_text():
+    a real generator's output, cached (live yfinance/statement-parsing work)
+    rather than re-run per hit. Called with empty credentials, same as
+    india_weekly_report.py's own __main__ demo -- real behavior for this
+    trader (statements-only, no live Breeze session token), not a stub."""
     global _india_report_cache
     if _india_report_cache is None or force_refresh:
         import asyncio
