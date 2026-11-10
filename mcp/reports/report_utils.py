@@ -1,3 +1,50 @@
+"""
+report_utils.py -- Bolt b19 split.
+
+This file used to be 1502 lines (over this repo's 1000-line Code Quality &
+Modularity Gate file cap). The code has been split into focused sibling
+submodules under mcp/reports/ by responsibility:
+
+  report_utils_core.py            -- filesystem/snapshot/CSV-field parsing,
+                                      calendar math, display formatting,
+                                      HTML/email report output.
+  report_utils_pricing.py         -- India symbol mapping, technical
+                                      snapshot, upcoming earnings, option-
+                                      chain pricing/probability-ITM.
+  report_utils_positions_us.py    -- Schwab snapshot/transaction parsing,
+                                      Schwab-snapshot-vs-transactions source
+                                      selection, open-leg reconstruction,
+                                      position-CSV loading.
+  report_utils_positions_india.py -- Breeze/ICICI position mapping.
+  report_utils_kpis.py            -- premium/KPI aggregation, per-position
+                                      action/priority/delta signal helpers.
+
+This file is now a thin shim: it re-exports every name from those
+submodules explicitly (not a bare `import *`, since several real names --
+_INDIA_SYMBOL_MAP, _clean_money, _dte_from_expiry, etc. -- are intentionally
+underscore-prefixed, and a bare `import *` silently drops those), so every
+existing `from report_utils import X` / `import report_utils` call site
+across the repo keeps working completely unchanged.
+
+A handful of functions/globals stay PHYSICALLY DEFINED here rather than
+moving out: _now, _today, _history_cache, current_price,
+get_extended_hours_quote, _extended_hours_is_usable,
+get_cached_extended_hours_quote, overnight_move_pct, extended_hours_context,
+_snapshot_holdings (+ _SNAPSHOT_HOLDINGS_CACHE), _fill_current_marks,
+load_robinhood_positions, _record_account_failure, load_us_positions.
+Several existing regression tests (tests/test_report_utils_cache_freshness.py,
+tests/test_extended_hours_pricing.py, tests/test_robinhood_netting.py) do
+`mock.patch.object(report_utils, "<name>", ...)` for exactly these names
+while exercising ANOTHER one of these same functions -- that kind of patch
+only takes effect if the patched name and its caller resolve the same bare
+module-global at call time, i.e. are defined in the exact same module
+object. Moving either half of such a pair into a different file would
+silently stop the existing test's patch from working, without any import
+error to flag it. Every name in the sibling submodules was confirmed (by
+reading every existing test in the repo) to never be the target of that
+kind of cross-function patching, so those are free to live in their own
+files.
+"""
 import asyncio
 import calendar
 import csv
@@ -27,9 +74,10 @@ import yfinance as yf
 
 # This module's own directory (mcp/reports/) -- so `robinhood_netting`
 # (a sibling module, see docs/design/adr/0003-robinhood-position-ingestion.md)
-# is bare-importable regardless of whether this file was reached via
-# server.py's "reports.report_utils" package import (which only puts mcp/
-# itself on sys.path) or a test's own flat sys.path setup.
+# and the new report_utils_* sibling submodules are bare-importable
+# regardless of whether this file was reached via server.py's
+# "reports.report_utils" package import (which only puts mcp/ itself on
+# sys.path) or a test's own flat sys.path setup.
 _this_dir = os.path.dirname(os.path.abspath(__file__))
 if _this_dir not in _sys.path:
     _sys.path.insert(0, _this_dir)
@@ -47,90 +95,50 @@ from config import PORTFOLIO, RISK, PERMANENT_EXITS, OVERNIGHT_MOVE_GATE_PCT
 from routines.email_report import send_email
 from robinhood_netting import parse_robinhood_transaction_csv, net_robinhood_option_legs
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = PROJECT_ROOT / "data"
-STATEMENTS_DIR = DATA_DIR / "statements"
-LOGS_DIR = PROJECT_ROOT / "logs"
-SNAPSHOT_FILE = DATA_DIR / "portfolio_snapshot.yaml"
-TO_EMAIL = "ravjdpr@gmail.com"
-FROM_EMAIL = "onboarding@resend.dev"
-
-_ACCOUNT_FILES = {
-    "A": "Individual_XXX232_Transactions_*.csv",
-    "B": "Contributory_XXX275_Transactions_*.csv",
-    "C": "Designated_Bene_Individual_XXX634_Transactions_*.csv",  # fixed: actual filename prefix
-}
-
-# Files to NEVER load for premium calculations.
-# The Empower consolidated export mixes 14+ accounts (Robinhood IRAs, 401k mutual funds,
-# Traditional/Roth IRAs) in a different CSV format (Date,Account,Description,Category,Tags,Amount).
-# Parsing it as Schwab transactions produces garbage premium data.
-_EXCLUDED_FILE_STEMS = {
-    "2026-01-01 thru 2026-04-25 transactions",  # Empower all-account export
-}
-
-_INDIA_SYMBOL_MAP = {
-    "ADAGRE": "ADANIGREEN.NS",  # Adani Green Energy -- confirmed via india_6month_plan.yaml equity_adds + live yfinance 2026-09-25
-    "ADAPOR": "ADANIPORTS.NS",
-    "ADAPOW": "ADANIPOWER.NS",
-    "ANARAJ": "ANANTRAJ.NS",
-    "APOHOS": "APOLLOHOSP.NS",
-    "AURPHA": "AUROPHARMA.NS",
-    "BAJFI": "BAJFINANCE.NS",
-    "BHAELE": "BEL.NS",
-    "BILGAR": "GROWW.NS",  # Billionbrains Garage Ventures (Groww) -- confirmed via india_6month_plan.yaml equity_adds + live yfinance 2026-09-25
-    "BSE": "BSE.NS",
-    "DIXTEC": "DIXON.NS",
-    "DLFLIM": "DLF.NS",
-    "DRREDD": "DRREDDY.NS",
-    "GENOVE": "GENUSPOWER.NS",
-    "HCLTEC": "HCLTECH.NS",
-    "HDFBAN": "HDFCBANK.NS",
-    "HERHON": "HEROMOTOCO.NS",
-    "HIMFUT": "HFCL.NS",  # Himachal Futuristic Communications (HFCL) -- confirmed via india_6month_plan.yaml equity_adds + live yfinance 2026-09-25
-    "HINAER": "HAL.NS",
-    "IDECEL": "IDEA.NS",
-    "LEMTRE": "LEMONTREE.NS",
-    "LIC": "LICI.NS",
-    "LUPIN": "LUPIN.NS",
-    "MAZDOC": "MAZDOCK.NS",
-    "MTAR": "MTARTECH.NS",  # MTAR Technologies -- MTAR.NS 404s on Yahoo; MTARTECH.NS confirmed live 2026-10-04
-    "STLTC": "STLTECH.NS",  # Sterlite Technologies
-    "NTPC": "NTPC.NS",
-    "ONE97": "PAYTM.NS",  # One97 Communications (Paytm) -- confirmed via india_config.yaml watchlist entry, real ticker already used there
-    "PARDEF": "PARAS.NS",
-    "POWGRI": "POWERGRID.NS",
-    "RELIND": "RELIANCE.NS",
-    "SOBDEV": "SOBHA.NS",  # Sobha Developers/Limited -- confirmed via india_config.yaml watchlist entry + live yfinance 2026-09-25
-    "SOLIN": "SOLARINDS.NS",
-    "STABAN": "SBIN.NS",
-    "SUZENE": "SUZLON.NS",
-    "TCS": "TCS.NS",
-    "TRENT": "TRENT.NS",
-    "VARBEV": "VBL.NS",
-    "YATHOS": "YATHARTH.NS",
-    "ZOMLIM": "ETERNAL.NS",
-}
+# ---------------------------------------------------------------------------
+# Sibling submodules -- explicit re-export (see this file's own docstring for
+# why not a bare `import *`). Safe to import right away: every cross-
+# reference these submodules make back into THIS module's own
+# forced-to-stay cluster (current_price/_today/_history_cache/
+# _fill_current_marks/etc., see below) is a deferred, function-body-local
+# import, resolved only when that function is actually CALLED -- by which
+# point this module has finished executing and defined everything below.
+# ---------------------------------------------------------------------------
+from report_utils_core import (  # noqa: F401 -- re-exported for callers
+    PROJECT_ROOT, DATA_DIR, STATEMENTS_DIR, LOGS_DIR, SNAPSHOT_FILE,
+    TO_EMAIL, FROM_EMAIL, _ACCOUNT_FILES, _EXCLUDED_FILE_STEMS,
+    ensure_logs_dir, load_snapshot, latest_file, load_account_transactions,
+    parse_amount, parse_qty, parse_txn_date,
+    month_window, previous_month, month_name, month_days, project_value,
+    fmt_money, fmt_inr, safe_div, compute_rsi,
+    save_html, maybe_send,
+)
+from report_utils_pricing import (  # noqa: F401 -- re-exported for callers
+    _INDIA_SYMBOL_MAP, _OPTION_CHAIN_CACHE, _OPTION_CHAIN_CACHE_DATE,
+    _EARNINGS_CACHE, _EARNINGS_CACHE_DATE,
+    yf_symbol, technical_snapshot, upcoming_earnings, parse_option_symbol,
+    option_market_price, option_probability_itm,
+)
+from report_utils_positions_us import (  # noqa: F401 -- re-exported for callers
+    _SCHWAB_SNAPSHOT_FILE, _SCHWAB_OPT_SYMBOL, _clean_money,
+    reconstruct_open_option_legs, load_position_csv, fallback_us_positions,
+    schwab_source_choice, load_schwab_from_snapshot,
+    reconstruct_positions_from_transactions,
+)
+from report_utils_positions_india import (  # noqa: F401 -- re-exported for callers
+    _dte_from_expiry, _map_breeze_to_positions, _map_breeze_equity_holdings,
+    load_india_positions,
+)
+from report_utils_kpis import (  # noqa: F401 -- re-exported for callers
+    monthly_premium, monthly_option_pnl_series, combined_kpis,
+    priority_from_position, action_for_option_leg, estimate_delta,
+)
 
 _US_PRICE_CACHE: dict[str, dict[str, Any]] = {}
 _INDIA_PRICE_CACHE: dict[str, dict[str, Any]] = {}
 
-# _OPTION_CHAIN_CACHE / _EARNINGS_CACHE: plain in-process dicts, NOT
-# file-backed. Found, while reading every cache in this file for the
-# same-day-cache unification, to have had NO staleness check at all -- a
-# dict that memoized for the entire life of the process, the same
-# unbounded-cache bug class already fixed live 2026-11-05 for
-# _US_PRICE_CACHE (see _PRICE_CACHE_TTL_SECONDS below) and
-# _SNAPSHOT_HOLDINGS_CACHE (see _snapshot_holdings()). Given a calendar-day
-# bound here too via same_day_cache.ensure_same_day, for consistency with
-# those two and because neither has a legitimate reason to serve a chain or
-# an earnings date list fetched on a prior day. Each `*_DATE` holder is the
-# "last reset day" cell ensure_same_day needs (see that helper's docstring
-# for why a 1-element list, not a bare str/None).
-_OPTION_CHAIN_CACHE: dict[tuple[str, str], Any] = {}
-_OPTION_CHAIN_CACHE_DATE: list = [None]
-_EARNINGS_CACHE: dict[str, list[str]] = {}
-_EARNINGS_CACHE_DATE: list = [None]
+# _OPTION_CHAIN_CACHE / _EARNINGS_CACHE now live in report_utils_pricing.py
+# (re-exported above).
 
 # How long a cached price is trusted before _history_cache() re-fetches it.
 # Found live 2026-11-05: this cache previously had NO expiry at all, so a
@@ -151,126 +159,9 @@ def _now() -> float:
     return time.time()
 
 
-def ensure_logs_dir() -> Path:
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    return LOGS_DIR
-
-
-def load_snapshot() -> dict[str, Any]:
-    if not SNAPSHOT_FILE.exists():
-        return {}
-    with SNAPSHOT_FILE.open() as f:
-        return yaml.safe_load(f) or {}
-
-
-def latest_file(pattern: str) -> Path | None:
-    matches = sorted(STATEMENTS_DIR.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True)
-    return matches[0] if matches else None
-
-
-def load_account_transactions() -> dict[str, list[dict[str, str]]]:
-    result: dict[str, list[dict[str, str]]] = {}
-    for account, pattern in _ACCOUNT_FILES.items():
-        path = latest_file(pattern)
-        if not path:
-            result[account] = []
-            continue
-        with path.open(newline="", encoding="utf-8-sig") as f:
-            result[account] = list(csv.DictReader(f))
-    return result
-
-
-def parse_amount(raw: Any) -> float:
-    text = str(raw or "").replace("$", "").replace(",", "").strip()
-    if not text:
-        return 0.0
-    try:
-        return float(text)
-    except ValueError:
-        return 0.0
-
-
-def parse_qty(raw: Any) -> int:
-    text = str(raw or "0").replace(",", "").replace('"', '').strip()
-    try:
-        return int(float(text))
-    except ValueError:
-        return 0
-
-
-def parse_txn_date(raw: str) -> date | None:
-    for fmt in ("%m/%d/%Y", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(str(raw).strip(), fmt).date()
-        except Exception:
-            continue
-    return None
-
-
-def month_window(target: date) -> tuple[date, date]:
-    first = target.replace(day=1)
-    last = target.replace(day=calendar.monthrange(target.year, target.month)[1])
-    return first, last
-
-
-def previous_month(target: date) -> date:
-    prev = target.replace(day=1) - timedelta(days=1)
-    return prev.replace(day=1)
-
-
-def month_name(target: date) -> str:
-    return target.strftime("%B %Y")
-
-
-def month_days(target: date) -> int:
-    return calendar.monthrange(target.year, target.month)[1]
-
-
-def project_value(current_value: float, as_of: date) -> float:
-    elapsed = max(1, as_of.day)
-    return current_value / elapsed * month_days(as_of)
-
-
-def fmt_money(value: Any) -> str:
-    try:
-        num = float(value)
-    except Exception:
-        return "—"
-    return f"${num:,.0f}"
-
-
-def fmt_inr(value: Any) -> str:
-    try:
-        num = float(value)
-    except Exception:
-        return "—"
-    return f"₹{num:,.0f}"
-
-
-def safe_div(n: float, d: float) -> float:
-    return n / d if d else 0.0
-
-
-def compute_rsi(prices, period: int = 14) -> float | None:
-    try:
-        delta = prices.diff()
-        gain = delta.clip(lower=0).rolling(period).mean()
-        loss = (-delta.clip(upper=0)).rolling(period).mean()
-        rs = gain / loss.replace(0, math.nan)
-        value = (100 - (100 / (1 + rs))).iloc[-1]
-        return round(float(value), 1) if value == value else None
-    except Exception:
-        return None
-
-
-def yf_symbol(symbol: str, india: bool = False) -> str:
-    if not india:
-        return symbol
-    if symbol in _INDIA_SYMBOL_MAP:
-        return _INDIA_SYMBOL_MAP[symbol]
-    if symbol.startswith("^") or symbol.endswith(".NS"):
-        return symbol
-    return f"{symbol}.NS"
+def _today() -> str:
+    """Isolated so tests can simulate a day change without real waiting."""
+    return date.today().isoformat()
 
 
 def _history_cache(symbol: str, india: bool = False):
@@ -297,52 +188,6 @@ def current_price(symbol: str, india: bool = False) -> float:
     except Exception:
         pass
     return 0.0
-
-
-def technical_snapshot(symbol: str, india: bool = False) -> dict[str, Any]:
-    payload = _history_cache(symbol, india)
-    hist = payload.get("hist")
-    ticker = payload.get("ticker")
-    if hist is None or getattr(hist, "empty", True):
-        return {
-            "symbol": symbol,
-            "current": 0.0,
-            "rsi": None,
-            "ma50": None,
-            "ma200": None,
-            "above_50": None,
-            "above_200": None,
-            "week_52_high": None,
-            "week_52_low": None,
-            "pct_off_high": None,
-            "pe": None,
-        }
-    close = hist["Close"]
-    current = float(close.iloc[-1])
-    ma50 = float(close.tail(50).mean()) if len(close) >= 50 else None
-    ma200 = float(close.tail(200).mean()) if len(close) >= 200 else None
-    week_52_high = float(close.max()) if len(close) else None
-    week_52_low = float(close.min()) if len(close) else None
-    pe = None
-    if india:
-        try:
-            info = ticker.info if ticker else {}
-            pe = info.get("trailingPE") or info.get("forwardPE")
-        except Exception:
-            pe = None
-    return {
-        "symbol": symbol,
-        "current": current,
-        "rsi": compute_rsi(close, 14),
-        "ma50": round(ma50, 2) if ma50 else None,
-        "ma200": round(ma200, 2) if ma200 else None,
-        "above_50": current > ma50 if ma50 else None,
-        "above_200": current > ma200 if ma200 else None,
-        "week_52_high": round(week_52_high, 2) if week_52_high else None,
-        "week_52_low": round(week_52_low, 2) if week_52_low else None,
-        "pct_off_high": round((current - week_52_high) / week_52_high * 100, 1) if week_52_high else None,
-        "pe": round(float(pe), 2) if pe else None,
-    }
 
 
 _EXTENDED_HOURS_CACHE_FILE = DATA_DIR / "extended_hours_cache.json"
@@ -433,281 +278,7 @@ def extended_hours_context(symbol: str, regular_close_price: float | None) -> di
     }
 
 
-def upcoming_earnings(symbol: str, days: int = 14) -> list[str]:
-    ensure_same_day(_EARNINGS_CACHE, _EARNINGS_CACHE_DATE, _today())
-    if symbol in _EARNINGS_CACHE:
-        return _EARNINGS_CACHE[symbol]
-    found: list[str] = []
-    try:
-        cal = yf.Ticker(symbol).calendar
-        if hasattr(cal, "index"):
-            if "Earnings Date" in getattr(cal, "index", []):
-                values = cal.loc["Earnings Date"]
-                for value in values if hasattr(values, "tolist") else [values]:
-                    dt = getattr(value, "to_pydatetime", lambda: value)()
-                    if isinstance(dt, datetime):
-                        found.append(dt.date().isoformat())
-            elif hasattr(cal, "columns") and "Earnings Date" in cal.columns:
-                for value in cal["Earnings Date"].tolist():
-                    if value is not None:
-                        dt = getattr(value, "to_pydatetime", lambda: value)()
-                        if isinstance(dt, datetime):
-                            found.append(dt.date().isoformat())
-        elif isinstance(cal, dict):
-            values = cal.get("Earnings Date") or []
-            for value in values if isinstance(values, list) else [values]:
-                if hasattr(value, "date"):
-                    found.append(value.date().isoformat())
-    except Exception:
-        pass
-    cutoff = date.today() + timedelta(days=days)
-    filtered = []
-    for raw in found:
-        try:
-            dt = date.fromisoformat(raw)
-            if date.today() <= dt <= cutoff:
-                filtered.append(raw)
-        except Exception:
-            continue
-    _EARNINGS_CACHE[symbol] = filtered
-    return filtered
-
-
-def option_market_price(symbol: str, expiry: str, strike: float, option_type: str) -> float | None:
-    ensure_same_day(_OPTION_CHAIN_CACHE, _OPTION_CHAIN_CACHE_DATE, _today())
-    key = (symbol, expiry)
-    chain = _OPTION_CHAIN_CACHE.get(key)
-    if chain is None:
-        try:
-            chain = yf.Ticker(symbol).option_chain(expiry)
-        except Exception:
-            chain = None
-        _OPTION_CHAIN_CACHE[key] = chain
-    if chain is None:
-        return None
-    try:
-        table = chain.calls if option_type == "CALL" else chain.puts
-        if table is None or table.empty:
-            return None
-        row = table.loc[(table["strike"] - float(strike)).abs().idxmin()]
-        if abs(float(row["strike"]) - float(strike)) > 0.01:
-            return None
-        bid = float(row.get("bid", 0) or 0)
-        ask = float(row.get("ask", 0) or 0)
-        last = float(row.get("lastPrice", 0) or 0)
-        if bid and ask:
-            return round((bid + ask) / 2, 2)
-        return round(last, 2) if last else None
-    except Exception:
-        return None
-
-
-def option_probability_itm(symbol: str, expiry: str, strike: float, option_type: str, spot: float) -> float | None:
-    """Risk-neutral probability the contract finishes ITM at expiry. Uses
-    the contract's own live implied vol (same cached chain as
-    option_market_price -- no extra fetch if that was already called for
-    this symbol/expiry this run) and delegates the actual d2/probability
-    math to enhanced_metrics.BlackScholesGreeks.d2 -- that class was
-    already imported into the production report and never instantiated
-    (see unified_master_report_production.py's Section 7 comment); this is
-    its first real caller rather than a second hand-rolled Black-Scholes
-    implementation. Risk-free rate fixed at 0 -- no existing call site in
-    this codebase sets one, and it's immaterial at these DTEs.
-    Returns None if spot/strike/IV aren't all usable (matches
-    option_market_price's fail-quiet convention -- callers already handle
-    a None price the same way).
-    Trader-facing meaning: for a short PUT this is "probability of
-    assignment"; for a short CALL, "probability of being exercised against."
-    """
-    from enhanced_metrics import BlackScholesGreeks
-    from scipy.stats import norm
-
-    ensure_same_day(_OPTION_CHAIN_CACHE, _OPTION_CHAIN_CACHE_DATE, _today())
-    key = (symbol, expiry)
-    chain = _OPTION_CHAIN_CACHE.get(key)
-    if chain is None:
-        try:
-            chain = yf.Ticker(symbol).option_chain(expiry)
-        except Exception:
-            chain = None
-        _OPTION_CHAIN_CACHE[key] = chain
-    if chain is None or not spot or spot <= 0 or not strike or strike <= 0:
-        return None
-    try:
-        table = chain.calls if option_type == "CALL" else chain.puts
-        if table is None or table.empty:
-            return None
-        row = table.loc[(table["strike"] - float(strike)).abs().idxmin()]
-        if abs(float(row["strike"]) - float(strike)) > 0.01:
-            return None
-        iv = float(row.get("impliedVolatility", 0) or 0)
-        if iv <= 0:
-            return None
-        expiry_date = date.fromisoformat(expiry)
-        T = max((expiry_date - date.today()).days, 0) / 365.0
-        if T <= 0:
-            return 1.0 if (option_type == "PUT") == (spot < strike) else 0.0
-        d2 = BlackScholesGreeks.d2(spot, strike, T, 0, iv)
-        # P(S_T < K) for a put's assignment risk, P(S_T > K) for a call's
-        # exercise risk -- both expressed as "probability this leg finishes
-        # against the seller."
-        return round(float(norm.cdf(-d2)) if option_type == "PUT" else float(norm.cdf(d2)), 4)
-    except Exception:
-        return None
-
-
-def parse_option_symbol(symbol: str) -> dict[str, Any] | None:
-    import re
-
-    match = re.match(r"^(\w+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([CP])$", str(symbol).strip())
-    if not match:
-        return None
-    return {
-        "symbol": match.group(1),
-        "expiry": datetime.strptime(match.group(2), "%m/%d/%Y").date().isoformat(),
-        "strike": float(match.group(3)),
-        "option_type": "CALL" if match.group(4) == "C" else "PUT",
-    }
-
-
-def reconstruct_open_option_legs(rows: list[dict[str, str]], account: str) -> list[dict[str, Any]]:
-    book: dict[tuple[str, str, float, str], dict[str, Any]] = {}
-    for row in rows:
-        parsed = parse_option_symbol(row.get("Symbol", ""))
-        if not parsed:
-            continue
-        qty = max(1, parse_qty(row.get("Quantity", 1)))
-        action = str(row.get("Action", "")).strip()
-        amount = parse_amount(row.get("Amount", 0))
-        txn_date = parse_txn_date(row.get("Date", "")) or date.today()
-        key = (parsed["symbol"], parsed["expiry"], parsed["strike"], parsed["option_type"])
-        item = book.setdefault(key, {
-            **parsed,
-            "contracts": 0,
-            "net_credit": 0.0,
-            "opened": None,
-            "account": account,
-        })
-        if "Sell to Open" in action:
-            item["contracts"] += qty
-            item["net_credit"] += max(0.0, amount)
-            item["opened"] = min(item["opened"], txn_date) if item["opened"] else txn_date
-        elif action == "Buy to Close":
-            item["contracts"] = max(0, item["contracts"] - qty)
-            item["net_credit"] -= abs(amount)
-        elif action in ("Assigned", "Expired", "Exercise"):
-            item["contracts"] = 0
-    open_legs = []
-    for item in book.values():
-        if item["contracts"] <= 0:
-            continue
-        dte = (date.fromisoformat(item["expiry"]) - date.today()).days
-        underlying = current_price(item["symbol"])
-        mark = option_market_price(item["symbol"], item["expiry"], item["strike"], item["option_type"])
-        item.update({
-            "dte": dte,
-            "underlying_price": underlying,
-            "mark": (mark or 0.0) * 100 * item["contracts"],
-            "premium_received": item["net_credit"],
-            "moneyness_pct": round(((underlying - item["strike"]) / underlying * 100), 1) if underlying else None,
-        })
-        open_legs.append(item)
-    return sorted(open_legs, key=lambda x: (x["dte"], x["symbol"]))
-
-
-def load_position_csv() -> list[dict[str, Any]]:
-    path = latest_file("Individual-Positions*.csv")
-    if not path:
-        return []
-    positions: list[dict[str, Any]] = []
-    with path.open(newline="", encoding="utf-8-sig") as f:
-        lines = f.readlines()
-    header_idx = next((i for i, line in enumerate(lines) if "\"Symbol\"" in line and "Asset Type" in line), None)
-    if header_idx is None:
-        return []
-    for row in csv.DictReader(lines[header_idx:]):
-        symbol = str(row.get("Symbol", "")).strip().strip('"')
-        if not symbol:
-            continue
-        positions.append({
-            "symbol": symbol,
-            "qty": parse_qty(row.get("Qty (Quantity)", 0)),
-            "price": parse_amount(row.get("Price", 0)),
-            "market_value": parse_amount(row.get("Mkt Val (Market Value)", 0)),
-            "cost_basis_total": parse_amount(row.get("Cost Basis", 0)),
-            "asset_type": str(row.get("Asset Type", "")).strip().strip('"'),
-        })
-    return positions
-
-
-def fallback_us_positions() -> dict[str, Any]:
-    snapshot = load_snapshot()
-    txns = load_account_transactions()
-    pos_rows = load_position_csv()
-    price_map = {row["symbol"]: row["price"] for row in pos_rows if row.get("asset_type", "").lower() == "equity"}
-    cost_map = {
-        row["symbol"]: safe_div(row["cost_basis_total"], row["qty"])
-        for row in pos_rows if row.get("asset_type", "").lower() == "equity" and row.get("qty")
-    }
-    positions: dict[tuple[str, str], Position] = {}
-    for item in snapshot.get("assigned_positions", []):
-        symbol = item.get("symbol")
-        if not symbol:
-            continue
-        raw_account = str(item.get("account", "A"))
-        if "8634" in raw_account or "634" in raw_account or raw_account.strip().upper() == "C":
-            account = "C"
-        elif "275" in raw_account or raw_account.strip().upper() == "B":
-            account = "B"
-        else:
-            account = "A"
-        positions[(account, symbol)] = Position(
-            symbol=symbol,
-            account=account,
-            shares=int(item.get("shares", 0) or 0),
-            stock_cost_basis=float(cost_map.get(symbol) or item.get("cost_basis", 0) or 0),
-            current_price=float(price_map.get(symbol) or current_price(symbol) or item.get("cost_basis", 0) or 0),
-        )
-        positions[(account, symbol)]._snapshot_meta = item
-    for account, rows in txns.items():
-        for leg in reconstruct_open_option_legs(rows, account):
-            pos = positions.get((account, leg["symbol"]))
-            if not pos:
-                pos = Position(
-                    symbol=leg["symbol"],
-                    account=account,
-                    shares=0,
-                    stock_cost_basis=0.0,
-                    current_price=float(leg.get("underlying_price") or current_price(leg["symbol"]) or 0),
-                )
-                positions[(account, leg["symbol"])] = pos
-            pos.option_legs.append(OptionLeg(
-                description=f"{leg['option_type']} {leg['strike']} {leg['expiry']}",
-                strike=float(leg["strike"]),
-                expiry=leg["expiry"],
-                option_type=leg["option_type"],
-                quantity=-int(leg["contracts"]),
-                premium_received=float(leg["premium_received"]),
-                current_mark=float(leg["mark"]),
-                dte=int(leg["dte"]),
-            ))
-            pos.current_price = float(leg.get("underlying_price") or pos.current_price)
-    return {
-        "positions": list(positions.values()),
-        "balances": {"A": {}, "B": {}, "C": {}},
-        "data_source": "SNAPSHOT (LIVE API UNAVAILABLE)",
-        "warning": f"Using snapshot dated {snapshot.get('last_updated', 'unknown')} plus statement fallbacks.",
-        "snapshot": snapshot,
-        "transactions": txns,
-    }
-
-
 _SNAPSHOT_HOLDINGS_CACHE: dict[str, Any] | None = None  # {"date": iso-date, "holdings": set}
-
-
-def _today() -> str:
-    """Isolated so tests can simulate a day change without real waiting."""
-    return date.today().isoformat()
 
 
 def _snapshot_holdings() -> set:
@@ -746,269 +317,6 @@ def _snapshot_holdings() -> set:
         return set()
     _SNAPSHOT_HOLDINGS_CACHE = {"date": today, "holdings": holdings}
     return holdings
-
-
-_SCHWAB_SNAPSHOT_FILE = {
-    "A": "schwab_rahul_individual.csv",
-    "B": "schwab_pinky_ira.csv",
-    "C": "schwab_designated-bene.csv",
-}
-
-_SCHWAB_OPT_SYMBOL = re.compile(r"^(\w+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([CP])$")
-
-
-def _clean_money(val: str) -> float:
-    try:
-        return float(val.strip().strip('"').replace("$", "").replace(",", ""))
-    except (ValueError, AttributeError):
-        return 0.0
-
-
-def schwab_source_choice(snapshot_mtime: float, txn_mtime: float) -> str:
-    """Decide whether load_us_positions() should use the position snapshot
-    or reconstructed transaction history for a Schwab account. Compares
-    calendar DAY, not raw mtime seconds: snapshot and transactions files
-    are normally written by the same reconcile.py batch run, seconds apart
-    in either order, so a same-day snapshot is always preferred -- it
-    carries Schwab's own real share counts, which reconstruction cannot
-    produce at all. Only a snapshot that is missing, or from a strictly
-    earlier calendar day than the transactions file (meaning real trades
-    happened since the last snapshot was taken), falls back to
-    reconstruction. Confirmed real bug, 2026-10-13: Account C's snapshot
-    was written 31 seconds BEFORE its same-batch transactions file; a raw
-    `snapshot_mtime >= txn_mtime` check flipped to "transactions" for that
-    reason alone, and reconstruction (which has no equity-share tracking)
-    reported TWLO's real 324 shares as 0, misclassifying a covered call
-    as naked."""
-    if snapshot_mtime < 0:
-        return "transactions"
-    if txn_mtime <= 0:
-        return "snapshot"
-    snapshot_date = datetime.fromtimestamp(snapshot_mtime).date()
-    txn_date = datetime.fromtimestamp(txn_mtime).date()
-    return "snapshot" if snapshot_date >= txn_date else "transactions"
-
-
-def load_schwab_from_snapshot(account: str) -> list[Position] | None:
-    """Build Positions directly from the current Schwab POSITION snapshot
-    (data/positions/schwab_*.csv -- the same canonical file reconcile.py
-    maintains), instead of reconstructing from transaction history. Real
-    advantage over reconstruct_positions_from_transactions(): this file
-    carries Schwab's own live Cost Basis (-> premium_received) and Mkt Val
-    (-> current_mark) per leg directly -- no live option-chain fetch needed,
-    and no risk of a stale transaction file showing a contract as still
-    open (or a share count as 0) when the broker's own current snapshot
-    says otherwise. Confirmed real case, 2026-10-12: Account A's
-    transactions file was 10 days stale and showed OKTA with 0 shares
-    against 6 short calls (looked like naked calls, 15x loss); the SAME
-    day's position snapshot (4:23 PM) showed the true figure -- 600 shares,
-    fully covering all 6 contracts -- a covered-call position, not a naked
-    one. Returns None if no snapshot file exists for this account."""
-    filename = _SCHWAB_SNAPSHOT_FILE.get(account)
-    if not filename:
-        return None
-    path = DATA_DIR / "positions" / filename
-    if not path.exists():
-        return None
-
-    try:
-        with open(path, newline="", encoding="utf-8-sig") as f:
-            lines = f.readlines()
-    except Exception:
-        return None
-
-    header_idx = next((i for i, l in enumerate(lines) if '"Symbol"' in l and "Asset Type" in l), None)
-    if header_idx is None:
-        return None
-
-    equity_map: dict[str, Position] = {}
-    reader = csv.DictReader(lines[header_idx:])
-    for row in reader:
-        raw_sym = (row.get("Symbol") or "").strip().strip('"')
-        if not raw_sym or raw_sym.lower().startswith(("account", "cash")):
-            continue
-        asset_type = (row.get("Asset Type") or "").strip().strip('"').lower()
-        try:
-            qty = float((row.get("Qty (Quantity)") or "0").strip().strip('"').replace(",", ""))
-        except ValueError:
-            continue
-        price = _clean_money(row.get("Price") or "0")
-
-        if asset_type in ("equity", "stock"):
-            if raw_sym not in equity_map:
-                equity_map[raw_sym] = Position(
-                    symbol=raw_sym, account=account, shares=0,
-                    stock_cost_basis=0, current_price=price, option_legs=[],
-                )
-            equity_map[raw_sym].shares = int(qty) if qty > 0 else 0
-            equity_map[raw_sym].current_price = price
-
-        elif asset_type == "option" and qty < 0:
-            m = _SCHWAB_OPT_SYMBOL.match(raw_sym)
-            if not m:
-                continue
-            underlying, expiry_str, strike_str, opt_char = m.groups()
-            expiry = datetime.strptime(expiry_str, "%m/%d/%Y").date()
-            dte = (expiry - date.today()).days
-            if dte < 0:
-                continue  # expired -- not an open position
-
-            if underlying not in equity_map:
-                equity_map[underlying] = Position(
-                    symbol=underlying, account=account, shares=0,
-                    stock_cost_basis=0, current_price=0, option_legs=[],
-                )
-
-            leg = OptionLeg(
-                description=raw_sym,
-                option_type="CALL" if opt_char == "C" else "PUT",
-                strike=float(strike_str),
-                expiry=expiry.isoformat(),
-                dte=dte,
-                quantity=-abs(qty),
-                premium_received=abs(_clean_money(row.get("Cost Basis") or "0")),
-                current_mark=abs(_clean_money(row.get("Mkt Val (Market Value)") or "0")),
-            )
-            equity_map[underlying].option_legs.append(leg)
-
-    result = [p for p in equity_map.values() if p.option_legs]
-    return result if result else None
-
-
-def reconstruct_positions_from_transactions(account: str = "A") -> list[Position] | None:
-    """
-    Reconstruct current positions from transaction history (fallback when live API unavailable).
-    Parses Individual_XXX###_Transactions_*.csv, calculates net position state.
-    Returns list of Position objects or None if transactions unavailable.
-    """
-    pattern_map = {
-        "A": "Individual_XXX232_Transactions_*.csv",
-        "B": "Contributory_XXX275_Transactions_*.csv",
-        "C": "Designated_Bene_Individual_XXX634_Transactions_*.csv",
-    }
-    pattern = pattern_map.get(account)
-    if not pattern:
-        return None
-
-    # Find latest transaction file — prefer data/positions/ (current, per the file contract),
-    # fall back to data/statements/. Newest by mtime wins.
-    txn_files = list((DATA_DIR / "positions").glob(pattern)) + list(STATEMENTS_DIR.glob(pattern))
-    if not txn_files:
-        return None
-    txn_file = max(txn_files, key=lambda x: x.stat().st_mtime)
-
-    positions_dict = defaultdict(lambda: {"contracts": defaultdict(int)})
-    # Real premium received per contract, from the SAME transaction file's own
-    # Amount column -- STO credits add, BTC debits reduce (a partial close
-    # reduces the basis remaining on the still-open quantity). No live fetch
-    # needed; this is exactly what the broker already recorded.
-    premium_by_contract: dict[str, float] = defaultdict(float)
-
-    def _amount(row: dict) -> float:
-        raw = row.get("Amount", "").strip().strip('"').replace("$", "").replace(",", "")
-        try:
-            return float(raw)
-        except ValueError:
-            return 0.0
-
-    try:
-        with open(txn_file) as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                action = row.get("Action", "").strip('"')
-                symbol = row.get("Symbol", "").strip('"')
-                qty_str = row.get("Quantity", "").strip('"')
-
-                if not qty_str or not symbol:
-                    continue
-
-                try:
-                    qty = int(qty_str)
-                except ValueError:
-                    continue
-
-                # Parse option symbol (skip equity)
-                opt_match = re.match(r"^(\w+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([CP])$", symbol)
-                if not opt_match:
-                    continue
-
-                underlying = opt_match.group(1)
-
-                if "Sell to Open" in action or "STO" in action:
-                    positions_dict[underlying]["contracts"][symbol] += qty
-                    premium_by_contract[symbol] += abs(_amount(row))
-                elif "Buy to Close" in action or "BTC" in action:
-                    positions_dict[underlying]["contracts"][symbol] -= qty
-                    premium_by_contract[symbol] -= abs(_amount(row))
-                elif "Assigned" in action or "Expired" in action:
-                    # short option closed by assignment/expiration — net it out
-                    positions_dict[underlying]["contracts"][symbol] -= abs(qty)
-
-        # Convert to Position objects
-        result = []
-        pending_mark_lookups: list[tuple[str, str, float, str, "OptionLeg"]] = []  # (symbol, expiry, strike, opt_type, leg)
-        for underlying in sorted(positions_dict.keys()):
-            contracts = positions_dict[underlying]["contracts"]
-            # Only NET-POSITIVE = genuine open short (STO not yet closed). Net-negative =
-            # orphaned Buy-to-Close whose Sell-to-Open predates this file window (phantom).
-            live_contracts = {sym: qty for sym, qty in contracts.items() if qty > 0}
-
-            if live_contracts:
-                # Create Position with live option legs. Field names must
-                # match analysis.pnl.Position/OptionLeg exactly -- this call
-                # drifted from the real schema (cost_basis -> stock_cost_basis,
-                # a premium_received kwarg Position never had, qty -> quantity,
-                # and OptionLeg's required description was missing entirely)
-                # and silently returned None for every Schwab account on every
-                # call ever since, via the bare except below. Confirmed live
-                # 2026-10-04: reconstruct_positions_from_transactions("A")
-                # raised TypeError: Position.__init__() got an unexpected
-                # keyword argument 'cost_basis' on every single call -- this
-                # is what made run_screener/scan_sector/screen_new_entries
-                # tag real Schwab-held names (AXON, NU) as "not currently
-                # held," not a one-ticker fluke.
-                pos = Position(
-                    symbol=underlying,
-                    shares=0,
-                    stock_cost_basis=0,
-                    current_price=0,
-                    account=account,
-                    option_legs=[],
-                )
-
-                for contract_sym, qty in live_contracts.items():
-                    opt_match = re.match(r"^(\w+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([CP])$", contract_sym)
-                    if opt_match:
-                        expiry_str = opt_match.group(2)
-                        strike = float(opt_match.group(3))
-                        opt_type = "CALL" if opt_match.group(4) == "C" else "PUT"
-                        expiry = datetime.strptime(expiry_str, "%m/%d/%Y").date()
-                        dte = (expiry - date.today()).days
-                        if dte < 0:
-                            continue  # expired — no longer an open position
-
-                        leg = OptionLeg(
-                            description=contract_sym,
-                            option_type=opt_type,
-                            strike=strike,
-                            expiry=expiry.isoformat(),
-                            dte=dte,
-                            quantity=-abs(qty),  # short (negative), matching OptionLeg's own convention
-                            premium_received=max(0.0, premium_by_contract.get(contract_sym, 0.0)),
-                            current_mark=0,  # filled in below via a live option-chain lookup
-                        )
-                        pos.option_legs.append(leg)
-                        pending_mark_lookups.append((underlying, expiry.isoformat(), strike, opt_type, leg))
-
-                if pos.option_legs:
-                    result.append(pos)
-
-        _fill_current_marks(pending_mark_lookups)
-
-        return result if result else None
-
-    except Exception:
-        return None
 
 
 def _fill_current_marks(lookups: list[tuple[str, str, float, str, "OptionLeg"]]) -> None:
@@ -1062,35 +370,44 @@ def load_robinhood_positions(csv_path: str, account_label: str) -> list[Position
     pending_mark_lookups: list[tuple[str, str, float, str, "OptionLeg"]] = []
 
     for leg_data in legs:
+        leg, lookup = _robinhood_leg_to_option_leg(leg_data)
         ticker = leg_data["ticker"]
         if ticker not in positions:
             positions[ticker] = Position(
                 symbol=ticker, account=account_label,
                 shares=0, stock_cost_basis=0.0, current_price=0.0,
             )
-        is_short = leg_data["quantity"] < 0
-        contracts = int(abs(leg_data["quantity"]))
-        leg = OptionLeg(
-            description=f"{leg_data['option_type']} {leg_data['strike']} {leg_data['expiry']}",
-            strike=leg_data["strike"],
-            expiry=leg_data["expiry"],
-            option_type=leg_data["option_type"],
-            quantity=-contracts if is_short else contracts,
-            # Net credit only means "premium received" for a short leg; a
-            # net-long leg's net_credit is a net debit (cost basis paid),
-            # which OptionLeg has no slot for -- matches every other
-            # broker's own parser convention here (parse_fidelity_csv etc.
-            # also hardcode premium_received=0.0 for a long leg).
-            premium_received=max(0.0, leg_data["net_credit"]) if is_short else 0.0,
-            current_mark=0.0,  # filled in below via a live option-chain lookup
-            dte=leg_data["dte"],
-        )
         positions[ticker].option_legs.append(leg)
-        pending_mark_lookups.append((ticker, leg_data["expiry"], leg_data["strike"], leg_data["option_type"], leg))
+        pending_mark_lookups.append(lookup)
 
     _fill_current_marks(pending_mark_lookups)
 
     return list(positions.values())
+
+
+def _robinhood_leg_to_option_leg(leg_data: dict) -> tuple["OptionLeg", tuple[str, str, float, str, "OptionLeg"]]:
+    """One netted robinhood_netting.py leg dict -> (OptionLeg,
+    pending-mark-lookup tuple). Split out of load_robinhood_positions() to
+    keep that function under the Code Quality Gate's 50-line cap."""
+    is_short = leg_data["quantity"] < 0
+    contracts = int(abs(leg_data["quantity"]))
+    leg = OptionLeg(
+        description=f"{leg_data['option_type']} {leg_data['strike']} {leg_data['expiry']}",
+        strike=leg_data["strike"],
+        expiry=leg_data["expiry"],
+        option_type=leg_data["option_type"],
+        quantity=-contracts if is_short else contracts,
+        # Net credit only means "premium received" for a short leg; a
+        # net-long leg's net_credit is a net debit (cost basis paid),
+        # which OptionLeg has no slot for -- matches every other
+        # broker's own parser convention here (parse_fidelity_csv etc.
+        # also hardcode premium_received=0.0 for a long leg).
+        premium_received=max(0.0, leg_data["net_credit"]) if is_short else 0.0,
+        current_mark=0.0,  # filled in below via a live option-chain lookup
+        dte=leg_data["dte"],
+    )
+    lookup = (leg_data["ticker"], leg_data["expiry"], leg_data["strike"], leg_data["option_type"], leg)
+    return leg, lookup
 
 
 def _record_account_failure(errors: list[str], label: str, exc: Exception) -> None:
@@ -1108,6 +425,163 @@ def _record_account_failure(errors: list[str], label: str, exc: Exception) -> No
     errors.append(message)
 
 
+def _load_schwab_account_positions(label: str, cfg: dict) -> tuple[list[Position] | None, dict | None]:
+    """One Schwab account: snapshot-vs-transactions source selection (see
+    schwab_source_choice()'s own docstring for why) + positions. Returns
+    (None, None) if nothing could be loaded either way. May raise -- the
+    caller (load_us_positions()) records the failure via
+    _record_account_failure instead of letting one bad account block the
+    rest."""
+    snapshot_path = DATA_DIR / "positions" / _SCHWAB_SNAPSHOT_FILE.get(label, "")
+    txn_pattern = {
+        "A": "Individual_XXX232_Transactions_*.csv",
+        "B": "Contributory_XXX275_Transactions_*.csv",
+        "C": "Designated_Bene_Individual_XXX634_Transactions_*.csv",
+    }.get(label, "")
+    txn_files = list((DATA_DIR / "positions").glob(txn_pattern)) + list(STATEMENTS_DIR.glob(txn_pattern))
+    txn_mtime = max((f.stat().st_mtime for f in txn_files), default=0)
+    snapshot_mtime = snapshot_path.stat().st_mtime if snapshot_path.exists() else -1
+
+    positions = None
+    used_source, used_mtime = "transactions", txn_mtime
+    if schwab_source_choice(snapshot_mtime, txn_mtime) == "snapshot":
+        positions = load_schwab_from_snapshot(label)
+        if positions:
+            used_source, used_mtime = "snapshot", snapshot_mtime
+    if not positions:
+        positions = reconstruct_positions_from_transactions(label)
+        used_source, used_mtime = "transactions", txn_mtime
+    if not positions:
+        return None, None
+
+    as_of = datetime.fromtimestamp(used_mtime).date().isoformat() if used_mtime > 0 else None
+    days_stale = (date.today() - datetime.fromtimestamp(used_mtime).date()).days if used_mtime > 0 else None
+    return positions, {"source": used_source, "as_of": as_of, "days_stale": days_stale}
+
+
+def _csv_account_source_entry(broker: str, file_mtime: float) -> dict:
+    """account_sources parity with the Schwab loop (ADR 0004) -- previously
+    only Schwab populated this, so data_source/data_as_of/days_stale came
+    back None for every Fidelity/Vanguard/Robinhood leg downstream. The
+    returned "as_of"/"days_stale" are the backing CSV export's own file
+    age, same meaning as the Schwab snapshot/transactions mtime."""
+    as_of_date = datetime.fromtimestamp(file_mtime).date()
+    return {"source": broker, "as_of": as_of_date.isoformat(), "days_stale": (date.today() - as_of_date).days}
+
+
+def _load_fidelity_account_positions(label: str, cfg: dict) -> tuple[list[Position], dict | None]:
+    from analysis.pnl import parse_fidelity_csv
+
+    csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+    if not csv_path or not os.path.exists(csv_path):
+        return [], None
+    per_acct = parse_fidelity_csv(csv_path, account_filter=cfg.get("fidelity_account_number"))
+    positions: list[Position] = []
+    for _, pos_list in per_acct.items():
+        for pos in pos_list:
+            pos.account = label
+        positions.extend(pos_list)
+    return positions, _csv_account_source_entry("fidelity_csv", os.path.getmtime(csv_path))
+
+
+def _load_robinhood_account_positions(label: str, cfg: dict) -> tuple[list[Position], dict | None]:
+    csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+    if not csv_path or not os.path.exists(csv_path):
+        return [], None
+    positions = load_robinhood_positions(csv_path, account_label=label)
+    return positions, _csv_account_source_entry("robinhood_csv", os.path.getmtime(csv_path))
+
+
+def _load_vanguard_account_positions(label: str, cfg: dict) -> tuple[list[Position], dict | None]:
+    from analysis.pnl import parse_vanguard_csv, parse_vanguard_pdf
+
+    pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
+    csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
+    if pdf_path and os.path.exists(pdf_path):
+        positions = parse_vanguard_pdf(pdf_path, account_label=label)
+        used_path = pdf_path
+    elif csv_path and os.path.exists(csv_path):
+        positions = parse_vanguard_csv(csv_path, account_label=label)
+        used_path = csv_path
+    else:
+        return [], None
+    return positions, _csv_account_source_entry("vanguard_csv", os.path.getmtime(used_path))
+
+
+_CSV_ACCOUNT_LOADERS = {
+    "fidelity_csv": _load_fidelity_account_positions,
+    "robinhood_csv": _load_robinhood_account_positions,
+    "vanguard_csv": _load_vanguard_account_positions,
+}
+
+
+def _backfill_missing_prices(all_positions: list[Position]) -> None:
+    """Live Yahoo Finance call for any position current_price() didn't
+    already set (mutates in place). The CSV parsers only set current_price
+    from an OWNED-EQUITY row in the export; a pure options position (short
+    put/call with no shares held — the normal case for cash-secured puts
+    and naked calls, i.e. most of this book) has no such row, so the merge
+    step hardcoded current_price=0.0 as a placeholder and NEVER actually
+    called Yahoo for it. That silently cascaded into scan_position_heat/
+    scan_profit_take_candidates/scan_roll_candidates treating the majority
+    of open legs as NO_PRICE (found: 49 of 55 legs) — not a Yahoo outage, a
+    code path that skipped the live lookup entirely for anything without
+    owned shares."""
+    for pos in all_positions:
+        if not pos.current_price or pos.current_price <= 0:
+            live = current_price(pos.symbol)
+            if live:
+                pos.current_price = live
+
+
+def _apply_snapshot_ground_truth_filter(all_positions: list[Position]) -> list[Position]:
+    """Applies to BOTH parser and fallback positions: drop any position not
+    in the actual position snapshots — removes phantoms from incomplete/
+    orphaned transaction history."""
+    holdings = _snapshot_holdings()
+    if holdings:
+        return [p for p in all_positions if str(p.symbol).upper() in holdings]
+    return all_positions
+
+
+def _load_all_schwab_positions(accounts: dict, all_positions: list[Position],
+                                account_sources: dict, load_errors: list[str]) -> None:
+    """Schwab accounts — from the current position snapshot when it's at
+    least as fresh as the transactions file, else reconstructed from
+    transaction history (NO live API either way; file+Yahoo only). See
+    _load_schwab_account_positions()'s own docstring for why the snapshot
+    is preferred whenever it's current. Mutates all_positions/
+    account_sources/load_errors in place (non-fatal per account)."""
+    for label, cfg in accounts.items():
+        if cfg.get("broker") != "schwab":
+            continue
+        try:
+            positions, source_entry = _load_schwab_account_positions(label, cfg)
+            if positions:
+                all_positions.extend(positions)
+                account_sources[label] = source_entry
+        except Exception as exc:
+            _record_account_failure(load_errors, label, exc)  # never block on one account
+
+
+def _load_all_csv_positions(accounts: dict, all_positions: list[Position],
+                             account_sources: dict, load_errors: list[str]) -> None:
+    """CSV-based accounts (fidelity_csv/robinhood_csv/vanguard_csv), each
+    non-fatal. Mutates all_positions/account_sources/load_errors in place."""
+    for label, cfg in accounts.items():
+        loader = _CSV_ACCOUNT_LOADERS.get(cfg.get("broker"))
+        if loader is None:
+            continue
+        try:
+            positions, source_entry = loader(label, cfg)
+            if positions:
+                all_positions.extend(positions)
+            if source_entry:
+                account_sources[label] = source_entry
+        except Exception as exc:
+            _record_account_failure(load_errors, label, exc)  # never block on one account
+
+
 async def load_us_positions() -> dict[str, Any]:
     """
     Load all US positions from every configured account in the ACCOUNTS registry.
@@ -1118,10 +592,6 @@ async def load_us_positions() -> dict[str, Any]:
     "this account has no position in this symbol."
     """
     from config import ACCOUNTS
-    from analysis.pnl import (
-        parse_schwab_positions, parse_fidelity_csv,
-        parse_vanguard_pdf, parse_vanguard_csv,
-    )
 
     all_positions: list[Position] = []
     balances: dict[str, dict[str, Any]] = {}
@@ -1131,110 +601,8 @@ async def load_us_positions() -> dict[str, Any]:
     account_sources: dict[str, dict[str, Any]] = {}
     load_errors: list[str] = []
 
-    # ── Schwab accounts — from the current position snapshot when it's at
-    # least as fresh as the transactions file, else reconstructed from
-    # transaction history (NO live API either way; file+Yahoo only). The
-    # snapshot carries Schwab's own real Cost Basis/Mkt Val and share counts
-    # directly -- prefer it whenever it's current, since a stale transaction
-    # file can show a wrong share count (confirmed real case 2026-10-12:
-    # Account A's transactions file was 10 days stale and showed OKTA with
-    # 0 shares against 6 short calls -- looked naked; the snapshot from the
-    # same day showed the true 600 shares, fully covering all 6).
-    for label, cfg in ACCOUNTS.items():
-        if cfg.get("broker") != "schwab":
-            continue
-        try:
-            snapshot_path = DATA_DIR / "positions" / _SCHWAB_SNAPSHOT_FILE.get(label, "")
-            txn_pattern = {
-                "A": "Individual_XXX232_Transactions_*.csv",
-                "B": "Contributory_XXX275_Transactions_*.csv",
-                "C": "Designated_Bene_Individual_XXX634_Transactions_*.csv",
-            }.get(label, "")
-            txn_files = list((DATA_DIR / "positions").glob(txn_pattern)) + list(STATEMENTS_DIR.glob(txn_pattern))
-            txn_mtime = max((f.stat().st_mtime for f in txn_files), default=0)
-            snapshot_mtime = snapshot_path.stat().st_mtime if snapshot_path.exists() else -1
-
-            positions = None
-            used_source, used_mtime = "transactions", txn_mtime
-            if schwab_source_choice(snapshot_mtime, txn_mtime) == "snapshot":
-                positions = load_schwab_from_snapshot(label)
-                if positions:
-                    used_source, used_mtime = "snapshot", snapshot_mtime
-            if not positions:
-                positions = reconstruct_positions_from_transactions(label)
-                used_source, used_mtime = "transactions", txn_mtime
-            if positions:
-                all_positions.extend(positions)
-                as_of = datetime.fromtimestamp(used_mtime).date().isoformat() if used_mtime > 0 else None
-                days_stale = (date.today() - datetime.fromtimestamp(used_mtime).date()).days if used_mtime > 0 else None
-                account_sources[label] = {"source": used_source, "as_of": as_of, "days_stale": days_stale}
-        except Exception as exc:
-            _record_account_failure(load_errors, label, exc)  # never block on one account
-
-    # ── CSV-based accounts (non-fatal each) ──────────────────────────────────
-    csv_brokers = ("fidelity_csv", "robinhood_csv", "vanguard_csv")
-    for label, cfg in ACCOUNTS.items():
-        broker = cfg.get("broker")
-        if broker not in csv_brokers:
-            continue
-        try:
-            if broker == "fidelity_csv":
-                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-                if not csv_path or not os.path.exists(csv_path):
-                    continue
-                acct_filter = cfg.get("fidelity_account_number")
-                per_acct = parse_fidelity_csv(csv_path, account_filter=acct_filter)
-                for _, positions in per_acct.items():
-                    for pos in positions:
-                        pos.account = label
-                    all_positions.extend(positions)
-                # account_sources parity with the Schwab loop (ADR 0004) --
-                # previously only Schwab populated this, so data_source/
-                # data_as_of/days_stale came back None for every Fidelity/
-                # Vanguard/Robinhood leg downstream. "as_of"/"days_stale"
-                # here are the backing CSV export's own file age, same
-                # meaning as the Schwab snapshot/transactions mtime above.
-                file_mtime = os.path.getmtime(csv_path)
-                as_of_date = datetime.fromtimestamp(file_mtime).date()
-                account_sources[label] = {
-                    "source": broker, "as_of": as_of_date.isoformat(),
-                    "days_stale": (date.today() - as_of_date).days,
-                }
-
-            elif broker == "robinhood_csv":
-                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-                if not csv_path or not os.path.exists(csv_path):
-                    continue
-                positions = load_robinhood_positions(csv_path, account_label=label)
-                all_positions.extend(positions)
-                file_mtime = os.path.getmtime(csv_path)
-                as_of_date = datetime.fromtimestamp(file_mtime).date()
-                account_sources[label] = {
-                    "source": broker, "as_of": as_of_date.isoformat(),
-                    "days_stale": (date.today() - as_of_date).days,
-                }
-
-            elif broker == "vanguard_csv":
-                pdf_path = os.getenv(cfg.get("pdf_path_env", ""), "")
-                csv_path = os.getenv(cfg.get("csv_path_env", ""), "")
-                used_path = None
-                if pdf_path and os.path.exists(pdf_path):
-                    positions = parse_vanguard_pdf(pdf_path, account_label=label)
-                    used_path = pdf_path
-                elif csv_path and os.path.exists(csv_path):
-                    positions = parse_vanguard_csv(csv_path, account_label=label)
-                    used_path = csv_path
-                else:
-                    continue
-                all_positions.extend(positions)
-                file_mtime = os.path.getmtime(used_path)
-                as_of_date = datetime.fromtimestamp(file_mtime).date()
-                account_sources[label] = {
-                    "source": broker, "as_of": as_of_date.isoformat(),
-                    "days_stale": (date.today() - as_of_date).days,
-                }
-        except Exception as exc:
-            _record_account_failure(load_errors, label, exc)  # never block on one account
+    _load_all_schwab_positions(ACCOUNTS, all_positions, account_sources, load_errors)
+    _load_all_csv_positions(ACCOUNTS, all_positions, account_sources, load_errors)
 
     # If the live parsers produced nothing, use the fallback dataset as the source.
     data_source = "LIVE"
@@ -1243,27 +611,8 @@ async def load_us_positions() -> dict[str, Any]:
         all_positions = fb.get("positions", [])
         data_source = fb.get("data_source", "SNAPSHOT")
 
-    # Backfill missing prices via a real Yahoo Finance call. The CSV parsers only
-    # set current_price from an OWNED-EQUITY row in the export; a pure options
-    # position (short put/call with no shares held — the normal case for
-    # cash-secured puts and naked calls, i.e. most of this book) has no such row,
-    # so the merge step hardcoded current_price=0.0 as a placeholder and NEVER
-    # actually called Yahoo for it. That silently cascaded into scan_position_heat
-    # /scan_profit_take_candidates/scan_roll_candidates treating the majority of
-    # open legs as NO_PRICE (found: 49 of 55 legs) — not a Yahoo outage, a code
-    # path that skipped the live lookup entirely for anything without owned shares.
-    for pos in all_positions:
-        if not pos.current_price or pos.current_price <= 0:
-            live = current_price(pos.symbol)
-            if live:
-                pos.current_price = live
-
-    # Ground-truth filter (applies to BOTH parser and fallback positions): drop any
-    # position not in the actual position snapshots — removes phantoms from
-    # incomplete/orphaned transaction history.
-    holdings = _snapshot_holdings()
-    if holdings:
-        all_positions = [p for p in all_positions if str(p.symbol).upper() in holdings]
+    _backfill_missing_prices(all_positions)
+    all_positions = _apply_snapshot_ground_truth_filter(all_positions)
 
     return {
         "positions": all_positions,
@@ -1274,229 +623,3 @@ async def load_us_positions() -> dict[str, Any]:
         "transactions": load_account_transactions(),
         "account_sources": account_sources,
     }
-
-
-def _dte_from_expiry(expiry: str) -> int:
-    try:
-        return (date.fromisoformat(expiry) - date.today()).days
-    except Exception:
-        return 0
-
-
-def _map_breeze_to_positions(raw_positions: list[dict]) -> list[Position]:
-    equity_map: dict[str, Position] = {}
-    option_legs: dict[str, list[OptionLeg]] = {}
-    for pos in raw_positions:
-        symbol = str(pos.get("symbol", "")).strip()
-        if not symbol:
-            continue
-        exchange = str(pos.get("exchange", "NSE")).upper()
-        product = str(pos.get("product_type", "")).lower()
-        qty = int(pos.get("quantity", 0) or 0)
-        avg_price = float(pos.get("avg_price", 0) or 0)
-        market_value = float(pos.get("market_value", 0) or 0)
-        last_price = float(pos.get("ltp", 0) or 0)
-        current_px = last_price or (market_value / qty if qty else avg_price)
-        if exchange == "NSE" and product in ("cash", ""):
-            equity_map[symbol] = Position(symbol=symbol, account="INDIA", shares=qty, stock_cost_basis=avg_price, current_price=current_px)
-        elif product == "options":
-            option_type = "CALL" if str(pos.get("option_type", "")).upper() == "CE" else "PUT"
-            strike = float(pos.get("strike_price", 0) or 0)
-            expiry = str(pos.get("expiry_date", "") or "")
-            dte = _dte_from_expiry(expiry)
-            is_short = qty < 0
-            abs_qty = abs(qty)
-            premium = avg_price * abs_qty if is_short else 0.0
-            mark = current_px * abs_qty if is_short else 0.0
-            underlying = pos.get("_raw", {}).get("stock_code") or symbol
-            option_legs.setdefault(underlying, []).append(
-                OptionLeg(
-                    description=f"{option_type} {strike} {expiry}",
-                    strike=strike,
-                    expiry=expiry,
-                    option_type=option_type,
-                    quantity=qty,
-                    premium_received=premium,
-                    current_mark=mark,
-                    dte=dte,
-                )
-            )
-    for underlying, legs in option_legs.items():
-        if underlying not in equity_map:
-            equity_map[underlying] = Position(symbol=underlying, account="INDIA", shares=0, stock_cost_basis=0.0, current_price=0.0)
-        equity_map[underlying].option_legs.extend(legs)
-    return list(equity_map.values())
-
-
-def _map_breeze_equity_holdings(raw_holdings: list[dict]) -> list[Position]:
-    positions: list[Position] = []
-    india_cfg = load_india_config()
-    core = set(india_cfg.get("core_portfolio", []))
-    exits = {item["icici_symbol"]: item for item in india_cfg.get("exit_triggers", []) if "icici_symbol" in item}
-    for holding in raw_holdings:
-        symbol = holding.get("symbol", "")
-        if not symbol:
-            continue
-        pos = Position(
-            symbol=symbol,
-            account="INDIA",
-            shares=int(holding.get("quantity", 0) or 0),
-            stock_cost_basis=float(holding.get("avg_price", 0) or 0),
-            current_price=float(holding.get("ltp", 0) or holding.get("avg_price", 0) or 0),
-        )
-        pos._is_core = symbol in core
-        pos._exit_trigger = exits.get(symbol)
-        positions.append(pos)
-    return positions
-
-
-def load_india_positions() -> dict[str, Any]:
-    api_key = os.getenv("BREEZE_API_KEY", "")
-    api_secret = os.getenv("BREEZE_API_SECRET", "")
-    session_token = os.getenv("BREEZE_SESSION_TOKEN", "")
-    try:
-        if not (api_key and api_secret and session_token):
-            raise RuntimeError("Breeze credentials missing")
-        from breeze_client import get_demat_holdings, get_portfolio_positions
-        holdings = get_demat_holdings(api_key, api_secret, session_token)
-        fno = get_portfolio_positions(api_key, api_secret, session_token)
-        if not holdings and not fno:
-            raise RuntimeError("No live India data")
-        equity_positions = {p.symbol: p for p in _map_breeze_equity_holdings(holdings)}
-        for pos in _map_breeze_to_positions(fno):
-            if pos.symbol in equity_positions:
-                equity_positions[pos.symbol].option_legs.extend(pos.option_legs)
-            else:
-                equity_positions[pos.symbol] = pos
-        return {
-            "positions": list(equity_positions.values()),
-            "data_source": "LIVE",
-            "warning": None,
-            "config": load_india_config(),
-        }
-    except Exception:
-        positions = build_positions_from_statements(load_india_config())
-        for pos in positions:
-            if pos.shares > 0:
-                live = current_price(pos.symbol, india=True)
-                if live:
-                    pos.current_price = live
-        return {
-            "positions": positions,
-            "data_source": "SNAPSHOT (LIVE API UNAVAILABLE)",
-            "warning": "Using India statement/config fallback data.",
-            "config": load_india_config(),
-        }
-
-
-def monthly_premium(rows: list[dict[str, str]], month_start: date) -> float:
-    total = 0.0
-    for row in rows:
-        txn_date = parse_txn_date(row.get("Date", ""))
-        if not txn_date or txn_date.year != month_start.year or txn_date.month != month_start.month:
-            continue
-        parsed = parse_option_symbol(row.get("Symbol", ""))
-        if not parsed:
-            continue
-        action = str(row.get("Action", "")).strip()
-        amount = parse_amount(row.get("Amount", 0))
-        if "Sell to Open" in action and amount > 0:
-            total += amount
-        elif action == "Buy to Close" and amount < 0:
-            total -= abs(amount)
-    return round(total, 2)
-
-
-def monthly_option_pnl_series(rows: list[dict[str, str]]) -> list[float]:
-    monthly: defaultdict[tuple[int, int], float] = defaultdict(float)
-    for row in rows:
-        txn_date = parse_txn_date(row.get("Date", ""))
-        if not txn_date:
-            continue
-        parsed = parse_option_symbol(row.get("Symbol", ""))
-        if not parsed:
-            continue
-        action = str(row.get("Action", "")).strip()
-        amount = parse_amount(row.get("Amount", 0))
-        key = (txn_date.year, txn_date.month)
-        if "Sell to Open" in action and amount > 0:
-            monthly[key] += amount
-        elif action == "Buy to Close" and amount < 0:
-            monthly[key] -= abs(amount)
-    return [monthly[key] for key in sorted(monthly)]
-
-
-def combined_kpis(txns: dict[str, list[dict[str, str]]], snapshot: dict[str, Any]) -> dict[str, Any]:
-    all_rows = [row for rows in txns.values() for row in rows]
-    capture = premium_capture_rate(all_rows) if all_rows else {"capture_rate": snapshot.get("ytd_premium_capture_rate"), "signal": "WATCH"}
-    pf = profit_factor(all_rows) if all_rows else {"profit_factor": snapshot.get("ytd_profit_factor"), "win_rate": None, "signal": "WATCH"}
-    monthly_series = monthly_option_pnl_series(all_rows)
-    sortino = sortino_ratio(monthly_series) if len(monthly_series) >= 3 else {"sortino_annualized": None, "signal": "WATCH"}
-    return {"capture": capture, "profit_factor": pf, "sortino": sortino}
-
-
-def save_html(prefix: str, html: str, report_day: date | None = None) -> Path:
-    ensure_logs_dir()
-    report_day = report_day or date.today()
-    path = LOGS_DIR / f"{prefix}_{report_day.isoformat()}.html"
-    path.write_text(html, encoding="utf-8")
-    return path
-
-
-def maybe_send(subject: str, html: str) -> dict[str, Any]:
-    api_key = os.getenv("RESEND_API_KEY", "")
-    if not api_key:
-        return {"success": False, "error": "RESEND_API_KEY not set"}
-    return send_email(
-        to_email=TO_EMAIL,
-        subject=subject,
-        html_body=html,
-        from_email=FROM_EMAIL,
-        api_key=api_key,
-    )
-
-
-def priority_from_position(position: Position, regime: str) -> tuple[int, str, str]:
-    roll = position.roll_signal()
-    loss = position.loss_flag()
-    profit = position.profit_take_signal(regime)
-    if loss.get("flag"):
-        return 1, "URGENT", f"Mark {loss.get('multiplier')}x premium received"
-    if any(leg.dte <= RISK["roll_dte_threshold"] for leg in position.option_legs):
-        return 2, "URGENT", "At or inside 21 DTE"
-    if profit.get("signal"):
-        return 2, "STRONG", f"{profit.get('pct_captured')}% premium captured"
-    if position.symbol in PERMANENT_EXITS:
-        return 2, "WATCH", "Permanent exit: accelerate covered call exit"
-    return 5, "WATCH", "No immediate action"
-
-
-def action_for_option_leg(underlying: float, strike: float, option_type: str, dte: int) -> str:
-    if dte <= 21:
-        return "ROLL / CLOSE"
-    if option_type == "PUT" and underlying and underlying < strike:
-        return "DEFEND / ROLL"
-    if option_type == "CALL" and underlying and underlying > strike:
-        return "MANAGE ITM CALL"
-    return "HOLD"
-
-
-def estimate_delta(underlying: float, strike: float, option_type: str) -> float | None:
-    if not underlying or not strike:
-        return None
-    moneyness = strike / underlying
-    if option_type == "PUT":
-        if moneyness >= 1.05:
-            return -0.65
-        if moneyness >= 1.0:
-            return -0.55
-        if moneyness >= 0.95:
-            return -0.35
-        return -0.2
-    if moneyness <= 0.95:
-        return 0.65
-    if moneyness <= 1.0:
-        return 0.55
-    if moneyness <= 1.05:
-        return 0.35
-    return 0.2
