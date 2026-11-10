@@ -56,6 +56,8 @@ sys.path.insert(0, str(_ROOT / "mcp"))
 
 from heat_scanner import (  # noqa: E402
     LegHeat,
+    LegContract,
+    LegPricing,
     assess_portfolio_heat,
     heat_from_positions,
     format_heat_block,
@@ -76,9 +78,11 @@ def check(label, condition, detail=""):
 def leg(symbol, option_type, strike, dte, current_price, premium_received,
         cost_to_close, expiry="2027-06-18"):
     return LegHeat(
-        symbol=symbol, option_type=option_type, strike=strike, dte=dte,
-        expiry=expiry, premium_received=premium_received,
-        cost_to_close=cost_to_close, current_price=current_price,
+        contract=LegContract(symbol=symbol, option_type=option_type, strike=strike,
+                              expiry=expiry),
+        pricing=LegPricing(premium_received=premium_received,
+                            cost_to_close=cost_to_close, current_price=current_price),
+        dte=dte,
     )
 
 

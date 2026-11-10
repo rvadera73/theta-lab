@@ -21,16 +21,31 @@ from config import HEAT_THRESHOLDS, HEAT_REGIME_ACTIONS
 
 HeatColor = Literal["GREEN", "YELLOW", "RED", "UNKNOWN"]
 
+
 @dataclass
-class LegHeat:
+class LegContract:
+    """Position-identity fields for a single short option leg (excludes dte,
+    which is time-varying rather than identity, and is kept on LegHeat itself
+    so both this and LegPricing stay at <=4 required fields)."""
     symbol: str
     option_type: Literal["CALL", "PUT"]
     strike: float
-    dte: int
     expiry: str
+
+
+@dataclass
+class LegPricing:
+    """Pricing fields for a single short option leg."""
     premium_received: float    # credit when opened
     cost_to_close: float       # current ask/mark to BTC (positive = debit)
     current_price: float       # stock price now
+
+
+@dataclass
+class LegHeat:
+    contract: LegContract
+    pricing: LegPricing
+    dte: int
 
     color: HeatColor = field(init=False)
     distance_pct: float = field(init=False)   # % buffer to strike
@@ -40,13 +55,36 @@ class LegHeat:
     reason: str = field(init=False)
 
     def __post_init__(self) -> None:
-        pr = self.premium_received
-        ctc = self.cost_to_close
+        # Flatten the grouped contract/pricing inputs onto the instance so the
+        # rest of this class (and every external reader of a LegHeat) keeps
+        # using the same plain attribute names as before the 4-param-max
+        # constructor refactor. (dte is already a flat field -- see above.)
+        self.symbol = self.contract.symbol
+        self.option_type = self.contract.option_type
+        self.strike = self.contract.strike
+        self.expiry = self.contract.expiry
+        self.premium_received = self.pricing.premium_received
+        self.cost_to_close = self.pricing.cost_to_close
+        self.current_price = self.pricing.current_price
 
-        # Legs with no live price can't be assessed — this is NOT the same as
-        # "safe". Surfacing them as GREEN was hiding real risk (e.g. SMR/OKLO
-        # puts sat unassessed for months while displaying as healthy). Use a
-        # distinct UNKNOWN color so they're visibly separate from verified-safe.
+        if self._apply_unknown_price_state():
+            return
+
+        self.distance_pct = self._compute_distance_pct()
+        self.pnl_pct, self.loss_multiple = self._compute_pnl_and_loss_multiple()
+        self.color = self._determine_color()
+        self._set_action()
+
+    def _apply_unknown_price_state(self) -> bool:
+        """
+        Legs with no live price can't be assessed — this is NOT the same as
+        "safe". Surfacing them as GREEN was hiding real risk (e.g. SMR/OKLO
+        puts sat unassessed for months while displaying as healthy). Use a
+        distinct UNKNOWN color so they're visibly separate from verified-safe.
+
+        Returns True (and sets all UNKNOWN-state fields) when there is no
+        usable live price; returns False otherwise.
+        """
         if not self.current_price or self.current_price <= 0:
             self.distance_pct = 0.0
             self.pnl_pct = 0.0
@@ -55,25 +93,30 @@ class LegHeat:
             self.action = "NO_PRICE"
             self.reason = "No live price available — NOT assessed, do not treat as safe"
             self.stagger_dte = max(180, self.dte + 75)
-            return
+            return True
+        return False
 
-        # Distance to strike (always positive)
+    def _compute_distance_pct(self) -> float:
+        """Distance to strike (always positive)."""
         if self.option_type == "CALL":
             # How far stock is BELOW the call strike
-            self.distance_pct = (self.strike - self.current_price) / self.current_price
-        else:
-            # How far stock is ABOVE the put strike
-            self.distance_pct = (self.current_price - self.strike) / self.current_price
+            return (self.strike - self.current_price) / self.current_price
+        # How far stock is ABOVE the put strike
+        return (self.current_price - self.strike) / self.current_price
 
-        self.pnl_pct     = (pr - ctc) / pr if pr > 0 else 0.0
-        self.loss_multiple = ctc / pr if pr > 0 else 0.0
+    def _compute_pnl_and_loss_multiple(self) -> tuple[float, float]:
+        pr = self.premium_received
+        ctc = self.cost_to_close
+        pnl_pct = (pr - ctc) / pr if pr > 0 else 0.0
+        loss_multiple = ctc / pr if pr > 0 else 0.0
+        return pnl_pct, loss_multiple
 
-        # ── Traffic light ───────────────────────────────────────────────
-        red_dist   = HEAT_THRESHOLDS[self.option_type.lower()]["red"]
+    def _determine_color(self) -> HeatColor:
+        red_dist    = HEAT_THRESHOLDS[self.option_type.lower()]["red"]
         yellow_dist = HEAT_THRESHOLDS[self.option_type.lower()]["yellow"]
-        loss_cut   = HEAT_THRESHOLDS["loss_cut_multiplier"]
-        early_warn = HEAT_THRESHOLDS["early_warning_multiple"]
-        profit_tgt = HEAT_THRESHOLDS["profit_target_pct"]
+        loss_cut    = HEAT_THRESHOLDS["loss_cut_multiplier"]
+        early_warn  = HEAT_THRESHOLDS["early_warning_multiple"]
+        profit_tgt  = HEAT_THRESHOLDS["profit_target_pct"]
 
         # Real bug found 2026-10-15: strike-proximity (distance_pct) and the
         # hard loss-cut (loss_multiple) fired RED regardless of DTE, even
@@ -92,95 +135,222 @@ class LegHeat:
         # decisions.
         RED_DTE_WINDOW = 45
         if self.dte <= 7:
-            self.color = "RED"
-        elif self.loss_multiple >= loss_cut:
-            self.color = "RED"
-        elif self.distance_pct < red_dist and self.dte <= RED_DTE_WINDOW:
-            self.color = "RED"
-        elif self.distance_pct < red_dist:
+            return "RED"
+        if self.loss_multiple >= loss_cut:
+            return "RED"
+        if self.distance_pct < red_dist and self.dte <= RED_DTE_WINDOW:
+            return "RED"
+        if self.distance_pct < red_dist:
             # Strike-proximity stress with real time still on the clock --
             # matches "time is working," not yet an action-now signal.
-            self.color = "YELLOW"
-        elif self.pnl_pct >= profit_tgt:
+            return "YELLOW"
+        if self.pnl_pct >= profit_tgt:
             # Profit target hit → YELLOW (action: harvest and redeploy)
-            self.color = "YELLOW"
-        elif self.loss_multiple >= early_warn:
-            self.color = "YELLOW"
-        elif self.distance_pct < yellow_dist:
-            self.color = "YELLOW"
-        elif self.dte <= 21:
-            self.color = "YELLOW"
-        else:
-            self.color = "GREEN"
-
-        self._set_action()
+            return "YELLOW"
+        if self.loss_multiple >= early_warn:
+            return "YELLOW"
+        if self.distance_pct < yellow_dist:
+            return "YELLOW"
+        if self.dte <= 21:
+            return "YELLOW"
+        return "GREEN"
 
     def _set_action(self) -> None:
-        pr   = self.premium_received
-        typ  = self.option_type
-        dte  = self.dte
+        reentry_dte = max(180, self.dte + 75)
+
+        if self.color == "GREEN":
+            self._set_green_action()
+        elif self.color == "YELLOW":
+            self._set_yellow_action(reentry_dte)
+        else:  # RED
+            self._set_red_action(reentry_dte)
+
+    def _set_green_action(self) -> None:
+        dist = self.distance_pct * 100
+        self.action = "HOLD"
+        self.reason = f"{dist:.0f}% cushion to strike, {self.dte}d DTE — theta working"
+
+    def _set_yellow_action(self, reentry_dte: int) -> None:
         dist = self.distance_pct * 100
         pnl  = self.pnl_pct * 100
         mult = self.loss_multiple
         lm   = HEAT_THRESHOLDS["loss_cut_multiplier"]
         pt   = HEAT_THRESHOLDS["profit_target_pct"] * 100
 
-        # Stagger re-entry DTE: when harvesting, re-open at current DTE + 60-90d minimum 180d.
-        # Data: harvest 86-134 DTE → re-open 200-344 DTE. harvest 50 DTE → re-open 148-267 DTE.
-        reentry_dte = max(180, dte + 75)
+        if pnl >= pt:
+            self.action = "HARVEST_RESTAGGER"
+            self.reason = (
+                f"{pnl:.0f}% profit captured — BTC for ${self.cost_to_close:,.0f}. "
+                f"Re-open SAME NAME at {reentry_dte}d DTE (current+75d), same/slightly lower strike. "
+                f"Re-entry within 1 week. Data: you re-stagger median 10d after harvest."
+            )
+        elif mult >= HEAT_THRESHOLDS["early_warning_multiple"]:
+            self.action = "WATCH_CLOSE"
+            self.reason = f"Cost-to-close is {mult:.1f}x premium — approaching loss threshold ({lm:.0f}x)"
+        elif self.dte <= 21:
+            self.action = "CLOSE_RESTAGGER"
+            self.reason = (
+                f"{self.dte}d DTE — gamma risk zone. "
+                f"BTC for ${self.cost_to_close:,.0f}, re-open at {reentry_dte}d DTE to keep premium engine running."
+            )
+        else:
+            self.action = "PREPARE_ROLL"
+            self.reason = (
+                f"Only {dist:.0f}% cushion to ${self.strike:.0f} {self.option_type} strike — "
+                f"prepare to roll {'higher and further out' if self.option_type == 'CALL' else 'lower and further out'}"
+            )
 
-        if self.color == "GREEN":
-            self.action = "HOLD"
-            self.reason = f"{dist:.0f}% cushion to strike, {dte}d DTE — theta working"
+    def _set_red_action(self, reentry_dte: int) -> None:
+        pr   = self.premium_received
+        dist = self.distance_pct * 100
+        mult = self.loss_multiple
+        lm   = HEAT_THRESHOLDS["loss_cut_multiplier"]
 
-        elif self.color == "YELLOW":
-            if pnl >= pt:
-                self.action = "HARVEST_RESTAGGER"
-                self.reason = (
-                    f"{pnl:.0f}% profit captured — BTC for ${self.cost_to_close:,.0f}. "
-                    f"Re-open SAME NAME at {reentry_dte}d DTE (current+75d), same/slightly lower strike. "
-                    f"Re-entry within 1 week. Data: you re-stagger median 10d after harvest."
-                )
-            elif mult >= HEAT_THRESHOLDS["early_warning_multiple"]:
-                self.action = "WATCH_CLOSE"
-                self.reason = f"Cost-to-close is {mult:.1f}x premium — approaching loss threshold ({lm:.0f}x)"
-            elif dte <= 21:
-                self.action = "CLOSE_RESTAGGER"
-                self.reason = (
-                    f"{dte}d DTE — gamma risk zone. "
-                    f"BTC for ${self.cost_to_close:,.0f}, re-open at {reentry_dte}d DTE to keep premium engine running."
-                )
-            else:
-                self.action = "PREPARE_ROLL"
-                self.reason = (
-                    f"Only {dist:.0f}% cushion to ${self.strike:.0f} {typ} strike — "
-                    f"prepare to roll {'higher and further out' if typ == 'CALL' else 'lower and further out'}"
-                )
+        if mult >= lm:
+            self.action = "CUT_RESTAGGER"
+            self.reason = (
+                f"Cost-to-close ${self.cost_to_close:,.0f} = {mult:.1f}x premium ${pr:,.0f} — "
+                f"hard stop. BTC now. Re-enter fresh at {reentry_dte}d DTE only after name stabilises (wait 5-10d)."
+            )
+        elif self.dte <= 7:
+            self.action = "CLOSE_NOW"
+            self.reason = f"{self.dte}d DTE — close immediately to avoid pin/assignment risk"
+        elif self.option_type == "CALL":
+            self.action = "ROLL_CALL"
+            self.reason = (
+                f"Only {dist:.0f}% below ${self.strike:.0f} CALL — "
+                f"ROLL: BTC ${self.cost_to_close:,.0f}, sell new CALL at higher strike + {reentry_dte}d DTE for net credit. "
+                f"If AI bull melt-up: CUT and pause calls on this name."
+            )
+        else:
+            self.action = "ROLL_OR_CUT_PUT"
+            self.reason = (
+                f"Only {dist:.0f}% above ${self.strike:.0f} PUT — "
+                f"If thesis intact: roll down-and-out to {reentry_dte}d DTE for credit. "
+                f"If thesis broken: CUT at ${self.cost_to_close:,.0f} and re-enter fresh after 5-10d."
+            )
 
-        else:  # RED
-            if mult >= lm:
-                self.action = "CUT_RESTAGGER"
-                self.reason = (
-                    f"Cost-to-close ${self.cost_to_close:,.0f} = {mult:.1f}x premium ${pr:,.0f} — "
-                    f"hard stop. BTC now. Re-enter fresh at {reentry_dte}d DTE only after name stabilises (wait 5-10d)."
-                )
-            elif dte <= 7:
-                self.action = "CLOSE_NOW"
-                self.reason = f"{dte}d DTE — close immediately to avoid pin/assignment risk"
-            elif typ == "CALL":
-                self.action = "ROLL_CALL"
-                self.reason = (
-                    f"Only {dist:.0f}% below ${self.strike:.0f} CALL — "
-                    f"ROLL: BTC ${self.cost_to_close:,.0f}, sell new CALL at higher strike + {reentry_dte}d DTE for net credit. "
-                    f"If AI bull melt-up: CUT and pause calls on this name."
-                )
-            else:
-                self.action = "ROLL_OR_CUT_PUT"
-                self.reason = (
-                    f"Only {dist:.0f}% above ${self.strike:.0f} PUT — "
-                    f"If thesis intact: roll down-and-out to {reentry_dte}d DTE for credit. "
-                    f"If thesis broken: CUT at ${self.cost_to_close:,.0f} and re-enter fresh after 5-10d."
-                )
+
+def _build_heat_legs(legs: list[dict]) -> list[LegHeat]:
+    """Construct a LegHeat per raw leg dict (see assess_portfolio_heat's docstring
+    for the expected keys)."""
+    heat_legs = []
+    for lg in legs:
+        contract = LegContract(
+            symbol=lg["symbol"], option_type=lg["option_type"], strike=lg["strike"],
+            expiry=lg["expiry"],
+        )
+        pricing = LegPricing(
+            premium_received=lg["premium_received"],
+            cost_to_close=lg["cost_to_close"],
+            current_price=lg["current_price"],
+        )
+        heat_legs.append(LegHeat(contract=contract, pricing=pricing, dte=lg["dte"]))
+    return heat_legs
+
+
+def _bucket_by_color(heat_legs: list[LegHeat]) -> dict[str, list[LegHeat]]:
+    by_color: dict[str, list[LegHeat]] = {"RED": [], "YELLOW": [], "GREEN": [], "UNKNOWN": []}
+    for leg in heat_legs:
+        by_color[leg.color].append(leg)
+
+    # Sort RED by urgency (loss multiple desc, then distance asc)
+    by_color["RED"].sort(key=lambda x: (-x.loss_multiple, x.distance_pct))
+    return by_color
+
+
+def _apply_call_tighten(by_color: dict[str, list[LegHeat]], regime_cfg: dict) -> None:
+    """Regime-specific call tightening: in AI bull, demote YELLOW calls to RED."""
+    if not regime_cfg["call_tighten"]:
+        return
+
+    newly_red = []
+    for leg in by_color["YELLOW"][:]:
+        if leg.option_type == "CALL" and leg.distance_pct < 0.12:
+            leg.color = "RED"
+            leg.action = "ROLL_CALL"
+            leg.reason = (
+                f"⚡ AI-bull tighten: {leg.distance_pct*100:.0f}% to ${leg.strike:.0f} CALL. "
+                f"In momentum rally, calls face melt-up risk. Roll before heat increases."
+            )
+            newly_red.append(leg)
+    for leg in newly_red:
+        by_color["YELLOW"].remove(leg)
+        by_color["RED"].append(leg)
+
+
+def _build_protocol_message(by_color: dict[str, list[LegHeat]], regime: str, regime_cfg: dict) -> str:
+    scale_back = regime_cfg["scale_back_strangles"]
+    red_calls  = [l for l in by_color["RED"]    if l.option_type == "CALL"]
+    red_puts   = [l for l in by_color["RED"]    if l.option_type == "PUT"]
+    yell_calls = [l for l in by_color["YELLOW"] if l.option_type == "CALL"]
+
+    protocol_parts = []
+    if scale_back and (red_calls or yell_calls):
+        protocol_parts.append(
+            f"⚡ {regime} protocol: PAUSE new strangles until {len(red_calls)+len(yell_calls)} "
+            f"call(s) are rolled/harvested. Recycle puts first to free up premium budget."
+        )
+    if red_calls:
+        protocol_parts.append(
+            f"🔴 {len(red_calls)} call(s) need immediate action (AI melt-up risk)."
+        )
+    if red_puts:
+        protocol_parts.append(
+            f"🔴 {len(red_puts)} put(s) need action."
+        )
+    if not by_color["RED"]:
+        protocol_parts.append("✅ No RED positions. Monitor YELLOW legs.")
+    return " ".join(protocol_parts)
+
+
+def _build_top_actions(by_color: dict[str, list[LegHeat]]) -> list[dict]:
+    top_actions = []
+    for leg in by_color["RED"] + by_color["YELLOW"]:
+        top_actions.append({
+            "color":        leg.color,
+            "symbol":       leg.symbol,
+            "option_type":  leg.option_type,
+            "strike":       leg.strike,
+            "expiry":       leg.expiry,
+            "dte":          leg.dte,
+            "pnl_pct":      round(leg.pnl_pct * 100, 1),
+            "distance_pct": round(leg.distance_pct * 100, 1),
+            "loss_multiple": round(leg.loss_multiple, 2),
+            "action":       leg.action,
+            "reason":       leg.reason,
+        })
+    return top_actions
+
+
+def _build_stagger_capacity(heat_legs: list[LegHeat]) -> dict[str, str]:
+    """
+    Stagger deployment gate: how many calls can you add right now?
+    Rule from data: can carry 2-3 simultaneous calls per name as long as ALL are GREEN.
+    Stop adding when ANY call is RED; be cautious when YELLOW.
+    """
+    all_calls = [l for l in heat_legs if l.option_type == "CALL"]
+    calls_by_sym: dict[str, list[LegHeat]] = {}
+    for lg in all_calls:
+        calls_by_sym.setdefault(lg.symbol, []).append(lg)
+
+    stagger_capacity: dict[str, str] = {}
+    for sym, sym_legs in calls_by_sym.items():
+        reds    = [l for l in sym_legs if l.color == "RED"]
+        yellows = [l for l in sym_legs if l.color == "YELLOW"]
+        greens  = [l for l in sym_legs if l.color == "GREEN"]
+        if reds:
+            stagger_capacity[sym] = f"STOP — {len(reds)} RED call(s). Roll/cut first."
+        elif len(sym_legs) >= 3:
+            stagger_capacity[sym] = f"FULL ({len(sym_legs)} calls) — harvest a YELLOW before adding."
+        elif yellows:
+            stagger_capacity[sym] = (
+                f"HARVEST_FIRST — {len(yellows)} call(s) at profit target. "
+                f"BTC those, then re-stagger at longer DTE."
+            )
+        else:
+            stagger_capacity[sym] = f"OPEN — {len(greens)} call(s) GREEN. Can add 1 more stagger leg."
+    return stagger_capacity
 
 
 def assess_portfolio_heat(
@@ -205,97 +375,15 @@ def assess_portfolio_heat(
         - scale_back: bool — should pause new strangles
         - top_actions: ordered list of most urgent items
     """
-    heat_legs = [LegHeat(**lg) for lg in legs]
+    heat_legs = _build_heat_legs(legs)
     regime_cfg = HEAT_REGIME_ACTIONS.get(regime, HEAT_REGIME_ACTIONS["BULL"])
 
-    by_color: dict[str, list[LegHeat]] = {"RED": [], "YELLOW": [], "GREEN": [], "UNKNOWN": []}
-    for leg in heat_legs:
-        by_color[leg.color].append(leg)
+    by_color = _bucket_by_color(heat_legs)
+    _apply_call_tighten(by_color, regime_cfg)
 
-    # Sort RED by urgency (loss multiple desc, then distance asc)
-    by_color["RED"].sort(key=lambda x: (-x.loss_multiple, x.distance_pct))
-
-    # Regime-specific call tightening: in AI bull, demote YELLOW calls to RED
-    if regime_cfg["call_tighten"]:
-        newly_red = []
-        for leg in by_color["YELLOW"][:]:
-            if leg.option_type == "CALL" and leg.distance_pct < 0.12:
-                leg.color = "RED"
-                leg.action = "ROLL_CALL"
-                leg.reason = (
-                    f"⚡ AI-bull tighten: {leg.distance_pct*100:.0f}% to ${leg.strike:.0f} CALL. "
-                    f"In momentum rally, calls face melt-up risk. Roll before heat increases."
-                )
-                newly_red.append(leg)
-        for leg in newly_red:
-            by_color["YELLOW"].remove(leg)
-            by_color["RED"].append(leg)
-
-    # Build protocol message
-    priority = regime_cfg["priority"]
-    scale_back = regime_cfg["scale_back_strangles"]
-    red_calls   = [l for l in by_color["RED"]  if l.option_type == "CALL"]
-    red_puts    = [l for l in by_color["RED"]  if l.option_type == "PUT"]
-    yell_calls  = [l for l in by_color["YELLOW"] if l.option_type == "CALL"]
-
-    protocol_parts = []
-    if scale_back and (red_calls or yell_calls):
-        protocol_parts.append(
-            f"⚡ {regime} protocol: PAUSE new strangles until {len(red_calls)+len(yell_calls)} "
-            f"call(s) are rolled/harvested. Recycle puts first to free up premium budget."
-        )
-    if red_calls:
-        protocol_parts.append(
-            f"🔴 {len(red_calls)} call(s) need immediate action (AI melt-up risk)."
-        )
-    if red_puts:
-        protocol_parts.append(
-            f"🔴 {len(red_puts)} put(s) need action."
-        )
-    if not by_color["RED"]:
-        protocol_parts.append("✅ No RED positions. Monitor YELLOW legs.")
-
-    top_actions = []
-    for leg in by_color["RED"] + by_color["YELLOW"]:
-        top_actions.append({
-            "color":        leg.color,
-            "symbol":       leg.symbol,
-            "option_type":  leg.option_type,
-            "strike":       leg.strike,
-            "expiry":       leg.expiry,
-            "dte":          leg.dte,
-            "pnl_pct":      round(leg.pnl_pct * 100, 1),
-            "distance_pct": round(leg.distance_pct * 100, 1),
-            "loss_multiple": round(leg.loss_multiple, 2),
-            "action":       leg.action,
-            "reason":       leg.reason,
-        })
-
-    # Stagger deployment gate: how many calls can you add right now?
-    # Rule from data: can carry 2-3 simultaneous calls per name as long as ALL are GREEN
-    # Stop adding when ANY call is RED; be cautious when YELLOW
-    all_calls = [l for l in heat_legs if l.option_type == "CALL"]
-    all_puts  = [l for l in heat_legs if l.option_type == "PUT"]
-    calls_by_sym: dict[str, list[LegHeat]] = {}
-    for lg in all_calls:
-        calls_by_sym.setdefault(lg.symbol, []).append(lg)
-
-    stagger_capacity: dict[str, str] = {}
-    for sym, sym_legs in calls_by_sym.items():
-        reds    = [l for l in sym_legs if l.color == "RED"]
-        yellows = [l for l in sym_legs if l.color == "YELLOW"]
-        greens  = [l for l in sym_legs if l.color == "GREEN"]
-        if reds:
-            stagger_capacity[sym] = f"STOP — {len(reds)} RED call(s). Roll/cut first."
-        elif len(sym_legs) >= 3:
-            stagger_capacity[sym] = f"FULL ({len(sym_legs)} calls) — harvest a YELLOW before adding."
-        elif yellows:
-            stagger_capacity[sym] = (
-                f"HARVEST_FIRST — {len(yellows)} call(s) at profit target. "
-                f"BTC those, then re-stagger at longer DTE."
-            )
-        else:
-            stagger_capacity[sym] = f"OPEN — {len(greens)} call(s) GREEN. Can add 1 more stagger leg."
+    protocol = _build_protocol_message(by_color, regime, regime_cfg)
+    top_actions = _build_top_actions(by_color)
+    stagger_capacity = _build_stagger_capacity(heat_legs)
 
     return {
         "by_color": {
@@ -306,8 +394,8 @@ def assess_portfolio_heat(
         },
         "counts": {k: len(v) for k, v in by_color.items()},
         "regime": regime,
-        "scale_back_new_entries": scale_back,
-        "protocol": " ".join(protocol_parts),
+        "scale_back_new_entries": regime_cfg["scale_back_strangles"],
+        "protocol": protocol,
         "top_actions": top_actions,
         "stagger_capacity": stagger_capacity,
     }
@@ -466,4 +554,3 @@ def format_heat_html(heat: dict) -> str:
     <tbody>{rows_html}</tbody>
   </table>
 </div>"""
-
