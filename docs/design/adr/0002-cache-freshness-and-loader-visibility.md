@@ -85,10 +85,15 @@ was hardcoded to `None`, never actually populated.
 
 ## Open questions
 
-- Whether `_OPTION_CHAIN_CACHE` and `_EARNINGS_CACHE` (same module, same
+- ~~Whether `_OPTION_CHAIN_CACHE` and `_EARNINGS_CACHE` (same module, same
   unbounded-cache shape, not touched by this ADR) need the same treatment —
   earnings dates and listed option chains change far less dynamically than
   price/holdings, so they were judged lower-priority and out of scope here,
   not exempted on principle. Worth a follow-up tech-debt pass if either is
   ever found to produce a stale real-world decision the way price/holdings
-  did today.
+  did today.~~ **Resolved 2026-11-10** (PR #19, the same-day-cache
+  unification Bolt): both were found to have **no staleness check at all**
+  (pure memoize-forever, not actually "same-day" caches despite the name),
+  and were migrated onto the shared `mcp/analysis/same_day_cache.py` helper's
+  calendar-day invalidation — closing the same unbounded-cache bug class this
+  ADR already fixed for price/holdings.
