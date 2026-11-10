@@ -28,22 +28,24 @@ default -- so any no-open-legs week crashed real report generation
 (weekly_report.py, monthly_objectives_report.py both pipe heat_from_positions()
 straight into one of those formatters). Fixed + regression-tested below.
 
-ISSUE FOUND, NOT FIXED (documented, not silently changed -- Mode C):
-mcp/config.py's HEAT_THRESHOLDS sets "yellow" equal to "red" (0.08) for both
-"call" and "put", instead of the "green" value (0.15) the inline comments
-describe as the yellow/green boundary ("yellow: stock 85-92% of strike
+ISSUE FOUND AND FIXED BY BOLT b11 (2026-11-10):
+mcp/config.py's HEAT_THRESHOLDS used to set "yellow" equal to "red" (0.08) for
+both "call" and "put", instead of sitting between "green" (0.15) and "red"
+(0.08) as the inline comments describe ("yellow: stock 85-92% of strike
 (8-15% cushion)"). Because of this, heat_scanner.py line ~109
-(`elif self.distance_pct < yellow_dist:`) is unreachable dead code: anything
+(`elif self.distance_pct < yellow_dist:`) was unreachable dead code: anything
 with distance_pct < 0.08 already matched the RED/YELLOW branches above it,
-and 0.08 is as far as this comparison can ever reach. Net effect: a leg with
-8-15% cushion to strike, no profit/loss trigger, and DTE > 21 reports GREEN
-today, not the documented YELLOW. This also means the regime "call_tighten"
-demotion (which only promotes already-YELLOW calls to RED) cannot catch such
-a leg via this path either. This is a real, plausible logic bug, but fixing
-it changes live risk classification for real positions -- out of scope for a
-characterization Bolt. Flagged precisely here and in the PR description as a
-recommended follow-up; the test below locks down the CURRENT (dead-branch)
-behavior rather than guessing at the "intended" one.
+and 0.08 was as far as this comparison could ever reach. Net effect: a leg
+with 8-15% cushion to strike, no profit/loss trigger, and DTE > 21 reported
+GREEN, not the documented YELLOW. This also meant the regime "call_tighten"
+demotion (which only promotes already-YELLOW calls to RED) could not catch
+such a leg via this path either.
+
+Bolt b11 restored "yellow" to the documented midpoint (0.115) between green
+(0.15) and red (0.08) in mcp/config.py. The `dead_branch_leg` check below was
+updated accordingly (now expects the real, documented YELLOW/PREPARE_ROLL
+classification instead of the old dead-branch GREEN). See
+tests/test_heat_thresholds.py for the direct regression test.
 
 No pytest dependency -- run directly: python3 tests/test_heat_scanner.py
 """
@@ -93,7 +95,7 @@ def leg_dict(symbol, option_type, strike, dte, current_price,
 
 # Real thresholds from mcp/config.py HEAT_THRESHOLDS, read here so the
 # fixtures below are visibly derived from the real config, not guessed:
-#   call/put red = 0.08, yellow = 0.08 (see "ISSUE FOUND, NOT FIXED" above),
+#   call/put red = 0.08, yellow = 0.115 (Bolt b11 fix -- see note above),
 #   loss_cut_multiplier = 2.0, early_warning_multiple = 1.5,
 #   profit_target_pct = 0.40, RED_DTE_WINDOW = 45 (in heat_scanner.py itself)
 
@@ -171,16 +173,20 @@ red_dte_window_leg = leg("RDW", "PUT", strike=94, dte=45, current_price=100,
 check("same 6% cushion but DTE=45 (inside the <=45 RED_DTE_WINDOW) -> RED",
       red_dte_window_leg.color == "RED", f"got {red_dte_window_leg.color}")
 
-# ISSUE FOUND, NOT FIXED: distance_pct inside the documented 8-15% "yellow"
-# band (config.py comments) currently reports GREEN, because config.py's
-# "yellow" threshold equals "red" (0.08) instead of "green" (0.15), making
-# heat_scanner.py's own distance-driven YELLOW branch unreachable. This
-# locks down CURRENT real behavior -- it does NOT assert this is correct.
+# FIXED BY BOLT b11: distance_pct inside the documented 8-11.5% "yellow"
+# band (config.py comments) now correctly reports YELLOW/PREPARE_ROLL, now
+# that config.py's "yellow" threshold (0.115) sits between "red" (0.08) and
+# "green" (0.15) instead of equaling "red" -- this previously-dead branch
+# (heat_scanner.py's `elif self.distance_pct < yellow_dist:`) is reachable
+# again. Before the fix this leg reported GREEN (see the module docstring's
+# "ISSUE FOUND AND FIXED BY BOLT b11" note for the full history).
 dead_branch_leg = leg("DBB", "CALL", strike=110, dte=90, current_price=100,
                        premium_received=500, cost_to_close=400)
-check("10% cushion (inside documented 8-15% yellow band per config.py comments), "
-      "no pnl/loss/DTE trigger -> currently GREEN (see ISSUE FOUND, NOT FIXED above)",
-      dead_branch_leg.color == "GREEN", f"got {dead_branch_leg.color}")
+check("10% cushion (inside documented 8-11.5% yellow band per config.py comments), "
+      "no pnl/loss/DTE trigger -> YELLOW (Bolt b11 fix)",
+      dead_branch_leg.color == "YELLOW", f"got {dead_branch_leg.color}")
+check("10% cushion with no pnl/loss trigger and DTE > 21 -> PREPARE_ROLL",
+      dead_branch_leg.action == "PREPARE_ROLL", f"got {dead_branch_leg.action}")
 
 # ---------------------------------------------------------------------------
 # LegHeat: RED -- each reachable branch and action

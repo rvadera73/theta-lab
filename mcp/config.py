@@ -174,17 +174,26 @@ REGIME_SIGNALS = {
 #   roll threatened calls first, harvest puts at 40%+ and recycle
 #
 # Traffic light system based on distance of stock price to strike:
+#
+# Bolt b11 fix (2026-11-10): "yellow" previously equaled "red" (0.08) for both
+# call and put — a copy-paste bug that made heat_scanner.py's distance-driven
+# YELLOW branch (`distance_pct < yellow_dist`) unreachable, since any leg with
+# distance_pct < 0.08 was already consumed by the RED/time-is-working branches
+# above it. Net effect: legs with 8-11.5% cushion to strike (no profit/loss
+# trigger, DTE > 21) were reporting GREEN instead of the documented YELLOW
+# "prepare to roll/harvest" state. Restored to the documented midpoint between
+# green (0.15) and red (0.08). See tests/test_heat_thresholds.py.
 HEAT_THRESHOLDS = {
     # SHORT CALL thresholds: stock rising toward call strike
     "call": {
         "green":  0.15,   # stock < 85% of strike  (>15% cushion) — theta working, hold
-        "yellow": 0.08,   # stock 85-92% of strike (8-15% cushion) — prepare to roll or harvest
+        "yellow": 0.115,  # stock 85-92% of strike (8-15% cushion) — prepare to roll or harvest
         "red":    0.08,   # stock > 92% of strike  (<8% cushion) — act now: roll or cut
     },
     # SHORT PUT thresholds: stock falling toward put strike
     "put": {
         "green":  0.15,   # stock > 115% of strike — hold
-        "yellow": 0.08,   # stock 108-115% of strike — prepare
+        "yellow": 0.115,  # stock 108-115% of strike — prepare
         "red":    0.08,   # stock < 108% of strike — act now
     },
     # P&L thresholds (cost-to-close as multiple of premium received)
