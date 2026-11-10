@@ -15,6 +15,7 @@ import yfinance as yf
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 import json
@@ -169,392 +170,576 @@ class TechnicalIndicators:
         }
 
 
+# =============================================================================
+# get_ticker_metrics -- decomposed into per-phase helpers (Bolt B14 refactor).
+# Each phase dataclass carries forward the shared intermediate values computed
+# once here (closes, ma50/ma200, etc.) so no helper re-fetches/re-derives data
+# another helper already has -- this module hits yfinance network calls, so a
+# redundant recompute would be a real perf/behavior-adjacent regression, not
+# just a style issue.
+# =============================================================================
+
+
+@dataclass
+class _Fundamentals:
+    pe_ratio: Optional[float]
+    week_52_high: Optional[float]
+    week_52_low: Optional[float]
+    revenue_growth: Optional[float]
+    earnings_growth: Optional[float]
+    analyst_rating: Optional[str]
+    target_upside_pct: Optional[float]
+
+
+@dataclass
+class _TechnicalSignals:
+    rsi: float
+    macd_data: Dict[str, float]
+    bb_data: Dict[str, float]
+    roc_7d: Optional[float]
+
+
+@dataclass
+class _TrendPositioning:
+    ma50: Optional[float]
+    ma200: Optional[float]
+    pct_above_50ma: Optional[float]
+    pct_above_200ma: Optional[float]
+    structurally_extended: bool
+    structurally_weak: bool
+
+
+@dataclass
+class _FundamentalConfirmation:
+    supports_extension: bool
+    confirms_weakness: bool
+    target_upside_pct: Optional[float]
+
+
+@dataclass
+class _HeatContext:
+    rsi: float
+    position_in_range: float
+    roc_7d: Optional[float]
+    bb_pct_b: float
+    pct_above_200ma: Optional[float]
+    structurally_extended: bool
+    structurally_weak: bool
+    supports_extension: bool
+    confirms_weakness: bool
+    vs200_s: str
+    upside_s: str
+
+
+@dataclass
+class _MetricsResult:
+    ticker: str
+    current_price: float
+    conviction: float
+    technical: _TechnicalSignals
+    trend: _TrendPositioning
+    position_in_range: float
+    fundamentals: _Fundamentals
+    heat_status: str
+    heat_reason: str
+
+
+def _fetch_fundamentals(stock, current_price: float) -> _Fundamentals:
+    """Pull fundamentals off stock.info, incl. analyst target upside."""
+    info = stock.info
+    pe_ratio = info.get('trailingPE', None)
+    week_52_high = info.get('fiftyTwoWeekHigh', None)
+    week_52_low = info.get('fiftyTwoWeekLow', None)
+    revenue_growth = info.get('revenueGrowth', None)
+    earnings_growth = info.get('earningsGrowth', None)
+    if earnings_growth is None:
+        earnings_growth = info.get('earningsQuarterlyGrowth', None)
+    analyst_rating = info.get('recommendationKey', None)
+    target_mean = info.get('targetMeanPrice', None)
+    target_upside_pct = (
+        (target_mean / current_price - 1) * 100
+        if target_mean and current_price else None
+    )
+    if target_upside_pct is not None and pd.isna(target_upside_pct):
+        target_upside_pct = None
+    return _Fundamentals(pe_ratio, week_52_high, week_52_low, revenue_growth,
+                          earnings_growth, analyst_rating, target_upside_pct)
+
+
+def _position_in_52w_range(current_price: float, week_52_high: Optional[float],
+                            week_52_low: Optional[float]) -> float:
+    """Position in 52-week range (0-100)."""
+    position_in_range = 50.0
+    if week_52_high and week_52_low and week_52_high > week_52_low:
+        position_in_range = ((current_price - week_52_low) / (week_52_high - week_52_low)) * 100
+        position_in_range = max(0, min(100, position_in_range))
+    return position_in_range
+
+
+def _fetch_price_history(stock, current_price: float) -> pd.Series:
+    """Historical closes for technical indicators, with a 6mo fallback."""
+    hist = stock.history(period="1y")
+    if len(hist) == 0:
+        hist = stock.history(period="6mo")
+    return hist['Close'] if len(hist) > 0 else pd.Series([current_price])
+
+
+def _compute_technical_signals(closes: pd.Series) -> _TechnicalSignals:
+    """RSI/MACD/Bollinger plus 7-day rate-of-change -- a recency/speed measure
+    RSI(14) and 52-week-range position both miss (a two-month grind and a
+    one-week spike can both read RSI 80; this tells them apart)."""
+    rsi = TechnicalIndicators.rsi(closes)
+    macd_data = TechnicalIndicators.macd(closes)
+    bb_data = TechnicalIndicators.bollinger_bands(closes)
+
+    roc_7d = None
+    if len(closes) >= 8:
+        try:
+            prior = float(closes.iloc[-8])
+            if prior:
+                roc_7d = float((closes.iloc[-1] / prior - 1) * 100)
+        except (ZeroDivisionError, IndexError):
+            roc_7d = None
+
+    return _TechnicalSignals(rsi, macd_data, bb_data, roc_7d)
+
+
+def _compute_moving_averages(closes: pd.Series) -> Tuple[Optional[float], Optional[float]]:
+    """50/200-day simple moving averages, NaN-sanitized (gappy/holiday-
+    misaligned history can average out to NaN even with enough window
+    length; float(nan) doesn't raise, so this must be sanitized explicitly
+    rather than relying on an `is not None` check alone)."""
+    ma50 = float(closes.tail(50).mean()) if len(closes) >= 50 else None
+    ma200 = float(closes.tail(200).mean()) if len(closes) >= 200 else None
+    if ma50 is not None and pd.isna(ma50):
+        ma50 = None
+    if ma200 is not None and pd.isna(ma200):
+        ma200 = None
+    return ma50, ma200
+
+
+def _compute_pct_above_ma(current_price: float, ma50: Optional[float],
+                           ma200: Optional[float]) -> Tuple[Optional[float], Optional[float]]:
+    """Price vs 50/200-day average, NaN-sanitized (see _compute_moving_averages)."""
+    pct_above_50ma = (current_price / ma50 - 1) * 100 if ma50 else None
+    pct_above_200ma = (current_price / ma200 - 1) * 100 if ma200 else None
+    if pct_above_50ma is not None and pd.isna(pct_above_50ma):
+        pct_above_50ma = None
+    if pct_above_200ma is not None and pd.isna(pct_above_200ma):
+        pct_above_200ma = None
+    return pct_above_50ma, pct_above_200ma
+
+
+def _compute_trend_positioning(closes: pd.Series, current_price: float) -> _TrendPositioning:
+    """50/200-day trend positioning -- gates whether an RSI/ROC/Bollinger
+    trigger earns a hard RED/GREEN or gets downgraded to a "watch, not
+    confirmed" YELLOW (added 2026-08-24; >10% above/below the 200-day average
+    is the structural-confirmation threshold, calibrated to cleanly separate
+    confirmed-extended names from short-term-only bounces inside a longer
+    consolidation/downtrend). Neither this nor the RSI/ROC/Bollinger triggers
+    replaces the other."""
+    ma50, ma200 = _compute_moving_averages(closes)
+    pct_above_50ma, pct_above_200ma = _compute_pct_above_ma(current_price, ma50, ma200)
+    structurally_extended = pct_above_200ma is not None and pct_above_200ma > 10
+    structurally_weak = pct_above_200ma is not None and pct_above_200ma < -10
+    return _TrendPositioning(ma50, ma200, pct_above_50ma, pct_above_200ma,
+                             structurally_extended, structurally_weak)
+
+
+def _compute_fundamental_confirmation(fundamentals: _Fundamentals) -> _FundamentalConfirmation:
+    """Fundamentals confirmation gate (added 2026-08-24) -- can only pull a
+    technical RED/GREEN back toward YELLOW, never overrides the 50/200MA
+    confirmation. Uses analyst target_upside_pct/rating rather than a
+    computed PEG ratio, which was tried informally this session and kept
+    producing nonsense-cheap readings driven by a single quarter's extreme
+    earnings-growth% off a low prior-period base."""
+    target_upside_pct = fundamentals.target_upside_pct
+    analyst_rating = fundamentals.analyst_rating
+    supports_extension = target_upside_pct is not None and target_upside_pct > 10
+    confirms_weakness = (
+        (target_upside_pct is not None and target_upside_pct < -10)
+        or analyst_rating in ("sell", "strong_sell", "underperform")
+    )
+    return _FundamentalConfirmation(supports_extension, confirms_weakness, target_upside_pct)
+
+
+# --- Conviction scoring -- see get_ticker_metrics docstring for the overall
+# approach (raw score accumulated across components, then rescaled onto the
+# 1-10 display range by its own achievable range rather than clamped). ---
+
+def _score_rsi_component(rsi: float, option_type: Optional[str]) -> float:
+    """RSI contribution, direction-dependent per option side (GitHub issue #1
+    backtest, n=343 Account A closed trades). Calls: oversold=bullish is the
+    best setup, overbought=bearish the worst (matches the heat-scanner's
+    "AI melt-up" warning). Puts: overbought was instead the BEST-performing
+    put bucket (98.3% win rate, n=59) -- opposite sign from calls -- so puts
+    are scored separately with modest, uniformly positive contributions
+    rather than mirroring the call-side swing."""
+    is_put = str(option_type or '').upper() in ('P', 'PUT')
+    if is_put:
+        if rsi > 70:
+            return 1.0
+        if 40 < rsi < 60:
+            return 0.75
+        if rsi < 30:
+            return 0.75
+        return 0.0
+    if rsi < 30:
+        return 2.0
+    if rsi > 70:
+        return -1.0
+    if 40 < rsi < 60:
+        return 0.5
+    return 0.0
+
+
+def _score_macd_component(macd_data: Dict[str, float]) -> float:
+    """Max +1.5 / min -1.0."""
+    if macd_data['histogram'] > 0 and macd_data['macd'] > macd_data['signal']:
+        return 1.5
+    if macd_data['histogram'] < 0 and macd_data['macd'] < macd_data['signal']:
+        return -1.0
+    return 0.0
+
+
+def _score_range_position_component(position_in_range: float) -> float:
+    """Max +1.5 / min -1.0."""
+    if position_in_range < 25:
+        return 1.5
+    if position_in_range > 85:
+        return -1.0
+    return 0.0
+
+
+def _score_pe_ratio_component(pe_ratio: Optional[float]) -> float:
+    """Max +0.5 / min -0.5."""
+    if pe_ratio and 15 < pe_ratio < 30:
+        return 0.5
+    if pe_ratio and pe_ratio > 40:
+        return -0.5
+    return 0.0
+
+
+def _score_technical_component(technical: _TechnicalSignals, option_type: Optional[str],
+                                position_in_range: float, pe_ratio: Optional[float]) -> float:
+    """Supplemental technical score: RSI(2.0) + MACD(1.5) + range(1.5) + PE(0.5)."""
+    score = _score_rsi_component(technical.rsi, option_type)
+    score += _score_macd_component(technical.macd_data)
+    score += _score_range_position_component(position_in_range)
+    score += _score_pe_ratio_component(pe_ratio)
+    return score
+
+
+def _score_revenue_growth_component(revenue_growth: Optional[float]) -> float:
+    """Max +1.5 / min -1.0."""
+    if revenue_growth is None:
+        return 0.0
+    if revenue_growth > 0.20:
+        return 1.5
+    if revenue_growth > 0.05:
+        return 0.5
+    if revenue_growth < -0.05:
+        return -1.0
+    return 0.0
+
+
+def _score_earnings_growth_component(earnings_growth: Optional[float]) -> float:
+    """Max +1.5 / min -2.5 (deteriorating earnings is the dominant signal)."""
+    if earnings_growth is None:
+        return 0.0
+    if earnings_growth > 0.20:
+        return 1.5
+    if earnings_growth >= 0:
+        return 0.5
+    if earnings_growth > -0.20:
+        return -0.5
+    return -2.5
+
+
+def _score_analyst_rating_component(analyst_rating: Optional[str]) -> float:
+    """Max +1.5 / min -2.0."""
+    if analyst_rating in ("strong_buy",):
+        return 1.5
+    if analyst_rating in ("buy",):
+        return 0.75
+    if analyst_rating in ("hold",):
+        return -0.5
+    if analyst_rating in ("sell", "strong_sell", "underperform"):
+        return -2.0
+    return 0.0
+
+
+def _score_target_upside_component(target_upside_pct: Optional[float]) -> float:
+    """Max +1.0 / min -2.0 (analyst target below current price)."""
+    if target_upside_pct is None:
+        return 0.0
+    if target_upside_pct > 15:
+        return 1.0
+    if target_upside_pct > 0:
+        return 0.3
+    if target_upside_pct > -15:
+        return -1.0
+    return -2.0
+
+
+def _score_fundamental_component(fundamentals: _Fundamentals) -> float:
+    """Primary signal -- weighted with a wider swing than the technical
+    component, matching the trading persona's stated philosophy
+    ("fundamentals + macro instinct is the research engine... technicals are
+    supplemental, not primary"). A technical-only version of this formula
+    shipped 2026-07-19 and scored Dr Reddy's (DRREDDY.NS) at 8.0/10 -- the
+    HIGHEST conviction in a 23-name India audit -- purely because it was
+    oversold with a "fair" PE, while earnings had collapsed -86% YoY with an
+    analyst downgrade to hold. That's the exact failure mode this weighting
+    prevents."""
+    return (
+        _score_revenue_growth_component(fundamentals.revenue_growth)
+        + _score_earnings_growth_component(fundamentals.earnings_growth)
+        + _score_analyst_rating_component(fundamentals.analyst_rating)
+        + _score_target_upside_component(fundamentals.target_upside_pct)
+    )
+
+
+def _compute_conviction(fundamentals: _Fundamentals, technical: _TechnicalSignals,
+                         option_type: Optional[str], position_in_range: float) -> float:
+    """Achievable raw range is symmetric +/-11.0 (RSI 2.0 + MACD 1.5 + range
+    1.5 + PE 0.5 + revenue 1.5 + earnings 1.5 + rating 1.5 + upside 1.0 = 11.0
+    max; mirrored min). Rescaled onto the 5-wide half-range around baseline
+    5.0 (not a baseline + clamp) so a 10.0 requires maxing EVERY component at
+    once, not just clearing a handful of independent thresholds -- the old
+    clamp approach let 20+ unrelated names all land on an identical 10.0/10."""
+    raw_score = _score_technical_component(technical, option_type, position_in_range,
+                                            fundamentals.pe_ratio)
+    raw_score += _score_fundamental_component(fundamentals)
+    MAX_RAW_SCORE = 11.0
+    conviction = 5.0 + 5.0 * (raw_score / MAX_RAW_SCORE)
+    return max(1, min(10, conviction))  # safety net only -- should rarely bind
+
+
+# --- Heat status (RED/YELLOW/GREEN) determination. Checked in the same order
+# as the original elif chain: each _heat_status_* below returns None (meaning
+# "doesn't apply, check the next one") or a terminal (status, reason) tuple,
+# exactly mirroring "if cond: ... elif cond2: ..." fall-through semantics. ---
+
+def _build_heat_context(technical: _TechnicalSignals, trend: _TrendPositioning,
+                         confirmation: _FundamentalConfirmation,
+                         position_in_range: float) -> _HeatContext:
+    pct_above_200ma = trend.pct_above_200ma
+    vs200_s = f"{pct_above_200ma:+.0f}%" if pct_above_200ma is not None else "n/a (< 200d history)"
+    upside_s = f"{confirmation.target_upside_pct:+.0f}%" if confirmation.target_upside_pct is not None else "n/a"
+    return _HeatContext(
+        rsi=technical.rsi,
+        position_in_range=position_in_range,
+        roc_7d=technical.roc_7d,
+        bb_pct_b=technical.bb_data['pct_b'],
+        pct_above_200ma=pct_above_200ma,
+        structurally_extended=trend.structurally_extended,
+        structurally_weak=trend.structurally_weak,
+        supports_extension=confirmation.supports_extension,
+        confirms_weakness=confirmation.confirms_weakness,
+        vs200_s=vs200_s,
+        upside_s=upside_s,
+    )
+
+
+def _heat_status_spike_up(ctx: _HeatContext) -> Optional[Tuple[str, str]]:
+    if ctx.roc_7d is None or ctx.roc_7d <= 12:
+        return None
+    roc_7d = ctx.roc_7d
+    if ctx.structurally_extended and not ctx.supports_extension:
+        return "RED", f"Spiked {roc_7d:.0f}% in 7 days AND {ctx.pct_above_200ma:.0f}% above its 200-day average — genuinely extended, not just a pop"
+    if ctx.structurally_extended:
+        return "YELLOW", f"Spiked {roc_7d:.0f}% in 7 days, {ctx.pct_above_200ma:.0f}% above its 200-day average, but analyst upside still {ctx.upside_s} — may be fundamentally supported, watch rather than force a close"
+    return "YELLOW", f"Spiked {roc_7d:.0f}% in 7 days but only {ctx.vs200_s} vs its 200-day average — short-term move, not structurally extended"
+
+
+def _heat_status_bollinger_up(ctx: _HeatContext) -> Optional[Tuple[str, str]]:
+    if ctx.bb_pct_b <= 1.0:
+        return None
+    if ctx.structurally_extended and not ctx.supports_extension:
+        return "RED", f"Above upper Bollinger Band AND {ctx.pct_above_200ma:.0f}% above its 200-day average — confirmed extension"
+    if ctx.structurally_extended:
+        return "YELLOW", f"Above upper Bollinger Band and {ctx.pct_above_200ma:.0f}% above its 200-day average, but analyst upside still {ctx.upside_s} — may be fundamentally supported"
+    return "YELLOW", f"Above upper Bollinger Band, but {ctx.vs200_s} vs its 200-day average — short-term only, not confirmed"
+
+
+def _heat_status_overbought(ctx: _HeatContext) -> Optional[Tuple[str, str]]:
+    if not (ctx.rsi > 75 or ctx.position_in_range > 90):
+        return None
+    if ctx.structurally_extended and not ctx.supports_extension:
+        return "RED", f"Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only {ctx.upside_s}"
+    if ctx.structurally_extended:
+        return "YELLOW", f"Technically extended ({ctx.vs200_s} vs 200-day average), but analyst upside still {ctx.upside_s} — may be fundamentally supported, watch rather than force a close"
+    return "YELLOW", f"RSI/range reads overbought, but {ctx.vs200_s} vs its 200-day average — watch, don't force a close"
+
+
+def _heat_status_spike_down(ctx: _HeatContext) -> Optional[Tuple[str, str]]:
+    if ctx.roc_7d is None or ctx.roc_7d >= -12:
+        return None
+    roc_7d = ctx.roc_7d
+    if ctx.structurally_weak and ctx.confirms_weakness:
+        return "RED", f"Dropped {roc_7d:.0f}% in 7 days, {ctx.pct_above_200ma:.0f}% below its 200-day average, AND analyst upside only {ctx.upside_s} — thesis may be broken, not a dip"
+    if ctx.structurally_weak:
+        return "GREEN", f"Dropped {roc_7d:.0f}% in 7 days AND {ctx.pct_above_200ma:.0f}% below its 200-day average — genuinely beaten down"
+    return "YELLOW", f"Dropped {roc_7d:.0f}% in 7 days but only {ctx.vs200_s} vs its 200-day average — pullback within trend, verify thesis before treating as an entry"
+
+
+def _heat_status_bollinger_down(ctx: _HeatContext) -> Optional[Tuple[str, str]]:
+    if ctx.bb_pct_b >= 0.0:
+        return None
+    if ctx.structurally_weak and ctx.confirms_weakness:
+        return "RED", f"Below lower Bollinger Band, {ctx.pct_above_200ma:.0f}% below its 200-day average, AND analyst upside only {ctx.upside_s} — verify thesis before averaging down"
+    if ctx.structurally_weak:
+        return "GREEN", f"Below lower Bollinger Band AND {ctx.pct_above_200ma:.0f}% below its 200-day average — genuinely oversold"
+    return "YELLOW", f"Below lower Bollinger Band, but {ctx.vs200_s} vs its 200-day average — short-term only, not confirmed"
+
+
+def _heat_status_oversold(ctx: _HeatContext) -> Optional[Tuple[str, str]]:
+    if not (ctx.rsi < 25 or ctx.position_in_range < 10):
+        return None
+    if ctx.structurally_weak and ctx.confirms_weakness:
+        return "RED", f"Oversold on RSI/range, but {ctx.vs200_s} vs 200-day average AND analyst upside only {ctx.upside_s} — this may be the DRREDDY pattern (cheap-looking, thesis actually broken), not a bargain"
+    if ctx.structurally_weak:
+        return "GREEN", "Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning"
+    return "YELLOW", f"RSI/range reads oversold, but {ctx.vs200_s} vs its 200-day average — verify before treating as attractive"
+
+
+def _heat_status_neutral(ctx: _HeatContext) -> Optional[Tuple[str, str]]:
+    if 30 < ctx.rsi < 70 and 30 < ctx.position_in_range < 70:
+        return "GREEN", "Neutral positioning"
+    return None
+
+
+def _heat_status_catchall(ctx: _HeatContext) -> Tuple[str, str]:
+    """Transition zone just inside the outer 25/75 RSI and 10/90 range bounds
+    already excluded above -- names the actual RSI/range value(s) that
+    tripped it and which threshold they're approaching, rather than a
+    generic "approaching extremes" with no numbers."""
+    heat_status = "YELLOW"
+    triggers = []
+    if ctx.rsi >= 70:
+        triggers.append(f"RSI {ctx.rsi:.0f} approaching overbought (70+)")
+    elif ctx.rsi <= 30:
+        triggers.append(f"RSI {ctx.rsi:.0f} approaching oversold (30-)")
+    if ctx.position_in_range >= 70:
+        triggers.append(f"{ctx.position_in_range:.0f}% of 52-week range approaching the high extreme (90%+)")
+    elif ctx.position_in_range <= 30:
+        triggers.append(f"{ctx.position_in_range:.0f}% of 52-week range approaching the low extreme (10%-)")
+    heat_reason = "; ".join(triggers) if triggers else f"RSI {ctx.rsi:.0f}, {ctx.position_in_range:.0f}% of 52-week range — mixed signal, not cleanly neutral"
+    return heat_status, heat_reason
+
+
+def _determine_heat_status(ctx: _HeatContext) -> Tuple[str, str]:
+    """Heat status (RED/YELLOW/GREEN). The two recency checks (spike/Bollinger)
+    run FIRST -- a stock that just spiked/dropped hard in the last week or
+    last 20 sessions deserves flagging even when RSI(14)/52-week positioning
+    haven't caught up to it yet."""
+    checks = (
+        _heat_status_spike_up, _heat_status_bollinger_up, _heat_status_overbought,
+        _heat_status_spike_down, _heat_status_bollinger_down, _heat_status_oversold,
+        _heat_status_neutral,
+    )
+    for check in checks:
+        result = check(ctx)
+        if result is not None:
+            return result
+    return _heat_status_catchall(ctx)
+
+
+def _build_metrics_result(r: _MetricsResult) -> Dict:
+    """Assemble the documented public return dict -- field names/types/
+    rounding must match byte-for-byte what report-generation callers expect."""
+    f = r.fundamentals
+    t = r.technical
+    tr = r.trend
+    return {
+        "ticker": r.ticker,
+        "price": round(r.current_price, 2),
+        "conviction": round(r.conviction, 1),
+        "rsi": round(t.rsi, 1),
+        "macd": round(t.macd_data['macd'], 4),
+        "macd_histogram": round(t.macd_data['histogram'], 4),
+        "bb_position": round(t.bb_data['pct_b'], 2),
+        "roc_7d": round(t.roc_7d, 1) if t.roc_7d is not None else None,
+        "pct_above_50ma": round(tr.pct_above_50ma, 1) if tr.pct_above_50ma is not None else None,
+        "pct_above_200ma": round(tr.pct_above_200ma, 1) if tr.pct_above_200ma is not None else None,
+        "position_in_52w_range": round(r.position_in_range, 1),
+        "week_52_high": round(f.week_52_high, 2) if f.week_52_high else None,
+        "week_52_low": round(f.week_52_low, 2) if f.week_52_low else None,
+        "pe_ratio": round(f.pe_ratio, 2) if f.pe_ratio else None,
+        "heat_status": r.heat_status,
+        "heat_reason": r.heat_reason,
+        "revenue_growth": round(f.revenue_growth * 100, 1) if f.revenue_growth is not None else None,
+        "earnings_growth": round(f.earnings_growth * 100, 1) if f.earnings_growth is not None else None,
+        "analyst_rating": f.analyst_rating,
+        "target_upside_pct": round(f.target_upside_pct, 1) if f.target_upside_pct is not None else None,
+    }
+
+
+def _fallback_metrics_result(ticker: str, current_price: float) -> Dict:
+    """Unchanged from the pre-refactor except-block fallback, including its
+    pre-existing (out of scope for this refactor) omission of
+    pct_above_50ma/pct_above_200ma keys -- this path is a true fallback only
+    on an actual exception (e.g. network outage), not exercised by the
+    existing "no data" characterization test (that ticker runs the normal
+    success path with mostly-None fields instead)."""
+    return {
+        "ticker": ticker,
+        "price": round(current_price, 2),
+        "conviction": 5.0,
+        "rsi": 50.0,
+        "macd": 0.0,
+        "macd_histogram": 0.0,
+        "bb_position": 0.5,
+        "roc_7d": None,
+        "position_in_52w_range": 50.0,
+        "week_52_high": None,
+        "week_52_low": None,
+        "pe_ratio": None,
+        "heat_status": "YELLOW",
+        "heat_reason": "Data unavailable",
+        "revenue_growth": None,
+        "earnings_growth": None,
+        "analyst_rating": None,
+        "target_upside_pct": None,
+    }
+
+
 def get_ticker_metrics(ticker: str, current_price: float, option_type: str = None) -> Dict:
     """Get comprehensive metrics for a ticker from Yahoo Finance.
 
     option_type: None (default) or 'C'/'CALL' use the original RSI treatment
     (calibrated for call-side risk: overbought = bad). Pass 'P'/'PUT' to use
-    the put-side RSI treatment instead — see the RSI block below for why
+    the put-side RSI treatment instead — see _score_rsi_component for why
     these differ. Default is unchanged so all existing callers (portfolio-wide
     ticker tiering in batch_get_metrics, sector rotation) keep prior behavior;
     pass 'P' explicitly wherever the caller knows it's evaluating a put entry.
     """
-
     try:
         stock = yf.Ticker(ticker)
+        fundamentals = _fetch_fundamentals(stock, current_price)
+        position_in_range = _position_in_52w_range(
+            current_price, fundamentals.week_52_high, fundamentals.week_52_low)
 
-        # Get fundamentals
-        info = stock.info
-        pe_ratio = info.get('trailingPE', None)
-        week_52_high = info.get('fiftyTwoWeekHigh', None)
-        week_52_low = info.get('fiftyTwoWeekLow', None)
-        revenue_growth = info.get('revenueGrowth', None)
-        earnings_growth = info.get('earningsGrowth', None)
-        if earnings_growth is None:
-            earnings_growth = info.get('earningsQuarterlyGrowth', None)
-        analyst_rating = info.get('recommendationKey', None)
-        target_mean = info.get('targetMeanPrice', None)
-        target_upside_pct = (
-            (target_mean / current_price - 1) * 100
-            if target_mean and current_price else None
+        closes = _fetch_price_history(stock, current_price)
+        technical = _compute_technical_signals(closes)
+        trend = _compute_trend_positioning(closes, current_price)
+        confirmation = _compute_fundamental_confirmation(fundamentals)
+
+        conviction = _compute_conviction(fundamentals, technical, option_type, position_in_range)
+
+        heat_ctx = _build_heat_context(technical, trend, confirmation, position_in_range)
+        heat_status, heat_reason = _determine_heat_status(heat_ctx)
+
+        result = _MetricsResult(
+            ticker=ticker, current_price=current_price, conviction=conviction,
+            technical=technical, trend=trend, position_in_range=position_in_range,
+            fundamentals=fundamentals, heat_status=heat_status, heat_reason=heat_reason,
         )
-        if target_upside_pct is not None and pd.isna(target_upside_pct):
-            target_upside_pct = None
-
-        # Calculate position in 52-week range (0-100)
-        position_in_range = 50.0
-        if week_52_high and week_52_low and week_52_high > week_52_low:
-            position_in_range = ((current_price - week_52_low) / (week_52_high - week_52_low)) * 100
-            position_in_range = max(0, min(100, position_in_range))
-
-        # Get historical data for technical indicators
-        hist = stock.history(period="1y")
-        if len(hist) == 0:
-            hist = stock.history(period="6mo")
-
-        closes = hist['Close'] if len(hist) > 0 else pd.Series([current_price])
-
-        # Calculate technical indicators
-        rsi = TechnicalIndicators.rsi(closes)
-        macd_data = TechnicalIndicators.macd(closes)
-        bb_data = TechnicalIndicators.bollinger_bands(closes)
-
-        # 7-day rate-of-change — a recency/speed measure RSI(14) and the
-        # 52-week-range position both miss. RSI is a smoothed 14-day
-        # oscillator: a stock that ground higher over two months and one
-        # that spiked in the last week can both read RSI 80. 52-week-range
-        # position is even longer-horizon. Neither can tell "sustainably
-        # extended" from "just spiked" — this can.
-        roc_7d = None
-        if len(closes) >= 8:
-            try:
-                prior = float(closes.iloc[-8])
-                if prior:
-                    roc_7d = float((closes.iloc[-1] / prior - 1) * 100)
-            except (ZeroDivisionError, IndexError):
-                roc_7d = None
-
-        # 50/200-day trend positioning — added 2026-08-24 after a real, data-
-        # confirmed failure: COIN and ALB were both flagged RED ("spiked in 7
-        # days") purely on roc_7d/RSI, but a direct check found COIN -9.3% and
-        # ALB -8.9% BELOW their own 200-day average (COIN at 15.6% of its
-        # 52-week range, near the LOW, not the high). Both were short-term
-        # bounces inside a longer consolidation/downtrend, not blow-off tops —
-        # RSI(14) and a 1-week return can't see that, only trend positioning
-        # can. ABNB/EXPE/ELF, by contrast, were genuinely extended on BOTH the
-        # short-term AND 50/200-day view in the same check. The fix: RSI/ROC/
-        # Bollinger stay the trigger (they catch real short-term moves that
-        # 50/200MA is too slow to see), but 50/200MA positioning now GATES
-        # whether that trigger earns a hard RED/GREEN or gets downgraded to a
-        # "watch, not confirmed" YELLOW. Neither signal replaces the other.
-        ma50 = float(closes.tail(50).mean()) if len(closes) >= 50 else None
-        ma200 = float(closes.tail(200).mean()) if len(closes) >= 200 else None
-        # A window of enough LENGTH can still average out to NaN (gappy/holiday-
-        # misaligned history, seen on some NSE tickers via this same India report
-        # run) -- `float(nan)` doesn't raise, so an `is not None` check alone lets
-        # NaN silently leak into every downstream f-string as the literal text
-        # "nan%". Sanitize once here rather than re-guard every check below.
-        if ma50 is not None and pd.isna(ma50):
-            ma50 = None
-        if ma200 is not None and pd.isna(ma200):
-            ma200 = None
-        pct_above_50ma = (current_price / ma50 - 1) * 100 if ma50 else None
-        pct_above_200ma = (current_price / ma200 - 1) * 100 if ma200 else None
-        if pct_above_50ma is not None and pd.isna(pct_above_50ma):
-            pct_above_50ma = None
-        if pct_above_200ma is not None and pd.isna(pct_above_200ma):
-            pct_above_200ma = None
-        # >10% above/below the 200-day average as the structural-confirmation
-        # threshold -- calibrated directly against the 2026-08-24 check: it
-        # cleanly separates ABNB(+39%)/EXPE(+33%)/ELF(+42%) (confirmed
-        # extended) from COIN(-9%)/ALB(-9%)/CRCL(+3%) (not extended) and DIS
-        # (+6%, the one genuine borderline case, correctly left unconfirmed).
-        structurally_extended = pct_above_200ma is not None and pct_above_200ma > 10
-        structurally_weak = pct_above_200ma is not None and pct_above_200ma < -10
-
-        # Fundamentals confirmation — added 2026-08-24, same session as the
-        # 50/200MA fix above, prompted by a direct question: "these look
-        # undervalued on growth/revenue, why close them?" Deliberately uses
-        # analyst target_upside_pct/rating, NOT a computed PEG ratio (PE /
-        # earnings-growth%). PEG was tried informally this session on several
-        # names (Sobha, EXPE here) and kept producing nonsense-cheap readings
-        # (EXPE's PEG came out to 0.11) driven entirely by a single quarter's
-        # extreme reported earnings-growth% off a low prior-period base — not
-        # real, sustainable cheapness. Analyst upside is itself imperfect
-        # (targets can be stale) but it's a forward-looking, market-vetted
-        # consensus number already used elsewhere in this scoring function,
-        # rather than a ratio this session has now seen distort three
-        # separate times. This gate can only pull a technical RED/GREEN back
-        # toward YELLOW — it never overrides the 50/200MA confirmation above,
-        # it only asks "do fundamentals still support this extension/
-        # weakness, or has the market moved past what growth justifies."
-        fundamentally_supports_extension = target_upside_pct is not None and target_upside_pct > 10
-        fundamentally_confirms_weakness = (
-            (target_upside_pct is not None and target_upside_pct < -10)
-            or analyst_rating in ("sell", "strong_sell", "underperform")
-        )
-
-        # Determine conviction score (0-10). Fundamentals are weighted as the
-        # PRIMARY signal (larger swing) with technicals SUPPLEMENTAL — matching
-        # the trading persona's stated philosophy ("fundamentals + macro instinct
-        # is the research engine... technicals are supplemental, not primary").
-        # A technical-only version of this formula shipped 2026-07-19 and was found
-        # to score Dr Reddy's (DRREDDY.NS) at 8.0/10 — the HIGHEST conviction in a
-        # 23-name India audit — purely because it was oversold with a "fair" PE,
-        # while its earnings had actually collapsed -86% YoY with an analyst
-        # downgrade to hold. That's the exact failure mode this weighting prevents.
-        # Accumulate a raw score first, then rescale by its own achievable range
-        # (below) rather than adding to a baseline and clamping the overflow.
-        # The old approach (baseline 5.0 + additive points, clamp to 1-10) let the
-        # raw sum run from -11 to +11 around that baseline (range of 22) while the
-        # display range is only 9 wide — any stock clearing roughly half its
-        # criteria strongly blew past the ceiling. Result: 20+ completely
-        # different names (SaaS platforms next to a cyclical memory-chip maker)
-        # all landed on the identical "10.0/10", destroying differentiation at
-        # exactly the point where it matters most (ranking "best of the best").
-        raw_score = 0.0
-
-        # --- Technical component (supplemental) ---
-        # RSI contribution — direction-dependent (GitHub issue #1, backtest
-        # 2026-07-31 against 343 real closed trades from Account A, split by
-        # option type). A single "overbought = bad" rule is only true for
-        # calls; puts showed the opposite pattern in this account's actual
-        # history, so the two are now scored separately rather than sharing
-        # one sign.
-        is_put = str(option_type or '').upper() in ('P', 'PUT')
-        if is_put:
-            # PUT calibration — n=343 backtest: overbought entries were this
-            # account's BEST-performing put setup (98.3% win rate, n=59, mean
-            # +25.1%), not the worst. Neutral (91.0%, n=100) and oversold
-            # (92.9%, n=14 — smallest sample) were close behind. All three
-            # buckets are strong for puts, so contributions are modest and
-            # uniformly positive rather than mirroring the call-side swing —
-            # the data doesn't support a bigger spread than this at n=343.
-            if rsi > 70:
-                raw_score += 1.0   # best-performing put bucket in backtest
-            elif 40 < rsi < 60:
-                raw_score += 0.75  # neutral, nearly as strong
-            elif rsi < 30:
-                raw_score += 0.75  # smallest sample (n=14) — don't overweight
-        else:
-            # CALL calibration (also the default when option_type not given —
-            # existing generic ticker-tiering use). Backtest confirmed this
-            # direction is correct for calls: oversold entries were calls'
-            # best setup (84.0% win rate, +20.1% mean), overbought their worst
-            # (72.7% win rate) — matches the original "AI melt-up" heat-scanner
-            # warning. Max +2.0 / min -1.0.
-            if rsi < 30:
-                raw_score += 2.0  # Oversold = bullish
-            elif rsi > 70:
-                raw_score -= 1.0  # Overbought = bearish
-            elif 40 < rsi < 60:
-                raw_score += 0.5  # Neutral tendency
-
-        # MACD contribution: max +1.5 / min -1.0
-        if macd_data['histogram'] > 0 and macd_data['macd'] > macd_data['signal']:
-            raw_score += 1.5  # Bullish
-        elif macd_data['histogram'] < 0 and macd_data['macd'] < macd_data['signal']:
-            raw_score -= 1.0  # Bearish
-
-        # Position in range contribution: max +1.5 / min -1.0
-        if position_in_range < 25:
-            raw_score += 1.5  # Near 52-week low = attractive
-        elif position_in_range > 85:
-            raw_score -= 1.0  # Near 52-week high = extended
-
-        # P/E ratio contribution: max +0.5 / min -0.5
-        if pe_ratio and 15 < pe_ratio < 30:
-            raw_score += 0.5  # Fair valuation
-        elif pe_ratio and pe_ratio > 40:
-            raw_score -= 0.5  # Expensive
-
-        # --- Fundamental component (primary — wider swing than technicals above) ---
-        if revenue_growth is not None:
-            if revenue_growth > 0.20:
-                raw_score += 1.5  # max +1.5 / min -1.0
-            elif revenue_growth > 0.05:
-                raw_score += 0.5
-            elif revenue_growth < -0.05:
-                raw_score -= 1.0
-
-        if earnings_growth is not None:
-            if earnings_growth > 0.20:
-                raw_score += 1.5  # max +1.5 / min -2.5
-            elif earnings_growth >= 0:
-                raw_score += 0.5
-            elif earnings_growth > -0.20:
-                raw_score -= 0.5
-            else:
-                raw_score -= 2.5  # Earnings deteriorating sharply — dominant signal
-
-        if analyst_rating in ("strong_buy",):
-            raw_score += 1.5  # max +1.5 / min -2.0
-        elif analyst_rating in ("buy",):
-            raw_score += 0.75
-        elif analyst_rating in ("hold",):
-            raw_score -= 0.5
-        elif analyst_rating in ("sell", "strong_sell", "underperform"):
-            raw_score -= 2.0
-
-        if target_upside_pct is not None:
-            if target_upside_pct > 15:
-                raw_score += 1.0  # max +1.0 / min -2.0
-            elif target_upside_pct > 0:
-                raw_score += 0.3
-            elif target_upside_pct > -15:
-                raw_score -= 1.0
-            else:
-                raw_score -= 2.0  # Analyst target below current price
-
-        # Achievable range derived directly from the max/min noted on each
-        # component above: RSI(2.0) + MACD(1.5) + range(1.5) + PE(0.5)
-        # + revenue(1.5) + earnings(1.5) + rating(1.5) + upside(1.0) = 11.0 max;
-        # -1.0-1.0-1.0-0.5-1.0-2.5-2.0-2.0 = -11.0 min. Symmetric +/-11.
-        # Rescale onto the 5-wide half-range around baseline 5.0 so hitting 10.0
-        # requires maxing EVERY component at once (a true "perfect" stock), not
-        # just clearing a handful of independent thresholds.
-        MAX_RAW_SCORE = 11.0
-        conviction = 5.0 + 5.0 * (raw_score / MAX_RAW_SCORE)
-        conviction = max(1, min(10, conviction))  # safety net only — should rarely bind now
-
-        # Determine heat status (RED/YELLOW/GREEN). The two recency checks
-        # run FIRST — a stock that just spiked/dropped hard in the last week
-        # (roc_7d) or last 20 sessions (Bollinger %B, computed above but
-        # previously never used) deserves flagging even when RSI(14)/52-week
-        # positioning haven't caught up to it yet.
-        vs200_s = f"{pct_above_200ma:+.0f}%" if pct_above_200ma is not None else "n/a (< 200d history)"
-
-        upside_s = f"{target_upside_pct:+.0f}%" if target_upside_pct is not None else "n/a"
-
-        if roc_7d is not None and roc_7d > 12:
-            if structurally_extended and not fundamentally_supports_extension:
-                heat_status = "RED"
-                heat_reason = f"Spiked {roc_7d:.0f}% in 7 days AND {pct_above_200ma:.0f}% above its 200-day average — genuinely extended, not just a pop"
-            elif structurally_extended:
-                heat_status = "YELLOW"
-                heat_reason = f"Spiked {roc_7d:.0f}% in 7 days, {pct_above_200ma:.0f}% above its 200-day average, but analyst upside still {upside_s} — may be fundamentally supported, watch rather than force a close"
-            else:
-                heat_status = "YELLOW"
-                heat_reason = f"Spiked {roc_7d:.0f}% in 7 days but only {vs200_s} vs its 200-day average — short-term move, not structurally extended"
-        elif bb_data['pct_b'] > 1.0:
-            if structurally_extended and not fundamentally_supports_extension:
-                heat_status = "RED"
-                heat_reason = f"Above upper Bollinger Band AND {pct_above_200ma:.0f}% above its 200-day average — confirmed extension"
-            elif structurally_extended:
-                heat_status = "YELLOW"
-                heat_reason = f"Above upper Bollinger Band and {pct_above_200ma:.0f}% above its 200-day average, but analyst upside still {upside_s} — may be fundamentally supported"
-            else:
-                heat_status = "YELLOW"
-                heat_reason = f"Above upper Bollinger Band, but {vs200_s} vs its 200-day average — short-term only, not confirmed"
-        elif rsi > 75 or position_in_range > 90:
-            if structurally_extended and not fundamentally_supports_extension:
-                heat_status = "RED"
-                heat_reason = f"Overbought / Extended — confirmed by RSI/range, 200-day trend positioning, AND analyst upside only {upside_s}"
-            elif structurally_extended:
-                heat_status = "YELLOW"
-                heat_reason = f"Technically extended ({vs200_s} vs 200-day average), but analyst upside still {upside_s} — may be fundamentally supported, watch rather than force a close"
-            else:
-                heat_status = "YELLOW"
-                heat_reason = f"RSI/range reads overbought, but {vs200_s} vs its 200-day average — watch, don't force a close"
-        elif roc_7d is not None and roc_7d < -12:
-            if structurally_weak and fundamentally_confirms_weakness:
-                heat_status = "RED"
-                heat_reason = f"Dropped {roc_7d:.0f}% in 7 days, {pct_above_200ma:.0f}% below its 200-day average, AND analyst upside only {upside_s} — thesis may be broken, not a dip"
-            elif structurally_weak:
-                heat_status = "GREEN"
-                heat_reason = f"Dropped {roc_7d:.0f}% in 7 days AND {pct_above_200ma:.0f}% below its 200-day average — genuinely beaten down"
-            else:
-                heat_status = "YELLOW"
-                heat_reason = f"Dropped {roc_7d:.0f}% in 7 days but only {vs200_s} vs its 200-day average — pullback within trend, verify thesis before treating as an entry"
-        elif bb_data['pct_b'] < 0.0:
-            if structurally_weak and fundamentally_confirms_weakness:
-                heat_status = "RED"
-                heat_reason = f"Below lower Bollinger Band, {pct_above_200ma:.0f}% below its 200-day average, AND analyst upside only {upside_s} — verify thesis before averaging down"
-            elif structurally_weak:
-                heat_status = "GREEN"
-                heat_reason = f"Below lower Bollinger Band AND {pct_above_200ma:.0f}% below its 200-day average — genuinely oversold"
-            else:
-                heat_status = "YELLOW"
-                heat_reason = f"Below lower Bollinger Band, but {vs200_s} vs its 200-day average — short-term only, not confirmed"
-        elif rsi < 25 or position_in_range < 10:
-            if structurally_weak and fundamentally_confirms_weakness:
-                heat_status = "RED"
-                heat_reason = f"Oversold on RSI/range, but {vs200_s} vs 200-day average AND analyst upside only {upside_s} — this may be the DRREDDY pattern (cheap-looking, thesis actually broken), not a bargain"
-            elif structurally_weak:
-                heat_status = "GREEN"
-                heat_reason = "Oversold / Attractive — confirmed by RSI/range AND 200-day trend positioning"
-            else:
-                heat_status = "YELLOW"
-                heat_reason = f"RSI/range reads oversold, but {vs200_s} vs its 200-day average — verify before treating as attractive"
-        elif 30 < rsi < 70 and 30 < position_in_range < 70:
-            heat_status = "GREEN"
-            heat_reason = "Neutral positioning"
-        else:
-            # Catch-all for the transition zone just inside the outer 25/75
-            # RSI and 10/90 range bounds already excluded above -- e.g. RSI
-            # 72 or 78% of 52-week range, real signal but not yet confirmed
-            # extended/oversold. Previously just said "Approaching extremes"
-            # with no numbers and no indication of which side -- trader
-            # feedback 2026-09-30: this read as no action, no insight. Now
-            # names the actual RSI/range value(s) that tripped it and which
-            # threshold they're approaching, same standard as every other
-            # branch above.
-            heat_status = "YELLOW"
-            triggers = []
-            if rsi >= 70:
-                triggers.append(f"RSI {rsi:.0f} approaching overbought (70+)")
-            elif rsi <= 30:
-                triggers.append(f"RSI {rsi:.0f} approaching oversold (30-)")
-            if position_in_range >= 70:
-                triggers.append(f"{position_in_range:.0f}% of 52-week range approaching the high extreme (90%+)")
-            elif position_in_range <= 30:
-                triggers.append(f"{position_in_range:.0f}% of 52-week range approaching the low extreme (10%-)")
-            heat_reason = "; ".join(triggers) if triggers else f"RSI {rsi:.0f}, {position_in_range:.0f}% of 52-week range — mixed signal, not cleanly neutral"
-
-        return {
-            "ticker": ticker,
-            "price": round(current_price, 2),
-            "conviction": round(conviction, 1),
-            "rsi": round(rsi, 1),
-            "macd": round(macd_data['macd'], 4),
-            "macd_histogram": round(macd_data['histogram'], 4),
-            "bb_position": round(bb_data['pct_b'], 2),
-            "roc_7d": round(roc_7d, 1) if roc_7d is not None else None,
-            "pct_above_50ma": round(pct_above_50ma, 1) if pct_above_50ma is not None else None,
-            "pct_above_200ma": round(pct_above_200ma, 1) if pct_above_200ma is not None else None,
-            "position_in_52w_range": round(position_in_range, 1),
-            "week_52_high": round(week_52_high, 2) if week_52_high else None,
-            "week_52_low": round(week_52_low, 2) if week_52_low else None,
-            "pe_ratio": round(pe_ratio, 2) if pe_ratio else None,
-            "heat_status": heat_status,
-            "heat_reason": heat_reason,
-            "revenue_growth": round(revenue_growth * 100, 1) if revenue_growth is not None else None,
-            "earnings_growth": round(earnings_growth * 100, 1) if earnings_growth is not None else None,
-            "analyst_rating": analyst_rating,
-            "target_upside_pct": round(target_upside_pct, 1) if target_upside_pct is not None else None,
-        }
+        return _build_metrics_result(result)
     except Exception as e:
         logger.warning(f"Error fetching metrics for {ticker}: {e}")
-        return {
-            "ticker": ticker,
-            "price": round(current_price, 2),
-            "conviction": 5.0,
-            "rsi": 50.0,
-            "macd": 0.0,
-            "macd_histogram": 0.0,
-            "bb_position": 0.5,
-            "roc_7d": None,
-            "position_in_52w_range": 50.0,
-            "week_52_high": None,
-            "week_52_low": None,
-            "pe_ratio": None,
-            "heat_status": "YELLOW",
-            "heat_reason": "Data unavailable",
-            "revenue_growth": None,
-            "earnings_growth": None,
-            "analyst_rating": None,
-            "target_upside_pct": None,
-        }
+        return _fallback_metrics_result(ticker, current_price)
 
 
 _METRICS_CACHE_FILE = os.path.join(
