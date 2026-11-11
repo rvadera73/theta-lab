@@ -89,7 +89,7 @@ _load_credentials()
 
 from analysis.metrics import breakeven_velocity, premium_capture_rate, profit_factor, sortino_ratio
 from analysis.same_day_cache import ensure_same_day, same_day_json_cache
-from analysis.pnl import OptionLeg, Position, parse_schwab_positions, parse_robinhood_positions
+from analysis.pnl import OptionLeg, Position, parse_schwab_positions
 from analysis.india_statement_parser import build_positions_from_statements, load_india_config
 from config import PORTFOLIO, RISK, PERMANENT_EXITS, OVERNIGHT_MOVE_GATE_PCT
 from routines.email_report import send_email

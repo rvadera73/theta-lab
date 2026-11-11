@@ -11,9 +11,6 @@ the real broker data shapes this module already parses in production:
     include_positions=True) -- instrument.assetType/symbol/underlyingSymbol/
     putCall, longQuantity/shortQuantity, averagePrice/averageShortPrice,
     marketValue (see parse_schwab_positions's own docstring/body).
-  - Robinhood (live, non-CSV path): robin_stocks build_holdings() equity
-    dict + already-enriched option_positions dicts (see
-    parse_robinhood_positions's own docstring).
   - Fidelity: the same "Account number,...,Last price,...,Cost basis
     total,..." sentence-case header as tests/test_parse_fidelity_csv.py's
     real fixture, extended here with option rows (" -SYM YYMMDDC/Pstrike"
@@ -208,47 +205,6 @@ if "NVDA" in _schwab_positions:
     check("NVDA: long (not short) option leg gets premium_received=0 and current_mark=0 under current logic",
           legs_tuple(p) == [("CALL", 900.0, "2027-12-18", 1, 0, 0)],
           f"got legs={legs_tuple(p)}")
-
-# ---------------------------------------------------------------------------
-# parse_robinhood_positions (live robin_stocks path, distinct from the
-# retired CSV parser covered by tests/test_robinhood_netting.py)
-# ---------------------------------------------------------------------------
-print("\nparse_robinhood_positions()")
-
-_rh_equity_holdings = {
-    "AAPL": {"quantity": "100", "average_buy_price": "150.0", "price": "175.0"},
-    "ZERO": {"quantity": "0", "average_buy_price": "10.0", "price": "12.0"},
-}
-_rh_option_positions = [
-    {"underlying": "AAPL", "option_type": "CALL", "strike": 200.0, "expiry": "2027-12-18",
-     "contracts": 2, "is_short": True, "premium_received": 900.0, "current_mark": 600.0, "dte": 400},
-    {"underlying": "TSLA", "option_type": "PUT", "strike": 300.0, "expiry": "2027-12-18",
-     "contracts": 1, "is_short": False, "premium_received": 0.0, "current_mark": 500.0, "dte": 400},
-    {"underlying": "", "option_type": "CALL", "strike": 1.0, "expiry": "2027-01-01",
-     "contracts": 1, "is_short": True, "premium_received": 1.0, "current_mark": 1.0, "dte": 1},
-]
-
-_rh_positions = {p.symbol: p for p in pnl.parse_robinhood_positions(
-    _rh_equity_holdings, _rh_option_positions, account_label="D")}
-
-check("a zero-share equity holding (ZERO) is skipped entirely",
-      "ZERO" not in _rh_positions, f"got {sorted(_rh_positions.keys())}")
-check("an option leg with no underlying ticker is skipped (not attached anywhere)",
-      set(_rh_positions.keys()) == {"AAPL", "TSLA"}, f"got {sorted(_rh_positions.keys())}")
-
-if "AAPL" in _rh_positions:
-    p = _rh_positions["AAPL"]
-    check("AAPL: equity fields + account label correct, short CALL leg attached with quantity negated",
-          (p.account, p.shares, p.stock_cost_basis, p.current_price) == ("D", 100, 150.0, 175.0)
-          and legs_tuple(p) == [("CALL", 200.0, "2027-12-18", -2, 900.0, 600.0)],
-          f"got {p}, legs={legs_tuple(p)}")
-
-if "TSLA" in _rh_positions:
-    p = _rh_positions["TSLA"]
-    check("TSLA: stub Position (no equity holding) created with a net-LONG option leg (positive quantity, not negated)",
-          (p.shares, p.stock_cost_basis, p.current_price) == (0, 0, 0)
-          and legs_tuple(p) == [("PUT", 300.0, "2027-12-18", 1, 0.0, 500.0)],
-          f"got {p}, legs={legs_tuple(p)}")
 
 # ---------------------------------------------------------------------------
 # parse_fidelity_csv -- extends tests/test_parse_fidelity_csv.py's
