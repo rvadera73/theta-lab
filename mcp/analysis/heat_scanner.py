@@ -374,10 +374,19 @@ def _apply_call_tighten(by_color: dict[str, list[LegHeat]], regime_cfg: dict) ->
 
 
 def _build_protocol_message(by_color: dict[str, list[LegHeat]], regime: str, regime_cfg: dict) -> str:
+    """ADR 0005: a COVERED call reaching RED/YELLOW via its own dte<=7/21
+    assignment ladder (_determine_color) is a normal assignment/roll
+    decision, not naked melt-up risk -- excluded from red_calls/yell_calls
+    the same way _apply_call_tighten() already excludes it, for the same
+    reason (previously missing here: a covered call near its own expiry
+    was misattributed as "AI melt-up risk" and inflated the "PAUSE new
+    strangles" count with a leg that was never going to be rolled or
+    harvested). PARTIAL stays included: its uncovered portion is real
+    naked risk, same precedent as _apply_call_tighten()."""
     scale_back = regime_cfg["scale_back_strangles"]
-    red_calls  = [l for l in by_color["RED"]    if l.option_type == "CALL"]
+    red_calls  = [l for l in by_color["RED"]    if l.option_type == "CALL" and l.coverage != "COVERED"]
     red_puts   = [l for l in by_color["RED"]    if l.option_type == "PUT"]
-    yell_calls = [l for l in by_color["YELLOW"] if l.option_type == "CALL"]
+    yell_calls = [l for l in by_color["YELLOW"] if l.option_type == "CALL" and l.coverage != "COVERED"]
 
     protocol_parts = []
     if scale_back and (red_calls or yell_calls):
@@ -393,7 +402,12 @@ def _build_protocol_message(by_color: dict[str, list[LegHeat]], regime: str, reg
         protocol_parts.append(
             f"🔴 {len(red_puts)} put(s) need action."
         )
-    if not by_color["RED"]:
+    # Based on actionable (non-COVERED) RED legs, not raw by_color["RED"] --
+    # a book whose only RED legs are COVERED calls near their own expiry
+    # has no naked/melt-up risk to report, so this still reads "No RED
+    # positions" instead of going silent (red_calls/red_puts both empty,
+    # but by_color["RED"] non-empty would otherwise suppress this line).
+    if not red_calls and not red_puts:
         protocol_parts.append("✅ No RED positions. Monitor YELLOW legs.")
     return " ".join(protocol_parts)
 
@@ -423,8 +437,18 @@ def _build_stagger_capacity(heat_legs: list[LegHeat]) -> dict[str, str]:
     Stagger deployment gate: how many calls can you add right now?
     Rule from data: can carry 2-3 simultaneous calls per name as long as ALL are GREEN.
     Stop adding when ANY call is RED; be cautious when YELLOW.
+
+    ADR 0005: COVERED calls are excluded entirely, not just exempted from
+    the RED/YELLOW block -- this gate measures NAKED call stagger capacity
+    (how many more uncovered calls you can safely sell on this name), which
+    a covered call (bounded by assignment, not naked melt-up risk) neither
+    consumes nor should block. Without this, a covered call reaching RED/
+    YELLOW near its own expiry could wrongly STOP new naked stagger entries
+    on the same symbol, or eat into the 3-call capacity cap meant for naked
+    legs. PARTIAL stays included: its uncovered portion is real naked risk,
+    same precedent as _apply_call_tighten()/_build_protocol_message().
     """
-    all_calls = [l for l in heat_legs if l.option_type == "CALL"]
+    all_calls = [l for l in heat_legs if l.option_type == "CALL" and l.coverage != "COVERED"]
     calls_by_sym: dict[str, list[LegHeat]] = {}
     for lg in all_calls:
         calls_by_sym.setdefault(lg.symbol, []).append(lg)

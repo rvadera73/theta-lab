@@ -447,6 +447,35 @@ check("protocol separately flags the RED put(s)",
       "1 put(s) need action" in protocol_result["protocol"], f"got {protocol_result['protocol']!r}")
 
 # ---------------------------------------------------------------------------
+# ADR 0005: protocol message must not misattribute a COVERED call's own-
+# expiry RED/YELLOW state as naked/melt-up risk (previously missing --
+# _apply_call_tighten() got this exemption, _build_protocol_message() did
+# not).
+# ---------------------------------------------------------------------------
+print("\nassess_portfolio_heat: COVERED-call RED/YELLOW must not read as naked melt-up risk")
+
+covered_red_leg = leg_dict("CVRD", "CALL", 50, 5, 100, 400, 1800, coverage="COVERED")     # dte<=7 -> RED/CLOSE_OR_ASSIGN
+covered_yellow_leg = leg_dict("CVRDY", "CALL", 50, 15, 100, 400, 1800, coverage="COVERED")  # dte<=21 -> YELLOW/ROLL_CALL_OR_ASSIGN
+
+covered_protocol = assess_portfolio_heat([covered_red_leg], "CAUTIOUS_BULL")
+check("a COVERED call's own-expiry RED is NOT reported as 'AI melt-up risk'",
+      "AI melt-up risk" not in covered_protocol["protocol"], f"got {covered_protocol['protocol']!r}")
+check("a book whose only RED leg is a COVERED call still reads 'No RED positions' "
+      "(not silent -- by_color['RED'] is non-empty but red_calls/red_puts are both empty)",
+      "No RED positions" in covered_protocol["protocol"], f"got {covered_protocol['protocol']!r}")
+
+covered_yellow_protocol = assess_portfolio_heat([covered_yellow_leg], "CAUTIOUS_BULL")
+check("a COVERED call's own-expiry YELLOW does not trigger 'PAUSE new strangles'",
+      "PAUSE new strangles" not in covered_yellow_protocol["protocol"],
+      f"got {covered_yellow_protocol['protocol']!r}")
+
+mixed_protocol = assess_portfolio_heat([covered_red_leg, red_put_leg], "CAUTIOUS_BULL")
+check("a COVERED RED call alongside a real RED put: the put is still flagged",
+      "1 put(s) need action" in mixed_protocol["protocol"], f"got {mixed_protocol['protocol']!r}")
+check("a COVERED RED call alongside a real RED put: no melt-up risk attributed to the covered call",
+      "AI melt-up risk" not in mixed_protocol["protocol"], f"got {mixed_protocol['protocol']!r}")
+
+# ---------------------------------------------------------------------------
 # assess_portfolio_heat(): stagger_capacity per symbol (calls only)
 # ---------------------------------------------------------------------------
 print("\nassess_portfolio_heat: stagger_capacity per symbol")
@@ -472,6 +501,33 @@ check("a YELLOW (profit-target) call -> HARVEST_FIRST", sc.get("HARVESTME", "").
 check("a single GREEN call -> OPEN", sc.get("OPENME", "").startswith("OPEN"), f"got {sc.get('OPENME')!r}")
 check("stagger_capacity is calls-only -- PUT-only symbol never appears",
       "PUTSYM" not in sc, f"got keys={list(sc.keys())}")
+
+# ---------------------------------------------------------------------------
+# ADR 0005: stagger_capacity must not let a COVERED call block or consume
+# naked stagger capacity (previously missing -- same exemption
+# _apply_call_tighten()/_build_protocol_message() already have).
+# ---------------------------------------------------------------------------
+print("\nassess_portfolio_heat: COVERED calls excluded from stagger_capacity entirely")
+
+covered_stagger_result = assess_portfolio_heat([covered_red_leg], "BULL")
+check("a COVERED call's own-expiry RED does not block new naked stagger capacity "
+      "on the same symbol (the symbol doesn't appear at all -- no naked calls to gate)",
+      "CVRD" not in covered_stagger_result["stagger_capacity"],
+      f"got {covered_stagger_result['stagger_capacity']}")
+
+# 2 real naked GREEN calls + 1 COVERED GREEN call on the same symbol must
+# read as 2 naked slots used (OPEN), not 3 (FULL) -- the covered call must
+# not consume naked stagger capacity either.
+mixed_stagger_cov = leg_dict("MIXSYM", "CALL", 140, 60, 100, 500, 350, expiry="2027-04-01", coverage="COVERED")
+mixed_stagger_naked1 = leg_dict("MIXSYM", "CALL", 130, 60, 100, 500, 350, expiry="2027-01-01")
+mixed_stagger_naked2 = leg_dict("MIXSYM", "CALL", 135, 60, 100, 500, 350, expiry="2027-02-01")
+mixed_stagger_result = assess_portfolio_heat(
+    [mixed_stagger_cov, mixed_stagger_naked1, mixed_stagger_naked2], "BULL"
+)
+msc = mixed_stagger_result["stagger_capacity"]
+check("a COVERED call does not count toward the 3-call stagger FULL cap -- "
+      "2 naked + 1 covered reads as 2 naked GREEN calls (OPEN), not FULL",
+      msc.get("MIXSYM", "").startswith("OPEN"), f"got {msc.get('MIXSYM')!r}")
 
 # ---------------------------------------------------------------------------
 # heat_from_positions(): real Position/OptionLeg objects, zero-premium filter
