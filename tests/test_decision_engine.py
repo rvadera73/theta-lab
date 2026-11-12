@@ -361,6 +361,62 @@ check("build_decisions returns one record per leg, same order, none dropped",
       len(records) == len(batch) and [r.symbol for r in records] == [lg["symbol"] for lg in batch],
       f"got {len(records)} records for {len(batch)} legs")
 
+# ---------------------------------------------------------------------------
+# ADR 0005: _classify_coverage must prefer the real per-leg `coverage` field
+# (heat_scanner.py, ADR 0005) over the older, pooled, cross-account-AND-
+# combined `covered`/`covered_contracts` annotation (services.py), which can
+# disagree for a contract held covered in one account and naked in another
+# -- a confirmed real, recurring pattern (see tests/test_services.py's AAPL
+# $200 CALL cross-account-collision fixture), not a hypothetical. Before
+# this fix, a leg like the one below classified NAKED despite coverage=
+# "COVERED", fabricating "uncovered short stock created, assigned naked" in
+# assignment_resulting_position and a nonzero naked margin estimate on a
+# leg that carries neither risk.
+# ---------------------------------------------------------------------------
+print("\nADR 0005: coverage field vs. stale pooled `covered` annotation")
+
+collision_covered_leg = {
+    "symbol": "AAPL", "type": "CALL", "strike": 200.0, "expiry": "2027-01-15",
+    "dte": 90, "current_price": 220.0,
+    "coverage": "COVERED",                      # real, per-account, authoritative (ADR 0005)
+    "covered": False, "covered_contracts": 0,    # stale pooled annotation -- collision w/ a naked copy in another account
+    "total_contracts": 1, "premium_received": 400.0, "cost_to_close": 2100.0,
+    "loss_multiple": 5.25, "pnl_pct": -425.0, "distance_pct": -10.0,
+    "color": "GREEN", "action": "HOLD_TO_ASSIGNMENT",
+    "reason": "covered call working as designed", "account": "A", "gates_fired": [],
+}
+d_collision = build_decision(collision_covered_leg)
+check("a leg with coverage='COVERED' classifies COVERED even when the pooled "
+      "`covered` annotation disagrees (reads False)",
+      d_collision.coverage == "COVERED", f"got {d_collision.coverage}")
+check("COVERED-per-leg assignment never fabricates an 'uncovered short stock' outcome",
+      d_collision.assignment_resulting_position is not None
+      and "uncovered short stock" not in d_collision.assignment_resulting_position,
+      f"got {d_collision.assignment_resulting_position}")
+check("COVERED-per-leg margin is $0, not a naked-call estimate",
+      d_collision.est_margin_requirement == 0.0, f"got {d_collision.est_margin_requirement}")
+
+# The mirror case: coverage='NAKED' but the stale pooled annotation happens
+# to read covered=True/covered_contracts>0 (the same collision, opposite
+# direction) must still price real naked margin, not $0.
+collision_naked_leg = dict(collision_covered_leg, coverage="NAKED",
+                            covered=True, covered_contracts=1,
+                            color="RED", action="CUT_RESTAGGER", account="B")
+d_collision_naked = build_decision(collision_naked_leg)
+check("a leg with coverage='NAKED' classifies NAKED even when the pooled "
+      "`covered` annotation disagrees (reads True)",
+      d_collision_naked.coverage == "NAKED", f"got {d_collision_naked.coverage}")
+check("NAKED-per-leg margin is priced against the full naked size, not $0",
+      d_collision_naked.est_margin_requirement is not None and d_collision_naked.est_margin_requirement > 0,
+      f"got {d_collision_naked.est_margin_requirement}")
+
+# A pre-ADR-0005 leg with no `coverage` key at all must still classify via
+# the old predicate -- this module's own backward-compatible fallback.
+pre_adr0005_leg = {k: v for k, v in okta_naked_call.items()}
+d_pre = build_decision(pre_adr0005_leg)
+check("a leg with no `coverage` key falls back to the old covered/covered_contracts predicate",
+      d_pre.coverage == "NAKED", f"got {d_pre.coverage}")
+
 print()
 if failures:
     print(f"FAILED: {len(failures)} check(s) -- {failures}")

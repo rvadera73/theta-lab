@@ -118,6 +118,21 @@ def _opt_type(leg: dict) -> str | None:
 
 
 def _classify_coverage(leg: dict) -> Coverage:
+    """Prefers the real, per-account `coverage` field heat_scanner.py now
+    scores every leg with (ADR 0005) over the older `covered`/
+    `covered_contracts` pair below, which is a POOLED, cross-account-
+    AND-combined display annotation (services.py) that can disagree with
+    the real per-leg coverage for a contract held covered in one account
+    and naked in another -- confirmed live, not hypothetical (see
+    tests/test_services.py's AAPL $200 CALL fixture). Falling back to the
+    old predicate only for legs that predate ADR 0005 and never set
+    `coverage` at all (e.g. a caller this module was unit-tested against
+    before that field existed) keeps this module's own promise, stated in
+    its module docstring, of not re-deriving a classification some other
+    layer already computed."""
+    coverage = leg.get("coverage")
+    if coverage in ("NAKED", "COVERED", "PARTIAL", "CASH_SECURED_PUT"):
+        return coverage
     if _opt_type(leg) == "PUT":
         return "CASH_SECURED_PUT"
     covered = leg.get("covered")
@@ -187,7 +202,22 @@ def _reg_t_margin(leg: dict, coverage: Coverage) -> float | None:
     premium = leg.get("premium_received") or 0.0
 
     if _opt_type(leg) == "CALL":
-        naked_contracts = total_contracts - (leg.get("covered_contracts") or 0)
+        # Prefer the already-classified `coverage` enum over re-reading the
+        # leg dict's own `covered_contracts` here -- that field is the same
+        # pooled, cross-account-AND-combined annotation _classify_coverage()
+        # above was just fixed to stop trusting (ADR 0005), and this
+        # function previously re-introduced the identical bug independently:
+        # a COVERED leg with stale covered_contracts=0 (from a same-contract
+        # collision with a naked position in a different account) priced a
+        # full naked margin estimate on a position that carries none. PARTIAL
+        # has no better per-leg count available from coverage alone, so it
+        # still falls back to the leg dict's count for that one case.
+        if coverage == "COVERED":
+            naked_contracts = 0
+        elif coverage == "NAKED":
+            naked_contracts = total_contracts
+        else:
+            naked_contracts = total_contracts - (leg.get("covered_contracts") or 0)
         if naked_contracts <= 0:
             return 0.0
         underlying_value = price * 100 * naked_contracts
