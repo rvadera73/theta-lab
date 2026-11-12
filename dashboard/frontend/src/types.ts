@@ -25,6 +25,12 @@ export interface Leg {
   color: "RED" | "YELLOW" | "GREEN" | "UNKNOWN";
   action: string;
   reason: string;
+  // ADR 0005: the per-leg classification heat_scanner.py now scores color/
+  // action from directly -- `covered` below is a separate, older, pooled
+  // cross-account display annotation (see services.py) and can legitimately
+  // read `false` on a leg whose own `coverage` here is "COVERED", when an
+  // identical contract is held naked in a different account.
+  coverage?: "NAKED" | "COVERED" | "PARTIAL" | "CASH_SECURED_PUT";
   covered: boolean | null;
   covered_contracts: number | null;
   total_contracts: number | null;
@@ -213,6 +219,7 @@ export interface HeatLeg {
   color: "RED" | "YELLOW" | "GREEN" | "UNKNOWN";
   action: string;
   reason: string;
+  coverage?: "NAKED" | "COVERED" | "PARTIAL" | "CASH_SECURED_PUT";  // ADR 0005
   covered: boolean | null;
   covered_contracts: number | null;
   total_contracts: number | null;
