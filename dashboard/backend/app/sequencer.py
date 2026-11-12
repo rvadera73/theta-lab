@@ -31,9 +31,21 @@ _SEVERITY_RANK = {
     # (real bug found 2026-11-03: this action had no entry here at all and
     # silently fell to rank 2, tied with WATCH_CLOSE).
     "CLOSE_RESTAGGER": 2,
+    # ADR 0005: THESIS_WATCH is a naked/CSP/partial leg already past the
+    # loss-cut multiple but with >45 DTE remaining -- more concerning than the
+    # "approaching" WATCH_CLOSE state, but not time-bound, so ranked the same.
+    "THESIS_WATCH": 3,
     "WATCH_CLOSE": 3,
     "HARVEST_RESTAGGER": 4,
     "PREPARE_ROLL": 4,
+    # ADR 0005 COVERED-call actions -- _is_actionable_leg() below already
+    # excludes fully-covered CALLs from Tier 1 entirely, so these three only
+    # matter if that filter is ever relaxed; given explicit ranks here rather
+    # than the rank-2 default so they're never silently miscategorized the
+    # way CLOSE_RESTAGGER was before the 2026-11-03 fix above.
+    "CLOSE_OR_ASSIGN": 2,
+    "ROLL_CALL_OR_ASSIGN": 4,
+    "HOLD_TO_ASSIGNMENT": 5,
 }
 _COVERAGE_RANK = {False: 0, None: 1, True: 2}  # naked < cash-secured-put/unknown < covered
 

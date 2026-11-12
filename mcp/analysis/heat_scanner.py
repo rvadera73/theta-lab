@@ -2,15 +2,30 @@
 Position Heat Scanner
 =====================
 Scans all open short option legs and assigns a traffic light based on:
-  - Distance of current stock price to strike (primary trigger)
-  - Cost-to-close as a multiple of premium received (loss amplification)
-  - DTE remaining (gamma risk zone)
+  - Coverage (COVERED call vs. NAKED/CASH_SECURED_PUT/PARTIAL) -- gates which
+    ladder below even applies (ADR 0005)
+  - Distance of current stock price to strike (primary trigger, naked ladder only)
+  - Cost-to-close as a multiple of premium received (loss amplification, naked ladder only)
+  - DTE remaining (gamma risk zone / roll-decision window, both ladders)
 
 Management rules derived from Account A transaction history (195 matched trades):
   - Calls ROLLED when stock falls (repriced cheap): harvest + re-sell at lower strike
   - Puts CUT at loss when stock falls through strike; immediately re-open at new level
   - AI/momentum bull protocol: tighten call monitoring, scale back new strangles
   - Profit target: 40-50% of premium (median 44% from data, NOT 55-70%)
+
+Coverage (ADR 0005, 2026-11-12): a fully COVERED call has no naked downside --
+a high loss-multiple or deep-ITM distance just means the stock rallied past
+the strike, the strategy's designed outcome (shares deliver at the strike on
+assignment; the offsetting stock-leg gain isn't scored here at all). Before
+this, "coverage" was a display-only annotation added by services.py AFTER
+heat_scanner had already scored color/action -- confirmed real case:
+2026-11-12, 3 OKTA covered calls (127/127/8 DTE) were RED/CUT_RESTAGGER at
+up to 10.8x loss-multiple while the combined stock+options position was net
++$56.8K profitable. COVERED legs now route through their own ladder, below,
+driven only by DTE (same gamma/roll-decision windows every other leg already
+uses), never by multiple/distance. PARTIAL coverage (some contracts covered,
+some not) stays on the naked ladder -- the uncovered contracts carry real risk.
 """
 
 from __future__ import annotations
@@ -21,16 +36,27 @@ from config import HEAT_THRESHOLDS, HEAT_REGIME_ACTIONS
 
 HeatColor = Literal["GREEN", "YELLOW", "RED", "UNKNOWN"]
 
+# Shared by _determine_color() and _set_yellow_action() so both halves of the
+# naked-ladder DTE gate (color AND the THESIS_WATCH action text) always agree.
+_RED_DTE_WINDOW = 45
+
 
 @dataclass
 class LegContract:
     """Position-identity fields for a single short option leg (excludes dte,
     which is time-varying rather than identity, and is kept on LegHeat itself
-    so both this and LegPricing stay at <=4 required fields)."""
+    so both this and LegPricing stay at <=4 required fields).
+
+    coverage defaults to "NAKED" (optional, so this stays at 4 REQUIRED
+    fields) -- ADR 0005: NAKED | COVERED | PARTIAL | CASH_SECURED_PUT,
+    computed upstream from real owned-shares/contracts data (services.py's
+    _leg_coverage_and_strangle_expiries / heat_from_positions below), never
+    guessed here."""
     symbol: str
     option_type: Literal["CALL", "PUT"]
     strike: float
     expiry: str
+    coverage: str = "NAKED"
 
 
 @dataclass
@@ -63,6 +89,7 @@ class LegHeat:
         self.option_type = self.contract.option_type
         self.strike = self.contract.strike
         self.expiry = self.contract.expiry
+        self.coverage = self.contract.coverage
         self.premium_received = self.pricing.premium_received
         self.cost_to_close = self.pricing.cost_to_close
         self.current_price = self.pricing.current_price
@@ -118,6 +145,16 @@ class LegHeat:
         early_warn  = HEAT_THRESHOLDS["early_warning_multiple"]
         profit_tgt  = HEAT_THRESHOLDS["profit_target_pct"]
 
+        # ADR 0005: COVERED calls never enter the naked ladder below -- see
+        # the module docstring. Urgency here is purely the same gamma/roll-
+        # decision DTE windows every other leg already uses.
+        if self.coverage == "COVERED":
+            if self.dte <= 7:
+                return "RED"
+            if self.dte <= 21:
+                return "YELLOW"
+            return "GREEN"
+
         # Real bug found 2026-10-15: strike-proximity (distance_pct) and the
         # hard loss-cut (loss_multiple) fired RED regardless of DTE, even
         # when 90-180+ days remained -- directly contradicting this
@@ -127,22 +164,29 @@ class LegHeat:
         # 2 inside 21 days -- the color was flagging "far-dated and merely
         # close to strike" exactly as urgently as "expiring this week," which
         # made the whole Position Heat view read as a portfolio-wide
-        # emergency when it wasn't one. loss_cut (hard stop, cost-to-close
-        # already a real multiple of premium) stays DTE-independent --- a
-        # genuine hard-stop loss is urgent regardless of time left. Strike
-        # proximity alone is not: it only becomes RED-urgent within the same
+        # emergency when it wasn't one. Strike proximity alone is not RED
+        # regardless of DTE: it only becomes RED-urgent within the same
         # "time is working" window this trader already uses for roll
         # decisions.
-        RED_DTE_WINDOW = 45
+        #
+        # ADR 0005 (2026-11-12) extends the exact same DTE-gating to the
+        # hard loss-cut (loss_multiple), which this comment used to keep
+        # DTE-independent on the theory that "a genuine hard-stop loss is
+        # urgent regardless of time left." Verified against the real book:
+        # 42 of 61 naked/cash-secured-put/partial RED legs were >45 DTE hard
+        # stops -- the same contradiction of the trader's own "DTE > 45,
+        # thesis intact -> HOLD" rule the 2026-10-15 fix already recognized
+        # for strike proximity, just not yet applied to loss_multiple. Past
+        # the hard-stop level with real time left is YELLOW/THESIS_WATCH
+        # (re-check the thesis), not an immediate-cut emergency.
         if self.dte <= 7:
             return "RED"
-        if self.loss_multiple >= loss_cut:
+        if (self.loss_multiple >= loss_cut or self.distance_pct < red_dist) and self.dte <= _RED_DTE_WINDOW:
             return "RED"
-        if self.distance_pct < red_dist and self.dte <= RED_DTE_WINDOW:
-            return "RED"
-        if self.distance_pct < red_dist:
-            # Strike-proximity stress with real time still on the clock --
-            # matches "time is working," not yet an action-now signal.
+        if self.loss_multiple >= loss_cut or self.distance_pct < red_dist:
+            # Hard-stop math or strike-proximity stress, but real time still
+            # on the clock -- matches "time is working," not an action-now
+            # signal.
             return "YELLOW"
         if self.pnl_pct >= profit_tgt:
             # Profit target hit → YELLOW (action: harvest and redeploy)
@@ -158,12 +202,42 @@ class LegHeat:
     def _set_action(self) -> None:
         reentry_dte = max(180, self.dte + 75)
 
-        if self.color == "GREEN":
+        if self.coverage == "COVERED":
+            self._set_covered_action()
+        elif self.color == "GREEN":
             self._set_green_action()
         elif self.color == "YELLOW":
             self._set_yellow_action(reentry_dte)
         else:  # RED
             self._set_red_action(reentry_dte)
+
+    def _set_covered_action(self) -> None:
+        """ADR 0005: COVERED calls never see CUT_RESTAGGER/ROLL_CALL's naked-
+        loss framing -- a covered call going ITM against you is the strategy
+        working (shares deliver at the strike on assignment), not a loss to
+        cut. Moneyness is informational text only here; it never drives this
+        method's color/action, that's _determine_color()'s job."""
+        dist = self.distance_pct * 100
+        moneyness = f"{abs(dist):.0f}% {'ITM' if dist < 0 else 'OTM'}"
+        if self.color == "RED":  # dte<=7
+            self.action = "CLOSE_OR_ASSIGN"
+            self.reason = (
+                f"{self.dte}d DTE, {moneyness} to ${self.strike:.0f} CALL — covered, bounded risk. "
+                f"Let it assign (shares deliver at the strike) or BTC ${self.cost_to_close:,.0f} "
+                f"and roll up+out if you want to keep the shares past expiry."
+            )
+        elif self.color == "YELLOW":  # dte<=21
+            self.action = "ROLL_CALL_OR_ASSIGN"
+            self.reason = (
+                f"{self.dte}d DTE, {moneyness} to ${self.strike:.0f} CALL — covered. "
+                f"Roll up+out for a fresh credit to keep the shares, or let it assign at ${self.strike:.0f}."
+            )
+        else:  # GREEN
+            self.action = "HOLD_TO_ASSIGNMENT"
+            self.reason = (
+                f"{moneyness} to ${self.strike:.0f} CALL, {self.dte}d DTE — covered call working as "
+                f"designed. No action needed; shares deliver at the strike on assignment."
+            )
 
     def _set_green_action(self) -> None:
         dist = self.distance_pct * 100
@@ -183,6 +257,18 @@ class LegHeat:
                 f"{pnl:.0f}% profit captured — BTC for ${self.cost_to_close:,.0f}. "
                 f"Re-open SAME NAME at {reentry_dte}d DTE (current+75d), same/slightly lower strike. "
                 f"Re-entry within 1 week. Data: you re-stagger median 10d after harvest."
+            )
+        elif mult >= lm:
+            # ADR 0005: past the hard-stop multiple, but self.dte > _RED_DTE_WINDOW
+            # is the only way _determine_color() reaches YELLOW with mult>=lm --
+            # distinct from the "approaching but not yet past" WATCH_CLOSE below.
+            self.action = "THESIS_WATCH"
+            self.reason = (
+                f"Cost-to-close ${self.cost_to_close:,.0f} = {mult:.1f}x premium ${self.premium_received:,.0f} — "
+                f"past the {lm:.0f}x hard-stop level, but {self.dte}d DTE remaining "
+                f"(beyond the {_RED_DTE_WINDOW}d urgency window). "
+                f"Per the Roll Decision Framework: hold if thesis intact, time is working. "
+                f"Re-check the thesis before cutting on multiple alone."
             )
         elif mult >= HEAT_THRESHOLDS["early_warning_multiple"]:
             self.action = "WATCH_CLOSE"
@@ -238,7 +324,7 @@ def _build_heat_legs(legs: list[dict]) -> list[LegHeat]:
     for lg in legs:
         contract = LegContract(
             symbol=lg["symbol"], option_type=lg["option_type"], strike=lg["strike"],
-            expiry=lg["expiry"],
+            expiry=lg["expiry"], coverage=lg.get("coverage", "NAKED"),
         )
         pricing = LegPricing(
             premium_received=lg["premium_received"],
@@ -260,13 +346,21 @@ def _bucket_by_color(heat_legs: list[LegHeat]) -> dict[str, list[LegHeat]]:
 
 
 def _apply_call_tighten(by_color: dict[str, list[LegHeat]], regime_cfg: dict) -> None:
-    """Regime-specific call tightening: in AI bull, demote YELLOW calls to RED."""
+    """Regime-specific call tightening: in AI bull, demote YELLOW calls to RED.
+
+    ADR 0005: excludes COVERED calls -- this tighten exists for naked/melt-up
+    margin risk, which a covered call (bounded by assignment) doesn't carry.
+    A COVERED call only ever reaches YELLOW here via its own dte<=21 ladder
+    rung (see _determine_color), not distance, so demoting it on distance_pct
+    would reintroduce the exact false urgency ADR 0005 removes elsewhere.
+    PARTIAL stays eligible -- its uncovered contracts carry real naked risk.
+    """
     if not regime_cfg["call_tighten"]:
         return
 
     newly_red = []
     for leg in by_color["YELLOW"][:]:
-        if leg.option_type == "CALL" and leg.distance_pct < 0.12:
+        if leg.option_type == "CALL" and leg.coverage != "COVERED" and leg.distance_pct < 0.12:
             leg.color = "RED"
             leg.action = "ROLL_CALL"
             leg.reason = (
@@ -317,6 +411,7 @@ def _build_top_actions(by_color: dict[str, list[LegHeat]]) -> list[dict]:
             "pnl_pct":      round(leg.pnl_pct * 100, 1),
             "distance_pct": round(leg.distance_pct * 100, 1),
             "loss_multiple": round(leg.loss_multiple, 2),
+            "coverage":     leg.coverage,
             "action":       leg.action,
             "reason":       leg.reason,
         })
@@ -364,7 +459,10 @@ def assess_portfolio_heat(
     ----------
     legs : list of dicts with keys:
         symbol, option_type, strike, dte, expiry,
-        premium_received, cost_to_close, current_price
+        premium_received, cost_to_close, current_price,
+        coverage (optional, default "NAKED" -- ADR 0005: NAKED | COVERED |
+        PARTIAL | CASH_SECURED_PUT; a caller that doesn't compute this gets
+        the pre-ADR-0005 naked-ladder behavior for every leg, unchanged)
     regime : current regime string e.g. "CAUTIOUS_BULL"
 
     Returns
@@ -412,6 +510,7 @@ def _leg_summary(leg: LegHeat) -> dict:
         "distance_pct": round(leg.distance_pct * 100, 1),
         "pnl_pct":      round(leg.pnl_pct * 100, 1),
         "loss_multiple": round(leg.loss_multiple, 2),
+        "coverage":     leg.coverage,  # ADR 0005 -- now a scoring input, not just a post-hoc annotation
         "color":        leg.color,
         "action":       leg.action,
         "reason":       leg.reason,
@@ -422,6 +521,30 @@ def _leg_summary(leg: LegHeat) -> dict:
 # Helpers for report integration
 # ---------------------------------------------------------------------------
 
+def _call_coverage_by_id(pos) -> dict[int, str]:
+    """ADR 0005: same allocation services.py's _leg_coverage_and_strangle_expiries
+    uses -- real owned shares in THIS position, consumed by its own call legs
+    only (coverage doesn't cross accounts), calls sorted by strike ascending
+    so the most likely to be assigned draws on shares first."""
+    shares_remaining = pos.shares or 0
+    calls_sorted = sorted(
+        (lg for lg in pos.option_legs if lg.option_type == "CALL"),
+        key=lambda lg: lg.strike,
+    )
+    coverage_by_id: dict[int, str] = {}
+    for lg in calls_sorted:
+        contracts = abs(getattr(lg, "quantity", None) or 1)
+        covered_ct = min(shares_remaining // 100, contracts)
+        shares_remaining -= covered_ct * 100
+        if covered_ct >= contracts:
+            coverage_by_id[id(lg)] = "COVERED"
+        elif covered_ct > 0:
+            coverage_by_id[id(lg)] = "PARTIAL"
+        else:
+            coverage_by_id[id(lg)] = "NAKED"
+    return coverage_by_id
+
+
 def heat_from_positions(positions: list, regime: str) -> dict:
     """
     Build heat assessment directly from a list of Position objects
@@ -429,11 +552,13 @@ def heat_from_positions(positions: list, regime: str) -> dict:
     """
     legs = []
     for pos in positions:
+        coverage_by_id = _call_coverage_by_id(pos)
         for lg in pos.option_legs:
             pr  = getattr(lg, "premium_received", 0) or 0
             ctc = getattr(lg, "current_mark", 0) or 0
             if pr <= 0:
                 continue
+            coverage = "CASH_SECURED_PUT" if lg.option_type == "PUT" else coverage_by_id.get(id(lg), "NAKED")
             legs.append({
                 "symbol":           pos.symbol,
                 "option_type":      lg.option_type,
@@ -443,6 +568,7 @@ def heat_from_positions(positions: list, regime: str) -> dict:
                 "premium_received": pr,
                 "cost_to_close":    ctc,
                 "current_price":    pos.current_price,
+                "coverage":         coverage,
             })
     if not legs:
         # Real bug found while writing characterization tests (2026-11-09):

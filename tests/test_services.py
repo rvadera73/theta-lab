@@ -29,13 +29,26 @@ previously-undetected behavior: _annotate()'s "collapse duplicate
 cross-account contract" logic (services.py's own comment: "Collapse to one
 row per colliding key") computes a deduped list but then DISCARDS it --
 `_annotate(color_rows)` and `_annotate(result.get("top_actions", []))` never
-assign the return value back anywhere. The duplicate row is NOT removed from
-the final output; it is left in place without the merged annotation fields
-(no "covered"/"account"/"sector"/etc.), which means it falls into its own
-"(symbol, None)" position-group downstream. This is a pre-existing
-characterization of CURRENT behavior (confirmed by reading the source, not
-assumed) -- preserved as-is by this refactor's scope (behavior preservation,
-not a bug hunt), and flagged in the PR description for follow-up.
+assign the return value back anywhere. A duplicate row landing in the SAME
+color bucket as its sibling is NOT removed from the final output; it is left
+in place without the merged annotation fields (no "covered"/"account"/
+"sector"/etc.), which means it falls into its own "(symbol, None)"
+position-group downstream. This is a pre-existing characterization of
+CURRENT behavior (confirmed by reading the source, not assumed) --
+preserved as-is by this refactor's scope (behavior preservation, not a bug
+hunt), and flagged in the PR description for follow-up.
+
+ADR 0005 UPDATE (2026-11-12): this fixture's AAPL $200 CALL collision (fully
+COVERED in account A via its 100 shares, NAKED in account B which holds none)
+now lands in TWO DIFFERENT color buckets -- GREEN for A's copy (coverage now
+bypasses the naked ladder entirely), RED for B's copy -- since coverage is
+computed per-POSITION/per-account (real, confirmed behavior: coverage
+doesn't cross accounts), not from the merged display annotation. Each
+bucket's dedup pass only ever sees ONE occurrence of this key, so both
+copies get fully annotated here; the "bare duplicate in the same bucket"
+characterization above is still true of the dedup function itself (and still
+real), just no longer demonstrated by THIS specific fixture now that the two
+colliding rows score differently. See the updated assertions below.
 
 No pytest dependency -- run directly: python3 tests/test_services.py
 """
@@ -288,44 +301,61 @@ check("regime threads through from regime.detect_regime()", heat["regime"] == "C
 check("the zero-premium TGT leg never reaches the heat engine at all (excluded, not zeroed)",
       heat["counts"]["RED"] + heat["counts"]["YELLOW"] + heat["counts"]["GREEN"] + heat["counts"]["UNKNOWN"] == 5,
       f"got counts={heat['counts']}")
-check("4 of the 5 real legs land RED (close-to-strike, DTE<=45), 1 (MSFT put, deep OTM + profit target) lands YELLOW",
-      heat["counts"]["RED"] == 4 and heat["counts"]["YELLOW"] == 1, f"got {heat['counts']}")
+# ADR 0005: AAPL/A's $200 CALL is now fully COVERED (A's 100 shares back its
+# 1 contract) -> GREEN/HOLD_TO_ASSIGNMENT, no longer RED. 3 of the 5 real
+# legs land RED (205 CALL naked + 180 PUT cash-secured, both close-to-strike
+# DTE<=45; 200 CALL naked in account B, same strike-proximity math); 1
+# (MSFT put, deep OTM + profit target) lands YELLOW; 1 (the covered 200
+# CALL) lands GREEN.
+check("3 of 5 real legs RED, 1 (MSFT put) YELLOW, 1 (AAPL/A's covered 200 CALL) GREEN",
+      heat["counts"]["RED"] == 3 and heat["counts"]["YELLOW"] == 1 and heat["counts"]["GREEN"] == 1,
+      f"got {heat['counts']}")
 
 red_rows = heat["by_color"]["RED"]
-check("the duplicate cross-account AAPL $200 CALL row is NOT actually removed from by_color -- "
-      "_annotate()'s deduped list is computed but its return value is discarded at the call site "
-      "(a found, pre-existing bug; preserved as-is, not fixed, per this Bolt's behavior-preservation scope)",
-      len(red_rows) == 4, f"got {len(red_rows)} RED rows: {red_rows}")
+green_rows = heat["by_color"]["GREEN"]
+check("the colliding AAPL $200 CALL no longer produces a same-bucket duplicate -- "
+      "account A's copy (COVERED) and account B's copy (NAKED) now score into DIFFERENT "
+      "color buckets, so each bucket's dedup pass sees only one occurrence of this key "
+      "and fully annotates it (the pre-existing 'bare duplicate' bug -- see module "
+      "docstring -- is real but not exercised by this particular collision any more)",
+      len(red_rows) == 3 and len(green_rows) == 1, f"got RED={len(red_rows)} GREEN={len(green_rows)}")
 
-aapl_200_rows = [r for r in red_rows if r["symbol"] == "AAPL" and r["strike"] == 200.0]
-check("both the Account A and Account B copies of the colliding AAPL $200 CALL survive in RED",
-      len(aapl_200_rows) == 2, f"got {aapl_200_rows}")
-annotated = [r for r in aapl_200_rows if "covered" in r]
-bare = [r for r in aapl_200_rows if "covered" not in r]
-check("exactly one of the two colliding rows received the merged cross-account annotation",
-      len(annotated) == 1 and len(bare) == 1, f"annotated={annotated}, bare={bare}")
-check("the annotated copy reports the POOLED coverage across both accounts "
-      "(1 of 2 contracts covered, overall naked because B's copy has zero covering shares)",
-      annotated[0]["covered"] is False and annotated[0]["covered_contracts"] == 1
-      and annotated[0]["total_contracts"] == 2, f"got {annotated[0]}")
-check("the annotated copy is labeled as spanning both accounts",
-      annotated[0]["multi_account_contract"] is True and annotated[0]["account"] == "A+B",
-      f"got {annotated[0]}")
-check("the annotated copy is marked strangle=True (AAPL/A's own put shares its expiry)",
-      annotated[0]["strangle"] is True, f"got {annotated[0]}")
-check("the bare (un-annotated) duplicate carries NO merged context fields at all",
-      "account" not in bare[0] and "sector" not in bare[0] and "cost_to_close" not in bare[0],
-      f"got {bare[0]}")
+aapl_200_red = next(r for r in red_rows if r["symbol"] == "AAPL" and r["strike"] == 200.0)
+check("account B's $200 CALL copy: scored NAKED (0 covering shares in B) -> RED/ROLL_CALL",
+      aapl_200_red["coverage"] == "NAKED" and aapl_200_red["action"] == "ROLL_CALL",
+      f"got {aapl_200_red}")
+check("account B's copy still gets the POOLED display annotation across both accounts "
+      "(1 of 2 contracts covered overall, conservative AND-combine -- a known, accepted "
+      "cosmetic mismatch against its own GREEN sibling's coverage, out of this Bolt's scope)",
+      aapl_200_red["covered"] is False and aapl_200_red["covered_contracts"] == 1
+      and aapl_200_red["total_contracts"] == 2 and aapl_200_red["multi_account_contract"] is True
+      and aapl_200_red["account"] == "A+B",
+      f"got {aapl_200_red}")
+
+aapl_200_green = green_rows[0]
+check("account A's $200 CALL copy: scored COVERED (A's 100 shares fully back it) -> "
+      "GREEN/HOLD_TO_ASSIGNMENT, the ADR 0005 behavior this test exists to prove",
+      aapl_200_green["symbol"] == "AAPL" and aapl_200_green["strike"] == 200.0
+      and aapl_200_green["coverage"] == "COVERED" and aapl_200_green["action"] == "HOLD_TO_ASSIGNMENT",
+      f"got {aapl_200_green}")
+check("the GREEN copy ALSO gets the same pooled display annotation (same key, same context entry)",
+      aapl_200_green["covered"] is False and aapl_200_green["covered_contracts"] == 1
+      and aapl_200_green["total_contracts"] == 2 and aapl_200_green["account"] == "A+B",
+      f"got {aapl_200_green}")
 
 aapl_205_row = next(r for r in red_rows if r["symbol"] == "AAPL" and r["strike"] == 205.0)
-check("the non-colliding AAPL $205 CALL (2nd contract, no covering shares left) is correctly annotated naked",
-      aapl_205_row["covered"] is False and aapl_205_row["covered_contracts"] == 0
-      and aapl_205_row["total_contracts"] == 1 and aapl_205_row["account"] == "A",
+check("the non-colliding AAPL $205 CALL (2nd contract, no covering shares left) is correctly "
+      "scored NAKED and annotated naked",
+      aapl_205_row["coverage"] == "NAKED" and aapl_205_row["covered"] is False
+      and aapl_205_row["covered_contracts"] == 0 and aapl_205_row["total_contracts"] == 1
+      and aapl_205_row["account"] == "A",
       f"got {aapl_205_row}")
 
 aapl_put_row = next(r for r in red_rows if r["symbol"] == "AAPL" and r["strike"] == 180.0)
-check("a short PUT's 'covered' is None (not a meaningful concept for puts), not False/True",
-      aapl_put_row["covered"] is None, f"got {aapl_put_row['covered']}")
+check("a short PUT scores CASH_SECURED_PUT, and its display 'covered' is still None "
+      "(not a meaningful concept for puts), not False/True",
+      aapl_put_row["coverage"] == "CASH_SECURED_PUT" and aapl_put_row["covered"] is None,
+      f"got {aapl_put_row}")
 check("the put is correctly marked strangle=True (paired with AAPL/A's own calls, same expiry)",
       aapl_put_row["strangle"] is True, f"got {aapl_put_row}")
 
@@ -334,14 +364,11 @@ check("MSFT's put (single account, no collision) is fully annotated with its own
       msft_row["sector"] == "Communication Services" and msft_row["account"] == "A", f"got {msft_row}")
 
 sr = heat["sector_rollup"]
-check("sector_rollup buckets the 3 correctly-annotated Technology RED rows together "
-      "(the bare duplicate, lacking a 'sector', falls into 'Unknown' instead)",
-      sr["Technology"]["RED"] == 3 and sr["Unknown"]["RED"] == 1, f"got {sr}")
-check("sector_rollup's RED cost-to-close total uses the GLOBAL cost_to_close_by_key lookup "
-      "(by contract identity), not the row's own (possibly-missing) 'cost_to_close' field -- "
-      "so even the bare duplicate's bucket gets a real, non-zero cost",
-      sr["Unknown"]["red_cost_to_close"] == 3.0, f"got {sr['Unknown']}")
-check("Technology's RED cost-to-close sums all 3 real legs (205 CALL 2.5 + 200 CALL 3.0 + 180 PUT 1.0)",
+check("sector_rollup buckets all 3 Technology RED rows together, GREEN counted separately",
+      sr["Technology"]["RED"] == 3 and sr["Technology"]["GREEN"] == 1, f"got {sr}")
+check("Technology's RED cost-to-close sums the 3 RED legs' unique contract keys "
+      "(205 CALL 2.5 + 200 CALL[[B's key, shared with A's now-GREEN copy]] 3.0 + 180 PUT 1.0) -- "
+      "unchanged from before ADR 0005 since the rollup already summed by unique key, not row count",
       sr["Technology"]["red_cost_to_close"] == 6.5, f"got {sr['Technology']}")
 check("Communication Services (MSFT, YELLOW) never contributes to any RED cost-to-close total",
       sr["Communication Services"]["red_cost_to_close"] == 0.0 and sr["Communication Services"]["YELLOW"] == 1,
@@ -349,24 +376,26 @@ check("Communication Services (MSFT, YELLOW) never contributes to any RED cost-t
 
 positions = heat["positions"]
 groups_by_key = {(p["symbol"], p["account"]): p for p in positions}
-check("grouping is by (symbol, account) -- the bare duplicate's missing 'account' key "
-      "(None) makes it its own separate phantom group, distinct from the real Account A and A+B groups",
-      set(groups_by_key.keys()) == {("AAPL", "A"), ("AAPL", "A+B"), ("AAPL", None), ("MSFT", "A")},
+check("grouping is by (symbol, account) -- 3 groups now (no more phantom (AAPL, None) group: "
+      "both colliding rows got the same 'A+B' merged account annotation, in different colors, "
+      "so they group TOGETHER rather than one falling into an unannotated phantom group)",
+      set(groups_by_key.keys()) == {("AAPL", "A"), ("AAPL", "A+B"), ("MSFT", "A")},
       f"got {sorted(groups_by_key.keys(), key=str)}")
-check("the (AAPL, 'A') group collects the 2 legs that were genuinely and fully annotated as account A "
-      "(the 205 CALL and the 180 PUT) -- is_stagger True, naked_leg_count 1 (just the naked 205 CALL)",
+check("the (AAPL, 'A') group collects the 205 CALL and 180 PUT -- is_stagger True, "
+      "naked_leg_count 1 (just the naked 205 CALL), worst_color RED",
       groups_by_key[("AAPL", "A")]["leg_count"] == 2 and groups_by_key[("AAPL", "A")]["is_stagger"] is True
-      and groups_by_key[("AAPL", "A")]["naked_leg_count"] == 1,
+      and groups_by_key[("AAPL", "A")]["naked_leg_count"] == 1
+      and groups_by_key[("AAPL", "A")]["worst_color"] == "RED",
       f"got {groups_by_key[('AAPL', 'A')]}")
-check("the (AAPL, 'A+B') group holds just the one annotated colliding leg, correctly counted naked",
-      groups_by_key[("AAPL", "A+B")]["leg_count"] == 1 and groups_by_key[("AAPL", "A+B")]["naked_leg_count"] == 1,
+check("the (AAPL, 'A+B') group now holds BOTH colliding 200 CALL copies (one RED/NAKED, "
+      "one GREEN/COVERED) -- worst_color is RED (the group's worst leg wins), naked_leg_count "
+      "2 because that field still reads the OLD pooled 'covered' display annotation (False for "
+      "both rows), not the new per-leg 'coverage' scoring field -- a known, accepted divergence "
+      "between the two, out of this Bolt's scope",
+      groups_by_key[("AAPL", "A+B")]["leg_count"] == 2 and groups_by_key[("AAPL", "A+B")]["worst_color"] == "RED"
+      and groups_by_key[("AAPL", "A+B")]["naked_leg_count"] == 2,
       f"got {groups_by_key[('AAPL', 'A+B')]}")
-check("the phantom (AAPL, None) group's bare leg reports naked_leg_count=0 and total_cost_to_close=0.0 -- "
-      "its 'covered'/'cost_to_close' fields were never populated (None is not False, and .get() defaults to 0)",
-      groups_by_key[("AAPL", None)]["naked_leg_count"] == 0
-      and groups_by_key[("AAPL", None)]["total_cost_to_close"] == 0.0,
-      f"got {groups_by_key[('AAPL', None)]}")
-check("positions are ordered worst-color-first -- all 3 RED AAPL groups ahead of the YELLOW MSFT group",
+check("positions are ordered worst-color-first -- both RED AAPL groups ahead of the YELLOW MSFT group",
       [p["symbol"] for p in positions][-1] == "MSFT" and positions[-1]["worst_color"] == "YELLOW",
       f"got {[(p['symbol'], p['account'], p['worst_color']) for p in positions]}")
 

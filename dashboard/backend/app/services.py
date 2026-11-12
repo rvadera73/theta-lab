@@ -343,10 +343,26 @@ def _process_position_legs(pos, account_sources, acc: dict):
         premium = abs(lg.premium_received or 0)
         if premium <= 0:
             continue  # assess_portfolio_heat can't compute loss_multiple against a zero premium
+
+        # ADR 0005: coverage now feeds heat_scanner's color/action scoring
+        # itself, not just a post-hoc annotation (see _merge_context_onto_row
+        # below, unchanged) -- computed from the SAME per-position cov this
+        # function already derives below, so the two can never disagree.
+        cov = leg_coverage.get(id(lg))
+        if lg.option_type == "PUT":
+            coverage = "CASH_SECURED_PUT"
+        elif not cov["naked"]:
+            coverage = "COVERED"
+        elif cov["covered_contracts"] > 0:
+            coverage = "PARTIAL"
+        else:
+            coverage = "NAKED"
+
         acc["legs"].append({
             "symbol": pos.symbol, "option_type": lg.option_type, "strike": lg.strike,
             "dte": lg.dte, "expiry": lg.expiry, "premium_received": premium,
             "cost_to_close": abs(lg.current_mark or 0), "current_price": pos.current_price,
+            "coverage": coverage,
         })
         k = _key(pos.symbol, lg.strike, lg.expiry, lg.option_type)
         acc["cost_to_close_by_key"][k] = abs(lg.current_mark or 0)
@@ -362,7 +378,6 @@ def _process_position_legs(pos, account_sources, acc: dict):
                    "strangle_expiries": strangle_expiries, "source_info": source_info}
         entry = acc["context"].setdefault(k, _build_leg_context_entry(pos, lg, signals))
 
-        cov = leg_coverage.get(id(lg))
         entry["accounts"].add(pos.account)
         if lg.option_type == "CALL":
             entry["covered"] = entry["covered"] and not cov["naked"]
@@ -375,12 +390,19 @@ def _process_position_legs(pos, account_sources, acc: dict):
 def _build_legs_and_context(positions, account_sources):
     """Builds the flat per-leg `legs` list assess_portfolio_heat() scores,
     plus the per-contract context/cost/premium lookups _annotate_heat_rows()
-    merges back on afterward -- real position-context (per-leg coverage,
-    strangle pairing, data staleness) heat_scanner.py itself has no concept
-    of. A leg identifier can collide across two accounts holding the
-    identical contract; when it happens the two accounts' context is
-    combined rather than picked arbitrarily (conservative: covered only if
-    EVERY account holding it has enough shares)."""
+    merges back on afterward -- real position-context (strangle pairing, data
+    staleness, cross-account covered_contracts/total_contracts/strangle
+    display fields) heat_scanner.py itself has no concept of. As of ADR 0005,
+    heat_scanner.py DOES take a per-leg `coverage` classification (NAKED/
+    COVERED/PARTIAL/CASH_SECURED_PUT) as a scoring input -- computed once in
+    _process_position_legs() below and fed in via the `legs` list, so this
+    and the richer post-hoc `covered`/`covered_contracts` context can never
+    disagree about whether a given leg is covered. A leg identifier can
+    collide across two accounts holding the identical contract; when it
+    happens the two accounts' context is combined rather than picked
+    arbitrarily (conservative: covered only if EVERY account holding it has
+    enough shares) -- this collision handling is display-only (_annotate_heat_rows)
+    and does not affect the coverage each leg was actually SCORED with."""
     acc = {"legs": [], "context": {}, "cost_to_close_by_key": {}, "premium_received_by_key": {}}
     for pos in positions:
         _process_position_legs(pos, account_sources, acc)

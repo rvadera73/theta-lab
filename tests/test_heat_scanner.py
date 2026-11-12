@@ -10,15 +10,17 @@ mcp/config.py's HEAT_THRESHOLDS/HEAT_REGIME_ACTIONS (not round guessed
 numbers) and the real leg-dict shape fed by dashboard/backend/app/services.py
 and mcp/analysis/heat_from_positions()'s own construction of that shape.
 
-Coverage note on "covered"/"naked"/"partial": heat_scanner.py itself has NO
-concept of position coverage -- confirmed by source (zero references to
-"covered"/"shares" in this file) and by services.py's own comment at
-get_position_heat() ("real position-context annotations heat_scanner.py
-itself has no concept of ... per-leg coverage"). That classification lives in
-decision_engine.py (see tests/test_decision_engine.py's NAKED/COVERED/PARTIAL
-checks) and is merged into heat_scanner's output by services.py AFTER the
-fact. So this file does not test coverage -- it is correctly out of scope
-here.
+Coverage note on "covered"/"naked"/"partial" (UPDATED by ADR 0005,
+2026-11-12): heat_scanner.py now DOES take a `coverage` classification
+(NAKED/COVERED/PARTIAL/CASH_SECURED_PUT) as a scoring input -- see the
+"ADR 0005: coverage-aware severity" section below. decision_engine.py
+(tests/test_decision_engine.py) still independently re-derives the same
+classification from services.py's post-hoc `covered`/`covered_contracts`
+annotation for its own LegDecisionRecord.coverage field -- the two are
+computed from the same underlying per-position share/contract data
+(services.py's _leg_coverage_and_strangle_expiries) and should never
+disagree, but this file is the one that actually exercises heat_scanner's
+own `coverage` parameter and the color/action branches it drives.
 
 REAL BUG FOUND AND FIXED (see heat_scanner.py, heat_from_positions()): the
 "no open legs" shortcut return was missing the "UNKNOWN" bucket that
@@ -78,10 +80,10 @@ def check(label, condition, detail=""):
 
 
 def leg(symbol, option_type, strike, dte, current_price, premium_received,
-        cost_to_close, expiry="2027-06-18"):
+        cost_to_close, expiry="2027-06-18", coverage="NAKED"):
     return LegHeat(
         contract=LegContract(symbol=symbol, option_type=option_type, strike=strike,
-                              expiry=expiry),
+                              expiry=expiry, coverage=coverage),
         pricing=LegPricing(premium_received=premium_received,
                             cost_to_close=cost_to_close, current_price=current_price),
         dte=dte,
@@ -89,11 +91,12 @@ def leg(symbol, option_type, strike, dte, current_price, premium_received,
 
 
 def leg_dict(symbol, option_type, strike, dte, current_price,
-             premium_received, cost_to_close, expiry="2027-06-18"):
+             premium_received, cost_to_close, expiry="2027-06-18", coverage="NAKED"):
     return {
         "symbol": symbol, "option_type": option_type, "strike": strike,
         "dte": dte, "expiry": expiry, "premium_received": premium_received,
         "cost_to_close": cost_to_close, "current_price": current_price,
+        "coverage": coverage,
     }
 
 
@@ -197,10 +200,12 @@ check("10% cushion with no pnl/loss trigger and DTE > 21 -> PREPARE_ROLL",
 # ---------------------------------------------------------------------------
 print("\nRED branches")
 
-cut_leg = leg("CUT", "CALL", strike=200, dte=90, current_price=100,
+# ADR 0005: the hard-stop multiple is now DTE-gated the same as strike
+# proximity -- dte=30 (<=45 RED_DTE_WINDOW) is the genuinely-urgent case.
+cut_leg = leg("CUT", "CALL", strike=200, dte=30, current_price=100,
               premium_received=500, cost_to_close=1200)
-check("loss multiple 2.4x (>= 2.0x hard stop) -> RED", cut_leg.color == "RED",
-      f"got {cut_leg.color}")
+check("loss multiple 2.4x (>= 2.0x hard stop) with DTE=30 (<=45 window) -> RED",
+      cut_leg.color == "RED", f"got {cut_leg.color}")
 check("hard-stop multiple -> CUT_RESTAGGER", cut_leg.action == "CUT_RESTAGGER",
       f"got {cut_leg.action}")
 check("CUT_RESTAGGER reason states the real cost-to-close and premium dollars",
@@ -227,6 +232,76 @@ check("5% cushion with DTE=30 -> RED (PUT)", roll_put_leg.color == "RED",
       f"got {roll_put_leg.color}")
 check("RED PUT, multiple below hard stop, DTE > 7 -> ROLL_OR_CUT_PUT",
       roll_put_leg.action == "ROLL_OR_CUT_PUT", f"got {roll_put_leg.action}")
+
+# ---------------------------------------------------------------------------
+# ADR 0005: coverage-aware severity (2026-11-12)
+# ---------------------------------------------------------------------------
+print("\nADR 0005: coverage-aware severity")
+
+# Real incident this ADR fixes: a NAKED-ladder leg this deep ITM/high-multiple
+# (loss_multiple 10.8x, distance -57%) would have been RED/CUT_RESTAGGER
+# regardless of coverage before this change. A COVERED call with the exact
+# same numbers must now be GREEN/HOLD_TO_ASSIGNMENT -- coverage bypasses the
+# naked ladder entirely, it's not just a smaller RED threshold.
+covered_deep_itm = leg("OKT", "CALL", strike=80, dte=127, current_price=187,
+                        premium_received=3055, cost_to_close=32902, coverage="COVERED")
+check("COVERED call, 10.8x loss-multiple, deep ITM, 127 DTE -> GREEN (not RED)",
+      covered_deep_itm.color == "GREEN", f"got {covered_deep_itm.color}")
+check("COVERED + GREEN -> HOLD_TO_ASSIGNMENT (not CUT_RESTAGGER)",
+      covered_deep_itm.action == "HOLD_TO_ASSIGNMENT", f"got {covered_deep_itm.action}")
+check("HOLD_TO_ASSIGNMENT reason says no action needed / working as designed",
+      "no action needed" in covered_deep_itm.reason.lower(), f"got {covered_deep_itm.reason!r}")
+
+# Same COVERED leg, but inside the dte<=21 roll-decision window -> YELLOW.
+covered_near_expiry = leg("OKT", "CALL", strike=80, dte=15, current_price=187,
+                           premium_received=3055, cost_to_close=32902, coverage="COVERED")
+check("COVERED call, same deep-ITM numbers, DTE=15 (<=21) -> YELLOW",
+      covered_near_expiry.color == "YELLOW", f"got {covered_near_expiry.color}")
+check("COVERED + YELLOW -> ROLL_CALL_OR_ASSIGN", covered_near_expiry.action == "ROLL_CALL_OR_ASSIGN",
+      f"got {covered_near_expiry.action}")
+
+# Same COVERED leg, inside the dte<=7 gamma/pin window -> RED.
+covered_pin_risk = leg("OKT", "CALL", strike=80, dte=5, current_price=187,
+                        premium_received=3055, cost_to_close=32902, coverage="COVERED")
+check("COVERED call, same deep-ITM numbers, DTE=5 (<=7) -> RED (pin risk, not naked loss)",
+      covered_pin_risk.color == "RED", f"got {covered_pin_risk.color}")
+check("COVERED + RED -> CLOSE_OR_ASSIGN (not CUT_RESTAGGER)",
+      covered_pin_risk.action == "CLOSE_OR_ASSIGN", f"got {covered_pin_risk.action}")
+
+# PARTIAL coverage (some contracts covered, uncovered ones carry real risk)
+# stays on the NAKED ladder -- same deep-ITM/high-multiple numbers as above
+# must still reach RED at dte<=45, unlike the fully-COVERED case.
+partial_leg = leg("PRT", "CALL", strike=80, dte=30, current_price=187,
+                   premium_received=3055, cost_to_close=32902, coverage="PARTIAL")
+check("PARTIAL coverage with dte=30 (<=45) stays on the naked ladder -> RED",
+      partial_leg.color == "RED", f"got {partial_leg.color}")
+check("PARTIAL + RED -> CUT_RESTAGGER (same as NAKED)", partial_leg.action == "CUT_RESTAGGER",
+      f"got {partial_leg.action}")
+
+# The hard-stop DTE-gating extension: same 2.4x multiple as cut_leg above but
+# DTE=90 (>45) -> YELLOW/THESIS_WATCH, not RED/CUT_RESTAGGER. This is the
+# exact regression this ADR intentionally supersedes (see cut_leg above,
+# now fixed at dte=30 to keep testing the still-reachable RED path).
+thesis_watch_leg = leg("TWL", "CALL", strike=200, dte=90, current_price=100,
+                        premium_received=500, cost_to_close=1200)
+check("NAKED, loss multiple 2.4x, DTE=90 (>45 window) -> YELLOW (not RED)",
+      thesis_watch_leg.color == "YELLOW", f"got {thesis_watch_leg.color}")
+check("past hard-stop but long DTE -> THESIS_WATCH", thesis_watch_leg.action == "THESIS_WATCH",
+      f"got {thesis_watch_leg.action}")
+check("THESIS_WATCH reason cites the real multiple, DTE, and the Roll Decision Framework",
+      "2.4x" in thesis_watch_leg.reason and "90d DTE" in thesis_watch_leg.reason
+      and "Roll Decision Framework" in thesis_watch_leg.reason,
+      f"got {thesis_watch_leg.reason!r}")
+
+# call_tighten regime demotion must NOT touch a COVERED call -- see
+# _apply_call_tighten's ADR 0005 docstring. Same distance_pct/DTE as the
+# existing CAUTIOUS_BULL demotion test below (tighten_leg), but COVERED.
+covered_tighten_leg = leg_dict("CTGT", "CALL", 106, 90, 100, 500, 400, coverage="COVERED")
+covered_cautious_result = assess_portfolio_heat([covered_tighten_leg], "CAUTIOUS_BULL")
+check("COVERED call under CAUTIOUS_BULL (call_tighten=True) is NOT demoted to RED",
+      covered_cautious_result["counts"]["RED"] == 0, f"got {covered_cautious_result['counts']}")
+check("COVERED call under CAUTIOUS_BULL stays GREEN (dte=90, > 21d roll window)",
+      covered_cautious_result["counts"]["GREEN"] == 1, f"got {covered_cautious_result['counts']}")
 
 # ---------------------------------------------------------------------------
 # LegHeat: UNKNOWN (no live price) -- distinct from "safe"
@@ -309,9 +384,12 @@ check("zero legs -> stagger_capacity empty", empty_result["stagger_capacity"] ==
 # ---------------------------------------------------------------------------
 print("\nassess_portfolio_heat: RED sort order (loss_multiple desc) + top_actions")
 
-red_a = leg_dict("RA", "CALL", 200, 90, 100, 500, 1000)   # mult 2.0
-red_b = leg_dict("RB", "CALL", 200, 90, 100, 500, 2500)   # mult 5.0
-red_c = leg_dict("RC", "CALL", 200, 90, 100, 500, 1500)   # mult 3.0
+# dte=30 (<=45 RED_DTE_WINDOW) so these stay genuinely RED under ADR 0005 --
+# this test is about sort order, not the DTE-gating behavior (see the
+# dedicated ADR 0005 section above for that).
+red_a = leg_dict("RA", "CALL", 200, 30, 100, 500, 1000)   # mult 2.0
+red_b = leg_dict("RB", "CALL", 200, 30, 100, 500, 2500)   # mult 5.0
+red_c = leg_dict("RC", "CALL", 200, 30, 100, 500, 1500)   # mult 3.0
 yellow_one = leg_dict("YA", "CALL", 120, 90, 100, 500, 750)   # mult 1.5 -> WATCH_CLOSE
 green_one = leg_dict("GA", "CALL", 130, 60, 100, 500, 350)    # GREEN
 
@@ -373,7 +451,7 @@ check("protocol separately flags the RED put(s)",
 # ---------------------------------------------------------------------------
 print("\nassess_portfolio_heat: stagger_capacity per symbol")
 
-stop_leg = leg_dict("STOPME", "CALL", 200, 90, 100, 500, 1200)      # RED call
+stop_leg = leg_dict("STOPME", "CALL", 200, 30, 100, 500, 1200)      # RED call (dte=30, <=45 window)
 full_1 = leg_dict("FULLME", "CALL", 130, 60, 100, 500, 350, expiry="2027-01-01")
 full_2 = leg_dict("FULLME", "CALL", 135, 60, 100, 500, 350, expiry="2027-02-01")
 full_3 = leg_dict("FULLME", "CALL", 140, 60, 100, 500, 350, expiry="2027-03-01")  # 3 GREEN calls
