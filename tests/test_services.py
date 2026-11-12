@@ -415,6 +415,83 @@ check("an empty book returns the exact documented empty shape (all 4 color bucke
       f"got {empty_heat}")
 
 # ---------------------------------------------------------------------------
+# get_position_heat() -- SAME-bucket cross-account collision (both copies
+# NAKED, unlike the AAPL $200 CALL fixture above where coverage differs and
+# the two copies land in different buckets). Real bug found 2026-11-12: the
+# un-annotated duplicate (no "account" field at all) stayed in by_color
+# instead of being dropped, forming a phantom (symbol, None) position-group
+# that leaked into get_leg_decisions() -> decision_engine, double-counting
+# the same real contract's dollars in the portfolio rollup. Confirmed real,
+# recurring collision pattern (NVO $40C, 2026-10-15), not hypothetical.
+# ---------------------------------------------------------------------------
+print("\nget_position_heat() -- same-bucket cross-account collision (identical naked "
+      "contract in two accounts) is deduplicated, not left as a phantom duplicate")
+
+
+def _build_same_bucket_collision_positions():
+    # Same strike/price/premium/mark/dte as the AAPL/A 205C leg above
+    # (already proven RED by that test) -- reused here to avoid re-deriving
+    # the threshold math, just on a different symbol/accounts to isolate
+    # this collision from the AAPL fixture above.
+    msft_naked_a = Position(
+        symbol="MSFT", account="A", shares=0, stock_cost_basis=0.0, current_price=190.0,
+        option_legs=[
+            OptionLeg(description="MSFT 205C (acct A)", strike=205.0, expiry="2026-12-18", option_type="CALL",
+                      quantity=-1, premium_received=4.0, current_mark=2.5, dte=40),
+        ],
+    )
+    msft_naked_c = Position(
+        symbol="MSFT", account="C", shares=0, stock_cost_basis=0.0, current_price=190.0,
+        option_legs=[
+            OptionLeg(description="MSFT 205C (acct C)", strike=205.0, expiry="2026-12-18", option_type="CALL",
+                      quantity=-1, premium_received=4.0, current_mark=2.5, dte=40),
+        ],
+    )
+    return [msft_naked_a, msft_naked_c]
+
+
+async def _fake_load_same_bucket_collision():
+    return {
+        "positions": _build_same_bucket_collision_positions(),
+        "account_sources": {
+            "A": {"source": "schwab_api", "as_of": "2026-11-09", "days_stale": 0},
+            "C": {"source": "schwab_api", "as_of": "2026-11-09", "days_stale": 0},
+        },
+    }
+
+
+with mock.patch.object(report_utils, "load_us_positions", _fake_load_same_bucket_collision), \
+     mock.patch.object(report_utils, "extended_hours_context", side_effect=_fake_extended_hours), \
+     mock.patch.object(regime, "detect_regime", return_value={"regime": "CAUTIOUS_BULL"}), \
+     mock.patch.object(symbol_context, "get_cached_symbol_context", side_effect=_fake_symbol_context):
+    collision_heat = services.get_position_heat()
+
+check("both copies score RED individually (heat_scanner has no account concept, "
+      "scores each leg on its own merits) -- counts reflects the raw per-leg scoring",
+      collision_heat["counts"]["RED"] == 2, f"got {collision_heat['counts']}")
+collision_red_rows = collision_heat["by_color"]["RED"]
+check("the SAME-bucket collision is deduplicated to exactly ONE row, not left as a "
+      "bare/un-annotated duplicate",
+      len(collision_red_rows) == 1, f"got {len(collision_red_rows)} rows: {collision_red_rows}")
+check("the surviving row carries the merged multi-account annotation (account='A+C'), "
+      "proving it's the real, fully-annotated row, not a leftover bare one",
+      collision_red_rows[0].get("account") == "A+C" and collision_red_rows[0].get("multi_account_contract") is True,
+      f"got {collision_red_rows[0]}")
+
+collision_positions = collision_heat["positions"]
+collision_keys = {(p["symbol"], p["account"]) for p in collision_positions}
+check("exactly one MSFT position-group exists, keyed by the merged 'A+C' account -- "
+      "no phantom (MSFT, None) group from the dropped duplicate",
+      collision_keys == {("MSFT", "A+C")}, f"got {collision_keys}")
+
+collision_decisions = services.get_leg_decisions(heat=collision_heat)["decisions"]
+check("decision_engine receives exactly ONE MSFT record for this real contract held "
+      "across 2 accounts -- not two, which would double-count its premium/margin in "
+      "the portfolio rollup",
+      len(collision_decisions) == 1 and collision_decisions[0]["symbol"] == "MSFT",
+      f"got {len(collision_decisions)} decisions: {collision_decisions}")
+
+# ---------------------------------------------------------------------------
 # get_leg_decisions
 # ---------------------------------------------------------------------------
 print("\nget_leg_decisions() -- projects get_position_heat()'s legs through decision_engine, "
