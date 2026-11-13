@@ -47,8 +47,6 @@ LOGS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs"
 )
 
-)
-
 # ---------------------------------------------------------------------------
 # No hardcoded position data here.
 # ASSIGNED_POSITIONS, OPEN_PUTS, ENTRY_CANDIDATES, TOP_ACTIONS were removed.
@@ -78,6 +76,38 @@ def load_snapshot() -> dict:
         return {}
     with open(SNAPSHOT_FILE) as f:
         return yaml.safe_load(f) or {}
+
+
+# month_to_date_equity_change is a fully manual weekly field (see
+# scripts/update_snapshot.py's weekly workflow, step 8). update_snapshot.py
+# writes it as `None` (YAML null) every time it regenerates the snapshot —
+# the explicit "not entered yet this week" sentinel — and the trader
+# overwrites it by hand afterward with the real net mark-to-market change,
+# which may legitimately be 0 (no stock price movement). Both callers below
+# MUST resolve it through this one function so a skipped manual edit behaves
+# identically everywhere instead of silently becoming a guessed number.
+_MTD_EQUITY_NOT_ENTERED_NOTE = (
+    " MTD equity change: not entered this week — treated as $0 until set "
+    "in data/portfolio_snapshot.yaml."
+)
+
+
+def _resolve_mtd_equity_change(snapshot: dict) -> tuple[float, bool, str]:
+    """
+    Resolve month_to_date_equity_change from the snapshot.
+
+    Returns (value_to_use, was_entered, report_note):
+      - was_entered=False (value_to_use=0.0) when the field is missing or
+        still the `None` not-yet-entered placeholder. Never guesses a
+        number (no more hardcoded -15000 or silent 0 standing in for data
+        that was never actually typed in).
+      - was_entered=True (value_to_use=<real value>) once the trader has
+        hand-edited a real number into the snapshot, including a real 0.
+    """
+    raw = snapshot.get("month_to_date_equity_change")
+    if raw is None:
+        return 0.0, False, _MTD_EQUITY_NOT_ENTERED_NOTE
+    return float(raw), True, ""
 
 
 # ---------------------------------------------------------------------------
@@ -199,11 +229,14 @@ def run_weekly_dashboard(send_email: bool = True, save_log: bool = True) -> dict
     if transactions:
         capture = premium_capture_rate(transactions)
         pf = profit_factor(transactions)
+        mtd_equity_value, equity_entered, equity_note = _resolve_mtd_equity_change(snapshot)
         mt = monthly_target_tracker(
             transactions,
-            unrealized_equity_change=snapshot.get("month_to_date_equity_change", -15000),
+            unrealized_equity_change=mtd_equity_value,
             target_monthly=100_000,
         )
+        mt["equity_change_entered"] = equity_entered
+        mt["interpretation"] = mt.get("interpretation", "") + equity_note
     else:
         # Fallback to snapshot values when no CSV available (GitHub Actions)
         capture = {
@@ -218,7 +251,7 @@ def run_weekly_dashboard(send_email: bool = True, save_log: bool = True) -> dict
             "interpretation": f"Profit factor: {snapshot.get('ytd_profit_factor', '—')} (from snapshot)",
         }
         mtd_premium = snapshot.get("month_to_date_premium", 0)
-        mtd_equity = snapshot.get("month_to_date_equity_change", 0)
+        mtd_equity, equity_entered, equity_note = _resolve_mtd_equity_change(snapshot)
         combined = mtd_premium + mtd_equity
         pct = combined / 100_000 * 100
         mt = {
@@ -226,10 +259,14 @@ def run_weekly_dashboard(send_email: bool = True, save_log: bool = True) -> dict
             "combined_total": combined,
             "net_options_premium": mtd_premium,
             "unrealized_equity_change": mtd_equity,
+            "equity_change_entered": equity_entered,
             "target_monthly": 100_000,
             "remaining_to_target": max(0, 100_000 - combined),
             "signal": "ON TRACK" if pct >= 80 else ("WATCH" if pct >= 50 else "BEHIND"),
-            "interpretation": f"MTD: ${combined:,.0f} of $100,000 target ({pct:.1f}%). From snapshot.",
+            "interpretation": (
+                f"MTD: ${combined:,.0f} of $100,000 target ({pct:.1f}%). From snapshot."
+                + equity_note
+            ),
         }
 
     # 4. Breakeven velocities
