@@ -78,8 +78,12 @@ function AccountHealthSection() {
           <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-[12px] text-muted mb-2.5 tabular-nums">
             <span>Stress cash need <strong className="text-ink">{fmtUsd(forecast.stress_low)}–{fmtUsd(forecast.stress_high)}</strong></span>
             <span>Emergency reserve <strong className="text-ink">{fmtUsd(forecast.emergency_reserve)}</strong></span>
-            <span className={forecast.reserve_covers_stress ? "text-up" : "text-down"}>
-              {forecast.reserve_covers_stress ? "Reserve covers stress scenario" : "Reserve does NOT cover stress scenario"}
+            <span className={forecast.reserve_covers_stress == null ? "text-muted" : forecast.reserve_covers_stress ? "text-up" : "text-down"}>
+              {forecast.reserve_covers_stress == null
+                ? "Reserve unavailable -- no account_state figure on file"
+                : forecast.reserve_covers_stress
+                ? "Reserve covers stress scenario"
+                : "Reserve does NOT cover stress scenario"}
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-2.5">

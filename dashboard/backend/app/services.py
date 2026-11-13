@@ -321,12 +321,15 @@ def _build_leg_context_entry(pos, lg, signals: dict):
         "gates_fired": leg_ctx.get("gates_fired", []) + eh_ctx["gates_fired"],
         "dividend_rate": leg_ctx.get("dividend_rate"),
         "next_ex_dividend_date": leg_ctx.get("next_ex_dividend_date"),
-        # iv_rank/current_iv were computed here all along but never passed
-        # through to the leg dict (ADR 0001 step 7) -- decision_engine.py's
-        # portfolio Greeks rollup needs a vol input per leg; current_iv is
-        # real when a caller upstream supplied one (step 6), else iv_rank's
-        # own HV-proxy fallback.
-        "current_iv": leg_ctx.get("current_iv"),
+        # iv_rank/current_iv_pct were computed here all along but never
+        # passed through to the leg dict (ADR 0001 step 7) --
+        # decision_engine.py's portfolio Greeks rollup needs a vol input per
+        # leg; current_iv_pct is real when a caller upstream supplied one
+        # (step 6), else iv_rank's own HV-proxy fallback. Renamed from
+        # `current_iv` (issue #56) -- this is iv_rank.get_iv_rank()'s
+        # PERCENTAGE output, which used to share its name with that same
+        # function's unrelated fractional `current_iv` INPUT parameter.
+        "current_iv_pct": leg_ctx.get("current_iv_pct"),
         # Extended-hours overnight-move signal (ADR 0004) -- live_price is
         # the current pre-market/after-hours/regular quote; overnight_move_pct
         # compares it to pos.current_price (the regular close margin/P&L math
@@ -443,7 +446,7 @@ def _merge_context_onto_row(row, ctx, cost_to_close_by_key, premium_received_by_
     row["gates_fired"] = ctx["gates_fired"]
     row["dividend_rate"] = ctx.get("dividend_rate")
     row["next_ex_dividend_date"] = ctx.get("next_ex_dividend_date")
-    row["current_iv"] = ctx.get("current_iv")
+    row["current_iv_pct"] = ctx.get("current_iv_pct")
     row["live_price"] = ctx.get("live_price")
     row["live_price_source"] = ctx.get("live_price_source")
     row["overnight_move_pct"] = ctx.get("overnight_move_pct")
@@ -890,14 +893,25 @@ def _build_top_expiry_dates(opt, total_n):
 
 def _resolve_cash_reserve_info():
     """Emergency reserve -- was hardcoded to a stale $200K literal (ADR
-    0001, found 2026-11-03). The real fund is actively draining (~$140K as
-    of 2026-10-15, co-funding the Dubai purchase, per
-    skills/options-trader/SKILL.md) with no live feed, so it's read from
-    account_state.py instead, falling back to the last-confirmed figure.
-    Returns (emergency_reserve, reserve_days_stale)."""
+    0001, found 2026-11-03), then replaced with a live read from
+    account_state.py falling back to a second hardcoded guess ($140K,
+    issue #54) when account_state had no real figure on file. That second
+    fallback repeated the exact bug ADR 0001 fixed one layer up: a guessed
+    dollar figure silently standing in for real data, with
+    reserve_days_stale reporting None (no staleness signal at all) even
+    though the number itself was never real.
+
+    Per ADR 0001's own precedent (account_state.py's `days_stale is None`
+    already means "no data on file" elsewhere, e.g. get_today_plan's
+    "inactive" branch), the correct behavior is to surface "unavailable"
+    explicitly rather than substitute a guess. Returns (emergency_reserve,
+    reserve_days_stale) -- emergency_reserve is None when account_state has
+    never recorded a real value, and callers must treat that as
+    "unavailable", never as $0 or a safe-by-default number."""
     from . import account_state as acct_state
     a_state = acct_state.get_state("A") or {}
-    return a_state.get("emergency_reserve") or 140000, a_state.get("days_stale")
+    emergency_reserve = a_state.get("emergency_reserve")
+    return emergency_reserve, a_state.get("days_stale")
 
 
 def get_cash_margin_forecast():
@@ -926,6 +940,9 @@ def get_cash_margin_forecast():
     stress_low = total_n * 0.15 * 0.18
     stress_high = total_n * 0.20 * 0.18
     emergency_reserve, reserve_days_stale = _resolve_cash_reserve_info()
+    # issue #54: no real account_state figure on file -> surface "unavailable"
+    # explicitly (None), never a guessed dollar amount compared as if it were real.
+    reserve_covers_stress = emergency_reserve >= stress_high if emergency_reserve is not None else None
 
     return _to_native({
         "as_of": today.isoformat(),
@@ -936,7 +953,7 @@ def get_cash_margin_forecast():
         "operating_cash_target": 100000,
         "emergency_reserve": emergency_reserve,
         "reserve_days_stale": reserve_days_stale,
-        "reserve_covers_stress": emergency_reserve >= stress_high,
+        "reserve_covers_stress": reserve_covers_stress,
         "capacity": ACCOUNTS_CONFIG[_ACCOUNT_A_NAME].get('capacity'),
         "capacity_as_of": ACCOUNTS_CONFIG[_ACCOUNT_A_NAME].get('capacity_as_of'),
         "dte_buckets": buckets,

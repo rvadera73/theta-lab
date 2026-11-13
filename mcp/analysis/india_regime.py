@@ -19,20 +19,7 @@ import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo r
 import yfinance as yf
 
 from config import Regime, INDIA_REGIME_THRESHOLDS
-
-
-def _get_closes(symbol: str, period: str = "1y") -> list[float]:
-    try:
-        hist = yf.Ticker(symbol).history(period=period)
-        return hist["Close"].tolist()
-    except Exception:
-        return []
-
-
-def _moving_average(closes: list[float], window: int) -> float:
-    if len(closes) < window:
-        return 0.0
-    return sum(closes[-window:]) / window
+from regime_common import get_closes as _get_closes, moving_average as _moving_average, classify_tech_regime
 
 
 def detect_india_regime() -> dict:
@@ -111,15 +98,8 @@ def detect_india_regime() -> dict:
         else:
             bear_signals += 1
 
-    # Determine technical regime
-    if bull_signals >= 3 and bear_signals == 0:
-        tech_regime = Regime.BULL
-    elif bear_signals >= 3:
-        tech_regime = Regime.BEAR_SIDEWAYS
-    elif bull_signals > bear_signals:
-        tech_regime = Regime.TRANSITIONING
-    else:
-        tech_regime = Regime.BEAR_SIDEWAYS
+    # Determine technical regime (shared with analysis/regime.py)
+    tech_regime = classify_tech_regime(bull_signals, bear_signals)
 
     # Trader override via env var (mirrors US pattern)
     override_env = os.getenv("INDIA_REGIME_OVERRIDE", "").strip().upper()

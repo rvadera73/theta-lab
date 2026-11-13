@@ -22,7 +22,7 @@ from analysis.india_statement_parser import (
     load_india_config,
 )
 from analysis.position_priority import _dte_label, _dte_from_expiry, priority_prefix
-from reports.report_utils import current_price as _live_price, yf_symbol
+from reports.report_utils import current_price as _live_price, yf_symbol, portfolio_staleness_lines
 from config import (
     INDIA_ACCOUNT,
     INDIA_PERMANENT_EXITS,
@@ -413,6 +413,7 @@ async def generate_india_weekly_report(
         f"**Profit-take target:** {int(profit_low*100)}-{int(profit_high*100)}% of max premium",
         "",
     ]
+    lines += portfolio_staleness_lines()  # issue #53
 
     # --- Market signals ---
     sigs = regime_data.get("signals", {})

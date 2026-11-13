@@ -66,7 +66,14 @@ def get_iv_rank(symbol: str, current_iv: Optional[float] = None) -> dict:
             "symbol": symbol,
             "iv_rank": max(0.0, min(100.0, iv_rank)),
             "iv_pct": iv_pct,
-            "current_iv": round(iv * 100, 1),
+            # NOTE (issue #56): this is a PERCENTAGE (iv*100, e.g. 35.2), not
+            # the fractional `current_iv` INPUT PARAMETER above -- the two
+            # used to share the identical name `current_iv`, a naming
+            # collision across a 100x unit difference that every downstream
+            # consumer had to silently know about. Renamed to current_iv_pct
+            # so the key itself states its units; do NOT rename the function
+            # parameter above, which is correctly fractional already.
+            "current_iv_pct": round(iv * 100, 1),
             "hv_52w_low": round(hv_min * 100, 1),
             "hv_52w_high": round(hv_max * 100, 1),
             "entry_signal": iv_rank >= 40,  # IVR >= 40 required per persona

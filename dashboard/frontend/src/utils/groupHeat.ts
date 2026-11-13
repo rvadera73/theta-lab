@@ -1,12 +1,17 @@
 import type { HeatLeg, PositionGroupRef, Leg } from "../types";
 
-const SEVERITY_RANK: Record<string, number> = { RED: 0, YELLOW: 1, GREEN: 2, UNKNOWN: 3 };
+// Must match the backend's services._POSITION_COLOR_RANK exactly: RED
+// worst, then YELLOW, then UNKNOWN, then GREEN best. UNKNOWN ranks worse
+// than GREEN because an unscored/needs-review leg is not the same as a
+// confirmed-healthy one -- a prior mismatch here (GREEN ranked ahead of
+// UNKNOWN) let the US dashboard show a reassuring GREEN worst_color for a
+// group the backend's own grouping would treat as UNKNOWN (issue #50).
+const SEVERITY_RANK: Record<string, number> = { RED: 0, YELLOW: 1, UNKNOWN: 2, GREEN: 3 };
 
-// Mirrors the backend's services._group_positions() grouping (by symbol +
-// account, worst color wins) so the US tab's full Position Heat review and
-// Today's actionable Tier-1 list present the same real per-leg data the
-// same way, just over a different color slice (all colors here, RED/YELLOW
-// only on Today).
+// Mirrors the backend's services._group_positions_by_symbol_account()
+// grouping (by symbol + account, worst color wins) so the US tab's full
+// Position Heat review presents the same real per-leg data the same way
+// the backend does.
 export function groupHeatLegs(legs: HeatLeg[]): PositionGroupRef[] {
   const groups = new Map<string, { legs: Leg[]; account: string; symbol: string; sector: string }>();
   for (const lg of legs) {

@@ -8,6 +8,7 @@ from datetime import date
 from typing import Any
 
 from analysis.iv_rank import batch_iv_rank
+from analysis.strategy_engine import check_flags
 from config import INDIA_REGIME_THRESHOLDS, RISK, PERMANENT_EXITS
 from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
 from reports.screener_universe import INDIA_UNIVERSE, US_UNIVERSE, STRATEGIC_MACRO_FOCUS
@@ -211,6 +212,25 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
     # Never recommend new entries on permanent-exit names
     if symbol in PERMANENT_EXITS:
         return None
+    # Live, TTL-cached hard-block check (analysis.flags_engine, via
+    # analysis.strategy_engine.check_flags) -- the SAME path research_symbol/
+    # scan_sector/run_screener/dry_run_order and (as of #47) composite_score.py
+    # already use. Real bug found 2026-11-13 (#49): this screener -- the one
+    # feeding the LIVE run_screener/screen_new_entries MCP tools that can
+    # surface an active ENTER_NOW recommendation -- only ever excluded via the
+    # hardcoded, hand-maintained PERMANENT_EXITS list (4 names in config.py)
+    # and never consulted the quality-flag registry at all, static or live.
+    # A ticker carrying a real hard-block flag (ACCOUNTING_RISK/
+    # DELISTING_RISK/GOING_CONCERN/HALTED/PERMANENT_EXIT) in the flag registry
+    # but not separately hand-added to PERMANENT_EXITS could get an active
+    # ENTER_NOW recommendation from the live screener with zero flag check --
+    # worse than the composite_score.py bug, since this under-blocks a live
+    # buy recommendation rather than over-blocking a ranking display.
+    # PERMANENT_EXITS is kept as an additional, redundant check (not removed)
+    # since it's config-driven and may carry manual intent beyond the flag
+    # registry.
+    if check_flags(symbol)["hard_blocks"]:
+        return None
     in_portfolio = symbol in set(current_symbols)
     preferred = meta["preferred_strategy"]
     if in_portfolio and (preferred == "CSP" or preferred == "CSP_or_strangle"):
@@ -220,7 +240,7 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
     iv_data = iv_lookup.get(iv_key, {})
     ivr = iv_data.get("iv_rank")
     iv_pct = iv_data.get("iv_pct")
-    current_iv = iv_data.get("current_iv")
+    current_iv = iv_data.get("current_iv_pct")
 
     try:
         snap = _quiet_call(technical_snapshot, symbol, india=india)
@@ -290,7 +310,7 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
             "rsi": rsi,
             "ivr": ivr,
             "iv_pct": iv_pct,
-            "current_iv": current_iv,
+            "current_iv_pct": current_iv,
             "est_monthly_pct": est_monthly_pct,
             "signal": signal,
             "reason": _reason(signal, meta, ivr, rsi, regime, regime_fit, earnings_days if earnings_soon else None, portfolio_note),
@@ -345,7 +365,7 @@ def screen_us_opportunities(regime: str, current_symbols: list[str], top_n: int 
     """
     Screens US universe. Returns top_n candidates ranked by opportunity score.
     Each result dict has:
-      symbol, sector, tier, strategy, price, rsi, ivr, iv_pct, current_iv, est_monthly_pct,
+      symbol, sector, tier, strategy, price, rsi, ivr, iv_pct, current_iv_pct, est_monthly_pct,
       signal ("ENTER_NOW" | "WATCH" | "SKIP"), reason, pct_off_high, earnings_soon
     """
     return _screen(US_UNIVERSE, regime or "TRANSITIONING", current_symbols or [], top_n=top_n, india=False)

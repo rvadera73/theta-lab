@@ -47,9 +47,20 @@ def _days_stale(market: str) -> int | None:
 
 def _current_margin_utilization():
     for row in services.get_account_status():
-        if row.get("account") == "Account A (232)":
+        if row.get("account") == services._ACCOUNT_A_NAME:
             return row.get("utilization")
     return None
+
+
+def _current_quarter_doc_filename(market: str) -> str:
+    """The quarterly_portfolio_direction_{market}_{YEAR}-Q{N}.md filename
+    (same naming convention as the real files in logs/, and the same one
+    services.get_quarterly_direction() globs for) for the quarter TODAY
+    falls in -- derived from the real date instead of a literal that goes
+    stale the moment the doc rolls to the next quarter."""
+    today = date.today()
+    quarter = (today.month - 1) // 3 + 1
+    return f"quarterly_portfolio_direction_{market}_{today.year}-Q{quarter}.md"
 
 
 def check_and_flag_if_due():
@@ -76,5 +87,5 @@ def check_and_flag_if_due():
         "Quarterly Portfolio Direction review due",
         f"{reason}. This needs real judgment (market direction call, portfolio-state "
         f"rewrite) from a live session -- not something a background job can do. "
-        f"See logs/quarterly_portfolio_direction_us_2026-Q3.md.",
+        f"See logs/{_current_quarter_doc_filename('us')}.",
     )

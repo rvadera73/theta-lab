@@ -250,7 +250,7 @@
         <div class="kpi"><div class="value">${fmt(d.total_notional)}</div><div class="label">Total notional</div></div>
         <div class="kpi"><div class="value">${fmt(d.opt_req)}</div><div class="label">Current Opt Req</div></div>
         <div class="kpi"><div class="value">${fmt(d.stress_low)} - ${fmt(d.stress_high)}</div><div class="label">Stress-case incremental (15-20% move)</div></div>
-        <div class="kpi"><div class="value ${d.reserve_covers_stress ? 'status-ok' : 'status-over'}">${fmt(d.emergency_reserve)}</div><div class="label">Emergency reserve ${d.reserve_covers_stress ? '(covers stress)' : '(BELOW stress high)'}</div></div>
+        <div class="kpi"><div class="value ${d.reserve_covers_stress == null ? '' : d.reserve_covers_stress ? 'status-ok' : 'status-over'}">${fmt(d.emergency_reserve)}</div><div class="label">Emergency reserve ${d.reserve_covers_stress == null ? '(unavailable -- no account_state on file)' : d.reserve_covers_stress ? '(covers stress)' : '(BELOW stress high)'}</div></div>
       </div>
       <table class="usa-table usa-table--borderless" style="width:100%;">
         <caption>DTE bucket concentration</caption>

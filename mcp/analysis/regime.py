@@ -1,13 +1,24 @@
 """
 Market regime detection: BEAR_SIDEWAYS / TRANSITIONING / CAUTIOUS_BULL / BULL.
 
-Four-tier system calibrated for a theta-selling persona:
-  BULL          — VIX < 16, SPX above both MAs, not stretched. Full throttle.
-  CAUTIOUS_BULL — Technical bull but VIX 16-20 or SPX >12% above 200d MA.
-                  New entries allowed with tighter strikes (Tier 1-2 only).
-  TRANSITIONING — Mixed signals: VIX 20-25 or SPX above 200d but below 50d.
-                  Tier 1 only, reduced size.
-  BEAR_SIDEWAYS — Bear confirmed: VIX > 25 or SPX below 200d MA. No new entries.
+Real VIX breakpoints (config.REGIME_SIGNALS), not a four-tier VIX scheme --
+there are only two:
+  vix_bull_threshold  = 20.0  — VIX 5-day avg sustained below this is a BULL
+                                signal (+1 bull_signal).
+  vix_pause_threshold = 35.0  — VIX above this is a BEAR signal (+2
+                                bear_signals), "pause entries."
+  A VIX reading strictly between 20 and 35 is NEUTRAL: it contributes zero
+  weight to either bull_signals or bear_signals. It is not a bear-leaning
+  "TRANSITIONING: VIX 20-25 / BEAR_SIDEWAYS: VIX > 25" scheme.
+
+The VIX signal is combined with the S&P 500 vs. 50/200-day MA signal into
+a base technical regime via the shared classification tree in
+regime_common.classify_tech_regime() (BULL / TRANSITIONING / BEAR_SIDEWAYS),
+then this module applies one further, US-specific downgrade on top:
+  CAUTIOUS_BULL — technical regime is BULL but VIX >= 16 (elevated, not
+                  truly complacent) or SPX is >12% above its 200d MA
+                  (stretched/overextended). New entries allowed with
+                  tighter strikes (Tier 1-2 only).
 """
 
 import os as _os, sys as _sys
@@ -21,20 +32,7 @@ for _ in range(5):
 import yahoo_throttle  # noqa: F401 -- installs the global cross-process Yahoo rate limiter, must run before any yfinance call
 import yfinance as yf
 from config import Regime, REGIME_SIGNALS
-
-
-def _get_closes(symbol: str, period: str = "1y") -> list[float]:
-    try:
-        hist = yf.Ticker(symbol).history(period=period)
-        return hist["Close"].tolist()
-    except Exception:
-        return []
-
-
-def _moving_average(closes: list[float], window: int) -> float:
-    if len(closes) < window:
-        return 0.0
-    return sum(closes[-window:]) / window
+from regime_common import get_closes as _get_closes, moving_average as _moving_average, classify_tech_regime
 
 
 def detect_regime() -> dict:
@@ -87,15 +85,8 @@ def detect_regime() -> dict:
         else:
             bear_signals += 1
 
-    # Determine base technical regime
-    if bull_signals >= 3 and bear_signals == 0:
-        tech_regime = Regime.BULL
-    elif bear_signals >= 3:
-        tech_regime = Regime.BEAR_SIDEWAYS
-    elif bull_signals > bear_signals:
-        tech_regime = Regime.TRANSITIONING
-    else:
-        tech_regime = Regime.BEAR_SIDEWAYS
+    # Determine base technical regime (shared with india_regime.py)
+    tech_regime = classify_tech_regime(bull_signals, bear_signals)
 
     # CAUTIOUS_BULL downgrade: technical signals are all green but environment is not clean.
     # Triggers (any one sufficient):
