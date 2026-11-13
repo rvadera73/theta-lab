@@ -218,6 +218,11 @@ class OpenPositionsLoaderV2:
                 'ROTH IRA for Minor': 'Fidelity (Rajul — Roth IRA)',
             }, []),
         ]
+        # Stashed for _capture_fidelity_equity_from_position_files(), which
+        # needs the identical file-pattern/account-map/drop-values mapping --
+        # duplicating it there would let the two drift apart exactly the way
+        # ADR 0005's coverage carve-outs did across sibling code paths.
+        self._fidelity_account_patterns = fidelity_account_patterns
 
         for patterns, default_account_name, account_map, drop_values in fidelity_account_patterns:
             # Try each pattern in order
@@ -644,6 +649,77 @@ class OpenPositionsLoaderV2:
 
         return dict(equity_positions)
 
+    def _capture_fidelity_equity_from_position_files(self):
+        """Populate self.equity_from_position_files with Fidelity's real,
+        current equity (stock) holdings, read fresh from the same canonical
+        CSVs _load_accounts loads (deliberately NOT reusing
+        self.consolidated_df's 'symbol'/'quantity' columns, which hold
+        OPTION-row-oriented values for Fidelity -- see the caller's
+        comment). A position-file row is a real equity holding only when
+        its raw Symbol is a bare 1-5 letter ticker (option rows are
+        " -TICKERyymmdd[C|P]strike"; mutual-fund/money-market rows are
+        things like "FAPCX" matched by this same regex but excluded via the
+        Quantity check below, and summary rows like "Pending activity" or
+        "HELD IN MONEY MARKET" have no ticker-shaped Symbol at all) and its
+        raw Quantity parses as a whole number of shares (mutual fund rows
+        carry fractional quantities like "352.98"; blank/placeholder cells
+        parse as None via _safe_qty_float).
+
+        index_col=False matters here: these exports end every data row with
+        a trailing comma (one more field than the header has), and without
+        it pandas infers that extra field as an implicit row index -- which
+        silently shifts every NAMED column's values one field to the right
+        of where they belong (confirmed: 'Symbol' ends up holding the real
+        Description text, 'Quantity' the real Last-price string -- exactly
+        the corruption the reverted 2026-09-01 attempt ran into, just from
+        this parsing artifact rather than a real file-format difference)."""
+        import glob
+        for patterns, default_account_name, account_map, drop_values in getattr(self, '_fidelity_account_patterns', []):
+            file_path = None
+            for pattern in patterns:
+                matches = sorted(glob.glob(str(self.data_dir / pattern)))
+                if matches:
+                    file_path = matches[-1]
+                    break
+            if not file_path:
+                continue
+            try:
+                df = pd.read_csv(file_path, encoding='utf-8-sig', on_bad_lines='skip', index_col=False)
+            except Exception as e:
+                print(f"! Fidelity equity position-file read failed: {e}")
+                continue
+
+            acct_type_col = next(
+                (c for c in df.columns if str(c).strip().lower() == 'account name'), None
+            )
+            for _, row in df.iterrows():
+                symbol = str(row.get('Symbol', '')).strip()
+                match = re.match(r'^([A-Z]{1,5})$', symbol)
+                if not match:
+                    continue  # option row, money-market/mutual-fund symbol, or a summary row
+                ticker = match.group(1)
+
+                qty = self._safe_qty_float(row.get('Quantity'))
+                if qty is None or qty != int(qty):
+                    continue  # blank/placeholder, or a fractional mutual-fund share count
+
+                if account_map:
+                    # account_map keys off the account TYPE (e.g. "Traditional
+                    # IRA", "ROTH IRA") -- held in the 'Account name' column
+                    # for these exports (the real account number is a
+                    # separate, numeric 'Account number' column, not used for
+                    # this mapping; see the identical lookup in _load_accounts).
+                    acct_type = row.get(acct_type_col) if acct_type_col else None
+                    if drop_values and acct_type in drop_values:
+                        continue
+                    account_name = account_map.get(acct_type)
+                else:
+                    account_name = default_account_name
+                if not account_name:
+                    continue
+
+                self.equity_from_position_files[account_name][ticker] += int(qty)
+
     def _calculate_open_positions(self):
         """Calculate net open positions by excluding closed-out positions and expired contracts"""
         from datetime import date
@@ -660,6 +736,26 @@ class OpenPositionsLoaderV2:
         # action-text fix). Populated unconditionally so either branch below
         # can contribute to it.
         self.equity_from_position_files: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+
+        # Fidelity position-file equity capture (analogous to Schwab's
+        # below). An earlier attempt reused the same shifted 'symbol'/
+        # 'quantity' columns _load_accounts sets up for OPTION-row parsing
+        # (Symbol -> symbol, Description -> quantity) and applied them to
+        # equity rows too, corrupting tickers ("NIKE"/"SONOS"/"ADOBE" parsed
+        # from description text instead of real symbols "NKE"/"SONO"/
+        # "ADBE"). This instead re-reads the raw Fidelity CSVs directly
+        # (_capture_fidelity_equity_from_position_files), untouched by that
+        # shift, so it gets the real Symbol/Quantity columns for equity
+        # rows. Fidelity equity previously relied solely on
+        # _track_equity_positions()'s transaction-based reconstruction (the
+        # 'BOUGHT ASSIGNED PUTS'/'SOLD ASSIGNED CALLS' branch there), which
+        # only ever captures shares that arrived via option assignment --
+        # confirmed live 2026-11-13: a directly-purchased Fidelity equity
+        # position (SONO, 400 shares, bought outright rather than assigned)
+        # was invisible to it, silently falling back to the stale
+        # portfolio_equity_positions.yaml snapshot for every Fidelity
+        # account, every ticker, unconditionally.
+        self._capture_fidelity_equity_from_position_files()
 
         # For Schwab position files, keep only option rows (they show open positions directly)
         if 'asset type' in self.consolidated_df.columns:
@@ -693,22 +789,6 @@ class OpenPositionsLoaderV2:
                     continue
 
             self.consolidated_df = self.consolidated_df[~position_file_equity_mask].copy()
-
-        # NOTE: a Fidelity position-file equity capture (analogous to
-        # Schwab's above) was attempted here and reverted -- Fidelity's
-        # position-file export has a documented column-shift quirk (see the
-        # "Fidelity position files have misaligned columns" comment in
-        # _load_accounts, tuned specifically for OPTION rows: Symbol holds
-        # the description text, Description holds the quantity). Applying
-        # that same shift assumption to equity rows in the same file
-        # corrupted tickers (extracted "NIKE"/"SONOS"/"ADOBE" from
-        # description text instead of real symbols "NKE"/"SONO"/"ADBE").
-        # Fidelity equity relies on _track_equity_positions()'s
-        # transaction-based reconstruction instead (the 'BOUGHT ASSIGNED
-        # PUTS'/'SOLD ASSIGNED CALLS' branch below), which reads the
-        # transaction file -- NOT subject to this position-file-specific
-        # shift -- and is now fixed by the same end-of-string ticker-regex
-        # correction applied to Schwab.
 
             # Mark position file options as already having opening transactions (no netting)
             pf_option_mask = (
