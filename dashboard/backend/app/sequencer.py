@@ -53,15 +53,43 @@ _COVERAGE_RANK = {False: 0, None: 1, True: 2}  # naked < cash-secured-put/unknow
 _COMPOSITE_FIELDS = ("score", "yield_pct", "conviction", "rank", "population_size", "iv_rank", "iv_entry_signal")
 
 
+def _coverage_rank(leg: dict) -> int:
+    """ADR 0005: prefers the real per-leg `coverage` field (heat_scanner.py)
+    over the older `covered` boolean below, which is a POOLED, cross-
+    account-AND-combined display annotation (services.py) that can disagree
+    with the real per-leg coverage for a contract held covered in one
+    account and naked in another -- confirmed real, recurring, not
+    hypothetical (see tests/test_services.py's AAPL $200 CALL cross-
+    account-collision fixture). Falls back to the old boolean-keyed
+    _COVERAGE_RANK only for a leg that predates ADR 0005 and never set
+    `coverage` at all. PARTIAL ranks with NAKED (its uncovered portion is
+    real risk), matching the old scheme's treatment of covered=False."""
+    coverage = leg.get("coverage")
+    if coverage == "COVERED":
+        return 2
+    if coverage == "CASH_SECURED_PUT":
+        return 1
+    if coverage in ("NAKED", "PARTIAL"):
+        return 0
+    return _COVERAGE_RANK.get(leg.get("covered"), 1)
+
+
+def _is_covered_call(leg: dict) -> bool:
+    """Same ADR 0005 preference as _coverage_rank() above, isolated so
+    _is_actionable_leg() doesn't duplicate the fallback logic."""
+    coverage = leg.get("coverage")
+    if coverage is not None:
+        return leg.get("type") == "CALL" and coverage == "COVERED"
+    return leg.get("type") == "CALL" and leg.get("covered") is True
+
+
 def _is_actionable_leg(leg: dict) -> bool:
     """A leg needs attention now: RED/YELLOW and not a fully-covered call
     (a covered call's risk is capped by assignment, not the same urgency as
     naked -- see services.get_position_heat()). Used both to decide whether
     a (symbol, account) position group belongs in Tier 1 at all, and to pick
     the group's worst leg for severity/coverage ranking."""
-    return leg.get("color") in ("RED", "YELLOW") and not (
-        leg.get("type") == "CALL" and leg.get("covered") is True
-    )
+    return leg.get("color") in ("RED", "YELLOW") and not _is_covered_call(leg)
 
 
 def _tier1_rows():
@@ -86,12 +114,12 @@ def _tier1_rows():
             continue
         worst = min(
             actionable,
-            key=lambda lg: (_SEVERITY_RANK.get(lg.get("action"), 2), _COVERAGE_RANK.get(lg.get("covered"), 1)),
+            key=lambda lg: (_SEVERITY_RANK.get(lg.get("action"), 2), _coverage_rank(lg)),
         )
         row = dict(group)
         row["tier_source"] = "position_heat"
         row["severity_rank"] = _SEVERITY_RANK.get(worst.get("action"), 2)
-        row["coverage_rank"] = _COVERAGE_RANK.get(worst.get("covered"), 1)
+        row["coverage_rank"] = _coverage_rank(worst)
         comp = held_by_ticker.get(group["symbol"])
         if comp:
             for f in _COMPOSITE_FIELDS:
