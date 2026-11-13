@@ -1,6 +1,9 @@
 # Monthly Performance Skill
 
-Runs 1st of month at 8 AM ET to generate monthly performance analysis.
+Generates a monthly performance analysis. Run on-demand via the MCP tool
+`generate_monthly_objectives_report` (or the equivalent
+`/monthly-performance` invocation), triggered manually or via Claude Code —
+**not** on an unattended schedule (see "Automatic Scheduling" below).
 
 ## Invocation
 
@@ -87,15 +90,19 @@ Saves to: `logs/enhanced_monthly_report_{YYYY-MM-DD}.txt`
 
 ## Automatic Scheduling
 
-GitHub Actions runs this 1st of each month at 8 AM ET:
-```yaml
-name: Monthly Performance Report
-on:
-  schedule:
-    - cron: '0 13 1 * *'  # 8 AM ET on 1st = 13 UTC
-```
+**Not currently automated.** There is no `.github/workflows/` directory in
+this repo, so no GitHub Actions cron job runs this report. A scheduler
+script (`mcp/routines/unified_reports_scheduler.py`) and a cron-install
+script (`scripts/setup_cron.sh`) exist in the repo and can drive this
+report on a schedule, but as of this writing there is no crontab installed
+and the most recent scheduler run logs (`logs/scheduler_run_*.json`) are
+from May 2026 — stale, not evidence of a live schedule. In practice this
+report runs on-demand via the MCP tool, triggered manually or via Claude
+Code.
 
-Result emailed to user via Resend API.
+Email delivery via Resend (`mcp/routines/email_report.py`, using the
+`RESEND_API_KEY` env var) is real and can be wired into a manual or future
+scheduled run, but it is not itself what triggers report generation.
 
 ## Success Metrics (Month-over-Month)
 
