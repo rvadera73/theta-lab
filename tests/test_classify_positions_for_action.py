@@ -56,7 +56,7 @@ print("Covered-only RED/low-conviction ticker is excluded from close/trim")
 
 sono_like = _make_instance(
     metrics={"SONO": {"heat_status": "RED", "conviction": 4.5}},
-    open_positions_rows=[{"ticker": "SONO", "option_type": "CALL", "net_quantity": 4}],
+    open_positions_rows=[{"ticker": "SONO", "option_type": "CALL", "net_quantity": 4, "account_name": "F1"}],
     equity_positions={"F1": {"SONO": 400}},
 )
 naked, covered, total_calls, total_puts = sono_like._naked_covered_calls("SONO")
@@ -75,7 +75,7 @@ check("covered-only ticker excluded from close/trim even at conviction<5 (would-
 # conviction band it would have landed in.
 sono_like_trim_band = _make_instance(
     metrics={"SONO": {"heat_status": "RED", "conviction": 6.5}},
-    open_positions_rows=[{"ticker": "SONO", "option_type": "CALL", "net_quantity": 4}],
+    open_positions_rows=[{"ticker": "SONO", "option_type": "CALL", "net_quantity": 4, "account_name": "F1"}],
     equity_positions={"F1": {"SONO": 400}},
 )
 classified2 = sono_like_trim_band._classify_positions_for_action()
@@ -94,7 +94,7 @@ print("\nGenuinely naked-call RED/low-conviction ticker still classifies CLOSE/T
 
 naked_ticker = _make_instance(
     metrics={"XYZ": {"heat_status": "RED", "conviction": 4.5}},
-    open_positions_rows=[{"ticker": "XYZ", "option_type": "CALL", "net_quantity": 3}],
+    open_positions_rows=[{"ticker": "XYZ", "option_type": "CALL", "net_quantity": 3, "account_name": "A"}],
     equity_positions={},
 )
 naked2, covered2, _, _ = naked_ticker._naked_covered_calls("XYZ")
@@ -116,8 +116,8 @@ print("\nCovered call + a real separate short put is NOT excluded (real put-side
 okta_like = _make_instance(
     metrics={"OKTA": {"heat_status": "RED", "conviction": 4.5}},
     open_positions_rows=[
-        {"ticker": "OKTA", "option_type": "CALL", "net_quantity": 2},
-        {"ticker": "OKTA", "option_type": "PUT", "net_quantity": 3},
+        {"ticker": "OKTA", "option_type": "CALL", "net_quantity": 2, "account_name": "A"},
+        {"ticker": "OKTA", "option_type": "PUT", "net_quantity": 3, "account_name": "A"},
     ],
     equity_positions={"A": {"OKTA": 200}},
 )
@@ -140,7 +140,7 @@ print("\nPure stock-only RED/low-conviction ticker (no options at all) still cla
 
 stock_only = _make_instance(
     metrics={"PURESTOCK": {"heat_status": "RED", "conviction": 4.5}},
-    open_positions_rows=[{"ticker": "OTHERTICKER", "option_type": "PUT", "net_quantity": -1}],
+    open_positions_rows=[{"ticker": "OTHERTICKER", "option_type": "PUT", "net_quantity": -1, "account_name": "A"}],
     equity_positions={"A": {"PURESTOCK": 500}},
 )
 naked4, covered4, _, puts4 = stock_only._naked_covered_calls("PURESTOCK")

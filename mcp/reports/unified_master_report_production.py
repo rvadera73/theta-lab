@@ -1009,13 +1009,34 @@ class UnifiedReportProduction:
         correctly read as "WATCH" by THIS method's own logic in Section
         6) as if both needed closing. Real bug, caught by direct trader
         pushback, not a judgment call.
+
+        2026-11-12: naked/covered allocation is now done PER ACCOUNT, not
+        globally across every account holding this ticker -- a real gap
+        found during the ADR 0005 systematic audit: shares and short calls
+        must sit in the SAME brokerage account to actually back each
+        other (the exact rule services.py's own
+        _leg_coverage_and_strangle_expiries() already follows for the
+        dashboard's per-leg scoring). The old global sum let a naked call
+        in one account (0 shares there) read as covered by shares owned in
+        a completely different account -- e.g. 3 naked calls sold in
+        Account A with 0 shares in A, 300 shares owned in Account B, 0
+        calls in B: globally that read shares=300/calls=3/naked=0 (fully
+        "covered"), even though Account A's calls have no real backing
+        and carry genuine uncapped risk. `calls`/`puts` (the cross-account
+        totals used for messaging/strangle detection elsewhere) are
+        unchanged -- only the naked/covered split is now account-aware.
         """
-        shares = sum(acct.get(ticker, 0) for acct in self.equity_positions.values())
         ticker_opts = self.open_positions[self.open_positions['ticker'] == ticker]
+        naked = 0.0
+        covered = 0.0
+        for account_name, acct_opts in ticker_opts.groupby('account_name'):
+            acct_shares = self.equity_positions.get(account_name, {}).get(ticker, 0)
+            acct_calls = acct_opts[acct_opts['option_type'].astype(str).str.upper().str.startswith('C')]['net_quantity'].sum()
+            acct_covered = min(acct_calls, max(0, acct_shares) / 100)
+            covered += acct_covered
+            naked += max(0, acct_calls - acct_covered)
         calls = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('C')]['net_quantity'].sum()
         puts = ticker_opts[ticker_opts['option_type'].astype(str).str.upper().str.startswith('P')]['net_quantity'].sum()
-        covered = min(calls, max(0, shares) / 100)
-        naked = max(0, calls - covered)
         return naked, covered, calls, puts
 
     def _build_sector_position_table(self, critical: list, monitor: list, healthy: list) -> List[str]:
