@@ -107,7 +107,18 @@ ACCOUNTS: dict[str, dict] = {
 # Portfolio-level targets ($3M across all 14 accounts)
 # ---------------------------------------------------------------------------
 
+# Issue #53: this dict's total_aum/target_monthly_combined/
+# active_options_aum_estimate are a hand-typed snapshot with no recorded
+# as-of date -- so a consumer had no way to tell stale from current. "as_of"
+# fixes that. Per `git log -S'total_aum' -- mcp/config.py`, these three
+# figures were introduced in commit 472c257 (2026-04-30) and have never been
+# edited since, so that's the real last-known-accurate date (not today's
+# date) -- use it rather than a fabricated/overstated freshness claim.
+# report_utils.portfolio_staleness_lines() warns visibly (in
+# weekly_report.py, monthly_objectives_report.py, india_weekly_report.py)
+# once this date is more than PORTFOLIO_STALENESS_DAYS old.
 PORTFOLIO = {
+    "as_of": "2026-04-30",
     "total_aum": 3_000_000,
     "target_monthly_combined": 100_000,   # $100K/month = premium + equity appreciation
     "target_annual_return": 0.40,          # $1.2M/year = 40% of $3M
