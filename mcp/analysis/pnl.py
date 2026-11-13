@@ -5,10 +5,21 @@ This is the metric that matters — not just options P&L in isolation.
 
 import csv
 import io
+import os
 import re
+import sys
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Callable, Optional
+
+# Needed so `from analysis.position_priority import ...` below resolves
+# regardless of which sys.path setup the caller used to reach this module --
+# some existing tests (e.g. tests/test_parse_fidelity_csv.py) only add
+# mcp/analysis/ to sys.path, not mcp/ itself, and previously never needed
+# to since this file had no eager cross-package import. Mirrors the same
+# `dirname(dirname(...))` bootstrap every mcp/reports/*.py file already uses.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from analysis.position_priority import _dte_from_expiry
 
 
 @dataclass
@@ -147,15 +158,11 @@ def _parse_osi_symbol(symbol: str) -> tuple[str, str, float]:
 # option legs onto the equity map (creating a zero-share stub Position for
 # any underlying with no equity holding at that broker). Factored out once
 # here rather than re-implemented five times below.
+#
+# _dte_from_expiry() itself now lives in analysis.position_priority (see
+# issue #61) -- it was also being re-implemented, slightly differently,
+# in reports/india_weekly_report.py; imported above instead of duplicated.
 # ---------------------------------------------------------------------------
-
-def _dte_from_expiry(expiry: str, today: date) -> int:
-    """Days remaining to an ISO ('YYYY-MM-DD') expiry string; 0 if unparsable."""
-    try:
-        return (date.fromisoformat(expiry) - today).days
-    except (ValueError, TypeError):
-        return 0
-
 
 def _merge_option_legs_into_equity_map(
     equity_map: dict[str, Position],

@@ -21,6 +21,7 @@ from analysis.india_statement_parser import (
     build_positions_from_statements,
     load_india_config,
 )
+from analysis.position_priority import _dte_label, _dte_from_expiry, priority_prefix
 from reports.report_utils import current_price as _live_price, yf_symbol
 from config import (
     INDIA_ACCOUNT,
@@ -145,13 +146,6 @@ def _fetch_index_prices(symbols: list[str]) -> dict[str, float]:
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _dte_label(dte: int) -> str:
-    if dte <= 7:   return f"⚠️ {dte}d — URGENT"
-    if dte <= 21:  return f"🔶 {dte}d — act soon"
-    if dte <= 45:  return f"🟡 {dte}d — watch"
-    return f"🟢 {dte}d"
-
-
 def _fmt_inr(amount: float) -> str:
     """Format amount as ₹ with commas, e.g. ₹1,23,456."""
     sign = "+" if amount >= 0 else "-"
@@ -159,22 +153,16 @@ def _fmt_inr(amount: float) -> str:
 
 
 def _priority(position: Position, regime_str: str) -> tuple[int, str, str]:
-    """Returns (priority 1-5, label, reason) for a position."""
-    roll = position.roll_signal()
-    loss = position.loss_flag()
-    profit = position.profit_take_signal(regime_str)
+    """Returns (priority 1-5, label, reason) for a position.
 
-    if loss["flag"]:
-        return 1, "URGENT", f"Mark {loss['multiplier']}x premium — flag and review"
-    for leg in position.option_legs:
-        if leg.dte <= 7:
-            return 1, "URGENT", f"Expires in {leg.dte} days — decide now"
-    if any(leg.dte <= 21 for leg in position.option_legs):
-        return 2, "URGENT", "Within 21 DTE — roll or close"
-    if profit["signal"]:
-        return 2, "REVIEW", f"At profit target ({profit['pct_captured']}% captured)"
-    if roll["signal"]:
-        return 3, "MONITOR", "Approaching roll threshold"
+    Shared loss/DTE-urgency/profit/roll logic lives in
+    analysis.position_priority.priority_prefix() (see issue #61) -- this
+    function layers India's own permanent-exit-list check and WEAK/EXTENDED
+    verdict branches on top of that shared result.
+    """
+    result = priority_prefix(position, regime_str)
+    if result is not None:
+        return result
     if position.symbol in INDIA_PERMANENT_EXITS:
         return 2, "REVIEW", "On permanent exit list — accelerate exit"
     verdict = getattr(position, "_verdict", None)
@@ -188,14 +176,6 @@ def _priority(position: Position, regime_str: str) -> tuple[int, str, str]:
         # but still carries its own verdict label/reason instead of the generic one.
         return 5, verdict, _verdict_reason(position._conviction_metrics)
     return 5, "WATCH", "No immediate action needed"
-
-
-def _dte_from_expiry(expiry: str) -> int:
-    """Calculate DTE from YYYY-MM-DD string."""
-    try:
-        return (date.fromisoformat(expiry) - date.today()).days
-    except Exception:
-        return 0
 
 
 def _map_breeze_to_positions(raw_positions: list[dict]) -> list[Position]:
@@ -243,7 +223,7 @@ def _map_breeze_to_positions(raw_positions: list[dict]) -> list[Position]:
                 strike = 0.0
 
             expiry = pos.get("expiry_date", "")
-            dte = _dte_from_expiry(expiry)
+            dte = _dte_from_expiry(expiry, date.today())
 
             is_short = qty < 0
             abs_qty = abs(qty)

@@ -15,36 +15,23 @@ from analysis.pnl import Position
 from analysis.regime import detect_regime
 from analysis.iv_rank import batch_iv_rank
 from analysis.heat_scanner import heat_from_positions, format_heat_html
+from analysis.position_priority import _dte_label, priority_prefix
 from config import (
     ACCOUNTS, PERMANENT_EXITS,
     LEGACY_EXIT_RULES, RISK, Regime, PROFIT_TARGETS, UNIVERSE, Tier,
 )
 
 
-def _dte_label(dte: int) -> str:
-    if dte <= 7:   return f"⚠️ {dte}d — URGENT"
-    if dte <= 21:  return f"🔶 {dte}d — act soon"
-    if dte <= 45:  return f"🟡 {dte}d — watch"
-    return f"🟢 {dte}d"
-
-
 def _priority(position: Position, regime_str: str) -> tuple[int, str, str]:
-    """Returns (priority 1-5, label, reason) for a position."""
-    roll = position.roll_signal()
-    loss = position.loss_flag()
-    profit = position.profit_take_signal(regime_str)
+    """Returns (priority 1-5, label, reason) for a position.
 
-    if loss["flag"]:
-        return 1, "URGENT", f"Mark {loss['multiplier']}x premium — flag and review"
-    for leg in position.option_legs:
-        if leg.dte <= 7:
-            return 1, "URGENT", f"Expires in {leg.dte} days — decide now"
-    if any(leg.dte <= 21 for leg in position.option_legs):
-        return 2, "URGENT", "Within 21 DTE — roll or close"
-    if profit["signal"]:
-        return 2, "REVIEW", f"At profit target ({profit['pct_captured']}% captured)"
-    if roll["signal"]:
-        return 3, "MONITOR", "Approaching roll threshold"
+    Shared loss/DTE-urgency/profit/roll logic lives in
+    analysis.position_priority.priority_prefix() (see issue #61) -- this
+    function only owns the US-specific permanent-exit-list fallback.
+    """
+    result = priority_prefix(position, regime_str)
+    if result is not None:
+        return result
     if position.symbol in PERMANENT_EXITS:
         return 2, "REVIEW", "On permanent exit list — accelerate exit"
     return 5, "WATCH", "No immediate action needed"
