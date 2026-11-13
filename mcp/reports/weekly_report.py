@@ -63,7 +63,7 @@ async def generate_weekly_report(
     schwab_client: optional mock for testing without live credentials.
     """
     from routines.email_report import build_weekly_action_html
-    from reports.report_utils import save_html, maybe_send
+    from reports.report_utils import save_html, maybe_send, portfolio_staleness_lines
     today = date.today()
     week_label = f"{today.strftime('%B %d')} – {(today + __import__('datetime').timedelta(days=4)).strftime('%B %d, %Y')}"
 
@@ -77,6 +77,7 @@ async def generate_weekly_report(
     all_actions = []
     all_positions: list = []
     text_warnings = []
+    text_warnings += portfolio_staleness_lines()  # issue #53
 
     try:
         from reports.report_utils import load_us_positions

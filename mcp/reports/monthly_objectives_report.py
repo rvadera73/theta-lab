@@ -19,6 +19,7 @@ from reports.report_utils import (
     month_name,
     monthly_option_pnl_series,
     monthly_premium,
+    portfolio_staleness_lines,
     previous_month,
     project_value,
     save_html,
@@ -336,7 +337,10 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
     data = {
         "title": "Theta-Lab Monthly Objectives Report",
         "data_source": f"US: {us['data_source']} | India: {india['data_source']}",
-        "warning": " | ".join([msg for msg in [us.get('warning'), india.get('warning')] if msg]),
+        "warning": " | ".join(
+            [msg for msg in [us.get('warning'), india.get('warning')] if msg]
+            + portfolio_staleness_lines()  # issue #53
+        ),
         "header": {"previous_month": month_name(prior_month), "current_month": month_name(current_month)},
         "income_rows": income_rows,
         "kpi_rows": kpi_rows,
@@ -416,13 +420,16 @@ async def generate_monthly_objectives_report(send_email: bool = True, save_to_fi
     path = save_html("monthly_objectives", html, today) if save_to_file else None
     subject = f"Theta-Lab Monthly Objectives Report — {today:%B %d, %Y}"
     email_result = maybe_send(subject, html) if send_email else {"success": False, "error": "send skipped"}
-    summary = "\n".join([
+    summary_lines = [
         "# Monthly Objectives Report",
         f"- Previous month: {month_name(prior_month)}",
         f"- Data source: {data['data_source']}",
         f"- Saved HTML: {path}" if path else "- Saved HTML: skipped",
         f"- Email: {'sent' if email_result.get('success') else 'not sent'}",
-    ])
+    ]
+    if data["warning"]:
+        summary_lines.append(f"- Warning: {data['warning']}")
+    summary = "\n".join(summary_lines)
     return {"html": html, "path": str(path) if path else None, "summary": summary, "data": data, "email": email_result}
 
 

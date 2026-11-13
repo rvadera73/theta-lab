@@ -95,6 +95,50 @@ from config import PORTFOLIO, RISK, PERMANENT_EXITS, OVERNIGHT_MOVE_GATE_PCT
 from routines.email_report import send_email
 from robinhood_netting import parse_robinhood_transaction_csv, net_robinhood_option_legs
 
+# Issue #53: config.PORTFOLIO's total_aum/target_monthly_combined/
+# active_options_aum_estimate are a hand-typed snapshot. 75 is the chosen
+# middle value in the issue's named 60-90 day range.
+PORTFOLIO_STALENESS_DAYS = 75
+
+
+def portfolio_staleness_lines() -> list[str]:
+    """Shared staleness check for config.PORTFOLIO's hand-typed AUM snapshot
+    (issue #53) -- a small helper instead of copy-pasting this date-math
+    into weekly_report.py, monthly_objectives_report.py, and
+    india_weekly_report.py, all of which already import from this module.
+    Returns a visible warning line (same shape as the existing
+    `lines += _check_fno_concentration_risk(...)` / text_warnings pattern
+    these reports already use for other live-data checks) when
+    PORTFOLIO['as_of'] is missing, unparseable, or more than
+    PORTFOLIO_STALENESS_DAYS old; otherwise returns [] so callers can do
+    `lines += portfolio_staleness_lines()` / `text_warnings +=
+    portfolio_staleness_lines()` unconditionally.
+    """
+    as_of_str = PORTFOLIO.get("as_of")
+    if not as_of_str:
+        return [
+            "⚠️ **PORTFOLIO config has no `as_of` date** -- total_aum / "
+            "target_monthly_combined / active_options_aum_estimate "
+            "(mcp/config.py) cannot be verified as current."
+        ]
+    try:
+        as_of = datetime.strptime(as_of_str, "%Y-%m-%d").date()
+    except ValueError:
+        return [
+            f"⚠️ **PORTFOLIO['as_of'] is malformed** ({as_of_str!r}) -- "
+            "expected YYYY-MM-DD (mcp/config.py)."
+        ]
+    age_days = (date.today() - as_of).days
+    if age_days > PORTFOLIO_STALENESS_DAYS:
+        return [
+            f"⚠️ **PORTFOLIO config is {age_days}d old** (as_of {as_of_str}, "
+            f"over the {PORTFOLIO_STALENESS_DAYS}d threshold) -- total_aum / "
+            "target_monthly_combined / active_options_aum_estimate "
+            "(mcp/config.py) are a hand-typed snapshot; verify them before "
+            "trusting any variance math derived from them."
+        ]
+    return []
+
 # ---------------------------------------------------------------------------
 # Sibling submodules -- explicit re-export (see this file's own docstring for
 # why not a bare `import *`). Safe to import right away: every cross-

@@ -890,14 +890,25 @@ def _build_top_expiry_dates(opt, total_n):
 
 def _resolve_cash_reserve_info():
     """Emergency reserve -- was hardcoded to a stale $200K literal (ADR
-    0001, found 2026-11-03). The real fund is actively draining (~$140K as
-    of 2026-10-15, co-funding the Dubai purchase, per
-    skills/options-trader/SKILL.md) with no live feed, so it's read from
-    account_state.py instead, falling back to the last-confirmed figure.
-    Returns (emergency_reserve, reserve_days_stale)."""
+    0001, found 2026-11-03), then replaced with a live read from
+    account_state.py falling back to a second hardcoded guess ($140K,
+    issue #54) when account_state had no real figure on file. That second
+    fallback repeated the exact bug ADR 0001 fixed one layer up: a guessed
+    dollar figure silently standing in for real data, with
+    reserve_days_stale reporting None (no staleness signal at all) even
+    though the number itself was never real.
+
+    Per ADR 0001's own precedent (account_state.py's `days_stale is None`
+    already means "no data on file" elsewhere, e.g. get_today_plan's
+    "inactive" branch), the correct behavior is to surface "unavailable"
+    explicitly rather than substitute a guess. Returns (emergency_reserve,
+    reserve_days_stale) -- emergency_reserve is None when account_state has
+    never recorded a real value, and callers must treat that as
+    "unavailable", never as $0 or a safe-by-default number."""
     from . import account_state as acct_state
     a_state = acct_state.get_state("A") or {}
-    return a_state.get("emergency_reserve") or 140000, a_state.get("days_stale")
+    emergency_reserve = a_state.get("emergency_reserve")
+    return emergency_reserve, a_state.get("days_stale")
 
 
 def get_cash_margin_forecast():
@@ -926,6 +937,9 @@ def get_cash_margin_forecast():
     stress_low = total_n * 0.15 * 0.18
     stress_high = total_n * 0.20 * 0.18
     emergency_reserve, reserve_days_stale = _resolve_cash_reserve_info()
+    # issue #54: no real account_state figure on file -> surface "unavailable"
+    # explicitly (None), never a guessed dollar amount compared as if it were real.
+    reserve_covers_stress = emergency_reserve >= stress_high if emergency_reserve is not None else None
 
     return _to_native({
         "as_of": today.isoformat(),
@@ -936,7 +950,7 @@ def get_cash_margin_forecast():
         "operating_cash_target": 100000,
         "emergency_reserve": emergency_reserve,
         "reserve_days_stale": reserve_days_stale,
-        "reserve_covers_stress": emergency_reserve >= stress_high,
+        "reserve_covers_stress": reserve_covers_stress,
         "capacity": ACCOUNTS_CONFIG[_ACCOUNT_A_NAME].get('capacity'),
         "capacity_as_of": ACCOUNTS_CONFIG[_ACCOUNT_A_NAME].get('capacity_as_of'),
         "dte_buckets": buckets,

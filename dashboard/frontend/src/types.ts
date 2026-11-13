@@ -198,8 +198,10 @@ export interface CashMarginForecast {
   stress_low: number;
   stress_high: number;
   operating_cash_target: number;
-  emergency_reserve: number;
-  reserve_covers_stress: boolean;
+  // issue #54: null when account_state has no real figure on file -- the
+  // dashboard must render "unavailable", never a guessed dollar amount.
+  emergency_reserve: number | null;
+  reserve_covers_stress: boolean | null;
   capacity: number;
   capacity_as_of: string;
   dte_buckets: { label: string; pct: number; target_lo: number; target_hi: number; status: string }[];

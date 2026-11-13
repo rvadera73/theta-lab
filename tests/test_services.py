@@ -782,15 +782,41 @@ check("the single-date concentration status buckets correctly: >25% over, 20-25%
       and any(d["status"] == "ok" for d in top_dates_by_notional),
       f"got {top_dates_by_notional}")
 
-print("\nget_cash_margin_forecast() -- no account_state on file -> falls back to the documented $140K reserve")
+print("\nget_cash_margin_forecast() -- no account_state on file -> surfaces 'unavailable', "
+      "never a guessed dollar figure (issue #54)")
 
 with mock.patch.object(services, "_get_generator", return_value=_fake_gen2), \
      mock.patch.object(accounts_config, "ACCOUNTS_CONFIG", _fake_accounts_config), \
      mock.patch.object(account_state, "get_state", return_value=None):
     forecast2 = services.get_cash_margin_forecast()
-check("emergency_reserve falls back to 140000 and reserve_days_stale is None when no state is on file",
-      forecast2["emergency_reserve"] == 140000 and forecast2["reserve_days_stale"] is None,
-      f"got {forecast2['emergency_reserve']}, {forecast2['reserve_days_stale']}")
+check("emergency_reserve is None (not a guessed $140000/$200000 literal) when no state is on file",
+      forecast2["emergency_reserve"] is None,
+      f"got {forecast2['emergency_reserve']}")
+check("reserve_days_stale is None when no state is on file",
+      forecast2["reserve_days_stale"] is None,
+      f"got {forecast2['reserve_days_stale']}")
+check("reserve_covers_stress is explicitly None (unavailable), not a guessed True/False, "
+      "when emergency_reserve is unknown",
+      forecast2["reserve_covers_stress"] is None,
+      f"got {forecast2['reserve_covers_stress']}")
+
+print("\nget_cash_margin_forecast() -- account_state row exists but emergency_reserve was never "
+      "set on it (e.g. only cash/equity_pct recorded) -> still 'unavailable', not a guess")
+
+with mock.patch.object(services, "_get_generator", return_value=_fake_gen2), \
+     mock.patch.object(accounts_config, "ACCOUNTS_CONFIG", _fake_accounts_config), \
+     mock.patch.object(account_state, "get_state",
+                        return_value={"emergency_reserve": None, "days_stale": 3, "cash": 5000.0}):
+    forecast3 = services.get_cash_margin_forecast()
+check("a present-but-None emergency_reserve field still surfaces as None, not 140000",
+      forecast3["emergency_reserve"] is None,
+      f"got {forecast3['emergency_reserve']}")
+check("reserve_days_stale still passes through from account_state even though emergency_reserve is unknown",
+      forecast3["reserve_days_stale"] == 3,
+      f"got {forecast3['reserve_days_stale']}")
+check("reserve_covers_stress is None here too -- a stale-but-present row doesn't fall back to a guess either",
+      forecast3["reserve_covers_stress"] is None,
+      f"got {forecast3['reserve_covers_stress']}")
 
 # ---------------------------------------------------------------------------
 # get_report_text / extract_section_from_text / extract_markdown_section
