@@ -1,6 +1,9 @@
 # Weekly Actions Skill
 
-Runs Mondays at 8 AM ET to generate weekly action plan.
+Generates a weekly action plan. Run on-demand via the MCP tool
+`generate_weekly_action_report` (or the equivalent `/weekly-actions`
+invocation), triggered manually or via Claude Code — **not** on an
+unattended schedule (see "Automatic Scheduling" below).
 
 ## Invocation
 
@@ -79,12 +82,16 @@ Saves to: `logs/enhanced_weekly_report_{YYYY-MM-DD}.txt`
 
 ## Automatic Scheduling
 
-GitHub Actions runs this Mondays at 8 AM ET:
-```yaml
-name: Weekly Actions Report
-on:
-  schedule:
-    - cron: '0 13 * * 1'  # 8 AM ET Mondays = 13 UTC
-```
+**Not currently automated.** There is no `.github/workflows/` directory in
+this repo, so no GitHub Actions cron job runs this report. A scheduler
+script (`mcp/routines/unified_reports_scheduler.py`) and a cron-install
+script (`scripts/setup_cron.sh`) exist in the repo and can drive this
+report on a schedule, but as of this writing there is no crontab installed
+and the most recent scheduler run logs (`logs/scheduler_run_*.json`) are
+from May 2026 — stale, not evidence of a live schedule. In practice this
+report runs on-demand via the MCP tool, triggered manually or via Claude
+Code.
 
-Result emailed to user via Resend API.
+Email delivery via Resend (`mcp/routines/email_report.py`, using the
+`RESEND_API_KEY` env var) is real and can be wired into a manual or future
+scheduled run, but it is not itself what triggers report generation.
