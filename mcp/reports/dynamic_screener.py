@@ -8,6 +8,7 @@ from datetime import date
 from typing import Any
 
 from analysis.iv_rank import batch_iv_rank
+from analysis.strategy_engine import check_flags
 from config import INDIA_REGIME_THRESHOLDS, RISK, PERMANENT_EXITS
 from reports.report_utils import technical_snapshot, upcoming_earnings, yf_symbol
 from reports.screener_universe import INDIA_UNIVERSE, US_UNIVERSE, STRATEGIC_MACRO_FOCUS
@@ -210,6 +211,25 @@ def _score_candidate(meta: dict[str, Any], regime: str, current_symbols: list[st
     symbol = meta["symbol"]
     # Never recommend new entries on permanent-exit names
     if symbol in PERMANENT_EXITS:
+        return None
+    # Live, TTL-cached hard-block check (analysis.flags_engine, via
+    # analysis.strategy_engine.check_flags) -- the SAME path research_symbol/
+    # scan_sector/run_screener/dry_run_order and (as of #47) composite_score.py
+    # already use. Real bug found 2026-11-13 (#49): this screener -- the one
+    # feeding the LIVE run_screener/screen_new_entries MCP tools that can
+    # surface an active ENTER_NOW recommendation -- only ever excluded via the
+    # hardcoded, hand-maintained PERMANENT_EXITS list (4 names in config.py)
+    # and never consulted the quality-flag registry at all, static or live.
+    # A ticker carrying a real hard-block flag (ACCOUNTING_RISK/
+    # DELISTING_RISK/GOING_CONCERN/HALTED/PERMANENT_EXIT) in the flag registry
+    # but not separately hand-added to PERMANENT_EXITS could get an active
+    # ENTER_NOW recommendation from the live screener with zero flag check --
+    # worse than the composite_score.py bug, since this under-blocks a live
+    # buy recommendation rather than over-blocking a ranking display.
+    # PERMANENT_EXITS is kept as an additional, redundant check (not removed)
+    # since it's config-driven and may carry manual intent beyond the flag
+    # registry.
+    if check_flags(symbol)["hard_blocks"]:
         return None
     in_portfolio = symbol in set(current_symbols)
     preferred = meta["preferred_strategy"]
