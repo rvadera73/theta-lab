@@ -1202,6 +1202,25 @@ class UnifiedReportProduction:
                 label = f"🟡 WATCH: strangle ({naked:.0f}C/{total_puts:.0f}P) — call side uncapped if it rallies"
             elif naked > 0:
                 label = f"🟡 WATCH: {naked:.0f} isolated naked call(s), no offsetting puts — uncapped upside risk if it runs"
+            elif heat == 'RED' and covered > 0 and total_puts == 0:
+                # Same covered-only carve-out as the close_tickers/trim_tickers
+                # branch above (2026-10-02 TWLO/SONO fix), ported here 2026-11-12
+                # after the trader challenged SONO specifically: RED heat here is
+                # the STOCK's own RSI/technical extendedness, not a per-leg
+                # assignment risk. naked==0 is already guaranteed by the naked>0
+                # checks above; total_puts==0 is checked explicitly here (unlike
+                # the close/trim branch, nothing upstream of this elif chain rules
+                # out a real separate short put on this name for a conviction>=7
+                # ticker) so a covered call + genuine put-side assignment risk
+                # still falls through to the generic RED branch below, not here.
+                # The old wording ("conviction holds it back from CLOSE/TRIM")
+                # wrongly implied conviction was the only thing preventing a
+                # trim -- conviction was never the reason; being fully covered is.
+                label = (
+                    f"🟡 WATCH: {int(covered)} covered call(s) only, no naked/strangle risk -- "
+                    f"RED heat is the stock's own RSI extendedness, not an assignment risk; "
+                    f"consider adding a short put for strangle premium instead of trimming"
+                )
             elif heat == 'RED':
                 label = f"🟡 WATCH: RED heat, but conviction {conv:.1f} holds it back from CLOSE/TRIM"
             elif reason:
