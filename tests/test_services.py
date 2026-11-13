@@ -229,7 +229,10 @@ def _fake_symbol_context(symbol, **kwargs):
     return {
         "sector": sectors.get(symbol), "gates_fired": [],
         "dividend_rate": 0.5, "next_ex_dividend_date": "2026-12-01",
-        "current_iv": 0.3,
+        # current_iv_pct (issue #56): a PERCENTAGE, matching real
+        # get_cached_symbol_context() output -- not the old `current_iv` key
+        # name, and not the 0.3 fractional value that name used to mask.
+        "current_iv_pct": 30.0,
     }
 
 

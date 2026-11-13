@@ -10,15 +10,19 @@ Covers:
     independently hand-computed expected volatility (not just "returns a
     positive float" -- that would be tautological).
   - get_iv_rank()'s HV-proxy path (current_iv=None): confirms the returned
-    current_iv genuinely IS the HV proxy by re-fetching the same 1y history
-    and re-running the real _historical_volatility() (the function under
-    test, not a reimplementation of its math) over the same trailing
+    current_iv_pct genuinely IS the HV proxy by re-fetching the same 1y
+    history and re-running the real _historical_volatility() (the function
+    under test, not a reimplementation of its math) over the same trailing
     31-close window get_iv_rank() itself uses -- an integration check of
     the wiring, not the math (already covered above).
-  - get_iv_rank()'s current_iv override path: confirms current_iv passes
+  - get_iv_rank()'s current_iv override path: confirms current_iv_pct passes
     through exactly (round(iv*100,1), not re-derived from HV) and that
     iv_rank is computed as this value's percentile position between the
     SAME hv_52w_low/high the HV-proxy path reported for the same symbol.
+  - The return dict uses `current_iv_pct`, NOT `current_iv`, for this
+    percentage field (issue #56 regression guard) -- `current_iv` must only
+    ever appear here as the function's own fractional INPUT parameter name,
+    never as an output key sharing that name across a 100x unit difference.
   - The actual failure shape that fires for an invalid/delisted symbol,
     confirmed live rather than assumed (see note at that section below).
   - batch_iv_rank() returning both shapes correctly, per-symbol.
@@ -98,11 +102,18 @@ check("iv_pct is a float in [0, 100]",
 check("hv_52w_low <= hv_52w_high",
       baseline["hv_52w_low"] <= baseline["hv_52w_high"],
       f"low={baseline['hv_52w_low']!r} high={baseline['hv_52w_high']!r}")
-check("current_iv is present and numeric (not None)",
-      isinstance(baseline.get("current_iv"), (int, float)),
-      f"got {baseline.get('current_iv')!r}")
+check("current_iv_pct is present and numeric (not None)",
+      isinstance(baseline.get("current_iv_pct"), (int, float)),
+      f"got {baseline.get('current_iv_pct')!r}")
+check("return dict uses `current_iv_pct`, not the old `current_iv` key "
+      "(issue #56 naming-collision regression guard)",
+      "current_iv" not in baseline, f"got keys={list(baseline.keys())!r}")
+check("current_iv_pct is a PERCENTAGE, not a fraction -- a healthy symbol's "
+      "IV is essentially never below 1.0 on a 0-100 scale (a fraction like "
+      "0.352 would be, and indicates the 100x bug has returned)",
+      baseline["current_iv_pct"] > 1.0, f"got {baseline['current_iv_pct']!r}")
 
-# Cross-check: current_iv on the HV-proxy path must genuinely be the HV
+# Cross-check: current_iv_pct on the HV-proxy path must genuinely be the HV
 # proxy and not some other value -- re-fetch the same 1y history
 # independently and re-run the REAL _historical_volatility() over the same
 # trailing 31-close window get_iv_rank() itself uses (closes[-31:],
@@ -111,11 +122,11 @@ ticker = yf.Ticker("AAPL")
 hist = ticker.history(period="1y")
 closes = hist["Close"].tolist()
 recomputed_current_hv_pct = round(_historical_volatility(closes[-31:], window=30) * 100, 1)
-check("HV-proxy current_iv matches an independent re-fetch + re-run of "
+check("HV-proxy current_iv_pct matches an independent re-fetch + re-run of "
       "_historical_volatility() over the same trailing window "
       "(small tolerance for inter-call timing/rounding)",
-      abs(recomputed_current_hv_pct - baseline["current_iv"]) <= 0.3,
-      f"recomputed={recomputed_current_hv_pct!r} returned={baseline['current_iv']!r}")
+      abs(recomputed_current_hv_pct - baseline["current_iv_pct"]) <= 0.3,
+      f"recomputed={recomputed_current_hv_pct!r} returned={baseline['current_iv_pct']!r}")
 
 # ---------------------------------------------------------------------------
 # get_iv_rank("AAPL", current_iv=0.25) -- override path
@@ -123,9 +134,9 @@ check("HV-proxy current_iv matches an independent re-fetch + re-run of "
 print("\nget_iv_rank('AAPL', current_iv=0.25) override path, live data")
 
 overridden = get_iv_rank("AAPL", current_iv=0.25)
-check("override current_iv surfaces exactly as round(0.25*100, 1) == 25.0, "
+check("override current_iv_pct surfaces exactly as round(0.25*100, 1) == 25.0, "
       "not re-derived from HV",
-      overridden.get("current_iv") == 25.0, f"got {overridden.get('current_iv')!r}")
+      overridden.get("current_iv_pct") == 25.0, f"got {overridden.get('current_iv_pct')!r}")
 check("override path uses the SAME hv_52w_low/high range as the HV-proxy "
       "path for the same symbol (same underlying 1y history)",
       overridden["hv_52w_low"] == baseline["hv_52w_low"]
@@ -138,9 +149,9 @@ check("override path uses the SAME hv_52w_low/high range as the HV-proxy "
 # formula ((iv - low) / (high - low) * 100) -- not a copy of the
 # implementation's internals, a check of its output against the formula it
 # claims to implement. Small tolerance for the *100-rounding already baked
-# into the low/high/current_iv fields themselves.
+# into the low/high/current_iv_pct fields themselves.
 lo, hi = overridden["hv_52w_low"], overridden["hv_52w_high"]
-expected_rank = (overridden["current_iv"] - lo) / (hi - lo) * 100
+expected_rank = (overridden["current_iv_pct"] - lo) / (hi - lo) * 100
 check("iv_rank for the override matches the hand-computed percentile "
       "position between the returned hv_52w_low/high",
       abs(overridden["iv_rank"] - expected_rank) < 1.0,
@@ -184,8 +195,8 @@ for sym in ("AAPL", "MSFT"):
     check(f"batch[{sym}] hv_52w_low <= hv_52w_high",
           res["hv_52w_low"] <= res["hv_52w_high"],
           f"low={res.get('hv_52w_low')!r} high={res.get('hv_52w_high')!r}")
-    check(f"batch[{sym}] current_iv is numeric (HV-proxy path, no override passed)",
-          isinstance(res.get("current_iv"), (int, float)), f"got {res.get('current_iv')!r}")
+    check(f"batch[{sym}] current_iv_pct is numeric (HV-proxy path, no override passed)",
+          isinstance(res.get("current_iv_pct"), (int, float)), f"got {res.get('current_iv_pct')!r}")
 
 print()
 if failures:

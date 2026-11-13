@@ -446,7 +446,7 @@ def _recommended_trade(symbol: str, tech: dict[str, Any], iv_data: dict[str, Any
     display_account = "/".join(accounts)
     engine_account = str(accounts[0]) if accounts else "A"
     iv_rank = _safe_float(iv_data.get("iv_rank")) or 0.0
-    iv = _normalized_iv_decimal(iv_data.get("current_iv"), iv_rank)
+    iv = _normalized_iv_decimal(iv_data.get("current_iv_pct"), iv_rank)
     rsi = _safe_float(tech.get("rsi")) or 50.0
 
     rec = recommend_trade(
@@ -510,7 +510,7 @@ def _format_research_card(
     price = _safe_float(tech.get("current")) or _safe_float(portfolio_check.get("price"))
     rsi = _safe_float(tech.get("rsi"))
     ivr_value = _safe_float(ivr.get("iv_rank")) or _safe_float(portfolio_check.get("ivr"))
-    current_iv = _safe_float(ivr.get("current_iv")) or _safe_float(portfolio_check.get("current_iv"))
+    current_iv = _safe_float(ivr.get("current_iv_pct")) or _safe_float(portfolio_check.get("current_iv_pct"))
 
     earnings_days = portfolio_check.get("earnings_days")
     if earnings:
@@ -1022,7 +1022,7 @@ async def call_tool(name: str, arguments: dict):
                 ivr = data.get("iv_rank")
                 entry = "✅ Entry OK (IVR ≥ 40)" if data.get("entry_signal") else "❌ IVR too low for new entry"
                 if ivr is not None:
-                    lines.append(f"**{sym}:** IVR {ivr:.0f} | IV Pct {data.get('iv_pct')}% | Current IV {data.get('current_iv')}% | {entry}")
+                    lines.append(f"**{sym}:** IVR {ivr:.0f} | IV Pct {data.get('iv_pct')}% | Current IV {data.get('current_iv_pct')}% | {entry}")
                 else:
                     lines.append(f"**{sym}:** Data unavailable — {data.get('error', 'unknown error')}")
             return [TextContent(type="text", text="\n".join(lines))]
@@ -1352,7 +1352,7 @@ async def call_tool(name: str, arguments: dict):
             qualified.sort(key=lambda x: x[1].get("iv_rank", 0), reverse=True)
             lines = ["## Entry Candidates (IVR ≥ 40)", ""]
             for sym, d in qualified[:10]:
-                lines.append(f"- **{sym}**: IVR {d['iv_rank']:.0f} | IV {d['current_iv']}% | Entry: ✅")
+                lines.append(f"- **{sym}**: IVR {d['iv_rank']:.0f} | IV {d['current_iv_pct']}% | Entry: ✅")
             return [TextContent(type="text", text="\n".join(lines))]
 
         elif name == "get_live_positions":
@@ -1617,10 +1617,10 @@ async def call_tool(name: str, arguments: dict):
                 portfolio_check.update({
                     "signal": signal,
                     "flags": flag_state,
-                    "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
+                    "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv_pct": candidate.get("current_iv_pct")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                     "price": candidate.get("price"),
                     "ivr": candidate.get("ivr"),
-                    "current_iv": candidate.get("current_iv"),
+                    "current_iv_pct": candidate.get("current_iv_pct"),
                     "pct_off_high": candidate.get("pct_off_high"),
                     "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
                     "earnings_window": 21,
@@ -1632,7 +1632,7 @@ async def call_tool(name: str, arguments: dict):
                     "week_52_low": None,
                     "pct_off_high": candidate.get("pct_off_high"),
                 }
-                iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}
+                iv_data = {"iv_rank": candidate.get("ivr"), "current_iv_pct": candidate.get("current_iv_pct")}
                 cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, regime_data.get("regime", "UNKNOWN")))
 
             header = (
@@ -1672,10 +1672,10 @@ async def call_tool(name: str, arguments: dict):
                     portfolio_check.update({
                         "signal": signal,
                         "flags": flag_state,
-                        "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
+                        "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv_pct": candidate.get("current_iv_pct")}, portfolio_check, regime_data.get("regime", "TRANSITIONING")),
                         "price": candidate.get("price"),
                         "ivr": candidate.get("ivr"),
-                        "current_iv": candidate.get("current_iv"),
+                        "current_iv_pct": candidate.get("current_iv_pct"),
                         "pct_off_high": candidate.get("pct_off_high"),
                         "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
                         "earnings_window": 21,
@@ -1687,7 +1687,7 @@ async def call_tool(name: str, arguments: dict):
                         "week_52_low": None,
                         "pct_off_high": candidate.get("pct_off_high"),
                     }
-                    iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}
+                    iv_data = {"iv_rank": candidate.get("ivr"), "current_iv_pct": candidate.get("current_iv_pct")}
                     us_cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, regime_data.get("regime", "UNKNOWN")))
                 sections.append(
                     f"## US screener\nRegime: {regime_data.get('regime', 'UNKNOWN')}\n\n"
@@ -1718,10 +1718,10 @@ async def call_tool(name: str, arguments: dict):
                             "sector_warning": False,
                             "signal": "SKIP" if flag_state.get("is_blocked") else (candidate.get("signal") or "SKIP").replace("_", " "),
                             "flags": flag_state,
-                            "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}, {"meta": meta, "shares": 0, "accounts": [], "share_accounts": [], "short_puts": 0, "short_calls": 0, "sector": meta.get("sector"), "sector_count": 0, "sector_warning": False}, india_regime_data.get("regime", "TRANSITIONING")),
+                            "trade": _recommended_trade(symbol, {"current": candidate.get("price"), "rsi": candidate.get("rsi")}, {"iv_rank": candidate.get("ivr"), "current_iv_pct": candidate.get("current_iv_pct")}, {"meta": meta, "shares": 0, "accounts": [], "share_accounts": [], "short_puts": 0, "short_calls": 0, "sector": meta.get("sector"), "sector_count": 0, "sector_warning": False}, india_regime_data.get("regime", "TRANSITIONING")),
                             "price": candidate.get("price"),
                             "ivr": candidate.get("ivr"),
-                            "current_iv": candidate.get("current_iv"),
+                            "current_iv_pct": candidate.get("current_iv_pct"),
                             "pct_off_high": candidate.get("pct_off_high"),
                             "earnings_days": candidate.get("earnings_days") if candidate.get("earnings_soon") else None,
                             "earnings_window": 21,
@@ -1733,7 +1733,7 @@ async def call_tool(name: str, arguments: dict):
                             "week_52_low": None,
                             "pct_off_high": candidate.get("pct_off_high"),
                         }
-                        iv_data = {"iv_rank": candidate.get("ivr"), "current_iv": candidate.get("current_iv")}
+                        iv_data = {"iv_rank": candidate.get("ivr"), "current_iv_pct": candidate.get("current_iv_pct")}
                         india_cards.append(_format_research_card(symbol, tech, iv_data, [], portfolio_check, india_regime_data.get("regime", "TRANSITIONING")))
                     sections.append(
                         f"## India screener\nIndia VIX: {india_vix:.1f} | Regime: {india_regime_data.get('regime', 'UNKNOWN')}\n\n"

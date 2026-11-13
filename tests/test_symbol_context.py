@@ -79,20 +79,24 @@ for sym in DIVIDEND_PAYERS:
 print("\ncurrent_iv kwarg overrides the HV-proxy fallback")
 
 baseline = get_symbol_context("AAPL")
-baseline_current_iv = baseline.get("current_iv")
-check("baseline (no current_iv) call returns a numeric current_iv (HV-proxy fallback)",
+baseline_current_iv = baseline.get("current_iv_pct")
+check("baseline (no current_iv) call returns a numeric current_iv_pct (HV-proxy fallback)",
       isinstance(baseline_current_iv, (int, float)), f"got {baseline_current_iv!r}")
+check("get_symbol_context()'s return dict uses `current_iv_pct`, not the old "
+      "`current_iv` key (issue #56 naming-collision regression guard)",
+      "current_iv" not in baseline, f"got keys={list(baseline.keys())!r}")
 
 overridden = get_symbol_context("AAPL", current_iv=0.35)
-overridden_current_iv = overridden.get("current_iv")
+overridden_current_iv = overridden.get("current_iv_pct")
 # get_iv_rank()'s own contract: it stores whatever `iv` it used (the passed
 # current_iv, in the same fractional-vol units as its internal HV calc) and
-# returns it as round(iv * 100, 1) for display -- so a 0.35 override surfaces
-# as 35.0, not 0.35 unchanged. Verified live against this exact code path
-# before writing this assertion (see iv_rank.get_iv_rank, lines ~59-69).
-check("current_iv=0.35 override surfaces as 35.0 (iv_rank's own *100 display convention)",
+# returns it as round(iv * 100, 1) under `current_iv_pct` for display -- so a
+# 0.35 override surfaces as 35.0, not 0.35 unchanged. Verified live against
+# this exact code path before writing this assertion (see
+# iv_rank.get_iv_rank, lines ~59-69).
+check("current_iv=0.35 override surfaces as current_iv_pct=35.0 (iv_rank's own *100 display convention)",
       overridden_current_iv == 35.0, f"got {overridden_current_iv!r}")
-check("overridden current_iv differs from the HV-proxy baseline (override actually took effect)",
+check("overridden current_iv_pct differs from the HV-proxy baseline (override actually took effect)",
       overridden_current_iv != baseline_current_iv,
       f"baseline={baseline_current_iv!r} overridden={overridden_current_iv!r}")
 
@@ -114,9 +118,9 @@ second_call_s = t2 - t1
 check("first get_cached_symbol_context() call returns a usable dict (iv_rank present)",
       first.get("iv_rank") is not None, f"got {first}")
 check("two calls for the same symbol/day return identical symbol-level facts "
-      "(dividend_rate, current_iv, sector all match -- cache hit, not a fresh HV re-fetch)",
+      "(dividend_rate, current_iv_pct, sector all match -- cache hit, not a fresh HV re-fetch)",
       (first.get("dividend_rate") == second.get("dividend_rate")
-       and first.get("current_iv") == second.get("current_iv")
+       and first.get("current_iv_pct") == second.get("current_iv_pct")
        and first.get("sector") == second.get("sector")),
       f"first={first} second={second}")
 check("second call is fast -- well under what a live 1y-history + info fetch takes "

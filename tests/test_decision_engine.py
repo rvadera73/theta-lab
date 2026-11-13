@@ -264,7 +264,7 @@ print("\nBlack-Scholes delta + portfolio rollup")
 # Deep ITM naked call, 17 DTE, real-ish IV (30%) -> delta should be close to
 # -100 shares per contract (deep ITM short call behaves almost like -100
 # shares of stock).
-deep_itm_call = dict(okta_naked_call, current_iv=30.0)
+deep_itm_call = dict(okta_naked_call, current_iv_pct=30.0)
 d19 = build_decision(deep_itm_call)
 check("deep ITM short call delta_source is BLACK_SCHOLES_ESTIMATE",
       d19.delta_source == "BLACK_SCHOLES_ESTIMATE", f"got {d19.delta_source}")
@@ -272,18 +272,29 @@ check("deep ITM short call delta_shares is strongly negative (near -100/contract
       d19.delta_shares is not None and d19.delta_shares < -70,
       f"got {d19.delta_shares}")
 
+# issue #56 regression guard: the engine reads the leg's PERCENTAGE IV under
+# `current_iv_pct` -- a leg that instead carries the OLD `current_iv` key
+# (even with a plausible value) must be treated as having no IV at all,
+# exactly like no_iv_leg below, not silently accepted.
+stale_key_leg = dict(okta_naked_call, current_iv=30.0)  # old key name, should be ignored
+d_stale = build_decision(stale_key_leg)
+check("a leg carrying the OLD `current_iv` key (not `current_iv_pct`) gets "
+      "delta UNAVAILABLE, not a silently-accepted stale-key guess",
+      d_stale.delta_shares is None and d_stale.delta_source == "UNAVAILABLE",
+      f"got {d_stale.delta_shares} / {d_stale.delta_source}")
+
 # Deep ITM short put, similar setup -> delta should be strongly POSITIVE
 # (short put benefits when stock rises, same direction as being long stock).
-deep_itm_put = dict(anet_put, current_iv=30.0)
+deep_itm_put = dict(anet_put, current_iv_pct=30.0)
 d20 = build_decision(deep_itm_put)
 check("deep ITM short put delta_shares is strongly positive (near +100/contract)",
       d20.delta_shares is not None and d20.delta_shares > 70,
       f"got {d20.delta_shares}")
 
 # Missing IV -> delta UNAVAILABLE, not a fabricated number
-no_iv_leg = dict(okta_naked_call, current_iv=None)
+no_iv_leg = dict(okta_naked_call, current_iv_pct=None)
 d21 = build_decision(no_iv_leg)
-check("leg with no current_iv -> delta UNAVAILABLE, not a guess",
+check("leg with no current_iv_pct -> delta UNAVAILABLE, not a guess",
       d21.delta_shares is None and d21.delta_source == "UNAVAILABLE",
       f"got {d21.delta_shares} / {d21.delta_source}")
 
@@ -292,9 +303,9 @@ check("leg with no current_iv -> delta UNAVAILABLE, not a guess",
 # review, 2026-11-05, to stop double-computing build_decisions() per call) --
 # build them explicitly here same as a real caller (get_leg_decisions()) does.
 rollup_legs = [
-    dict(okta_naked_call, symbol="AAA1", sector="Technology", current_iv=30.0, strike=140.0),
-    dict(okta_naked_call, symbol="AAA2", sector="Technology", current_iv=30.0, strike=140.0),
-    dict(anet_put, symbol="BBB1", sector="Industrials", current_iv=30.0),
+    dict(okta_naked_call, symbol="AAA1", sector="Technology", current_iv_pct=30.0, strike=140.0),
+    dict(okta_naked_call, symbol="AAA2", sector="Technology", current_iv_pct=30.0, strike=140.0),
+    dict(anet_put, symbol="BBB1", sector="Industrials", current_iv_pct=30.0),
 ]
 rollup = portfolio_rollup(build_decisions(rollup_legs))
 check("portfolio_rollup total_margin_estimate is positive and matches sum of parts",
@@ -310,8 +321,8 @@ check("Technology sector shows 2 legs (AAA1+AAA2), Industrials shows 1",
 
 # Force a concentration breach: one symbol with outsized margin vs tiny others
 concentrated_legs = [
-    dict(okta_naked_call, symbol="WHALE", current_iv=30.0, strike=140.0, total_contracts=50, covered_contracts=0),
-    dict(anet_put, symbol="TINY1", current_iv=30.0, total_contracts=1),
+    dict(okta_naked_call, symbol="WHALE", current_iv_pct=30.0, strike=140.0, total_contracts=50, covered_contracts=0),
+    dict(anet_put, symbol="TINY1", current_iv_pct=30.0, total_contracts=1),
 ]
 conc_rollup = portfolio_rollup(build_decisions(concentrated_legs))
 check("a symbol dominating portfolio margin fires a SYMBOL concentration gate",
