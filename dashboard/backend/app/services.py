@@ -237,9 +237,23 @@ def get_position_heat():
 
     result = assess_portfolio_heat(legs, regime_str)
 
-    for color_rows in result.get("by_color", {}).values():
-        _annotate_heat_rows(color_rows, context, cost_to_close_by_key, premium_received_by_key)
-    _annotate_heat_rows(result.get("top_actions", []), context, cost_to_close_by_key, premium_received_by_key)
+    # _annotate_heat_rows() returns a deduplicated list (the second row for
+    # a cross-account-collision key is dropped, not just left un-annotated)
+    # -- the return value MUST be used, not discarded, or the dropped
+    # duplicate's un-annotated twin stays in by_color with no "account"
+    # field at all. That un-annotated row previously formed a phantom
+    # (symbol, None) position-group in _group_positions_by_symbol_account()
+    # below and leaked straight into get_leg_decisions() -> decision_engine,
+    # double-counting the same real contract's premium/cost-to-close in the
+    # portfolio rollup -- confirmed real, recurring collision (NVO $40C,
+    # 2026-10-15), not hypothetical.
+    for color, color_rows in result.get("by_color", {}).items():
+        result["by_color"][color] = _annotate_heat_rows(
+            color_rows, context, cost_to_close_by_key, premium_received_by_key
+        )
+    result["top_actions"] = _annotate_heat_rows(
+        result.get("top_actions", []), context, cost_to_close_by_key, premium_received_by_key
+    )
 
     result["sector_rollup"] = _build_sector_rollup(result.get("by_color", {}), cost_to_close_by_key)
     result["positions"] = _group_positions_by_symbol_account(result.get("by_color", {}))
@@ -442,14 +456,19 @@ def _annotate_heat_rows(rows, context, cost_to_close_by_key, premium_received_by
     identical contract (symbol+strike+expiry+type) held in TWO accounts
     (confirmed real case: NVO $40C 03/19/2027) produces two separate
     heat_scanner.py rows (LegHeat has no account field), both pointing at
-    the SAME pooled context entry. Meant to collapse to one row per
-    colliding key, explicitly labeled as spanning multiple accounts.
+    the SAME pooled context entry. Collapses to one row per colliding key,
+    explicitly labeled as spanning multiple accounts (row["account"] reads
+    "A+B" via _merge_context_onto_row's multi_account_contract handling).
 
-    NOTE (found, not fixed -- preserved as-is per this refactor's
-    behavior-preservation scope): the `deduped` list built below is
-    discarded at both of get_position_heat()'s call sites, so the second/
-    duplicate row is left un-annotated rather than actually removed from
-    by_color/top_actions.
+    The caller MUST use this function's return value in place of its input
+    list -- a second real bug, found 2026-11-12: both of get_position_heat()'s
+    call sites discarded the deduplicated `deduped` list, leaving the
+    un-annotated duplicate row (no "account" field at all) still in
+    by_color/top_actions. That un-annotated row formed a phantom
+    (symbol, None) position-group downstream and leaked into
+    get_leg_decisions() -> decision_engine, double-counting the same real
+    contract's dollars in the portfolio rollup. Fixed at the call site, not
+    here -- this function's own dedup logic was already correct.
     """
     seen_keys: set[tuple] = set()
     deduped = []
