@@ -94,7 +94,7 @@ class LegDecisionRecord:
     sector: str | None = None
 
     # Portfolio-rollup inputs (ADR 0001 step 7): per-leg Black-Scholes delta
-    # in share-equivalents, ESTIMATED from current_iv (real if a caller
+    # in share-equivalents, ESTIMATED from current_iv_pct (real if a caller
     # upstream supplied one per step 6, else iv_rank's HV-proxy fallback) --
     # same "estimate, not exact" discipline as margin/dividend above. Signed
     # for a SHORT position (every leg this engine sees): a short call's
@@ -164,7 +164,7 @@ def _black_scholes_delta(opt_type: str, price: float | None, strike: float | Non
     codebase, and its effect on delta at realistic DTE/strike distances is
     small) -- an explicit approximation, same discipline as margin/dividend
     above, not a precise pricing model. iv_pct is a percentage (e.g. 35.2),
-    matching iv_rank.py's own `current_iv` convention.
+    matching iv_rank.py's own `current_iv_pct` output convention (issue #56).
     """
     if not price or not strike or not dte or not iv_pct or price <= 0 or strike <= 0 or dte <= 0 or iv_pct <= 0:
         return None
@@ -352,7 +352,7 @@ def build_decision(leg: dict) -> LegDecisionRecord:
 
     contracts = leg.get("total_contracts") or leg.get("contracts") or 1
     option_delta = _black_scholes_delta(
-        _opt_type(leg), leg.get("current_price"), leg.get("strike"), leg.get("dte"), leg.get("current_iv")
+        _opt_type(leg), leg.get("current_price"), leg.get("strike"), leg.get("dte"), leg.get("current_iv_pct")
     )
     delta_shares = -option_delta * 100 * contracts if option_delta is not None else None
     delta_source: Literal["BLACK_SCHOLES_ESTIMATE", "UNAVAILABLE"] = (

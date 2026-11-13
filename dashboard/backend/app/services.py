@@ -321,12 +321,15 @@ def _build_leg_context_entry(pos, lg, signals: dict):
         "gates_fired": leg_ctx.get("gates_fired", []) + eh_ctx["gates_fired"],
         "dividend_rate": leg_ctx.get("dividend_rate"),
         "next_ex_dividend_date": leg_ctx.get("next_ex_dividend_date"),
-        # iv_rank/current_iv were computed here all along but never passed
-        # through to the leg dict (ADR 0001 step 7) -- decision_engine.py's
-        # portfolio Greeks rollup needs a vol input per leg; current_iv is
-        # real when a caller upstream supplied one (step 6), else iv_rank's
-        # own HV-proxy fallback.
-        "current_iv": leg_ctx.get("current_iv"),
+        # iv_rank/current_iv_pct were computed here all along but never
+        # passed through to the leg dict (ADR 0001 step 7) --
+        # decision_engine.py's portfolio Greeks rollup needs a vol input per
+        # leg; current_iv_pct is real when a caller upstream supplied one
+        # (step 6), else iv_rank's own HV-proxy fallback. Renamed from
+        # `current_iv` (issue #56) -- this is iv_rank.get_iv_rank()'s
+        # PERCENTAGE output, which used to share its name with that same
+        # function's unrelated fractional `current_iv` INPUT parameter.
+        "current_iv_pct": leg_ctx.get("current_iv_pct"),
         # Extended-hours overnight-move signal (ADR 0004) -- live_price is
         # the current pre-market/after-hours/regular quote; overnight_move_pct
         # compares it to pos.current_price (the regular close margin/P&L math
@@ -443,7 +446,7 @@ def _merge_context_onto_row(row, ctx, cost_to_close_by_key, premium_received_by_
     row["gates_fired"] = ctx["gates_fired"]
     row["dividend_rate"] = ctx.get("dividend_rate")
     row["next_ex_dividend_date"] = ctx.get("next_ex_dividend_date")
-    row["current_iv"] = ctx.get("current_iv")
+    row["current_iv_pct"] = ctx.get("current_iv_pct")
     row["live_price"] = ctx.get("live_price")
     row["live_price_source"] = ctx.get("live_price_source")
     row["overnight_move_pct"] = ctx.get("overnight_move_pct")

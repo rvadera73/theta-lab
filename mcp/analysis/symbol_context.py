@@ -198,7 +198,10 @@ def get_symbol_context(symbol: str, dte: Optional[int] = None,
         # if a caller passed one (step 6), else its own HV-proxy fallback.
         # Computed here all along but never surfaced in this dict until now
         # (ADR 0001 step 7) -- decision_engine.py's Greeks rollup needs it.
-        "current_iv": iv.get("current_iv"),
+        # This is iv_rank.get_iv_rank()'s PERCENTAGE output field, renamed to
+        # current_iv_pct (issue #56) to stop sharing a name with this same
+        # function's own fractional `current_iv` INPUT parameter above.
+        "current_iv_pct": iv.get("current_iv_pct"),
         "dividend_yield_pct": dividend["dividend_yield_pct"],
         "dividend_rate": dividend["dividend_rate"],
         "next_ex_dividend_date": dividend["next_ex_dividend_date"],
