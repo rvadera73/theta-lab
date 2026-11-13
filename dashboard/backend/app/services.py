@@ -583,7 +583,7 @@ def get_priority_sequence_cacheable():
 
 
 _CASH_FLOOR = 50_000.0
-_EQUITY_FLOOR_PCT = 50.0
+_EQUITY_FLOOR_PCT = 40.0  # lowered 50->40 2026-11-11, trader directive (see options-trader/SKILL.md)
 
 
 def _build_context_notes(state):
