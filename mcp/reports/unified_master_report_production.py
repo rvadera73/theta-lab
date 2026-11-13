@@ -1422,6 +1422,28 @@ class UnifiedReportProduction:
         unchanged -- that's the most severe, correctly rare case, and
         widening it risks real over-triggering rather than just surfacing
         more borderline names to review.
+
+        2026-11-12: this loop had no coverage/naked/strangle awareness at
+        all, even though `suggestion_for()` (same class, below) already has
+        the exact carve-out needed -- its own `elif covered > 0:` branch
+        (reached only when naked<=0 and total_puts<=0, i.e. fully covered
+        calls only, no naked/strangle risk) never recommends a CLOSE/TRIM.
+        Without this check here, a covered-only ticker still landed in
+        close_/trim_ and got surfaced as a literal "CLOSE {ticker}"/"TRIM
+        {ticker}" command by THREE other consumers that read these raw
+        lists directly (Section 3 Top-5 Action Items, Section 7's Close
+        Now/Monitor lists, the Weekly Execution Plan's Reduce/Manage
+        bucket) -- none of which go through suggestion_for()'s own correct
+        wording at all. Not theoretical: SONO's real conviction (7.2) sat
+        just above this method's own <7 cutoff; a conviction of 6.5 (a
+        small, realistic swing) would already have hit this today, in
+        three sections PR #39 never touched. Matches suggestion_for()'s
+        exact precondition (covered>0 AND naked<=0 AND total_puts<=0) --
+        NOT simply naked<=0/total_puts<=0 alone, which would also wrongly
+        exclude a pure stock-only RED-heat ticker with zero calls/puts at
+        all (covered==naked==total_puts==0) that has nothing to do with
+        covered calls and should stay eligible for CLOSE/TRIM on its own
+        stock merits, unchanged from before.
         """
         if hasattr(self, '_action_classification_cache'):
             return self._action_classification_cache
@@ -1429,6 +1451,9 @@ class UnifiedReportProduction:
         close_, trim_ = [], []
         for ticker, m in self.metrics.items():
             if m['heat_status'] == 'RED' and m['conviction'] < 7:
+                naked, covered, total_calls, total_puts = self._naked_covered_calls(ticker)
+                if covered > 0 and naked <= 0 and total_puts <= 0:
+                    continue
                 (close_ if m['conviction'] < 5 else trim_).append((ticker, m))
 
         conviction_by_bucket = self._get_conviction_summary()
