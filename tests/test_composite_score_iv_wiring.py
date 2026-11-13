@@ -40,16 +40,22 @@ def check(label, condition, detail=""):
 
 # A minimal scoreable population -- one real ticker, no tail-risk flags,
 # built the same way gather_held_rows()/gather_watchlist_rows() would.
-raw_rows = [
-    composite_score._raw_row(
-        "AAA1", yield_pct=10.0, conviction=5.0, target_upside_pct=5.0,
-        verticals=[], sector="Technology",
-    ),
-    composite_score._raw_row(
-        "BBB1", yield_pct=8.0, conviction=4.0, target_upside_pct=3.0,
-        verticals=[], sector="Industrials",
-    ),
-]
+# _raw_row() now calls analysis.strategy_engine.check_flags() (2026-11-13
+# fix, see test_composite_score_live_flags.py) -- mocked here to "no flags"
+# since these are synthetic fixture tickers with no real registry entry;
+# this file is pure IV-wiring, not a flags test.
+with mock.patch.object(composite_score, "check_flags",
+                        return_value={"hard_blocks": [], "warnings": []}):
+    raw_rows = [
+        composite_score._raw_row(
+            "AAA1", yield_pct=10.0, conviction=5.0, target_upside_pct=5.0,
+            verticals=[], sector="Technology",
+        ),
+        composite_score._raw_row(
+            "BBB1", yield_pct=8.0, conviction=4.0, target_upside_pct=3.0,
+            verticals=[], sector="Industrials",
+        ),
+    ]
 
 # AAA1's real IV comes from the CALL side (0.42); BBB1's call side is None
 # so it must fall through to the PUT side (0.31) -- exercises both branches

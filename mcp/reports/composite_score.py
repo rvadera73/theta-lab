@@ -99,12 +99,12 @@ is directly visible, not just its own standalone number.
 """
 import statistics
 
-from screener_universe import QUALITY_FLAGS_BY_SYMBOL
 from config import PERMANENT_EXITS, RISK
 from trend_verticals import get_verticals_for_ticker
 from premium_yield import average_annualized_yield, get_cached_batch_yield
 from enhanced_metrics import batch_get_metrics
 from symbol_context import get_cached_symbol_context
+from analysis.strategy_engine import check_flags
 
 TAIL_RISK_FLAGS = RISK.get("binary_exit_flags", {"ACCOUNTING_RISK", "DELISTING_RISK", "GOING_CONCERN", "PERMANENT_EXIT"})
 OVERVALUATION_THRESHOLD = -15.0  # matches enhanced_metrics.py's own "fundamentally_confirms_weakness" bar
@@ -119,7 +119,23 @@ CONVICTION_DIVERGENCE_THRESHOLD = -0.5  # conviction_z below this = "fundamental
 
 def _raw_row(ticker, yield_pct, conviction, target_upside_pct, verticals, sector,
              invested=None, heat=None, rsi=None, price=None, is_new=False):
-    flags = set(QUALITY_FLAGS_BY_SYMBOL.get(ticker, []))
+    # Live, TTL-cached flag evaluation (analysis.flags_engine, via
+    # analysis.strategy_engine.check_flags) -- the SAME path research_symbol/
+    # scan_sector/run_screener/dry_run_order already use. Real bug found
+    # 2026-11-13: this used to read QUALITY_FLAGS_BY_SYMBOL (screener_
+    # universe.py's static, hand-curated, NEVER-expiring registry) directly,
+    # completely bypassing flags_cache.json's TTL-based re-evaluation -- BE's
+    # GOING_CONCERN flag (seeded 2026-05-03, expired per flags_engine's own
+    # 30-day TTL on 2026-06-02) kept permanently disqualifying BE from the
+    # composite score / Watchlist ranking five months after it should have
+    # auto-cleared, while every OTHER caller of flags already saw it cleared.
+    # Verified live 2026-11-13: BE's Q2 2026 revenue +165% YoY, $196M net
+    # income to common (vs -$43M prior year), raised FY26 guidance to
+    # $3.9-4.2B, $2.49B cash vs $2.60B recourse debt -- the real
+    # yfinance-based evaluator (cash/FCF/operating-cash-flow runway check)
+    # would never re-plant GOING_CONCERN against current fundamentals.
+    flag_state = check_flags(ticker)
+    flags = set(flag_state["hard_blocks"]) | set(flag_state["warnings"])
     tail_risk = bool(flags & TAIL_RISK_FLAGS) or ticker in PERMANENT_EXITS
     return {
         "ticker": ticker, "tail_risk": tail_risk,
